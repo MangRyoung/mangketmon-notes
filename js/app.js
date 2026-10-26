@@ -44,7 +44,15 @@ window.NT=(()=>{
   const o=[['pub','👥 모두'],['gm','🔒 GM만']].concat(opt.noPl?[]:seats.map(s=>['pl:'+s.seat,'👤 '+(seatName(s.seat)||s.seat)+' 에게만']));
   if(cur.startsWith('pl:')&&!o.some(x=>x[0]===cur))o.push([cur,'👤 '+visLabel(cur)]);
   return `<select class="vissel" ${id?`id="${id}"`:''} data-vis title="공개 설정">${o.map(([v,l])=>`<option value="${v}" ${v===cur?'selected':''}>${l}</option>`).join('')}</select>`}
- const visBadge=v=>!v||v==='pub'?'':`<span class="visb ${v==='gm'?'gm':'pl'}" title="${esc(visLabel(v))}">${v==='gm'?'🔒 GM':'👤 '+esc(seatName(v.slice(3))||'PL')}</span>`;
+ const visBadge=(v,kind,id)=>{/* 10-26 망령: GM 은 상세 칸의 이 칩을 눌러 바로 공개 범위(모두 · GM만 · PL 한 명)를 바꾼다 */
+  if(kind&&id&&gm()){v=v||'pub';return `<button type="button" class="visb visq ${v==='pub'?'pub':v==='gm'?'gm':'pl'}" data-visq="${esc(kind)}|${esc(id)}" title="공개 범위 바꾸기 — 지금: ${esc(visLabel(v))}">${v==='pub'?'👥 모두':v==='gm'?'🔒 GM만':'👤 '+esc(seatName(v.slice(3))||'PL')+'만'} ▾</button>`}
+  return !v||v==='pub'?'':`<span class="visb ${v==='gm'?'gm':'pl'}" title="${esc(visLabel(v))}">${v==='gm'?'🔒 GM':'👤 '+esc(seatName(v.slice(3))||'PL')}</span>`};
+ function visMenu(b){document.querySelectorAll('.visqm').forEach(x=>x.remove());const [kind,id]=b.dataset.visq.split('|');const d=doc(kind,id);if(!d)return;const cur=d.vis||'pub';
+  const o=[['pub','👥 모두에게'],['gm','🔒 GM만']].concat(ST.seats.map(x=>['pl:'+x.seat,'👤 '+(seatName(x.seat)||x.seat)+' 에게만']));
+  const m=document.createElement('div');m.className='visqm';m.innerHTML=o.map(([v,l])=>`<button type="button" data-vq="${esc(v)}" class="${v===cur?'on':''}">${esc(l)}${v===cur?' ✓':''}</button>`).join('')+(ST.seats.length?'':'<div class="vqh">PL 한 명에게만 보이게 하려면 「설정」 탭에서 좌석을 먼저 만들어 주세요</div>');
+  document.body.appendChild(m);const r=b.getBoundingClientRect();m.style.left=Math.max(6,Math.min(innerWidth-m.offsetWidth-6,r.left))+'px';m.style.top=(r.bottom+4+m.offsetHeight>innerHeight?Math.max(6,r.top-m.offsetHeight-4):r.bottom+4)+'px';
+  m.addEventListener('click',async e=>{const x=e.target.closest('[data-vq]');if(!x)return;e.stopPropagation();m.remove();const v=x.dataset.vq;if(v===cur)return;await put(kind,id,clone(d.data),v);toast('공개 범위: '+visLabel(v))})}
+ document.addEventListener('click',e=>{const b=e.target.closest('[data-visq]');if(b){e.preventDefault();e.stopPropagation();return visMenu(b)}if(!e.target.closest('.visqm'))document.querySelectorAll('.visqm').forEach(x=>x.remove())},true);
 
  async function put(kind,id,obj,vis){if(!ST.camp)return false;mark(kind,id);const cur=doc(kind,id);const v=vis||(cur?cur.vis:'pub');
   try{const t=await DBS().put(ST.camp,ST.secret,kind,id,obj,v);col(kind)[id]={data:clone(obj),vis:v,updated_at:typeof t==='string'?t:new Date().toISOString()};

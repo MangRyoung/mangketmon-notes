@@ -14,7 +14,7 @@
 
  function render(el){const G=N().gm();const all=ents();const q=U.q.trim().toLowerCase();
   const L=all.filter(e=>(!U.type||e.type===U.type)&&(!U.tag||(e.tags||[]).includes(U.tag))&&(!q||[e.title,e.sub,e.body,(e.tags||[]).join(' '),(e.rows||[]).map(r=>r.k+' '+r.v).join(' ')].join(' ').toLowerCase().includes(q)));
-  const sel=U.sel&&N().data('ents',U.sel)?Object.assign({id:U.sel},N().data('ents',U.sel)):null;
+  const sel=U.sel&&N().data('ents',U.sel)?Object.assign({id:U.sel,_vis:(N().doc('ents',U.sel)||{}).vis},N().data('ents',U.sel)):null;
   el.innerHTML=`<div class="toolbar"><h2>항목</h2><div class="seg" id="enTypes"><button data-t="" class="${!U.type?'on':''}">전체 ${all.length}</button>${TYPES.map(([t,,c])=>{const n=all.filter(e=>e.type===t).length;return n||G?`<button data-t="${t}" class="${U.type===t?'on':''}" style="--c:${c}"><i class="kdot"></i>${t} ${n}</button>`:''}).join('')}</div>
    <input type="search" id="enQ" placeholder="찾기" value="${esc(U.q)}" style="width:150px"><span class="sp"></span>${N().bulkBtns('ents',null,'항목')}${G?'<button class="btn sm pri" data-e="new">＋ 항목</button>':''}</div>
    ${(()=>{const T=tags();if(!T.length)return '';const cnt=t=>all.filter(e=>(e.tags||[]).includes(t)).length;const sorted=[...T].sort((a,b)=>cnt(b)-cnt(a)||a.localeCompare(b,'ko'));const show=U.tagsOpen||U.tag?sorted:sorted.slice(0,TAGMAX);
@@ -31,7 +31,7 @@
    const b=t.closest('[data-e]');if(b)act(b.dataset.e,b)})}
  function card(e){const t=tc(e.type);return `<button type="button" class="entcard ${e.id===U.sel?'on':''}" data-sel="${esc(e.id)}" style="--c:${e.color||t[2]}"><span class="face" style="${e.face?`background-image:url('${cssu(e.face)}')`:''}">${e.face?'':t[0][0]}</span><span class="eb"><b>${esc(e.title||'(제목 없음)')}</b><small>${esc(e.sub||'')}</small><span class="etags">${(e.tags||[]).slice(0,3).map(x=>`<em>${esc(x)}</em>`).join('')}${(e.tags||[]).length>3?`<em class="more">+${e.tags.length-3}</em>`:''}${N().visBadge(e._vis)}</span></span></button>`}
  function detail(e){const G=N().gm(),t=tc(e.type);const sec=N().data('sec','ent:'+e.id);const rels=N().list('rels').filter(r=>r.a===e.id||r.b===e.id);
-  return `<div class="card entd" style="--c:${e.color||t[2]}"><div class="row" style="gap:6px"><span class="chip static" style="border-color:var(--c);color:var(--c)">${esc(e.type||'')}</span>${window.NT_FAV?NT_FAV.btn('ents',e.id,e.title):''}${N().visBadge(e._vis)}<span class="sp"></span>${G?`<button class="btn xs" data-e="edit" data-id="${esc(e.id)}">고치기</button><button class="btn xs ghost danger" data-e="del" data-id="${esc(e.id)}">지우기</button>`:''}</div>
+  return `<div class="card entd" style="--c:${e.color||t[2]}"><div class="row" style="gap:6px"><span class="chip static" style="border-color:var(--c);color:var(--c)">${esc(e.type||'')}</span>${window.NT_FAV?NT_FAV.btn('ents',e.id,e.title):''}${N().visBadge(e._vis,'ents',e.id)}<span class="sp"></span>${G?`<button class="btn xs" data-e="edit" data-id="${esc(e.id)}">고치기</button><button class="btn xs ghost danger" data-e="del" data-id="${esc(e.id)}">지우기</button>`:''}</div>
    <div class="enthead">${e.face?`<img class="face" src="${esc(e.face)}" alt="" data-big="${esc(e.face)}">`:''}<div><h3>${esc(e.title||'')}</h3>${e.sub?`<div class="dim">${esc(e.sub)}</div>`:''}${(e.tags||[]).length?`<div class="etags">${e.tags.map(x=>`<em>${esc(x)}</em>`).join('')}</div>`:''}</div></div>
    ${e.photo?`<img class="photo" src="${esc(e.photo)}" alt="" data-big="${esc(e.photo)}" loading="lazy">`:''}
    ${e.body?`<p class="pre">${esc(e.body)}</p>`:''}
