@@ -317,3 +317,43 @@ table.poll td.ops{text-align:right}
 .mpop .mpa{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;align-items:center}
 .mpop .mpl{display:flex;flex-wrap:wrap;gap:4px;align-items:center}.mpop .mpl small{color:var(--mute);font-size:11px;margin-right:2px}.mpop .chip.xs{font-size:11px;padding:1px 7px}
 #mapSide.flash{outline:2px solid var(--yel);outline-offset:2px}
+/* scen/plan 10-26 */
+.dragh{cursor:grab}.dragh:active{cursor:grabbing}
+.fcard header .rdel,.laneh .rdel,.sess .sdel{opacity:.45;padding:0 5px;line-height:1.2}
+.fcard:hover header .rdel,.lane:hover .laneh .rdel,.sess:hover .sdel{opacity:1}
+.sess .stt{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.sess .wh{margin-left:6px;text-decoration:none;vertical-align:middle}.sess span.wh{display:inline-block;margin-top:3px}
+.sess.flash,.fstep.flash{outline:2px solid #fff;outline-offset:-1px}
+.emptyrow .btn,.empty .btn{margin-left:6px;vertical-align:middle}
+.sview{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-size:13.5px}
+.sview dt{color:var(--mute);font-size:11px;letter-spacing:.08em;font-family:var(--lab);padding-top:2px}.sview dd{margin:0}.sview dd.pre{white-space:pre-wrap}
+.sview .stt.now{color:var(--red2)}.sview .stt.done{color:var(--ok)}
+.nt-dragging.fstep,.nt-dragging.step,.nt-dragging.sess,.nt-dragging.pnote{outline:1px dashed var(--line2)}
+@media(hover:none){.fcard header .rdel,.laneh .rdel,.sess .sdel{opacity:.8}}
+/* ents/pc/graph 10-26 */
+.entcard.nt-dragging,.pccard.nt-dragging{outline:1px dashed var(--line2)}
+.entgrid .nt-ghost,.pcgrid .nt-ghost,body>.entcard.nt-ghost,body>.pccard.nt-ghost{border-color:var(--yel)}
+.empty .btn{vertical-align:middle}
+/* 10-26 감우: 이어진 곳 잇기 · 우클릭 메뉴 · 휠 안내 · 아래 시트 · 지도 순서 */
+.mapwrap.linking{cursor:alias;outline:2px dashed var(--yel);outline-offset:-2px}
+.mapwrap.linking .pin{cursor:alias}
+.toolbar .note.linking{color:var(--yel);display:inline-flex;align-items:center;gap:6px}
+.lnkx{background:none;border:0;color:var(--mute);font-size:11px;cursor:pointer;padding:0 4px;line-height:1}
+.lnkx:hover{color:var(--red2,#f55)}
+.lnkchip{display:inline-flex;align-items:center;gap:0}
+.lnkchk{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:2px 10px;max-height:160px;overflow:auto;padding:4px 0}
+.lnkchk label{display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;min-width:0}
+.lnkchk label b{font-family:var(--mono);font-size:11px;color:var(--mute)}
+.lnkchk input{margin:0}
+.mapwheelhint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:30;background:rgba(0,0,0,.78);color:#fff;border:1px solid rgba(255,255,255,.3);padding:10px 16px;font-size:14px;letter-spacing:.03em;pointer-events:none;opacity:0;transition:opacity .25s}
+.mapwheelhint.on{opacity:1}
+.mpopbg{position:fixed;inset:0;z-index:799;background:rgba(0,0,0,.4)}
+.mpop.sheet{position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;max-width:none;max-height:55dvh;overflow:auto;z-index:800;border-radius:14px 14px 0 0;border-top-width:1px;padding:4px 14px calc(12px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 30px rgba(0,0,0,.6);animation:sheetup .22s ease-out}
+.mpop.sheet .mpgrip{width:40px;height:4px;border-radius:2px;background:var(--line2);margin:4px auto 6px;flex:none}
+.mpop.sheet .mps{max-height:none}
+@keyframes sheetup{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+.molist{display:flex;flex-direction:column;gap:4px}
+.morow{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--line2);background:var(--panel);cursor:grab;touch-action:none}
+.morow .grip{color:var(--mute);letter-spacing:-2px;cursor:grab}
+.morow.nt-dragging{opacity:.35}
+.morow b{font-weight:600}
