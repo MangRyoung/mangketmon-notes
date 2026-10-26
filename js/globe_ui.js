@@ -69,7 +69,7 @@ window.NT_GLOBE=(()=>{
  function detail(it){const G=N().gm();let h=`<div class="k">${esc(ovNo(it))}</div>`;
   if(it.redacted)return h+`<h2><span class="bar">■■■■■■■■■■</span></h2><div class="meta"><span class="bar">■■■■</span> · <span class="bar">■■■■■■</span></div><p class="redline"><span class="bar">██████████████</span> <span class="bar">████████</span><br><span class="bar">██████████</span></p><p class="none">아직 관측되지 않았다. 관측되면 이곳에 기록된다.</p>${G?`<p class="small dim">GM: 이 번호(${esc(it.no)})의 특이점을 만들어 공개하면 가림막이 걷혀요.</p>`:''}`;
   const sec=G?N().data('sec','spot:'+it.id):null;
-  h+=`<div class="row" style="gap:6px"><h2 style="flex:1">${esc(it.title)}</h2>${N().visBadge(it._s._vis)}${G?`<button class="btn xs" data-g="edit" data-id="${esc(it.id)}">고치기</button>`:''}</div><div class="meta">${esc([it.year,it.place].filter(Boolean).join(' · '))} · <span class="st ${esc(it.status)}">${it.label||STL[it.status]||it.status}</span> · ${fmt(it.lat,'N','S')} ${fmt(it.lon,'E','W')}</div>`;
+  h+=`<div class="row" style="gap:6px"><h2 style="flex:1">${esc(it.title)}</h2>${N().visBadge(it._s._vis,'spots',it.id)}${G?`<button class="btn xs" data-g="edit" data-id="${esc(it.id)}">고치기</button>`:''}</div><div class="meta">${esc([it.year,it.place].filter(Boolean).join(' · '))} · <span class="st ${esc(it.status)}">${it.label||STL[it.status]||it.status}</span> · ${fmt(it.lat,'N','S')} ${fmt(it.lon,'E','W')}</div>`;
   if(it.pl.length)h+=`<ul>${it.pl.map(s=>`<li>${esc(s)}</li>`).join('')}</ul>`;
   if(sec&&sec.t)h+=`<div class="conf"><div class="ck">GM 전용 · 미공개</div><div class="pre">${esc(sec.t)}</div></div>`;
   if(it.img)h+=`<div class="gmap"><img src="${esc(it.img)}" alt="${esc(it.title)} 지도" data-big="${esc(it.img)}"></div>`;

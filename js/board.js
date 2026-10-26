@@ -75,8 +75,10 @@ window.NT_BOARD=(()=>{
    else if(k==='labels'){labels=!labels;board.classList.toggle('labels',labels);b.setAttribute('aria-pressed',labels);b.textContent=labels?'실 메모 숨기기':'실 메모 보기';saveUi()}
    else if(k==='new'&&opt.onNew){opt.onNew(vp.scrollLeft/scale+vp.clientWidth/scale/2,vp.scrollTop/scale+vp.clientHeight/scale/2)}
    else if(k==='link'){linkFrom=null;el.querySelectorAll('.cb-card.from').forEach(x=>x.classList.remove('from'));b.classList.toggle('on');board.classList.toggle('linkmode',b.classList.contains('on'));b.textContent=b.classList.contains('on')?'🧵 실 잇기 중 — 두 사람을 차례로':'🧵 실 잇기'}});
-  layoutAll();applyHidden();fit();select(null);
-  let lastW=0;const ro=window.ResizeObserver?new ResizeObserver(()=>{if(Math.abs(vp.clientWidth-lastW)>8){lastW=vp.clientWidth;fit()}}):null;if(ro)ro.observe(vp);
-  return {select:id=>{select(id,true);scrollTo(id)},relayout:layoutAll,destroy:()=>{if(ro)ro.disconnect()}}}
+  layoutAll();applyHidden();
+  /* 10-26 망령: 다시 그릴 때 확대 · 스크롤 · 고른 카드 · 실 잇기 모드를 이어 간다 */
+  const S0=opt.state;if(S0&&S0.scale){vp.style.height=S0.h||'';setScale(S0.scale);vp.scrollLeft=S0.l||0;vp.scrollTop=S0.t||0;if(S0.sel&&cards[S0.sel])select(S0.sel,true);else select(null);if(S0.link){const lb=el.querySelector('[data-cb="link"]');if(lb){lb.classList.add('on');board.classList.add('linkmode');lb.textContent='🧵 실 잇기 중 — 두 사람을 차례로'}if(S0.linkFrom&&cards[S0.linkFrom]){linkFrom=S0.linkFrom;cards[S0.linkFrom].classList.add('from')}}}else{fit();select(null)}
+  let lastW=vp.clientWidth;const ro=window.ResizeObserver?new ResizeObserver(()=>{if(Math.abs(vp.clientWidth-lastW)>8){lastW=vp.clientWidth;fit()}}):null;if(ro)ro.observe(vp);
+  return {select:id=>{select(id,true);scrollTo(id)},relayout:layoutAll,getState:()=>({scale,l:vp.scrollLeft,t:vp.scrollTop,h:vp.style.height,sel,link:board.classList.contains('linkmode'),linkFrom}),destroy:()=>{if(ro)ro.disconnect()}}}
  return {mount};
 })();

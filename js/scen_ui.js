@@ -59,7 +59,7 @@
  async function act(k,b){const id=b.dataset.id;
   if(k==='gomap'){N().go('map');setTimeout(()=>{NT_MAP.select(id);N().render()},0);return}
   if(k==='adv'){await N().patch('routes',id,r=>{const i=(r.steps||[]).findIndex(x=>x.st==='now');if(i<0)return;r.steps[i].st='done';const j=r.steps.findIndex((x,ix)=>ix>i&&!x.st);if(j>=0)r.steps[j].st='now'});return}
-  if(k==='new'){const nid=N().uid('r');await N().put('routes',nid,{name:'새 루트',group:U.group||'',color:PAL[routes().length%PAL.length],entry:'',goal:'',note:'',next:[],order:routes().length,visible:true,steps:[]},'gm');edit(nid);return}
+  if(k==='new'){const nid=N().uid('r');await N().put('routes',nid,{name:'새 루트',group:U.group||'',color:PAL[routes().length%PAL.length],entry:'',goal:'',note:'',next:[],order:routes().length,visible:true,steps:[]},'gm');edit(nid);N().armDraft('routes',nid);return}
   if(k==='edit')return edit(id);
   if(k==='addstep')return addStep(id)}
  async function addStep(rid){const spots=N().list('spots').sort((a,b)=>String(a.num||'').localeCompare(String(b.num||''),'ko',{numeric:true}));
@@ -81,8 +81,8 @@
   const save=(fn)=>N().patch('routes',rid,rr=>{const st=rr.steps[i];if(!st)return false;fn(rr,st)});
   $$('#smSt button',md).forEach(b=>b.onclick=async()=>{const v=b.dataset.st;await save((rr,st)=>{if(v==='now')rr.steps.forEach(x=>{if(x.st==='now')x.st=''});st.st=v});$$('#smSt button',md).forEach(x=>x.classList.toggle('on',x.dataset.st===v))});
   $('#smOk',md).onclick=async()=>{await save((rr,st)=>{st.spot=$('#smSpot',md).value;st.title=$('#smTitle',md).value.trim();st.note=$('#smNote',md).value.trim()});N().closeModal()};
-  $$('[data-mv]',md).forEach(b=>b.onclick=async()=>{const d=+b.dataset.mv;await N().patch('routes',rid,rr=>{const j=i+d;if(j<0||j>=rr.steps.length)return false;[rr.steps[i],rr.steps[j]]=[rr.steps[j],rr.steps[i]]});N().closeModal()});
-  $('#smDel',md).onclick=async()=>{await N().patch('routes',rid,rr=>{rr.steps.splice(i,1)});N().closeModal()};
+  $$('[data-mv]',md).forEach(b=>b.onclick=async()=>{const d=+b.dataset.mv;await N().patch('routes',rid,rr=>{const j=i+d;if(j<0||j>=rr.steps.length)return false;[rr.steps[i],rr.steps[j]]=[rr.steps[j],rr.steps[i]]});N().closeModal();const j=i+d;if(j>=0&&j<((N().data('routes',rid)||{}).steps||[]).length)stepMenu(rid,j)});
+  $('#smDel',md).onclick=async()=>{if(!await N().confirmBox('이 단계를 뺄까요?','빼기'))return;await N().patch('routes',rid,rr=>{rr.steps.splice(i,1)});N().closeModal()};
   const mp=$('#smMap',md);if(mp)mp.onclick=()=>{N().closeModal();N().go('map');setTimeout(()=>{NT_MAP.select(s.spot);N().render()},0)}}
  function edit(id){const r=N().data('routes',id);if(!r)return;const sec=N().data('sec','route:'+id)||{};const others=routes().filter(x=>x.id!==id);
   const md=N().openModal(`<div class="mhead"><h2>루트 고치기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>

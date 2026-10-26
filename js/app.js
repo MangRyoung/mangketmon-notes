@@ -20,14 +20,20 @@ window.NT=(()=>{
  /* ----- 알림 · 창 ----- */
  let toastT=0;
  function toast(t){const el=$('#toast');if(!el)return;el.textContent=t;el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('on'),2200)}
- function openModal(html,cls){closeModal();const bg=document.createElement('div');bg.className='modalbg';bg.innerHTML=`<div class="modal ${cls||''}" role="dialog">${html}</div>`;document.body.appendChild(bg);
-  bg.addEventListener('click',e=>{if(e.target===bg||e.target.closest('[data-x]'))closeModal()});document.body.classList.add('modal-open');return bg.firstElementChild}
- function closeModal(){$$('.modalbg').forEach(x=>x.remove());document.body.classList.remove('modal-open')}
- document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('.modalbg'))closeModal()});
- function confirmBox(msg,ok){return new Promise(res=>{const m=openModal(`<div class="mhead"><h2>확인</h2></div><p style="white-space:pre-wrap">${esc(msg)}</p><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn ghost" data-x>취소</button><button class="btn pri" id="cfOk">${esc(ok||'확인')}</button></div>`);
-  $('#cfOk',m).onclick=()=>{closeModal();res(true)};m.parentElement.addEventListener('click',e=>{if(e.target===m.parentElement||e.target.closest('[data-x]'))res(false)})})}
- function promptBox(title,def,ph){return new Promise(res=>{const m=openModal(`<div class="mhead"><h2>${esc(title)}</h2></div><input type="text" id="pbIn" style="width:100%" value="${esc(def||'')}" placeholder="${esc(ph||'')}"><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn ghost" data-x>취소</button><button class="btn pri" id="pbOk">확인</button></div>`);
-  const i=$('#pbIn',m);i.focus();i.select();const go=()=>{const v=i.value;closeModal();res(v)};$('#pbOk',m).onclick=go;i.onkeydown=e=>{if(e.key==='Enter')go()};m.parentElement.addEventListener('click',e=>{if(e.target===m.parentElement||e.target.closest('[data-x]'))res(null)})})}
+ /* 10-26 망령: 창을 쌓을 수 있다(확인창이 편집창을 지우지 않게). closeModal 은 맨 위 창만 닫는다. 고친 게 있으면(입력이 있었으면) 바깥 클릭 · Esc 로는 안 닫힌다 — 「닫기」나 저장으로만. */
+ function openModal(html,cls,opt){opt=opt||{};if(!opt.stack)closeModal(true);const bg=document.createElement('div');bg.className='modalbg';bg.style.zIndex=String(1000+$$('.modalbg').length);bg.innerHTML=`<div class="modal ${cls||''}" role="dialog">${html}</div>`;document.body.appendChild(bg);
+  bg.addEventListener('input',e=>{if(!e.target.closest('[data-nodirty]'))bg._dirty=1});
+  bg.addEventListener('click',e=>{if(e.target.closest('[data-x]')){closeOne(bg,'x');return}if(e.target===bg){if(bg._dirty){const m=bg.firstElementChild;m.classList.remove('shake');void m.offsetWidth;m.classList.add('shake');toast('고친 내용이 있어요 — 「닫기」나 저장을 눌러 주세요');return}closeOne(bg,'bg')}});
+  document.body.classList.add('modal-open');return bg.firstElementChild}
+ function closeOne(bg,how){if(!bg||!bg.isConnected)return;bg.dispatchEvent(new CustomEvent('nt:close',{detail:{how}}));bg.remove();if(!$('.modalbg'))document.body.classList.remove('modal-open')}
+ function closeModal(all){const L=$$('.modalbg');if(!L.length)return;if(all)L.forEach(b=>closeOne(b,'all'));else closeOne(L[L.length-1],'code')}
+ document.addEventListener('keydown',e=>{if(e.key!=='Escape'||e.isComposing)return;const vq=$('.visqm');if(vq){vq.remove();return}if(document.body.classList.contains('favopen')){document.body.classList.remove('favopen');return}const L=$$('.modalbg');if(!L.length)return;const bg=L[L.length-1];if(bg._dirty){toast('고친 내용이 있어요 — 「닫기」나 저장을 눌러 주세요');return}closeOne(bg,'esc')});
+ /* 새로 만든 문서의 편집 창을 저장 없이 닫으면(닫기 · 바깥 · Esc) 손대지 않은 문서는 도로 지운다 */
+ function armDraft(kind,id){const snap=JSON.stringify(data(kind,id)||null);setTimeout(()=>{const L=$$('.modalbg');const bg=L[L.length-1];if(!bg)return;bg.addEventListener('nt:close',async e=>{const how=(e.detail||{}).how;if(how==='code'||how==='ok'||how==='all')return;if(JSON.stringify(data(kind,id)||null)!==snap)return;if(!doc(kind,id))return;await del(kind,id);toast('저장하지 않아 새 문서를 지웠어요')})},0)}
+ function confirmBox(msg,ok){return new Promise(res=>{const m=openModal(`<div class="mhead"><h2>확인</h2></div><p style="white-space:pre-wrap">${esc(msg)}</p><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn ghost" data-x>취소</button><button class="btn pri" id="cfOk">${esc(ok||'확인')}</button></div>`,'',{stack:true});
+  let done=false;const fin=v=>{if(done)return;done=true;res(v)};$('#cfOk',m).onclick=()=>{fin(true);closeOne(m.parentElement,'ok')};m.parentElement.addEventListener('nt:close',()=>fin(false))})}
+ function promptBox(title,def,ph){return new Promise(res=>{const m=openModal(`<div class="mhead"><h2>${esc(title)}</h2></div><input type="text" id="pbIn" data-nodirty style="width:100%" value="${esc(def||'')}" placeholder="${esc(ph||'')}"><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn ghost" data-x>취소</button><button class="btn pri" id="pbOk">확인</button></div>`,'',{stack:true});
+  let done=false;const fin=v=>{if(done)return;done=true;res(v)};const i=$('#pbIn',m);i.focus();i.select();const go=()=>{const v=i.value;fin(v);closeOne(m.parentElement,'ok')};$('#pbOk',m).onclick=go;i.onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing)go()};m.parentElement.addEventListener('nt:close',()=>fin(null))})}
 
  /* ----- 데이터 ----- */
  const col=k=>D[k]||(D[k]={});
@@ -45,13 +51,14 @@ window.NT=(()=>{
   if(cur.startsWith('pl:')&&!o.some(x=>x[0]===cur))o.push([cur,'👤 '+visLabel(cur)]);
   return `<select class="vissel" ${id?`id="${id}"`:''} data-vis title="공개 설정">${o.map(([v,l])=>`<option value="${v}" ${v===cur?'selected':''}>${l}</option>`).join('')}</select>`}
  const visBadge=(v,kind,id)=>{/* 10-26 망령: GM 은 상세 칸의 이 칩을 눌러 바로 공개 범위(모두 · GM만 · PL 한 명)를 바꾼다 */
-  if(kind&&id&&gm()){v=v||'pub';return `<button type="button" class="visb visq ${v==='pub'?'pub':v==='gm'?'gm':'pl'}" data-visq="${esc(kind)}|${esc(id)}" title="공개 범위 바꾸기 — 지금: ${esc(visLabel(v))}">${v==='pub'?'👥 모두':v==='gm'?'🔒 GM만':'👤 '+esc(seatName(v.slice(3))||'PL')+'만'} ▾</button>`}
+  if(kind&&id&&gm()){v=v||'pub';return `<span role="button" tabindex="0" class="visb visq ${v==='pub'?'pub':v==='gm'?'gm':'pl'}" data-visq="${esc(kind)}|${esc(id)}" title="공개 범위 바꾸기 — 지금: ${esc(visLabel(v))}">${v==='pub'?'👥 모두':v==='gm'?'🔒 GM만':'👤 '+esc(seatName(v.slice(3))||'PL')+'만'} ▾</span>`}
   return !v||v==='pub'?'':`<span class="visb ${v==='gm'?'gm':'pl'}" title="${esc(visLabel(v))}">${v==='gm'?'🔒 GM':'👤 '+esc(seatName(v.slice(3))||'PL')}</span>`};
  function visMenu(b){document.querySelectorAll('.visqm').forEach(x=>x.remove());const [kind,id]=b.dataset.visq.split('|');const d=doc(kind,id);if(!d)return;const cur=d.vis||'pub';
   const o=[['pub','👥 모두에게'],['gm','🔒 GM만']].concat(ST.seats.map(x=>['pl:'+x.seat,'👤 '+(seatName(x.seat)||x.seat)+' 에게만']));
   const m=document.createElement('div');m.className='visqm';m.innerHTML=o.map(([v,l])=>`<button type="button" data-vq="${esc(v)}" class="${v===cur?'on':''}">${esc(l)}${v===cur?' ✓':''}</button>`).join('')+(ST.seats.length?'':'<div class="vqh">PL 한 명에게만 보이게 하려면 「설정」 탭에서 좌석을 먼저 만들어 주세요</div>');
   document.body.appendChild(m);const r=b.getBoundingClientRect();m.style.left=Math.max(6,Math.min(innerWidth-m.offsetWidth-6,r.left))+'px';m.style.top=(r.bottom+4+m.offsetHeight>innerHeight?Math.max(6,r.top-m.offsetHeight-4):r.bottom+4)+'px';
   m.addEventListener('click',async e=>{const x=e.target.closest('[data-vq]');if(!x)return;e.stopPropagation();m.remove();const v=x.dataset.vq;if(v===cur)return;await put(kind,id,clone(d.data),v);toast('공개 범위: '+visLabel(v))})}
+ document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[data-visq]')){e.preventDefault();visMenu(e.target)}});
  document.addEventListener('click',e=>{const b=e.target.closest('[data-visq]');if(b){e.preventDefault();e.stopPropagation();return visMenu(b)}if(!e.target.closest('.visqm'))document.querySelectorAll('.visqm').forEach(x=>x.remove())},true);
 
  async function put(kind,id,obj,vis){if(!ST.camp)return false;mark(kind,id);const cur=doc(kind,id);const v=vis||(cur?cur.vis:'pub');
@@ -105,10 +112,15 @@ window.NT=(()=>{
  document.documentElement.setAttribute('data-vt',vtGet());
 
  /* ----- 화면 ----- */
+ /* 10-26 망령: 다시 그려도 안쪽 스크롤 · 입력 포커스가 안 튄다 (실시간 갱신이 올 때마다 초기화되던 것) */
+ const KEEPSEL='.flow,.steps,.side,.tblwrap,.loglist,.entlist,.entgrid,.splist,.notes-grid,.pcsheet,.sess-list,[data-keep]';
+ function keepState(root){if(!root)return null;const sc=[];root.querySelectorAll(KEEPSEL).forEach((e,i)=>{if(e.scrollTop||e.scrollLeft)sc.push([e.className,i,e.scrollLeft,e.scrollTop])});const a=document.activeElement;const f=a&&root.contains(a)&&a.id?{id:a.id,s:a.selectionStart,e:a.selectionEnd}:null;return {sc,f,view:ST.view,y:window.scrollY}}
+ function restoreState(root,k){if(!k||k.view!==ST.view)return;const L=root.querySelectorAll(KEEPSEL);k.sc.forEach(([cls,i,l,t])=>{const e=L[i];if(e&&e.className===cls){e.scrollLeft=l;e.scrollTop=t}});if(k.f){const e=root.querySelector('#'+CSS.escape(k.f.id));if(e&&e!==document.activeElement){try{e.focus({preventScroll:true});if(k.f.s!=null&&e.setSelectionRange)e.setSelectionRange(k.f.s,k.f.e)}catch(x){}}}}
+
  function render(){const app=$('#app');if(!app)return;if(!ST.camp)return renderLobby(app);
   let sh=$('#ntShell',app);if(!sh){app.innerHTML=`<div id="ntShell"><header class="top"></header><div id="ntBody"><div id="ntFavSlot"></div><main id="ntMain"></main></div></div>`;sh=$('#ntShell',app)}
-  renderTop($('.top',sh));const fs=$('#ntFavSlot',sh);if(fs&&window.NT_FAV)fs.innerHTML=NT_FAV.rail();const old=$('#ntMain',sh);const main=old.cloneNode(false);old.replaceWith(main);main.dataset.view=ST.view;/* 탭 모듈이 render 마다 el.addEventListener 를 붙이므로, 매번 새 요소로 바꿔 처리기가 쌓이거나 다른 탭 것과 섞이지 않게 한다 */const M=MOD[ST.view];
-  try{if(M)M.render(main);else main.innerHTML='<div class="empty">준비 중</div>'}catch(e){console.error(e);main.innerHTML=`<div class="empty vfail"><b>「${esc((VIEWS.find(v=>v[0]===ST.view)||[])[1]||ST.view)}」 화면을 그리지 못했어요.</b><div class="small dim" style="margin-top:6px;word-break:break-all">${esc(e&&e.message||e)}</div><button class="btn sm" onclick="NT.go('map')">지도로</button></div>`}}
+  renderTop($('.top',sh));const fs=$('#ntFavSlot',sh);if(fs&&window.NT_FAV)fs.innerHTML=NT_FAV.rail();const old=$('#ntMain',sh);const keep=keepState(old);const main=old.cloneNode(false);old.replaceWith(main);main.dataset.view=ST.view;/* 탭 모듈이 render 마다 el.addEventListener 를 붙이므로, 매번 새 요소로 바꿔 처리기가 쌓이거나 다른 탭 것과 섞이지 않게 한다 */const M=MOD[ST.view];
+  try{if(M)M.render(main);else main.innerHTML='<div class="empty">준비 중</div>';restoreState(main,keep)}catch(e){console.error(e);main.innerHTML=`<div class="empty vfail"><b>「${esc((VIEWS.find(v=>v[0]===ST.view)||[])[1]||ST.view)}」 화면을 그리지 못했어요.</b><div class="small dim" style="margin-top:6px;word-break:break-all">${esc(e&&e.message||e)}</div><button class="btn sm" onclick="NT.go('map')">지도로</button></div>`}}
  function renderTop(top){const c=ST.campInfo||{};const role=gm()?'<span class="badge gm">GM</span>':me()?`<span class="badge seat">${esc(seatName(me())||me())}</span>`:'<span class="badge">구경</span>';
   const tabs=VIEWS.filter(([k])=>k!=='set'||gm()||me()).map(([k,n])=>`<button data-v="${k}" class="${ST.view===k?'on':''}">${n}</button>`).join('');
   top.innerHTML=`<a class="back" href="#" data-lobby>← 캠페인</a><h1 class="camp name"><b>${esc(c.name||'…')}</b>${c.data&&c.data.sub?`<small>${esc(c.data.sub)}</small>`:''}</h1>${role}<nav class="tabs" id="sceneTabs">${tabs}</nav><span class="sp"></span>
@@ -120,7 +132,7 @@ window.NT=(()=>{
    if(t.closest('[data-logout]')){try{localStorage.removeItem(SK(ST.camp))}catch(x){}ST.secret='';ST.role=null;open(ST.camp);return}
    const v=t.closest('button[data-vt]');if(v){vtSet(v.dataset.vt);return}
    if(t.closest('.vtcur')){const s=t.closest('.vtsw');s.classList.toggle('open');return}};
-  document.addEventListener('pointerdown',ev=>{if(!ev.target.closest('.vtsw'))$$('.vtsw.open').forEach(x=>x.classList.remove('open'))},{capture:true})}
+  if(!window._vtswBound){window._vtswBound=1;document.addEventListener('pointerdown',ev=>{if(!ev.target.closest('.vtsw'))$$('.vtsw.open').forEach(x=>x.classList.remove('open'))},{capture:true})}}
  function go(v){ST.view=VIEWS.some(x=>x[0]===v)?v:'map';setHash();render();try{localStorage.setItem('nt_view',ST.view)}catch(e){}}
 
  /* ----- 로비 ----- */
@@ -158,5 +170,5 @@ window.NT=(()=>{
  window.addEventListener('DOMContentLoaded',()=>{const q=readHash();if(q.camp)open(q.camp,q.view);else render()});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&ST.camp)resync()});
 
- return {ST,D,$,$$,esc,uid,clone,cssu,gm,me,canSee,canEdit,toast,openModal,closeModal,confirmBox,promptBox,doc,data,list,put,patch,del,putMany,bulkVis,bulkBtns,BULKF,upload,shrink,bindDrop,visSelect,visBadge,visLabel,seatName,render,go,open,leave,refreshCamp,resync,MOD,VIEWS,DBS};
+ return {ST,D,$,$$,esc,uid,clone,cssu,gm,me,canSee,canEdit,toast,openModal,closeModal,confirmBox,promptBox,armDraft,doc,data,list,put,patch,del,putMany,bulkVis,bulkBtns,BULKF,upload,shrink,bindDrop,visSelect,visBadge,visLabel,seatName,render,go,open,leave,refreshCamp,resync,MOD,VIEWS,DBS};
 })();

@@ -20,7 +20,8 @@
  function panel(){open=!open;let p=$('#ntNoticePanel');if(p)p.remove();if(!open)return;unread=0;document.title=baseTitle;paintBell();
   p=document.createElement('div');p.id='ntNoticePanel';p.innerHTML=`<div class="nph"><b>알림</b><span class="sp"></span>${'Notification' in window&&Notification.permission==='default'?'<button type="button" class="btn xs ghost" data-np="perm">브라우저 알림 켜기</button>':''}<button type="button" class="btn xs ghost" data-np="x">닫기</button></div>${L.length?L.slice(0,30).map((t,i)=>`<button type="button" class="npi" data-np="go" data-i="${i}"><small>${new Date(t.at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} · ${t.ev==='del'?'지움':t.ev==='new'?'새로':'고침'}</small><span>${esc(KL[t.kind]||t.kind)} 「${esc(t.name)}」</span></button>`).join(''):'<div class="small dim" style="padding:10px">보고 있는 동안 다른 사람이 올리거나 고친 것이 여기 쌓여요.</div>'}`;
   document.body.appendChild(p);p.addEventListener('click',e=>{const b=e.target.closest('[data-np]');if(!b)return;const k=b.dataset.np;if(k==='x'){open=false;p.remove()}else if(k==='perm'){try{Notification.requestPermission().then(()=>{open=false;p.remove();panel()})}catch(x){}}else if(k==='go'){const t=L[+b.dataset.i];open=false;p.remove();if(t&&t.ev!=='del')go(t)}})}
- document.addEventListener('click',e=>{if(e.target.closest('[data-bell]'))panel()});
+ document.addEventListener('click',e=>{if(e.target.closest('[data-bell]'))return panel();if(open&&!e.target.closest('#ntNoticePanel')){open=false;const p=$('#ntNoticePanel');if(p)p.remove()}});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&open){open=false;const p=$('#ntNoticePanel');if(p)p.remove()}});
  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!open){/* 돌아오면 제목만 원래대로, 수는 종에 남긴다 */document.title=unread?`(${unread}) ${baseTitle}`:baseTitle}});
  window.NT_NOTICE={push,bellHtml,list:L};
 })();

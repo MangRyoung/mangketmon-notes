@@ -8,7 +8,8 @@
  const U={zoom:1,px:0,py:0,mode:'move',from:'',sel:'',tag:'',type:'',team:'',hl:''};
  const RK=[['','보통','#9aa0a6'],['ally','우호 · 협력','#3ddc84'],['rival','적대 · 긴장','#ff4d5e'],['love','애정 · 유대','#ff7fa3'],['secret','비밀 · 의혹','#c58bff']];
  const rk=k=>RK.find(x=>x[0]===(k||''))||RK[0];
- const plView=()=>!N().gm()||U.view==='pl';
+ /* 10-26 망령: 진짜 PL 은 서버가 걸러 준 것(pub + 자기 pl:좌석)을 그대로 본다. GM 의 「PL 공개」 미리보기만 pub 으로 거른다 */
+ const plView=()=>N().gm()&&U.view==='pl';
  const nodes=()=>N().list('ents').filter(e=>(!plView()||e._vis==='pub')&&(!U.type||e.type===U.type)&&(!U.tag||(e.tags||[]).includes(U.tag))&&(!U.team||(e.teams||[]).includes(U.team)));
  const rels=()=>N().list('rels').filter(r=>!plView()||r._vis==='pub');
  const W=1600,H=1000;const BW=2200,BH=1400;const BK=k=>k==='rival'?'doubt':k==='secret'?'secret':'tie';
@@ -38,7 +39,7 @@
  function nodePanel(e){const rs=rels().filter(r=>r.a===e.id||r.b===e.id);return `<div class="card"><div class="row"><h3>${esc(e.title)}</h3>${N().visBadge(e._vis,'ents',e.id)}<span class="sp"></span>${N().gm()?`<button class="btn xs ${e._vis==='pub'?'':'ghost'}" data-g="visent" data-id="${esc(e.id)}" title="누르면 ${e._vis==='pub'?'GM만':'모두'}">${e._vis==='pub'?'👁 공개':'🔒 비공개'}</button>`:''}<button class="btn xs" data-g="toent" data-id="${esc(e.id)}">항목 보기</button><button class="btn xs ghost" data-g="unhl">닫기</button></div>${e.sub?`<div class="dim small">${esc(e.sub)}</div>`:''}
   <ul class="lnk" style="margin-top:8px">${rs.map(r=>{const oid=r.a===e.id?r.b:r.a;const o=N().data('ents',oid);const k=rk(r.kind);return `<li><i class="kdot" style="background:${k[2]}"></i><button class="linkbtn" data-g="hl" data-id="${esc(oid)}">${esc(o?o.title:'?')}</button> <span class="small dim">${r.a===e.id?'→':'←'} ${esc(r.label||'')}</span>${r._vis!=='pub'?' 🔒':''}${N().gm()?` <button class="linkbtn small" data-g="editrel" data-id="${esc(r.id)}">고치기</button>`:''}</li>`}).join('')||'<li class="dim small">관계가 없어요</li>'}</ul>${N().gm()&&rs.length?`<div class="row" style="gap:4px;margin-top:8px"><button class="btn xs ghost" data-g="relsall" data-id="${esc(e.id)}" data-v="pub">이 사람 관계 모두 공개</button><button class="btn xs ghost" data-g="relsall" data-id="${esc(e.id)}" data-v="gm">모두 비공개</button></div>`:''}</div>`}
  function relPanel(r){const a=N().data('ents',r.a),b=N().data('ents',r.b);const k=rk(r.kind);return `<div class="card"><div class="row"><h3>관계</h3><span class="sp"></span>${N().gm()?`<button class="btn xs ${r._vis==='pub'?'':'ghost'}" data-g="visrel" data-id="${esc(r.id)}">${r._vis==='pub'?'👁 공개':'🔒 비공개'}</button><button class="btn xs" data-g="editrel" data-id="${esc(r.id)}">고치기</button>`:''}<button class="btn xs ghost" data-g="unsel">닫기</button></div>
-  <div class="relline"><b>${esc(a?a.title:'?')}</b> <span style="color:${k[2]}">${r.two?'↔':'→'}</span> <b>${esc(b?b.title:'?')}</b></div><div><span class="chip static" style="border-color:${k[2]};color:${k[2]}">${k[1]}</span> ${esc(r.label||'')}</div>${r.note?`<p class="pre small" style="margin-top:6px">${esc(r.note)}</p>`:''}${N().visBadge(r._vis)}</div>`}
+  <div class="relline"><b>${esc(a?a.title:'?')}</b> <span style="color:${k[2]}">${r.two?'↔':'→'}</span> <b>${esc(b?b.title:'?')}</b></div><div><span class="chip static" style="border-color:${k[2]};color:${k[2]}">${k[1]}</span> ${esc(r.label||'')}</div>${r.note?`<p class="pre small" style="margin-top:6px">${esc(r.note)}</p>`:''}${N().visBadge(r._vis,'rels',r.id)}</div>`}
  function bind(el,byId){const svg=$('#grSvg',el),wrap=$('#grWrap',el);if(!svg)return;
   const apply=()=>svg.style.transform=`translate(${U.px}px,${U.py}px) scale(${U.zoom})`;
   ['grType','grTag','grTeam'].forEach(id=>{const s=$('#'+id,el);if(s)s.onchange=()=>{U[id==='grType'?'type':id==='grTag'?'tag':'team']=s.value;N().render()}});
@@ -53,20 +54,20 @@
    if(k==='unhl'){U.hl='';N().render();return}if(k==='hl'){U.hl=id;U.sel='';N().render();return}if(k==='unsel'){U.sel='';N().render();return}if(k==='editrel')return editRel(id)});
   wrap.addEventListener('wheel',e=>{e.preventDefault();const r=wrap.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;const z0=U.zoom,z=Math.max(.3,Math.min(4,z0*(e.deltaY<0?1.15:1/1.15)));U.px=mx-(mx-U.px)*z/z0;U.py=my-(my-U.py)*z/z0;U.zoom=z;apply()},{passive:false});
   let pd=null;const toSvg=(x,y)=>{const p=new DOMPoint(x,y).matrixTransform(svg.getScreenCTM().inverse());return {x:p.x,y:p.y}};
-  wrap.addEventListener('pointerdown',e=>{if(e.button!==0)return;const nd=e.target.closest('.node');pd={x:e.clientX,y:e.clientY,px:U.px,py:U.py,node:nd&&N().gm()&&U.mode==='move'?nd:null,nodeAny:nd,moved:false,id:e.pointerId};wrap.setPointerCapture(e.pointerId)});
-  wrap.addEventListener('pointermove',e=>{if(!pd)return;const dx=e.clientX-pd.x,dy=e.clientY-pd.y;if(!pd.moved&&Math.hypot(dx,dy)<4)return;pd.moved=true;
+  wrap.addEventListener('pointerdown',e=>{if(e.button!==0)return;const nd=e.target.closest('.node');pd={x:e.clientX,y:e.clientY,px:U.px,py:U.py,node:nd&&N().gm()&&U.mode==='move'?nd:null,nodeAny:nd,downRel:e.target.closest('.rel'),moved:false,id:e.pointerId}});
+  wrap.addEventListener('pointermove',e=>{if(!pd)return;const dx=e.clientX-pd.x,dy=e.clientY-pd.y;if(!pd.moved&&Math.hypot(dx,dy)<4)return;if(!pd.moved){try{wrap.setPointerCapture(pd.id)}catch(x){}}pd.moved=true;
    if(pd.node){const p=toSvg(e.clientX,e.clientY);pd.node.setAttribute('transform',`translate(${p.x} ${p.y})`);pd.pt=p}else{U.px=pd.px+dx;U.py=pd.py+dy;apply()}});
   const up=async e=>{if(!pd)return;const p=pd;pd=null;try{wrap.releasePointerCapture(p.id)}catch(x){}
    if(p.node&&p.moved&&p.pt){await N().patch('ents',p.node.dataset.node,o=>{o.gx=Math.round(p.pt.x);o.gy=Math.round(p.pt.y)});return}
    if(p.moved)return;
-   const nd=e.target.closest('.node');if(nd){const id=nd.dataset.node;if(N().gm()&&U.mode==='link'){if(!U.from){U.from=id;N().render();return}if(U.from===id){U.from='';N().render();return}const from=U.from;U.from='';return newRel(from,id)}U.hl=U.hl===id?'':id;U.sel='';N().render();return}
-   const rl=e.target.closest('.rel');if(rl){U.sel=rl.dataset.rel;U.hl='';N().render();return}
+   const nd=p.nodeAny;if(nd){const id=nd.dataset.node;if(N().gm()&&U.mode==='link'){if(!U.from){U.from=id;N().render();return}if(U.from===id){U.from='';N().render();return}const from=U.from;U.from='';return newRel(from,id)}U.hl=U.hl===id?'':id;U.sel='';N().render();return}
+   const rl=p.downRel;if(rl){U.sel=rl.dataset.rel;U.hl='';N().render();return}
    if(U.hl||U.sel){U.hl='';U.sel='';N().render()}};
   wrap.addEventListener('pointerup',up);wrap.addEventListener('pointercancel',()=>{pd=null});
   wrap.addEventListener('dblclick',e=>{if(!N().gm()||e.target.closest('.node,.rel'))return;const p=toSvg(e.clientX,e.clientY);newNode(p)})}
- async function newNode(p){const id=N().uid('e');const pt=p||{x:W/2+Math.random()*200-100,y:H/2+Math.random()*200-100};await N().put('ents',id,{type:'인물',title:'새 인물',sub:'',body:'',rows:[],tags:[],teams:[],face:'',photo:'',at:[],gx:Math.round(pt.x),gy:Math.round(pt.y),created:Date.now()},'gm');NT_ENTS.edit(id)}
+ async function newNode(p){const id=N().uid('e');const pt=p||{x:W/2+Math.random()*200-100,y:H/2+Math.random()*200-100};await N().put('ents',id,{type:'인물',title:'새 인물',sub:'',body:'',rows:[],tags:[],teams:[],face:'',photo:'',at:[],gx:Math.round(pt.x),gy:Math.round(pt.y),created:Date.now()},'gm');NT_ENTS.edit(id);N().armDraft('ents',id)}
  async function autoLayout(){const list=nodes();if(!list.length)return;if(!await N().confirmBox('보이는 인물을 원형으로 다시 배치할까요? (지금 자리는 사라져요)','배치'))return;const R=Math.min(W,H)*.4;const rows=list.map((e,i)=>{const a=i/list.length*Math.PI*2-Math.PI/2;const d=N().clone(N().data('ents',e.id));d.gx=Math.round(W/2+Math.cos(a)*R);d.gy=Math.round(H/2+Math.sin(a)*R);return {kind:'ents',id:e.id,data:d,vis:e._vis}});await N().putMany(rows)}
- async function newRel(a,b){const id=N().uid('r');await N().put('rels',id,{a,b,label:'',kind:'',two:false,note:''},'gm');editRel(id)}
+ async function newRel(a,b){const id=N().uid('r');await N().put('rels',id,{a,b,label:'',kind:'',two:false,note:''},'gm');editRel(id);N().armDraft('rels',id)}
  function editRel(id){const r=N().data('rels',id);if(!r)return;const a=N().data('ents',r.a),b=N().data('ents',r.b);
   const md=N().openModal(`<div class="mhead"><h2>관계 고치기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
    <div class="relline"><b>${esc(a?a.title:'?')}</b> → <b>${esc(b?b.title:'?')}</b> <button class="btn xs ghost" id="rlSwap">↔ 방향 바꾸기</button></div>
@@ -76,7 +77,7 @@
    <div class="row" style="margin-top:14px"><button class="btn danger ghost sm" id="rlDel">관계 지우기</button><span class="sp"></span><button class="btn pri" id="rlOk">저장</button></div>`);
   let A=r.a,B=r.b;$('#rlSwap',md).onclick=()=>{[A,B]=[B,A];$('.relline b:first-child',md).textContent=(N().data('ents',A)||{}).title||'?';$('.relline b:nth-of-type(2)',md).textContent=(N().data('ents',B)||{}).title||'?'};
   $('#rlOk',md).onclick=async()=>{await N().put('rels',id,{a:A,b:B,label:$('#rlLabel',md).value.trim(),kind:$('#rlKind',md).value,two:$('#rlTwo',md).checked,note:$('#rlNote',md).value.trim()},$('#rlVis',md).value);U.sel=id;N().closeModal()};
-  $('#rlDel',md).onclick=async()=>{await N().del('rels',id);U.sel='';N().closeModal()}}
+  $('#rlDel',md).onclick=async()=>{if(!await N().confirmBox('이 관계선을 지울까요?','지우기'))return;await N().del('rels',id);U.sel='';N().closeModal()}}
  /* ---- 코르크보드 ---- */
  function renderBoard(el){const G=N().gm();const all=N().list('ents');const list=nodes().filter(e=>['인물','조직','기타','이벤트'].includes(e.type)||e.face);const types=window.NT_ENTS?NT_ENTS.TYPES:[];
   const tags=[...new Set(all.flatMap(e=>e.tags||[]))].sort((a,b)=>a.localeCompare(b,'ko')),teams=[...new Set(all.flatMap(e=>e.teams||[]))].sort((a,b)=>a.localeCompare(b,'ko'));
@@ -92,8 +93,8 @@
   /* 자리 없는 노드: 원형 */
   const miss=nodesB.filter(n=>n.x==null);miss.forEach((n,i)=>{const a=i/miss.length*Math.PI*2-Math.PI/2;n.x=BW/2+Math.cos(a)*BW*.36;n.y=BH/2+Math.sin(a)*BH*.36});
   const edges=rels().filter(r=>ids.has(r.a)&&ids.has(r.b)).map(r=>({id:r.id,a:r.a,b:r.b,kind:BK(r.kind),label:r.label||'',gmOnly:r._vis!=='pub'}));
-  if(BOARD)BOARD.destroy();
-  BOARD=NT_BOARD.mount($('#cbRoot',el),{nodes:nodesB,edges,groups,W:BW,H:BH,key:'nt-board-'+N().ST.camp,canEdit:G,
+  let st0=null;if(BOARD){try{st0=BOARD.getState&&BOARD.getState()}catch(e){}BOARD.destroy()}if(U.hl&&st0&&!st0.sel)st0.sel=U.hl;
+  BOARD=NT_BOARD.mount($('#cbRoot',el),{nodes:nodesB,edges,groups,W:BW,H:BH,key:'nt-board-'+N().ST.camp,canEdit:G,state:st0,
    onMove:(id,x,y)=>N().patch('ents',id,d=>{d.gx=Math.round(x*W/BW);d.gy=Math.round(y*H/BH)}),
    onLink:(a,b)=>newRel(a,b),onEdge:id=>{if(G)editRel(id);else{const r=N().data('rels',id);if(r)N().toast((N().data('ents',r.a)||{}).title+' → '+(N().data('ents',r.b)||{}).title+' : '+(r.label||''))}},
    onNew:(x,y)=>newNode({x:x*W/BW,y:y*H/BH}),
@@ -112,7 +113,7 @@
    if(k==='delent'){(async()=>{const e2=N().data('ents',id)||{};const rs=N().list('rels').filter(r=>r.a===id||r.b===id);if(!await N().confirmBox(`「${e2.title||'?'}」 을(를) 지울까요?${rs.length?` 이어진 실 ${rs.length}개도 같이 지워져요.`:''} 항목 탭에서도 사라져요.`,'지우기'))return;for(const r of rs)await N().del('rels',r.id);if(N().doc('sec','ent:'+id))await N().del('sec','ent:'+id);await N().del('ents',id);N().toast('지웠어요')})();return}
    if(k==='visent'){const d=N().doc('ents',id);if(d)N().put('ents',id,d.data,d.vis==='pub'?'gm':'pub');return}
    if(k==='relsall'){const v=b.dataset.v;const rows=N().list('rels').filter(r=>(r.a===id||r.b===id)&&r._vis!==v).map(r=>({kind:'rels',id:r.id,data:N().doc('rels',r.id).data,vis:v}));if(rows.length)N().putMany(rows)}});
-  if(U.hl)BOARD.select(U.hl)}
+  if(U.hl&&!(st0&&st0.scale))BOARD.select(U.hl)}
  N().MOD.graph={render};
- window.NT_GRAPH={RK};
+ window.NT_GRAPH={RK,focus:id=>{U.hl=id;U.sel='';N().render();if(BOARD&&id)BOARD.select(id)}};
 })();

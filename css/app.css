@@ -228,3 +228,7 @@ table.t th{background:#000;font-family:var(--lab);font-weight:400;letter-spacing
  .toolbar h2{font-size:20px}
  .seg.bulk{order:20}
 }
+@keyframes ntshake{0%,100%{transform:none}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.modal.shake{animation:ntshake .3s}
+/* 10-26 망령: 터치 기기 — 호버로만 보이던 것을 늘 보이게, 작은 버튼은 누르기 쉽게 */
+@media(hover:none){#ntFav .favi em{opacity:1}.mnpc i{display:block}.visq,.favb,.mpx{min-height:30px;min-width:30px;display:inline-flex;align-items:center;justify-content:center}.mfoot{bottom:-12px}}
