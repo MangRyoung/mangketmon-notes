@@ -149,6 +149,7 @@ label.chk{display:inline-flex;align-items:center;gap:6px}
 .seg button{white-space:nowrap;flex:none}
 .seg button{background:transparent;border:0;color:var(--fg2);padding:3px 10px;cursor:pointer;font-size:12px;font-family:var(--lab);letter-spacing:.04em}
 .seg button.on{background:#fff;color:#000}
+.seg.bulk button{font-size:11px;padding:3px 7px;color:var(--mute)}.seg.bulk button:hover{color:var(--fg)}
 .chip{display:inline-block;background:#000;border:1px solid var(--line2);padding:1px 8px;font-size:11px;border-radius:0;cursor:pointer;color:var(--fg2)}
 .chip.on{background:var(--red);border-color:var(--red);color:#fff}
 .chip.static{cursor:default}

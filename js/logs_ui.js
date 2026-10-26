@@ -51,5 +51,5 @@
   if(k==='pin'){const sess=N().list('plan').filter(x=>x.t==='sess').sort((a,b)=>(a.order||0)-(b.order||0));const pin=Object.assign({},d.logPin||{});
    const md=N().openModal(`<div class="mhead"><h2>세션에 잇기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><label class="lbl">세션<select id="lpS"><option value="">— 없음 —</option>${sess.map(s=>`<option value="${esc(s.id)}" ${pin[id]===s.id?'selected':''}>${esc(s.label||'')} ${esc(s.date||'')} ${esc(s.what||'')}</option>`).join('')}</select></label><div class="mfoot"><span class="sp"></span><button class="btn pri" id="lpOk">저장</button></div>`);
    $('#lpOk',md).onclick=async()=>{const v=$('#lpS',md).value;if(v)pin[id]=v;else delete pin[id];N().closeModal();await saveCamp({logPin:pin})}}}
- N().MOD.logs={render,load,logsOf:sid=>{const pin=camp().logPin||{};return C.rows.filter(r=>pin[r.id]===sid)},viewUrl};
+ N().MOD.logs={render,load,folders:()=>C.folders,inFolder:f=>C.rows.filter(r=>(r.folder||'')===f),logsOf:sid=>{const pin=camp().logPin||{};return C.rows.filter(r=>pin[r.id]===sid)},viewUrl};
 })();

@@ -1,0 +1,56 @@
+/* ===== 지구본 지도 (관측실) — 칼데아스 관측실에서 옮겨 옴. 테마 변수 --g-* 로 색을 받는다 ===== */
+.globeview{--g-land:#7fe0ff;--g-sea:rgba(95,210,255,.2);--g-rim:rgba(95,210,255,.55);--g-grat:rgba(95,210,255,.12);--g-glow:rgba(60,170,255,.22);--g-accent:#5fd2ff;--g-amber:#ffbf47;--g-red:#ff5a5a;--g-fg:var(--fg);--g-muted:var(--mute);
+ --g-surface:rgba(9,19,36,.82);--g-line:rgba(110,180,255,.18);--g-soft:rgba(95,210,255,.10);--f-label:"Chakra Petch","IBM Plex Sans KR",system-ui,sans-serif;--f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;--f-serif:"Gowun Batang",serif;
+ background:radial-gradient(70vmax 50vmax at 30% 40%,var(--g-glow),transparent 70%),linear-gradient(var(--g-grat) 1px,transparent 1px) 0 0/44px 44px,linear-gradient(90deg,var(--g-grat) 1px,transparent 1px) 0 0/44px 44px,#050b16;border:1px solid var(--g-line);padding:14px;color:#e4efff}
+html[data-vt="p4"] .globeview{--g-land:#ffd12e;--g-sea:rgba(255,209,46,.14);--g-rim:rgba(255,209,46,.5);--g-grat:rgba(255,209,46,.1);--g-glow:rgba(255,209,46,.14);--g-accent:#ffe100;--g-amber:#ff9f1c;--g-red:#ff3b3b;--g-surface:rgba(10,10,10,.85);--g-line:rgba(255,209,46,.25);--g-soft:rgba(255,209,46,.08);background-color:#0a0a0a}
+html[data-vt="p5"] .globeview{--g-land:#ff6b7a;--g-sea:rgba(229,0,26,.16);--g-rim:rgba(229,0,26,.55);--g-grat:rgba(255,255,255,.08);--g-glow:rgba(229,0,26,.18);--g-accent:#ff2d55;--g-amber:#ffbf47;--g-red:#ff5a5a;--g-surface:rgba(11,11,13,.85);--g-line:rgba(255,255,255,.14);--g-soft:rgba(229,0,26,.1);background-color:#0b0b0d}
+.gobs{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:20px;align-items:start}
+.gw{position:relative;aspect-ratio:1/1;width:100%;max-width:max(340px,calc(100dvh - 190px));min-width:260px;min-height:260px;margin:0 auto;touch-action:none;user-select:none}
+.gw canvas{position:absolute;inset:0;width:100%;height:100%;cursor:grab}
+.gw canvas.drag{cursor:grabbing}
+.gw svg.lens{position:absolute;inset:-2%;width:104%;height:104%;pointer-events:none;color:var(--g-rim);opacity:.55;transition:opacity .6s,transform .9s ease}
+.gw svg.lens g{transform-origin:200px 200px;animation:gspin 180s linear infinite}
+.gw.dive svg.lens{opacity:.15;transform:scale(1.25)}
+@keyframes gspin{to{transform:rotate(360deg)}}
+.gw .hud{position:absolute;font:500 11px/1.5 var(--f-mono);color:var(--g-muted);letter-spacing:.04em;pointer-events:none}
+.gw .hud.tl{left:4px;top:4px}.gw .hud.br{right:4px;bottom:4px;text-align:right}
+.gw .hud b{color:var(--g-accent);font-weight:600}
+.gw .back{position:absolute;left:4px;bottom:4px;display:none;font:600 11.5px/1 var(--f-label);letter-spacing:.12em;text-transform:uppercase;padding:9px 12px;border:1px solid var(--g-accent);background:var(--g-surface);color:var(--g-accent);border-radius:2px;cursor:pointer}
+.gw.dive .back{display:block}
+.gw .zoom{position:absolute;right:4px;top:4px;display:flex;flex-direction:column;gap:4px}
+.gw .zoom button{width:32px;height:32px;border:1px solid var(--g-line);background:var(--g-surface);color:var(--g-fg);border-radius:2px;cursor:pointer;font:600 15px/1 var(--f-mono)}
+.gw .title-ov{position:absolute;left:50%;top:7%;transform:translateX(-50%);text-align:center;pointer-events:none;opacity:0;transition:opacity .5s .4s;width:90%}
+.gw.dive .title-ov{opacity:1}
+.gw .title-ov .n{font:600 12px/1.4 var(--f-label);letter-spacing:.3em;color:var(--g-accent);text-transform:uppercase}
+.gw .title-ov .t{font:700 clamp(18px,2.6vw,28px)/1.3 var(--f-serif);text-shadow:0 2px 12px #000;word-break:keep-all}
+.gpanel{background:var(--g-surface);border:1px solid var(--g-line);border-radius:4px;backdrop-filter:blur(10px);position:relative}
+.gpanel::before{content:"";position:absolute;left:-1px;top:-1px;width:18px;height:18px;border:2px solid var(--g-accent);border-right:0;border-bottom:0}
+.glist{list-style:none;margin:0;padding:8px;max-height:46vh;overflow:auto}
+.glist button{all:unset;box-sizing:border-box;width:100%;display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 10px;border-radius:2px;cursor:pointer;border:1px solid transparent;color:inherit}
+.glist button:hover{background:var(--g-soft)}
+.glist button[aria-current="true"]{border-color:var(--g-accent);background:var(--g-soft)}
+.glist .no{font:600 15px/1 var(--f-label);letter-spacing:.06em;color:var(--g-accent);text-align:center}
+.glist .tt{min-width:0}
+.glist .tt b{display:block;font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.glist .tt span{display:block;font:500 11.5px/1.4 var(--f-mono);color:var(--g-muted)}
+.globeview .st{font:600 10px/1 var(--f-label);letter-spacing:.14em;text-transform:uppercase;padding:4px 7px;border:1px solid currentColor;border-radius:2px;white-space:nowrap}
+.globeview .st.cleared{color:var(--g-accent)}.globeview .st.active{color:var(--g-amber)}.globeview .st.unobserved{color:var(--g-red)}.globeview .st.redacted{color:var(--g-muted)}
+.globeview .bar{background:currentColor;color:var(--g-muted);border-radius:1px;user-select:none;opacity:.75}
+.gdet{border-top:1px solid var(--g-line);padding:18px 18px 20px;font-size:14px}
+.gdet .k{font:600 11px/1.4 var(--f-label);letter-spacing:.2em;color:var(--g-accent);text-transform:uppercase}
+.gdet h2{margin:4px 0 2px;font:700 22px/1.3 var(--f-serif);word-break:keep-all}
+.gdet .meta{font:500 12.5px/1.5 var(--f-mono);color:var(--g-muted);margin-bottom:12px}
+.gdet ul{margin:0;padding-left:18px;line-height:1.7;font-size:14.5px}
+.gdet .conf{margin-top:14px;padding:12px 14px;border:1px dashed var(--g-red);border-radius:2px}
+.gdet .conf .ck{font:600 10.5px/1 var(--f-label);letter-spacing:.16em;color:var(--g-red);margin-bottom:8px;text-transform:uppercase}
+.gdet .gmap{margin-top:14px;border:1px solid var(--g-line);border-radius:2px;overflow:hidden}
+.gdet .gmap img{display:block;width:100%;height:auto;cursor:zoom-in}
+.gdet h3{font:600 11px/1.4 var(--f-label);letter-spacing:.18em;color:var(--g-muted);text-transform:uppercase;margin:18px 0 8px}
+.glogs{display:flex;flex-direction:column;gap:6px}
+.glogs a{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--g-line);border-radius:2px;color:inherit;text-decoration:none;font-size:14px}
+.glogs a:hover{border-color:var(--g-accent);background:var(--g-soft)}
+.glogs a::after{content:"레이시프트 →";font:600 10.5px/1 var(--f-label);letter-spacing:.12em;color:var(--g-accent);white-space:nowrap}
+.gdet .none{font-size:13.5px;color:var(--g-muted)}
+.gdet .redline{line-height:2.1;font-size:14.5px}
+@media(max-width:980px){.gobs{grid-template-columns:minmax(0,1fr)}.gw{max-width:560px}.glist{max-height:none}}
+@media(max-width:760px){.globeview{padding:8px;margin:0 -2px}}

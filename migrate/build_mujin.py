@@ -61,25 +61,25 @@ def chain(ls):
 for r in load('routes'):
     vis = r.get('visible', True)
     put('routes', r['id'], {'name': r.get('name', ''), 'group': r.get('group', ''), 'color': r.get('color', '#888'), 'entry': r.get('entry', ''), 'goal': r.get('goal', ''), 'note': r.get('note', ''),
-        'next': r.get('next') or [], 'order': int(r.get('order') or 0), 'visible': bool(vis), 'steps': chain(by.get(r['id'], []))}, 'pub' if vis else 'gm')
+        'next': r.get('next') or [], 'order': int(r.get('order') or 0), 'visible': bool(vis), 'steps': chain(by.get(r['id'], []))}, 'gm')
 # 항목
 for e in load('ents'):
     tags = list(e.get('tags') or []); sub = e.get('sub', '') or ''
     if e.get('kind') and e['kind'] not in tags: tags.insert(0, e['kind'])
     put('ents', e['id'], {'type': e.get('type', '기타'), 'title': e.get('title', ''), 'sub': sub, 'body': e.get('body', ''), 'rows': e.get('rows') or [], 'tags': tags, 'teams': e.get('teams') or [],
         'face': durl(e.get('face'), 512, 86), 'photo': durl(e.get('photo'), 1200, 78), 'at': e.get('at') or [], 'gx': (e.get('gx') + 800) if e.get('gx') is not None else None, 'gy': (e.get('gy') + 500) if e.get('gy') is not None else None, 'color': e.get('color', ''), 'created': e.get('created')},
-        'gm' if e.get('type') == '이벤트' else 'pub')
+        'gm')
 # 관계
 for q in load('rels'):
-    put('rels', q['id'], {'a': q['a'], 'b': q['b'], 'label': q.get('label', ''), 'kind': q.get('kind', ''), 'two': bool(q.get('two', False)), 'note': q.get('note', '')})
+    put('rels', q['id'], {'a': q['a'], 'b': q['b'], 'label': q.get('label', ''), 'kind': q.get('kind', ''), 'two': bool(q.get('two', False)), 'note': q.get('note', '')}, 'gm')
 # 진행표
 sub = ''
 for p in load('plan'):
     t = p.get('t')
     if t == 'meta': sub = p.get('sub', ''); continue
-    if t == 'part': put('plan', p['id'], {'t': 'part', 'title': p.get('name', ''), 'sub': p.get('sub', ''), 'order': int(p.get('order') or 0)})
-    elif t == 'sess': put('plan', p['id'], {'t': 'sess', 'part': p.get('part', ''), 'label': p.get('label', ''), 'kind': p.get('kind', ''), 'what': p.get('what', ''), 'memo': p.get('memo', ''), 'order': int(p.get('order') or 0), 'st': p.get('st', ''), 'date': '', 'time': '', 'dur': 240, 'where': ''})
-    elif t == 'note': put('plan', p['id'], {'t': 'note', 'k': p.get('k', ''), 'v': p.get('v', ''), 'list': p.get('list', ''), 'order': int(p.get('order') or 0)}, 'gm' if p.get('list') == 'todo' else 'pub')
+    if t == 'part': put('plan', p['id'], {'t': 'part', 'title': p.get('name', ''), 'sub': p.get('sub', ''), 'order': int(p.get('order') or 0)}, 'gm')
+    elif t == 'sess': put('plan', p['id'], {'t': 'sess', 'part': p.get('part', ''), 'label': p.get('label', ''), 'kind': p.get('kind', ''), 'what': p.get('what', ''), 'memo': p.get('memo', ''), 'order': int(p.get('order') or 0), 'st': p.get('st', ''), 'date': '', 'time': '', 'dur': 240, 'where': ''}, 'gm')
+    elif t == 'note': put('plan', p['id'], {'t': 'note', 'k': p.get('k', ''), 'v': p.get('v', ''), 'list': p.get('list', ''), 'order': int(p.get('order') or 0)}, 'gm')
 try: app = json.load(open(os.path.join(SRC, 'note', 'app.json'), encoding='utf-8'))
 except Exception: app = {}
 out = {'camp': {'name': app.get('title') or '무진', 'data': {'sub': sub or app.get('sub', '')}}, 'from': '망켓몬 세션 노트 (아티팩트 7toNsX3YEQF3tTgxcKNGQu)', 'docs': docs}

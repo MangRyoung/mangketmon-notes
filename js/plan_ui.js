@@ -12,6 +12,7 @@
 (()=>{
  const N=()=>window.NT;const {$,$$,esc}=window.NT;
  const now=new Date();
+ window.NT.BULKF.plan=()=>(id,d)=>U.tab==='note'?d.data.t==='note':(d.data.t==='part'||d.data.t==='sess');
  const U={tab:'sess',listf:'',y:now.getFullYear(),m:now.getMonth()};
  const all=()=>N().list('plan');
  const parts=()=>all().filter(x=>x.t==='part').sort((a,b)=>(a.order||0)-(b.order||0));
@@ -42,7 +43,7 @@
  /* ---- 그리기 ---- */
  function render(el){const G=N().gm();const total=sessAll().length,done=sessAll().filter(x=>x.st==='done').length;
   el.innerHTML=`<div class="toolbar"><h2>일정</h2><div class="seg"><button data-pt="sess" class="${U.tab==='sess'?'on':''}">세션 ${done}/${total}</button><button data-pt="cal" class="${U.tab==='cal'?'on':''}">달력</button><button data-pt="poll" class="${U.tab==='poll'?'on':''}">조율 ${cands().length?cands().filter(c=>c.date>=today).length:''}</button><button data-pt="note" class="${U.tab==='note'?'on':''}">설계 메모 ${notes().length}</button></div><span class="sp"></span>
-    ${U.tab==='sess'||U.tab==='cal'?`<button class="btn sm ghost" data-pl="ics" title="휴대폰 · 데스크톱 캘린더에 넣기">📅 .ics</button>`:''}${G?(U.tab==='sess'?'<button class="btn sm" data-pl="newpart">＋ 부</button><button class="btn sm pri" data-pl="newsess">＋ 세션</button><button class="btn xs ghost danger" data-pl="wipe" data-w="sess" title="부 · 세션 전부 지우기">비우기</button>':U.tab==='poll'?'<button class="btn sm pri" data-pl="newcand">＋ 후보 날짜</button>':U.tab==='note'?'<button class="btn sm pri" data-pl="newnote">＋ 메모</button><button class="btn xs ghost danger" data-pl="wipe" data-w="note" title="설계 메모 전부 지우기">비우기</button>':''):''}<span class="small dim" title="새로 만드는 세션 · 메모는 GM만 보기로 들어가요. 공개하려면 각 항목에서 바꿔요">🔒 기본 GM만</span></div>
+    ${U.tab==='sess'||U.tab==='cal'?`<button class="btn sm ghost" data-pl="ics" title="휴대폰 · 데스크톱 캘린더에 넣기">📅 .ics</button>`:''}${G?(U.tab==='sess'?'<button class="btn sm" data-pl="newpart">＋ 부</button><button class="btn sm pri" data-pl="newsess">＋ 세션</button><button class="btn xs ghost danger" data-pl="wipe" data-w="sess" title="부 · 세션 전부 지우기">비우기</button>':U.tab==='poll'?'<button class="btn sm pri" data-pl="newcand">＋ 후보 날짜</button>':U.tab==='note'?'<button class="btn sm pri" data-pl="newnote">＋ 메모</button><button class="btn xs ghost danger" data-pl="wipe" data-w="note" title="설계 메모 전부 지우기">비우기</button>':''):''}${N().bulkBtns('plan',null,U.tab==='note'?'설계 메모':'부 · 세션')}</div>
    ${U.tab==='sess'?sessHtml():U.tab==='cal'?calHtml():U.tab==='poll'?pollHtml():notesHtml()}`;
   el.addEventListener('click',e=>{const t=e.target;if(t.closest('a'))return;const pt=t.closest('[data-pt]');if(pt){U.tab=pt.dataset.pt;N().render();return}
    const lf=t.closest('[data-lf]');if(lf){U.listf=lf.dataset.lf;N().render();return}

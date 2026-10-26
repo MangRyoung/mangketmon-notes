@@ -39,14 +39,17 @@
   for(const s of sp){const es=ents.filter(e=>e.at.includes(s.id));es.forEach((e,i)=>out.push(`<button type="button" class="mnpc ${e._vis!=='pub'?'hid':''}" data-ent="${esc(e.id)}" style="left:calc(${s.x}% + ${14+i*26}px);top:${s.y}%;background-image:url('${cssu(e.face)}')" title="${esc(e.title)}"><i>${esc(e.title)}</i></button>`))}
   return out.join('')}
 
+ function mapSelHtml(m){const G=N().gm();return maps().length>1||G?`<select id="mapSel">${maps().map(x=>`<option value="${esc(x.id)}" ${x.id===m.id?'selected':''}>${esc(x.name||'지도')}${x.kind==='globe'?' (지구본)':''}</option>`).join('')}</select>`:''}
+ window.NT.BULKF.spots=()=>{const m=curMap();return (id,d)=>m&&d.data.map===m.id};
  function render(el){const m=curMap(),G=N().gm();
+  if(m&&m.kind==='globe'&&window.NT_GLOBE){NT_GLOBE.render(el,m);bind(el);return}
   if(!m){el.innerHTML=`<div class="toolbar"><h2>지도</h2></div><div class="empty">아직 지도가 없어요.${G?'<br><button class="btn sm pri" data-m="newmap" style="margin-top:10px">＋ 지도 만들기 (그림 올리기)</button>':''}</div>`;bind(el);return}
   const sp=spots(m.id).filter(s=>!U.filter||s.kind===U.filter);
   const sel=U.sel?N().data('spots',U.sel):null;
   el.innerHTML=`<div class="toolbar"><h2>지도</h2>${maps().length>1||G?`<select id="mapSel">${maps().map(x=>`<option value="${esc(x.id)}" ${x.id===m.id?'selected':''}>${esc(x.name||'지도')}</option>`).join('')}</select>`:''}
    <div class="seg" id="mapKinds"><button data-k="" class="${!U.filter?'on':''}">전체</button>${KINDS.map(([k,,c])=>`<button data-k="${k}" class="${U.filter===k?'on':''}" style="--c:${c}"><i class="kdot"></i>${k}</button>`).join('')}</div>
    ${G?`<div class="seg"><button data-mode="sel" class="${U.mode==='sel'?'on':''}">고르기 · 끌기</button><button data-mode="add" class="${U.mode==='add'?'on':''}">＋ 장소 찍기</button></div>`:''}
-   <span class="sp"></span><span class="note">${sp.length}곳${G?' · 휠 확대 · 빈 곳 끌어 이동':' · 휠 확대'}</span>
+   <span class="sp"></span>${N().bulkBtns('spots',null,'이 지도의 장소')}<span class="note">${sp.length}곳${G?' · 휠 확대 · 빈 곳 끌어 이동':' · 휠 확대'}</span>
    ${G?`<button class="btn xs" data-m="mapedit">지도 설정</button><button class="btn xs ghost" data-m="newmap">＋ 지도</button>`:''}</div>
    <div class="split">
     <div class="mapwrap" id="mapWrap" data-mode="${U.mode}" style="--ar:${m.w&&m.h?(m.h/m.w).toFixed(4):0.66}"><div class="mapinner" id="mapInner" style="transform:translate(${U.px}px,${U.py}px) scale(${U.zoom});${m.w?`aspect-ratio:${m.w}/${m.h}`:''}">
@@ -111,18 +114,19 @@
  function editMap(id){const m=N().data('maps',id);if(!m)return;const md=N().openModal(`<div class="mhead"><h2>지도 설정</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
    <div class="mrow"><label class="lbl">이름<input id="mpName" type="text" value="${esc(m.name||'')}"></label><label class="lbl">순서<input id="mpOrd" type="number" class="n" value="${m.order||0}"></label><label class="lbl">공개${N().visSelect(N().doc('maps',id).vis,'mpVis',{noPl:true})}</label></div>
    <label class="lbl">설명<textarea id="mpD" rows="2">${esc(m.d||'')}</textarea></label>
-   <div class="sec">지도 그림</div><div class="updz" id="mpDz"><div class="pv" style="${m.img?`background-image:url('${cssu(m.img)}')`:''}"></div><b>＋ 그림 올리기</b><span>끌어 놓기 · 클릭 · Ctrl+V — 올릴 때 3200px 안으로 줄여요</span></div>
+   <div class="mrow"><label class="lbl">종류<select id="mpKind"><option value="" ${m.kind!=='globe'?'selected':''}>그림 지도 (핀 · 루트)</option><option value="globe" ${m.kind==='globe'?'selected':''}>지구본 · 관측실 (위도 · 경도 특이점)</option></select></label><label class="lbl" style="grid-column:span 2">특이점 번호 목록 <small class="dim">(지구본용 · 쉼표로 · 빈 번호는 「미관측」 가림막)</small><input id="mpSlots" type="text" value="${esc((m.slots||[]).join(', '))}" placeholder="예: 序, I, II, III, IV, V, VI, VII, EX"></label></div>
+   <div class="sec">지도 그림 <small class="dim">(지구본이면 안 써요)</small></div><div class="updz" id="mpDz"><div class="pv" style="${m.img?`background-image:url('${cssu(m.img)}')`:''}"></div><b>＋ 그림 올리기</b><span>끌어 놓기 · 클릭 · Ctrl+V — 올릴 때 3200px 안으로 줄여요</span></div>
    <div class="row" style="margin-top:8px"><input type="text" id="mpImg" placeholder="또는 그림 주소 https://…" value="${esc(m.img||'')}" style="flex:1"></div>
    <div class="row" style="margin-top:14px"><button class="btn danger ghost sm" id="mpDel">지도 지우기</button><span class="sp"></span><button class="btn pri" id="mpOk">저장</button></div>`);
   N().bindDrop($('#mpDz',md),async fs=>{try{const u=await N().upload(fs[0],'map','map');$('#mpImg',md).value=u;$('#mpDz .pv',md).style.backgroundImage=`url('${cssu(u)}')`}catch(e){N().toast('올리기 실패: '+e.message)}});
   $('#mpOk',md).onclick=async()=>{const img=$('#mpImg',md).value.trim();let w=m.w||0,h=m.h||0;if(img&&img!==m.img){try{const im=await new Promise((r,j)=>{const i=new Image();i.onload=()=>r(i);i.onerror=j;i.src=img});w=im.naturalWidth;h=im.naturalHeight}catch(e){}}
-   await N().put('maps',id,Object.assign({},m,{name:$('#mpName',md).value.trim()||'지도',order:+$('#mpOrd',md).value||0,d:$('#mpD',md).value.trim(),img,w,h}),$('#mpVis',md).value);N().closeModal();U.fitDone=false;N().render()};
+   await N().put('maps',id,Object.assign({},m,{name:$('#mpName',md).value.trim()||'지도',order:+$('#mpOrd',md).value||0,d:$('#mpD',md).value.trim(),img,w,h,kind:$('#mpKind',md).value,slots:$('#mpSlots',md).value.split(/[,，]/).map(x=>x.trim()).filter(Boolean)}),$('#mpVis',md).value);N().closeModal();U.fitDone=false;N().render()};
   $('#mpDel',md).onclick=async()=>{if(!await N().confirmBox(`「${m.name}」 지도를 지울까요? 이 지도의 장소 ${spots(id).length}곳도 같이 지워져요.`,'지우기'))return;for(const s of spots(id))await N().del('spots',s.id);await N().del('maps',id);N().closeModal();U.map='';U.sel='';N().render()}}
- function editSpot(id){const s=N().data('spots',id);if(!s)return;const sec=N().data('sec','spot:'+id)||{};
-  const md=N().openModal(`<div class="mhead"><h2>장소 고치기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
-   <div class="mrow"><label class="lbl">번호<input id="spNum" type="text" value="${esc(s.num||'')}" style="width:70px"></label><label class="lbl" style="grid-column:span 2">이름<input id="spName" type="text" value="${esc(s.name||'')}"></label>
-    <label class="lbl">종류<select id="spKind">${KINDS.map(([k])=>`<option ${k===s.kind?'selected':''}>${k}</option>`).join('')}</select></label><label class="lbl">구역<input id="spArea" type="text" value="${esc(s.area||'')}" placeholder="예: 마을 북서쪽"></label><label class="lbl">공개${N().visSelect(N().doc('spots',id).vis,'spVis',{noPl:true})}</label></div>
-   <label class="lbl">요약<textarea id="spSum" rows="4">${esc(s.summary||'')}</textarea></label>
+ function editSpot(id){const s=N().data('spots',id);if(!s)return;const sec=N().data('sec','spot:'+id)||{};const GL=(N().data('maps',s.map)||{}).kind==='globe';const LF=(N().MOD.logs&&N().MOD.logs.folders())||[];
+  const md=N().openModal(`<div class="mhead"><h2>${GL?'특이점 고치기':'장소 고치기'}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
+   <div class="mrow"><label class="lbl">${GL?'특이점 번호':'번호'}<input id="spNum" type="text" value="${esc(s.num||'')}" style="width:70px"></label><label class="lbl" style="grid-column:span 2">이름<input id="spName" type="text" value="${esc(s.name||'')}"></label>
+    ${GL?`<label class="lbl">상태<select id="spStatus">${[['active','진행 중'],['cleared','수복 완료'],['unobserved','미관측']].map(([v,l])=>`<option value="${v}" ${(s.status||'active')===v?'selected':''}>${l}</option>`).join('')}</select></label><label class="lbl">장소<input id="spArea" type="text" value="${esc(s.area||'')}" placeholder="예: 해양유전기지 세라픽스"></label><label class="lbl">연대<input id="spYear" type="text" value="${esc(s.year||'')}" placeholder="예: 2015"></label><label class="lbl">위도<input id="spLat" type="number" step="0.1" min="-90" max="90" value="${esc(s.y)}"></label><label class="lbl">경도<input id="spLon" type="number" step="0.1" min="-180" max="180" value="${esc(s.x)}"></label><label class="lbl">기록 폴더 <small class="dim">(정리기 보관소)</small><select id="spLogf"><option value="">— 없음 —</option>${LF.map(f=>`<option value="${esc(f.id)}" ${f.id===s.logf?'selected':''}>${esc(f.name)}</option>`).join('')}</select></label>`:`<label class="lbl">종류<select id="spKind">${KINDS.map(([k])=>`<option ${k===s.kind?'selected':''}>${k}</option>`).join('')}</select></label><label class="lbl">구역<input id="spArea" type="text" value="${esc(s.area||'')}" placeholder="예: 마을 북서쪽"></label>`}<label class="lbl">공개${N().visSelect(N().doc('spots',id).vis,'spVis',{noPl:true})}</label></div>
+   <label class="lbl">${GL?'공개 기록 <small class="dim">(줄마다 한 항목으로 보여요)</small>':'요약'}<textarea id="spSum" rows="4">${esc(s.summary||'')}</textarea></label>
    <label class="lbl" style="margin-top:6px">얻을 것 · 아이템<input id="spItems" type="text" value="${esc(s.items||'')}"></label>
    <div class="sec">그림</div><div class="row" style="align-items:stretch"><div class="updz" id="spDz" style="width:150px"><div class="pv" style="${s.img?`background-image:url('${cssu(s.img)}')`:''}"></div><b>대표 그림</b></div>
     <div style="flex:1;min-width:200px"><div id="spImgs">${(s.imgs||[]).map((x,i)=>`<div class="row spimgrow" data-i="${i}"><img src="${esc(x.p)}" alt=""><input type="text" data-t value="${esc(x.t||'')}" placeholder="설명" style="flex:1"><button class="btn xs ghost danger" data-del>×</button></div>`).join('')}</div><div class="updz" id="spDz2" style="min-height:44px"><b>＋ 그림 더하기</b><span>여러 장 가능</span></div></div></div>
@@ -134,10 +138,11 @@
   drawImgs();
   N().bindDrop($('#spDz',md),async fs=>{try{img=await N().upload(fs[0],'thumb','spot');$('#spDz .pv',md).style.backgroundImage=`url('${cssu(img)}')`}catch(e){N().toast('올리기 실패: '+e.message)}});
   N().bindDrop($('#spDz2',md),async fs=>{for(const f of fs){try{imgs.push({p:await N().upload(f,'photo','spot'),t:''})}catch(e){N().toast('올리기 실패: '+e.message)}}drawImgs()},true);
-  $('#spOk',md).onclick=async()=>{const n=Object.assign({},s,{num:$('#spNum',md).value.trim(),name:$('#spName',md).value.trim()||'장소',kind:$('#spKind',md).value,area:$('#spArea',md).value.trim(),summary:$('#spSum',md).value.trim(),items:$('#spItems',md).value.trim(),img,imgs});
+  $('#spOk',md).onclick=async()=>{const n=Object.assign({},s,{num:$('#spNum',md).value.trim(),name:$('#spName',md).value.trim()||'장소',kind:GL?(s.kind||'사건'):$('#spKind',md).value,area:$('#spArea',md).value.trim(),summary:$('#spSum',md).value.trim(),items:$('#spItems',md).value.trim(),img,imgs});if(GL){n.status=$('#spStatus',md).value;n.year=$('#spYear',md).value.trim();n.y=+$('#spLat',md).value||0;n.x=+$('#spLon',md).value||0;n.logf=$('#spLogf',md).value}
    await N().put('spots',id,n,$('#spVis',md).value);const t=$('#spSec',md).value.trim();if(t)await N().put('sec','spot:'+id,{t},'gm');else if(N().doc('sec','spot:'+id))await N().del('sec','spot:'+id);N().closeModal()};
   $('#spDel',md).onclick=async()=>{if(!await N().confirmBox(`「${s.name}」 를 지울까요? 이어진 선도 같이 지워져요.`,'지우기'))return;for(const l of links().filter(l=>l.a===id||l.b===id))await N().del('links',l.id);await N().del('spots',id);if(N().doc('sec','spot:'+id))await N().del('sec','spot:'+id);U.sel='';N().closeModal()}}
 
  N().MOD.map={render};
- window.NT_MAP={KINDS,select:id=>{const s=N().data('spots',id);if(s){U.map=s.map;U.sel=id;U.fitDone=false}},curMap,spots};
+ window.NT_MAP={KINDS,select:id=>{const s=N().data('spots',id);if(s){U.map=s.map;U.sel=id;U.fitDone=false;if(window.NT_GLOBE)NT_GLOBE.select&&(NT_GLOBE.st||0)}},curMap,spots};
+ N().MOD.map=Object.assign(N().MOD.map||{},{editSpot,editMap,curMap,mapSelHtml});
 })();

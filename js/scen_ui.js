@@ -14,7 +14,7 @@
  const U2={view:'flow'};
  function render(el){const G=N().gm();const all=routes();const gs=groups();if(U.group&&!gs.includes(U.group))U.group='';
   const tot=all.reduce((a,r)=>a+(r.steps||[]).length,0),dn=all.reduce((a,r)=>a+prog(r).done,0);
-  el.innerHTML=`<div class="toolbar"><h2>시나리오</h2><span class="note">${all.length}개 루트 · 단계 ${dn} / ${tot}</span><div class="seg"><button data-sv="flow" class="${U2.view==='flow'?'on':''}">흐름도</button><button data-sv="list" class="${U2.view==='list'?'on':''}">목록</button></div>${gs.length>1&&U2.view==='list'?`<div class="seg"><button data-sg="" class="${!U.group?'on':''}">전체</button>${gs.map(g=>`<button data-sg="${esc(g)}" class="${U.group===g?'on':''}">${esc(g||'분류 없음')}</button>`).join('')}</div>`:''}<span class="sp"></span>${G?'<button class="btn sm pri" data-s="new">＋ 루트</button>':''}</div>
+  el.innerHTML=`<div class="toolbar"><h2>시나리오</h2><span class="note">${all.length}개 루트 · 단계 ${dn} / ${tot}</span><div class="seg"><button data-sv="flow" class="${U2.view==='flow'?'on':''}">흐름도</button><button data-sv="list" class="${U2.view==='list'?'on':''}">목록</button></div>${gs.length>1&&U2.view==='list'?`<div class="seg"><button data-sg="" class="${!U.group?'on':''}">전체</button>${gs.map(g=>`<button data-sg="${esc(g)}" class="${U.group===g?'on':''}">${esc(g||'분류 없음')}</button>`).join('')}</div>`:''}<span class="sp"></span>${N().bulkBtns('routes',null,'루트')}${G?'<button class="btn sm pri" data-s="new">＋ 루트</button>':''}</div>
    ${nowStrip(all)}
    ${!all.length?`<div class="empty">시나리오 루트가 없어요.${G?' 「＋ 루트」로 만들고 단계(장소)를 차례로 넣어요.':''}</div>`:U2.view==='flow'?flowHtml(all,gs):gs.filter(g=>!U.group||U.group===g).map(g=>`<section class="sgroup"><div class="sgh"><span>${esc(g||'분류 없음')}</span><span class="small dim">${all.filter(r=>(r.group||'').trim()===g).length}개 루트</span></div>${all.filter(r=>(r.group||'').trim()===g).map(lane).join('')}</section>`).join('')}`;
   el.addEventListener('click',e=>{const t=e.target;const sv=t.closest('[data-sv]');if(sv){U2.view=sv.dataset.sv;N().render();return}
@@ -26,7 +26,7 @@
  /* ---- 흐름도: 부(group)마다 세로 열, 루트 카드 안에 단계 체크리스트, next[] 는 화살표 ---- */
  const STI={done:'✓',now:'▶',skip:'↷',fail:'✗','':''};
  function flowHtml(all,gs){const G=N().gm();
-  return `<div class="flow" id="flow"><svg class="flowsvg"></svg>${gs.map(g=>`<div class="fcol"><div class="fcolh">${esc(g||'분류 없음')}</div>${all.filter(r=>(r.group||'').trim()===g).map(fcard).join('')}</div>`).join('')}</div>`}
+  return `<div class="flow" id="flow"><svg class="flowsvg"></svg>${gs.map(g=>`<div class="fcol"><div class="fcolh">${esc(g||'분류 없음')}</div><div class="fcards">${all.filter(r=>(r.group||'').trim()===g).map(fcard).join('')}</div></div>`).join('')}</div>`}
  function fcard(r){const G=N().gm();const p=prog(r);const c=r.color||'#888';const nx=(r.next||[]).map(id=>N().data('routes',id)).filter(Boolean);const hid=r.visible===false||r._vis!=='pub';const S=N().data.bind(N());
   return `<article class="fcard ${hid?'hid':''} ${p.now>=0?'active':p.n&&p.done===p.n?'done':''}" data-route="${esc(r.id)}" style="--c:${c}">
    <header><b>${esc(r.name||'루트')}</b>${N().visBadge(r._vis)}${r.visible===false?'<span class="visb gm" title="지도에 선을 그리지 않음">지도 숨김</span>':''}<span class="sp"></span><span class="prog">${p.done}/${p.n}</span>${G?`<button class="btn xs ghost" data-s="edit" data-id="${esc(r.id)}" title="루트 고치기">✎</button>`:''}</header>
