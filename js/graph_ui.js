@@ -11,15 +11,16 @@
  const plView=()=>!N().gm()||U.view==='pl';
  const nodes=()=>N().list('ents').filter(e=>(!plView()||e._vis==='pub')&&(!U.type||e.type===U.type)&&(!U.tag||(e.tags||[]).includes(U.tag))&&(!U.team||(e.teams||[]).includes(U.team)));
  const rels=()=>N().list('rels').filter(r=>!plView()||r._vis==='pub');
- const W=1600,H=1000;
+ const W=1600,H=1000;const BW=2200,BH=1400;const BK=k=>k==='rival'?'doubt':k==='secret'?'secret':'tie';
+ let BOARD=null;
  function layout(list){const miss=list.filter(e=>e.gx==null||e.gy==null);if(!miss.length)return;const R=Math.min(W,H)*.38;miss.forEach((e,i)=>{const a=i/miss.length*Math.PI*2-Math.PI/2;e.gx=Math.round(W/2+Math.cos(a)*R);e.gy=Math.round(H/2+Math.sin(a)*R)})}
- function render(el){const G=N().gm();const all=N().list('ents');const list=nodes();layout(list);const ids=new Set(list.map(e=>e.id));const rs=rels().filter(r=>ids.has(r.a)&&ids.has(r.b));
+ function render(el){if(U.gview!=='svg')return renderBoard(el);const G=N().gm();const all=N().list('ents');const list=nodes();layout(list);const ids=new Set(list.map(e=>e.id));const rs=rels().filter(r=>ids.has(r.a)&&ids.has(r.b));
   const tags=[...new Set(all.flatMap(e=>e.tags||[]))].sort((a,b)=>a.localeCompare(b,'ko')),teams=[...new Set(all.flatMap(e=>e.teams||[]))].sort((a,b)=>a.localeCompare(b,'ko'));
   const types=window.NT_ENTS?NT_ENTS.TYPES:[];
   const byId=Object.fromEntries(list.map(e=>[e.id,e]));
   const sel=U.sel?N().data('rels',U.sel):null;
   const nAll=N().list('ents').filter(e=>['인물','조직'].includes(e.type)||true).length,nPub=N().list('ents').filter(e=>e._vis==='pub').length,rPub=N().list('rels').filter(r=>r._vis==='pub').length,rAll=N().list('rels').length;
-  el.innerHTML=`<div class="toolbar"><h2>관계도</h2>${G?`<div class="seg"><button data-gv="gm" class="${U.view!=='pl'?'on':''}" title="GM 참고용 — 비공개 인물 · 관계까지 (점선)">🔒 GM 전체 ${nAll}·${rAll}</button><button data-gv="pl" class="${U.view==='pl'?'on':''}" title="PL 에게 보이는 그대로 — 오레마스가 가져가는 것도 이것">👥 PL 공개 ${nPub}·${rPub}</button></div>`:''}
+  el.innerHTML=`<div class="toolbar"><h2>관계도</h2><div class="seg"><button data-gview="board" class="${U.gview!=='svg'?'on':''}">보드</button><button data-gview="svg" class="${U.gview==='svg'?'on':''}">선도</button></div>${G?`<div class="seg"><button data-gv="gm" class="${U.view!=='pl'?'on':''}" title="GM 참고용 — 비공개 인물 · 관계까지 (점선)">🔒 GM 전체 ${nAll}·${rAll}</button><button data-gv="pl" class="${U.view==='pl'?'on':''}" title="PL 에게 보이는 그대로 — 오레마스가 가져가는 것도 이것">👥 PL 공개 ${nPub}·${rPub}</button></div>`:''}
    <select id="grType"><option value="">모든 종류</option>${types.map(([t])=>`<option ${U.type===t?'selected':''}>${t}</option>`).join('')}</select>
    ${tags.length?`<select id="grTag"><option value="">모든 태그</option>${tags.map(t=>`<option ${U.tag===t?'selected':''}>${esc(t)}</option>`).join('')}</select>`:''}
    ${teams.length?`<select id="grTeam"><option value="">모든 편</option>${teams.map(t=>`<option ${U.team===t?'selected':''}>${esc(t)}</option>`).join('')}</select>`:''}
@@ -43,6 +44,7 @@
   ['grType','grTag','grTeam'].forEach(id=>{const s=$('#'+id,el);if(s)s.onchange=()=>{U[id==='grType'?'type':id==='grTag'?'tag':'team']=s.value;N().render()}});
   $$('[data-gm]',el).forEach(b=>b.onclick=()=>{U.mode=b.dataset.gm;U.from='';N().render()});
   $$('[data-gv]',el).forEach(b=>b.onclick=()=>{U.view=b.dataset.gv;U.sel='';N().render()});
+  $$('[data-gview]',el).forEach(b=>b.onclick=()=>{U.gview=b.dataset.gview;N().render()});
   el.addEventListener('click',e=>{const b=e.target.closest('[data-g]');if(!b)return;const k=b.dataset.g,id=b.dataset.id;
    if(k==='newnode')return newNode();if(k==='auto')return autoLayout();
    if(k==='visent'){const d=N().doc('ents',id);if(d)N().put('ents',id,d.data,d.vis==='pub'?'gm':'pub');return}
@@ -75,6 +77,40 @@
   let A=r.a,B=r.b;$('#rlSwap',md).onclick=()=>{[A,B]=[B,A];$('.relline b:first-child',md).textContent=(N().data('ents',A)||{}).title||'?';$('.relline b:nth-of-type(2)',md).textContent=(N().data('ents',B)||{}).title||'?'};
   $('#rlOk',md).onclick=async()=>{await N().put('rels',id,{a:A,b:B,label:$('#rlLabel',md).value.trim(),kind:$('#rlKind',md).value,two:$('#rlTwo',md).checked,note:$('#rlNote',md).value.trim()},$('#rlVis',md).value);U.sel=id;N().closeModal()};
   $('#rlDel',md).onclick=async()=>{await N().del('rels',id);U.sel='';N().closeModal()}}
+ /* ---- 코르크보드 ---- */
+ function renderBoard(el){const G=N().gm();const all=N().list('ents');const list=nodes().filter(e=>['인물','조직','기타','이벤트'].includes(e.type)||e.face);const types=window.NT_ENTS?NT_ENTS.TYPES:[];
+  const tags=[...new Set(all.flatMap(e=>e.tags||[]))].sort((a,b)=>a.localeCompare(b,'ko')),teams=[...new Set(all.flatMap(e=>e.teams||[]))].sort((a,b)=>a.localeCompare(b,'ko'));
+  const nAll=all.length,nPub=all.filter(e=>e._vis==='pub').length,rPub=N().list('rels').filter(r=>r._vis==='pub').length,rAll=N().list('rels').length;
+  el.innerHTML=`<div class="toolbar"><h2>관계도</h2><div class="seg"><button data-gview="board" class="on">보드</button><button data-gview="svg">선도</button></div>${G?`<div class="seg"><button data-gv="gm" class="${U.view!=='pl'?'on':''}" title="GM 참고용 — 비공개 인물 · 관계까지">🔒 GM 전체 ${nAll}·${rAll}</button><button data-gv="pl" class="${U.view==='pl'?'on':''}" title="PL 에게 보이는 그대로">👥 PL 공개 ${nPub}·${rPub}</button></div>`:''}
+   <select id="grType"><option value="">모든 종류</option>${types.map(([t])=>`<option ${U.type===t?'selected':''}>${t}</option>`).join('')}</select>${tags.length?`<select id="grTag"><option value="">모든 태그</option>${tags.map(t=>`<option ${U.tag===t?'selected':''}>${esc(t)}</option>`).join('')}</select>`:''}${teams.length?`<select id="grTeam"><option value="">모든 편</option>${teams.map(t=>`<option ${U.team===t?'selected':''}>${esc(t)}</option>`).join('')}</select>`:''}
+   <span class="sp"></span>${N().bulkBtns('rels',null,'관계선')}${G&&U.view==='pl'?'<span class="note"><b style="color:var(--yel)">PL 이 보는 그대로</b></span>':''}</div><div class="cb" id="cbRoot"></div>`;
+  $$('#grType,#grTag,#grTeam',el).forEach(sl=>sl.onchange=()=>{U[sl.id==='grType'?'type':sl.id==='grTag'?'tag':'team']=sl.value;N().render()});
+  $$('[data-gv]',el).forEach(b=>b.onclick=()=>{U.view=b.dataset.gv;U.sel='';N().render()});$$('[data-gview]',el).forEach(b=>b.onclick=()=>{U.gview=b.dataset.gview;N().render()});
+  const groups={};const gOf=e=>(e.teams&&e.teams[0])||e.type||'';list.forEach(e=>{const g=gOf(e);if(!groups[g])groups[g]={name:g||'기타',color:e.color&&!(e.teams&&e.teams[0])?e.color:undefined}});
+  const ids=new Set(list.map(e=>e.id));
+  const nodesB=list.map(e=>({id:e.id,name:e.title||'?',short:e.title,role:e.sub||e.type||'',img:e.face||e.photo||'',group:gOf(e),x:e.gx!=null?e.gx*BW/W:null,y:e.gy!=null?e.gy*BH/H:null,gmOnly:e._vis!=='pub'}));
+  /* 자리 없는 노드: 원형 */
+  const miss=nodesB.filter(n=>n.x==null);miss.forEach((n,i)=>{const a=i/miss.length*Math.PI*2-Math.PI/2;n.x=BW/2+Math.cos(a)*BW*.36;n.y=BH/2+Math.sin(a)*BH*.36});
+  const edges=rels().filter(r=>ids.has(r.a)&&ids.has(r.b)).map(r=>({id:r.id,a:r.a,b:r.b,kind:BK(r.kind),label:r.label||'',gmOnly:r._vis!=='pub'}));
+  if(BOARD)BOARD.destroy();
+  BOARD=NT_BOARD.mount($('#cbRoot',el),{nodes:nodesB,edges,groups,W:BW,H:BH,key:'nt-board-'+N().ST.camp,canEdit:G,
+   onMove:(id,x,y)=>N().patch('ents',id,d=>{d.gx=Math.round(x*W/BW);d.gy=Math.round(y*H/BH)}),
+   onLink:(a,b)=>newRel(a,b),onEdge:id=>{if(G)editRel(id);else{const r=N().data('rels',id);if(r)N().toast((N().data('ents',r.a)||{}).title+' → '+(N().data('ents',r.b)||{}).title+' : '+(r.label||''))}},
+   onNew:(x,y)=>newNode({x:x*W/BW,y:y*H/BH}),
+   onEmpty:()=>`<p class="empty">보드에서 인물 한 명을 골라 주세요.<br>이어진 실을 정리해 드릴게요.${G?'<br><small style="font-family:var(--font);font-size:12px">끌어서 옮기기 · 빈 곳 두 번 누르면 새 인물 · 「실 잇기」로 관계 추가 · 실을 누르면 고치기</small>':''}</p>`,
+   dossier:(id,ctx)=>{const e=N().data('ents',id)||{};const d=N().doc('ents',id)||{};const sec=G?N().data('sec','ent:'+id):null;const rows=(e.rows||[]).filter(r=>r.k||r.v);
+    let h=`<h2>${esc(e.title||'?')}${d.vis!=='pub'?'<span class="lock">GM만</span>':''}</h2><p class="rl">${esc([e.type,e.sub].filter(Boolean).join(' · '))}${(e.teams||[]).length?' · '+esc(e.teams.join(' · ')):''}</p>`;
+    if(e.body)h+=`<h3>관찰 기록</h3><p>${esc(e.body)}</p>`;
+    if(rows.length)h+=`<div class="kv">${rows.map(r=>`<b>${esc(r.k)}</b><span>${esc(r.v)}</span>`).join('')}</div>`;
+    if(sec&&sec.t)h+=`<div class="conf"><p>${esc(sec.t)}</p></div>`;
+    if(ctx.edges.length)h+=`<h3>이어진 실</h3><ul class="rels">${ctx.edges.map(ed=>{const o=ed.a===id?ed.b:ed.a;const col=ed.kind==='tie'?'var(--cb-red)':ed.kind==='doubt'?'var(--cb-gold)':'var(--cb-noir)';return `<li><i class="${ed.kind}" style="border-color:${col}"></i><button type="button" data-go="${esc(o)}">${esc((ctx.byId[o]||{}).name||'?')}</button><span>${ed.a===id?'→':'←'} ${esc(ed.label||'')}${ed.gmOnly?' 🔒':''}</span>${G?` <button type="button" class="cb-mini" data-ge="${esc(ed.id)}">✎</button>`:''}</li>`}).join('')}</ul>`;
+    h+=`<div class="acts"><button type="button" data-g="toent" data-id="${esc(id)}">📇 항목 보기</button>${G?`<button type="button" data-g="visent" data-id="${esc(id)}">${d.vis==='pub'?'🔒 비공개로':'👁 공개로'}</button><button type="button" data-g="relsall" data-id="${esc(id)}" data-v="pub">실 모두 공개</button><button type="button" data-g="relsall" data-id="${esc(id)}" data-v="gm">실 모두 비공개</button>`:''}</div>`;
+    return h}});
+  el.addEventListener('click',e=>{const ge=e.target.closest('[data-ge]');if(ge){editRel(ge.dataset.ge);return}const b=e.target.closest('[data-g]');if(!b)return;const k=b.dataset.g,id=b.dataset.id;
+   if(k==='toent'){N().go('ents');setTimeout(()=>NT_ENTS.select(id),0);return}
+   if(k==='visent'){const d=N().doc('ents',id);if(d)N().put('ents',id,d.data,d.vis==='pub'?'gm':'pub');return}
+   if(k==='relsall'){const v=b.dataset.v;const rows=N().list('rels').filter(r=>(r.a===id||r.b===id)&&r._vis!==v).map(r=>({kind:'rels',id:r.id,data:N().doc('rels',r.id).data,vis:v}));if(rows.length)N().putMany(rows)}});
+  if(U.hl)BOARD.select(U.hl)}
  N().MOD.graph={render};
  window.NT_GRAPH={RK};
 })();
