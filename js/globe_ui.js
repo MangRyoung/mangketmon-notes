@@ -45,7 +45,7 @@ window.NT_GLOBE=(()=>{
   if(st.cv.width<2||st.cv.height<2)size();if(!document.hidden&&(st.anim||st.drag||t-st.last>33)){draw(t);st.last=t}st.raf=requestAnimationFrame(loop)}
  /* ---- 자료 ---- */
  function items(m){const G=N().gm();const sp=N().list('spots').filter(s=>s.map===m.id);
-  const real=sp.map(s=>({id:s.id,no:s.num||'',title:s.name||'',place:s.area||'',year:s.year||'',status:s.status||'active',lat:isFinite(+s.y)?+s.y:null,lon:isFinite(+s.x)?+s.x:null,pl:String(s.summary||'').split('\n').map(x=>x.trim()).filter(Boolean),img:s.img||'',logf:s.logf||'',hid:s._vis!=='pub',_s:s}));
+  const real=sp.map(s=>({id:s.id,no:s.num||'',title:s.name||'',place:s.area||'',year:s.year||'',status:s.status||'active',label:s.label||'',lat:isFinite(+s.y)?+s.y:null,lon:isFinite(+s.x)?+s.x:null,pl:String(s.summary||'').split('\n').map(x=>x.trim()).filter(Boolean),img:s.img||'',logf:s.logf||'',hid:s._vis!=='pub',_s:s}));
   const slots=(m.slots||[]);const have=new Set(real.map(r=>r.no));const red=slots.filter(n=>!have.has(n)).map(n=>({id:'red:'+n,no:n,redacted:true,lat:null,lon:null,status:'unobserved'}));
   const ord=n=>{const i=slots.indexOf(n);return i<0?999:i};return real.concat(red).sort((a,b)=>ord(a.no)-ord(b.no)||String(a.no).localeCompare(String(b.no)))}
  /* ---- 그리기 ---- */
@@ -59,17 +59,17 @@ window.NT_GLOBE=(()=>{
      <div class="zoom"><button type="button" data-g="zi" aria-label="확대">+</button><button type="button" data-g="zo" aria-label="축소">−</button></div>
      <button class="back" type="button" data-g="back">← 관측실로</button>
      <div class="title-ov" aria-hidden="true"><div class="n">${cur?esc(ovNo(cur)):''}</div><div class="t">${cur?(cur.redacted?'관측 불가':esc(cur.title)):''}</div></div></div>
-    <aside class="gpanel"><ul class="glist">${L.map(it=>`<li><button type="button" data-g="sel" data-id="${esc(it.id)}" aria-current="${st.sel===it.id}">${it.redacted?`<span class="no">${esc(it.no)}</span><span class="tt"><b><span class="bar">■■■■■■■■</span></b><span>관측 불가</span></span><span class="st redacted">미관측</span>`:`<span class="no">${esc(it.no)}</span><span class="tt"><b>${esc(it.title)}${it.hid?' 🔒':''}</b><span>${esc([it.year,it.place].filter(Boolean).join(' · '))}</span></span><span class="st ${esc(it.status)}">${STL[it.status]||it.status}</span>`}</button></li>`).join('')||'<li class="dim small" style="padding:10px">특이점이 없어요.'+(G?' 「＋ 특이점」으로 넣어요.':'')+'</li>'}</ul>
+    <aside class="gpanel"><ul class="glist">${L.map(it=>`<li><button type="button" data-g="sel" data-id="${esc(it.id)}" aria-current="${st.sel===it.id}">${it.redacted?`<span class="no">${esc(it.no)}</span><span class="tt"><b><span class="bar">■■■■■■■■</span></b><span>관측 불가</span></span><span class="st redacted">미관측</span>`:`<span class="no">${esc(it.no)}</span><span class="tt"><b>${esc(it.title)}${it.hid?' 🔒':''}</b><span>${esc([it.year,it.place].filter(Boolean).join(' · '))}</span></span><span class="st ${esc(it.status)}">${it.label||STL[it.status]||it.status}</span>`}</button></li>`).join('')||'<li class="dim small" style="padding:10px">특이점이 없어요.'+(G?' 「＋ 특이점」으로 넣어요.':'')+'</li>'}</ul>
      <section class="gdet" aria-live="polite">${cur?detail(cur):'<p class="none">지구본의 표시나 목록에서 특이점을 고르세요.</p>'}</section></aside></div></div>`;
   st.gw=$('#gw',el);st.cv=$('#gcv',el);readColors();size();draw(0);if(!st.raf)st.raf=requestAnimationFrame(loop);
-  if(window.ResizeObserver){const ro=new ResizeObserver(()=>{size();draw(performance.now())});ro.observe(st.gw)}
+  if(window.ResizeObserver){if(st.ro)st.ro.disconnect();st.ro=new ResizeObserver(()=>{if(st.gw&&st.gw.isConnected){size();draw(performance.now())}});st.ro.observe(st.gw)}
   bind(el,m)}
  const ovNo=it=>'SINGULARITY '+(it.no==='EX'?'EX · 사전 사건':it.no);
  function lens(n=16,r=186,size=13){let o='';for(let i=0;i<n;i++){const a=2*Math.PI*i/n,cx=200+r*Math.cos(a),cy=200+r*Math.sin(a);const pts=[0,1,2,3,4,5].map(k=>(cx+size*Math.cos(Math.PI/3*k+a)).toFixed(1)+','+(cy+size*Math.sin(Math.PI/3*k+a)).toFixed(1)).join(' ');o+=`<polygon points="${pts}" stroke-width=".9"/>`}return o+'<circle cx="200" cy="200" r="186" stroke-width=".4"/><circle cx="200" cy="200" r="170" stroke-width=".5" stroke-dasharray="2 6"/>'}
  function detail(it){const G=N().gm();let h=`<div class="k">${esc(ovNo(it))}</div>`;
   if(it.redacted)return h+`<h2><span class="bar">■■■■■■■■■■</span></h2><div class="meta"><span class="bar">■■■■</span> · <span class="bar">■■■■■■</span></div><p class="redline"><span class="bar">██████████████</span> <span class="bar">████████</span><br><span class="bar">██████████</span></p><p class="none">아직 관측되지 않았다. 관측되면 이곳에 기록된다.</p>${G?`<p class="small dim">GM: 이 번호(${esc(it.no)})의 특이점을 만들어 공개하면 가림막이 걷혀요.</p>`:''}`;
   const sec=G?N().data('sec','spot:'+it.id):null;
-  h+=`<div class="row" style="gap:6px"><h2 style="flex:1">${esc(it.title)}</h2>${N().visBadge(it._s._vis)}${G?`<button class="btn xs" data-g="edit" data-id="${esc(it.id)}">고치기</button>`:''}</div><div class="meta">${esc([it.year,it.place].filter(Boolean).join(' · '))} · <span class="st ${esc(it.status)}">${STL[it.status]||it.status}</span> · ${fmt(it.lat,'N','S')} ${fmt(it.lon,'E','W')}</div>`;
+  h+=`<div class="row" style="gap:6px"><h2 style="flex:1">${esc(it.title)}</h2>${N().visBadge(it._s._vis)}${G?`<button class="btn xs" data-g="edit" data-id="${esc(it.id)}">고치기</button>`:''}</div><div class="meta">${esc([it.year,it.place].filter(Boolean).join(' · '))} · <span class="st ${esc(it.status)}">${it.label||STL[it.status]||it.status}</span> · ${fmt(it.lat,'N','S')} ${fmt(it.lon,'E','W')}</div>`;
   if(it.pl.length)h+=`<ul>${it.pl.map(s=>`<li>${esc(s)}</li>`).join('')}</ul>`;
   if(sec&&sec.t)h+=`<div class="conf"><div class="ck">GM 전용 · 미공개</div><div class="pre">${esc(sec.t)}</div></div>`;
   if(it.img)h+=`<div class="gmap"><img src="${esc(it.img)}" alt="${esc(it.title)} 지도" data-big="${esc(it.img)}"></div>`;
@@ -77,9 +77,9 @@ window.NT_GLOBE=(()=>{
   const LG=N().MOD.logs;const logs=it.logf&&LG?LG.inFolder(it.logf):[];
   h+=`<h3>기록 · 레이시프트</h3>${logs.length?`<div class="glogs">${logs.map(l=>`<a href="${esc(LG.viewUrl(l.id))}" target="_blank" rel="noopener">${esc((l.meta&&l.meta.ep?l.meta.ep+' · ':'')+l.title)}</a>`).join('')}</div>`:`<p class="none">아직 남은 기록이 없다.${G&&!it.logf?' <span class="small">(고치기 → 기록 폴더를 고르면 그 폴더의 로그가 여기 붙어요)</span>':''}</p>`}`;
   return h}
- function select(id,el){st.sel=id;const it=id?items(N().data('maps',(N().list('spots').find(s=>s.id===id)||{}).map)||curMapFor(el)).find(x=>x.id===id):null;
-  if(!it){st.dive=false;animTo(20*RAD,st.lon,1,1100)}else if(it.redacted||it.lat==null){st.dive=false;animTo(st.lat,st.lon,1,1800,2*Math.PI)}else{st.dive=true;animTo(Math.max(-75,Math.min(75,it.lat))*RAD,it.lon*RAD,2.8,2000,2*Math.PI)}
-  N().render()}
+ function pick(id,el){st.sel=id;const it=id?items(N().data('maps',(N().list('spots').find(s=>s.id===id)||{}).map)||curMapFor(el)).find(x=>x.id===id):null;
+  if(!it){st.dive=false;animTo(20*RAD,st.lon,1,1100)}else if(it.redacted||it.lat==null){st.dive=false;animTo(st.lat,st.lon,1,1800,2*Math.PI)}else{st.dive=true;animTo(Math.max(-75,Math.min(75,it.lat))*RAD,it.lon*RAD,2.8,2000,2*Math.PI)}}
+ function select(id,el){pick(id,el);N().render()}
  const curMapFor=()=>N().MOD.map&&N().MOD.map.curMap?N().MOD.map.curMap():null;
  function bind(el,m){const cv=st.cv;let sx,sy,slon,slat,moved,lastX,lastT;
   cv.addEventListener('pointerdown',e=>{st.drag=true;moved=false;cv.setPointerCapture(e.pointerId);cv.classList.add('drag');sx=e.clientX;sy=e.clientY;slon=st.lon;slat=st.lat;lastX=e.clientX;lastT=performance.now();st.anim=null});
@@ -96,5 +96,5 @@ window.NT_GLOBE=(()=>{
  function unproj(px,py){const R=st.R0*st.z;const x=(px-st.cx)/R,y=-(py-st.cy)/R;const r2=x*x+y*y;if(r2>1)return null;const z=Math.sqrt(1-r2);const s0=Math.sin(st.lat),c0=Math.cos(st.lat);const lat=Math.asin(z*s0+y*c0);const lon=st.lon+Math.atan2(x,z*c0-y*s0);return {lat:lat/RAD,lon:((lon/RAD+540)%360)-180}}
  async function addSpot(m,ll){const n=N().list('spots').filter(s=>s.map===m.id).length;const id=N().uid('s');const slots=m.slots||[];const used=new Set(N().list('spots').filter(s=>s.map===m.id).map(s=>s.num));const no=slots.find(x=>!used.has(x))||String(n+1);
   const ok=await N().put('spots',id,{map:m.id,x:+ll.lon.toFixed(2),y:+ll.lat.toFixed(2),name:'새 특이점',num:no,kind:'사건',area:'',summary:'',items:'',img:'',imgs:[],status:'active',year:'',logf:''},'gm');if(ok){st.sel=id;N().MOD.map.editSpot(id)}}
- return {render,select,items};
+ return {render,select,pick,items};
 })();
