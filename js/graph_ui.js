@@ -36,7 +36,7 @@
    </svg>${!list.length?'<div class="empty" style="position:absolute;inset:40%">항목 탭에서 인물을 만들면 여기에 나와요.</div>':''}</div>
    <aside class="side" id="grSide">${sel?relPanel(sel):(U.hl&&N().data('ents',U.hl)?nodePanel(Object.assign({id:U.hl,_vis:(N().doc('ents',U.hl)||{}).vis},N().data('ents',U.hl))):`<div class="card dim small">인물을 누르면 그 사람의 관계만 밝게 보여요.${G?' 선을 누르면 고칠 수 있어요. 「선 잇기」에서 두 사람을 차례로 누르면 새 관계가 생겨요.':''}</div>`)}</aside></div>`;
   bind(el,byId)}
- function nodePanel(e){const rs=rels().filter(r=>r.a===e.id||r.b===e.id);return `<div class="card"><div class="row"><h3>${esc(e.title)}</h3>${N().visBadge(e._vis,'ents',e.id)}<span class="sp"></span>${N().gm()?`<button class="btn xs ${e._vis==='pub'?'':'ghost'}" data-g="visent" data-id="${esc(e.id)}" title="누르면 ${e._vis==='pub'?'GM만':'모두'}">${e._vis==='pub'?'👁 공개':'🔒 비공개'}</button>`:''}<button class="btn xs" data-g="toent" data-id="${esc(e.id)}">항목 보기</button><button class="btn xs ghost" data-g="unhl">닫기</button></div>${e.sub?`<div class="dim small">${esc(e.sub)}</div>`:''}
+ function nodePanel(e){const rs=rels().filter(r=>r.a===e.id||r.b===e.id);return `<div class="card"><div class="row"><h3>${esc(e.title)}</h3>${N().visBadge(e._vis,'ents',e.id)}<span class="sp"></span><button class="btn xs" data-g="toent" data-id="${esc(e.id)}">항목 보기</button>${N().gm()?`<button class="btn xs" data-g="editent" data-id="${esc(e.id)}">✎ 고치기</button><button class="btn xs ghost danger" data-g="delent" data-id="${esc(e.id)}">🗑 지우기</button>`:''}<button class="btn xs ghost" data-g="unhl">닫기</button></div>${e.sub?`<div class="dim small">${esc(e.sub)}</div>`:''}
   <ul class="lnk" style="margin-top:8px">${rs.map(r=>{const oid=r.a===e.id?r.b:r.a;const o=N().data('ents',oid);const k=rk(r.kind);return `<li><i class="kdot" style="background:${k[2]}"></i><button class="linkbtn" data-g="hl" data-id="${esc(oid)}">${esc(o?o.title:'?')}</button> <span class="small dim">${r.a===e.id?'→':'←'} ${esc(r.label||'')}</span>${r._vis!=='pub'?' 🔒':''}${N().gm()?` <button class="linkbtn small" data-g="editrel" data-id="${esc(r.id)}">고치기</button>`:''}</li>`}).join('')||'<li class="dim small">관계가 없어요</li>'}</ul>${N().gm()&&rs.length?`<div class="row" style="gap:4px;margin-top:8px"><button class="btn xs ghost" data-g="relsall" data-id="${esc(e.id)}" data-v="pub">이 사람 관계 모두 공개</button><button class="btn xs ghost" data-g="relsall" data-id="${esc(e.id)}" data-v="gm">모두 비공개</button></div>`:''}</div>`}
  function relPanel(r){const a=N().data('ents',r.a),b=N().data('ents',r.b);const k=rk(r.kind);return `<div class="card"><div class="row"><h3>관계</h3><span class="sp"></span>${N().gm()?`<button class="btn xs ${r._vis==='pub'?'':'ghost'}" data-g="visrel" data-id="${esc(r.id)}">${r._vis==='pub'?'👁 공개':'🔒 비공개'}</button><button class="btn xs" data-g="editrel" data-id="${esc(r.id)}">고치기</button>`:''}<button class="btn xs ghost" data-g="unsel">닫기</button></div>
   <div class="relline"><b>${esc(a?a.title:'?')}</b> <span style="color:${k[2]}">${r.two?'↔':'→'}</span> <b>${esc(b?b.title:'?')}</b></div><div><span class="chip static" style="border-color:${k[2]};color:${k[2]}">${k[1]}</span> ${esc(r.label||'')}</div>${r.note?`<p class="pre small" style="margin-top:6px">${esc(r.note)}</p>`:''}${N().visBadge(r._vis,'rels',r.id)}</div>`}
@@ -51,11 +51,15 @@
    if(k==='visent'){const d=N().doc('ents',id);if(d)N().put('ents',id,d.data,d.vis==='pub'?'gm':'pub');return}
    if(k==='visrel'){const d=N().doc('rels',id);if(d)N().put('rels',id,d.data,d.vis==='pub'?'gm':'pub');return}
    if(k==='relsall'){const v=b.dataset.v;const rows=N().list('rels').filter(r=>(r.a===id||r.b===id)&&r._vis!==v).map(r=>({kind:'rels',id:r.id,data:N().doc('rels',r.id).data,vis:v}));if(rows.length)N().putMany(rows);return}if(k==='toent'){N().go('ents');setTimeout(()=>NT_ENTS.select(id),0);return}
+   if(k==='editent'){NT_ENTS.edit(id);return}if(k==='delent'){delEnt(id);return}
    if(k==='unhl'){U.hl='';N().render();return}if(k==='hl'){U.hl=id;U.sel='';N().render();return}if(k==='unsel'){U.sel='';N().render();return}if(k==='editrel')return editRel(id)});
   wrap.addEventListener('wheel',e=>{e.preventDefault();const r=wrap.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;const z0=U.zoom,z=Math.max(.3,Math.min(4,z0*(e.deltaY<0?1.15:1/1.15)));U.px=mx-(mx-U.px)*z/z0;U.py=my-(my-U.py)*z/z0;U.zoom=z;apply()},{passive:false});
   let pd=null;const toSvg=(x,y)=>{const p=new DOMPoint(x,y).matrixTransform(svg.getScreenCTM().inverse());return {x:p.x,y:p.y}};
-  wrap.addEventListener('pointerdown',e=>{if(e.button!==0)return;const nd=e.target.closest('.node');pd={x:e.clientX,y:e.clientY,px:U.px,py:U.py,node:nd&&N().gm()&&U.mode==='move'?nd:null,nodeAny:nd,downRel:e.target.closest('.rel'),moved:false,id:e.pointerId}});
-  wrap.addEventListener('pointermove',e=>{if(!pd)return;const dx=e.clientX-pd.x,dy=e.clientY-pd.y;if(!pd.moved&&Math.hypot(dx,dy)<4)return;if(!pd.moved){try{wrap.setPointerCapture(pd.id)}catch(x){}}pd.moved=true;
+  /* 10-26 망령: 손가락 두 개 확대. 집는 동안은 한 손가락 끌기 · 노드 끌기를 멈춘다 */
+  N().pinch(wrap,()=>({zoom:U.zoom,px:U.px,py:U.py}),s=>{U.zoom=s.zoom;U.px=s.px;U.py=s.py;apply()},[.3,4]);
+  N().bindCtx(wrap,'.node',nd=>nodeCtx(nd.dataset.node));
+  wrap.addEventListener('pointerdown',e=>{if(e.button!==0||wrap.dataset.pinching)return;const nd=e.target.closest('.node');pd={x:e.clientX,y:e.clientY,px:U.px,py:U.py,node:nd&&N().gm()&&U.mode==='move'?nd:null,nodeAny:nd,downRel:e.target.closest('.rel'),moved:false,id:e.pointerId}});
+  wrap.addEventListener('pointermove',e=>{if(!pd)return;if(wrap.dataset.pinching){if(pd.node&&pd.moved)pd.node.setAttribute('transform',`translate(${(N().data('ents',pd.node.dataset.node)||{}).gx||0} ${(N().data('ents',pd.node.dataset.node)||{}).gy||0})`);pd=null;return}const dx=e.clientX-pd.x,dy=e.clientY-pd.y;if(!pd.moved&&Math.hypot(dx,dy)<4)return;if(!pd.moved){try{wrap.setPointerCapture(pd.id)}catch(x){}}pd.moved=true;
    if(pd.node){const p=toSvg(e.clientX,e.clientY);pd.node.setAttribute('transform',`translate(${p.x} ${p.y})`);pd.pt=p}else{U.px=pd.px+dx;U.py=pd.py+dy;apply()}});
   const up=async e=>{if(!pd)return;const p=pd;pd=null;try{wrap.releasePointerCapture(p.id)}catch(x){}
    if(p.node&&p.moved&&p.pt){await N().patch('ents',p.node.dataset.node,o=>{o.gx=Math.round(p.pt.x);o.gy=Math.round(p.pt.y)});return}
@@ -65,6 +69,14 @@
    if(U.hl||U.sel){U.hl='';U.sel='';N().render()}};
   wrap.addEventListener('pointerup',up);wrap.addEventListener('pointercancel',()=>{pd=null});
   wrap.addEventListener('dblclick',e=>{if(!N().gm()||e.target.closest('.node,.rel'))return;const p=toSvg(e.clientX,e.clientY);newNode(p)})}
+ /* 항목(인물) 지우기 — 선도 · 보드 공용 */
+ async function delEnt(id){const e2=N().data('ents',id)||{};const rs=N().list('rels').filter(r=>r.a===id||r.b===id);if(!await N().confirmBox(`「${e2.title||'?'}」 을(를) 지울까요?${rs.length?` 이어진 실 ${rs.length}개도 같이 지워져요.`:''} 항목 탭에서도 사라져요.`,'지우기'))return;for(const r of rs)await N().del('rels',r.id);if(N().doc('sec','ent:'+id))await N().del('sec','ent:'+id);await N().del('ents',id);if(U.hl===id)U.hl='';N().toast('지웠어요')}
+ /* 노드(선도) · 카드(보드) 우클릭 · 길게 누르기 메뉴. startLink: 이 사람부터 실 잇기 */
+ function nodeCtx(id,startLink){const d=N().doc('ents',id);if(!d)return null;const G=N().gm();const cur=d.vis||'pub';const it=[{t:'📇 항목에서 보기',on:()=>{N().go('ents');setTimeout(()=>NT_ENTS.select(id),0)}}];
+  if(G){it.push({t:'✎ 고치기',on:()=>NT_ENTS.edit(id)});it.push('-');
+   [['pub','👥 모두에게'],['gm','🔒 GM만']].concat((N().ST.seats||[]).map(s=>['pl:'+s.seat,'👤 '+(N().seatName(s.seat)||s.seat)+' 에게만'])).forEach(([v,l])=>it.push({t:l+(v===cur?' ✓':''),on:async()=>{if(v===cur)return;await N().put('ents',id,N().clone(d.data),v);N().toast('공개 범위: '+N().visLabel(v))}}));
+   it.push('-');it.push({t:'🧵 실 잇기 시작',on:startLink||(()=>{U.mode='link';U.from=id;N().render()})});it.push({t:'🗑 지우기',danger:true,on:()=>delEnt(id)})}
+  return it}
  async function newNode(p){const id=N().uid('e');const pt=p||{x:W/2+Math.random()*200-100,y:H/2+Math.random()*200-100};await N().put('ents',id,{type:'인물',title:'새 인물',sub:'',body:'',rows:[],tags:[],teams:[],face:'',photo:'',at:[],gx:Math.round(pt.x),gy:Math.round(pt.y),created:Date.now()},'gm');NT_ENTS.edit(id);N().armDraft('ents',id)}
  async function autoLayout(){const list=nodes();if(!list.length)return;if(!await N().confirmBox('보이는 인물을 원형으로 다시 배치할까요? (지금 자리는 사라져요)','배치'))return;const R=Math.min(W,H)*.4;const rows=list.map((e,i)=>{const a=i/list.length*Math.PI*2-Math.PI/2;const d=N().clone(N().data('ents',e.id));d.gx=Math.round(W/2+Math.cos(a)*R);d.gy=Math.round(H/2+Math.sin(a)*R);return {kind:'ents',id:e.id,data:d,vis:e._vis}});await N().putMany(rows)}
  async function newRel(a,b){const id=N().uid('r');await N().put('rels',id,{a,b,label:'',kind:'',two:false,note:''},'gm');editRel(id);N().armDraft('rels',id)}
@@ -110,9 +122,10 @@
   el.addEventListener('click',e=>{const ge=e.target.closest('[data-ge]');if(ge){editRel(ge.dataset.ge);return}const b=e.target.closest('[data-g]');if(!b)return;const k=b.dataset.g,id=b.dataset.id;
    if(k==='toent'){N().go('ents');setTimeout(()=>NT_ENTS.select(id),0);return}
    if(k==='editent'){NT_ENTS.edit(id);return}
-   if(k==='delent'){(async()=>{const e2=N().data('ents',id)||{};const rs=N().list('rels').filter(r=>r.a===id||r.b===id);if(!await N().confirmBox(`「${e2.title||'?'}」 을(를) 지울까요?${rs.length?` 이어진 실 ${rs.length}개도 같이 지워져요.`:''} 항목 탭에서도 사라져요.`,'지우기'))return;for(const r of rs)await N().del('rels',r.id);if(N().doc('sec','ent:'+id))await N().del('sec','ent:'+id);await N().del('ents',id);N().toast('지웠어요')})();return}
+   if(k==='delent'){delEnt(id);return}
    if(k==='visent'){const d=N().doc('ents',id);if(d)N().put('ents',id,d.data,d.vis==='pub'?'gm':'pub');return}
    if(k==='relsall'){const v=b.dataset.v;const rows=N().list('rels').filter(r=>(r.a===id||r.b===id)&&r._vis!==v).map(r=>({kind:'rels',id:r.id,data:N().doc('rels',r.id).data,vis:v}));if(rows.length)N().putMany(rows)}});
+  N().bindCtx($('#cbRoot',el),'.cb-card',c=>nodeCtx(c.dataset.id,()=>BOARD&&BOARD.linkFrom&&BOARD.linkFrom(c.dataset.id)));
   if(U.hl&&!(st0&&st0.scale))BOARD.select(U.hl)}
  N().MOD.graph={render};
  window.NT_GRAPH={RK,focus:id=>{U.hl=id;U.sel='';N().render();if(BOARD&&id)BOARD.select(id)}};
