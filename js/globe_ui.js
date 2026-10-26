@@ -55,7 +55,7 @@ window.NT_GLOBE=(()=>{
    <div class="globeview"><div class="gobs">
     <div class="gw ${st.dive?'dive':''}" id="gw"><canvas id="gcv" aria-label="지구본"></canvas>
      <svg class="lens" viewBox="0 0 400 400" fill="none" stroke="currentColor" aria-hidden="true"><g>${lens()}</g></svg>
-     <div class="hud tl">OBSERVATION · <b>관측 중</b><br><span id="gCoord">—</span></div><div class="hud br">끌어서 회전 · 표시를 눌러 선택</div>
+     <div class="hud tl">OBSERVATION · <b>관측 중</b><br><span id="gCoord">—</span></div><div class="hud br">끌어서 회전 · 표시를 눌러 선택${G?'<br>Shift+클릭 = 그 자리에 특이점':''}</div>
      <div class="zoom"><button type="button" data-g="zi" aria-label="확대">+</button><button type="button" data-g="zo" aria-label="축소">−</button></div>
      <button class="back" type="button" data-g="back">← 관측실로</button>
      <div class="title-ov" aria-hidden="true"><div class="n">${cur?esc(ovNo(cur)):''}</div><div class="t">${cur?(cur.redacted?'관측 불가':esc(cur.title)):''}</div></div></div>
@@ -83,10 +83,12 @@ window.NT_GLOBE=(()=>{
  const curMapFor=()=>N().MOD.map&&N().MOD.map.curMap?N().MOD.map.curMap():null;
  function bind(el,m){const cv=st.cv;let sx,sy,slon,slat,moved,lastX,lastT;
   cv.addEventListener('pointerdown',e=>{st.drag=true;moved=false;cv.setPointerCapture(e.pointerId);cv.classList.add('drag');sx=e.clientX;sy=e.clientY;slon=st.lon;slat=st.lat;lastX=e.clientX;lastT=performance.now();st.anim=null});
-  cv.addEventListener('pointermove',e=>{if(!st.drag)return;const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.hypot(dx,dy)>4)moved=true;const R=st.R0*st.z/st.dpr;st.lon=slon-dx/R;st.lat=Math.max(-85*RAD,Math.min(85*RAD,slat+dy/R));const now=performance.now();st.vlon=-(e.clientX-lastX)/R/Math.max(.016,(now-lastT)/1000);lastX=e.clientX;lastT=now});
+  cv.addEventListener('pointermove',e=>{if(!st.drag)return;if(cv.dataset.pinching){moved=true;return}const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.hypot(dx,dy)>4)moved=true;const R=st.R0*st.z/st.dpr;st.lon=slon-dx/R;st.lat=Math.max(-85*RAD,Math.min(85*RAD,slat+dy/R));const now=performance.now();st.vlon=-(e.clientX-lastX)/R/Math.max(.016,(now-lastT)/1000);lastX=e.clientX;lastT=now});
   cv.addEventListener('pointerup',e=>{st.drag=false;cv.classList.remove('drag');st.vlon=Math.max(-2,Math.min(2,st.vlon));if(moved)return;const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)*st.dpr,y=(e.clientY-r.top)*st.dpr;let best=null,bd=22*st.dpr;st.hits.forEach(h=>{const d=Math.hypot(h.x-x,h.y-y);if(d<bd){bd=d;best=h}});
    if(best)select(best.id,el);else if(N().gm()&&e.shiftKey){const ll=unproj(x,y);if(ll)addSpot(m,ll)}});
   cv.addEventListener('pointercancel',()=>{st.drag=false});
+  /* 10-26 감우: 손가락 두 개로 확대 (휠과 같은 범위 .8~3.2). 회전 중심은 그대로 두고 배율만 바꾼다 */
+  N().pinch(cv,()=>({zoom:st.z,px:0,py:0}),v=>{st.anim=null;st.z=v.zoom},[.8,3.2]);
   cv.addEventListener('wheel',e=>{e.preventDefault();st.anim=null;st.z=Math.max(.8,Math.min(3.2,st.z*(e.deltaY<0?1.12:1/1.12)))},{passive:false});
   el.addEventListener('click',e=>{const b=e.target.closest('[data-g]');if(!b)return;const k=b.dataset.g,id=b.dataset.id;
    if(k==='zi')return animTo(st.lat,st.lon,Math.min(3.2,st.z*1.3),400);if(k==='zo')return animTo(st.lat,st.lon,Math.max(.8,st.z/1.3),400);
