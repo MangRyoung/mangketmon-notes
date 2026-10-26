@@ -134,6 +134,7 @@ html[data-vt="p4"] body{background:#111 repeating-linear-gradient(135deg,#151515
 html[data-vt="p4"] .top{background:#ffe100!important;border-bottom:3px solid #111!important;color:#111!important}
 html[data-vt="p4"] .top .name{font-family:'Do Hyeon','Black Han Sans'!important;font-size:28px!important;color:#111!important;text-shadow:2px 2px 0 #fff!important}
 html[data-vt="p4"] .top .badge.gm{background:#111!important;color:#ffe100!important;border:0!important;border-radius:4px!important}
+html[data-vt="p4"] .top .badge:not(.gm):not(.seat){background:#111!important;color:#fff!important;border:0!important;border-radius:4px!important}
 html[data-vt="p4"] .top .small,html[data-vt="p4"] .top #conn,html[data-vt="p4"] .top .presence{color:#111!important}
 html[data-vt="p4"] #sceneTabs button{font-family:'Do Hyeon','Black Han Sans'!important;font-size:18px!important;font-weight:400!important;background:transparent!important;color:#5a4f12!important;border:0!important;border-radius:4px 4px 0 0!important;box-shadow:none!important;transform:none!important}
 html[data-vt="p4"] #sceneTabs button.on{background:#111!important;color:#ffe100!important}
