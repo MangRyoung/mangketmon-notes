@@ -314,5 +314,6 @@ table.poll td.ops{text-align:right}
 .mpop .mpbig{width:52px;height:52px;border-radius:50%;flex:none;border:2px solid var(--c);background:#333 center/cover no-repeat;display:grid;place-items:center;font-size:20px;color:#fff}
 .mpop .mpr{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0;font-size:12.5px}
 .mpop .mpr dt{color:var(--mute)}.mpop .mpr dd{margin:0}
-.mpop .mpa{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.mpop .mpa{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;align-items:center}
+.mpop .mpl{display:flex;flex-wrap:wrap;gap:4px;align-items:center}.mpop .mpl small{color:var(--mute);font-size:11px;margin-right:2px}.mpop .chip.xs{font-size:11px;padding:1px 7px}
 #mapSide.flash{outline:2px solid var(--yel);outline-offset:2px}

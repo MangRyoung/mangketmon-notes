@@ -111,18 +111,20 @@
   w.addEventListener('pointerup',up);w.addEventListener('pointercancel',e=>{pts.delete(e.pointerId);pd=null;if(pts.size<2)pinch=null})}
 
  /* ---------- 지도 위 말풍선: 핀 = 장소 요약, 얼굴 = 인물 카드 ---------- */
- function popHtml(){const P=U.pop;if(!P)return '';const G=N().gm();
+ function popHtml(){const P=U.pop;if(!P)return '';const G=N().gm();const m0=curMap()||{};
   if(P.k==='spot'){const s=N().data('spots',P.id);if(!s)return '';const k=kc(s.kind);const faces=N().list('ents').filter(e=>(e.at||[]).includes(P.id));
    return `<div class="mph" style="--c:${k[2]}"><i class="kdot" style="background:${k[2]}"></i>${s.num?`<b class="num">${esc(s.num)}</b>`:''}<h4>${esc(s.name||'장소')}</h4><button type="button" class="mpx" data-pop="close" title="닫기">✕</button></div>
     <div class="mpm">${esc(s.kind||'')}${s.area?' · '+esc(s.area):''}${N().doc('spots',P.id).vis!=='pub'?' · '+esc(N().visLabel(N().doc('spots',P.id).vis)):''}</div>
     ${s.summary?`<p class="mps">${esc(s.summary)}</p>`:'<p class="mps dim">요약이 아직 없어요.</p>'}
     ${faces.length?`<div class="mpf">${faces.map(e=>`<button type="button" class="mpface" data-pop="ent" data-id="${esc(e.id)}" title="${esc(e.title)}" style="${e.face?`background-image:url('${cssu(e.face)}')`:''}">${e.face?'':esc((e.title||'?')[0])}</button>`).join('')}</div>`:''}
-    <div class="mpa"><button type="button" class="btn xs" data-pop="detail" data-id="${esc(P.id)}">자세히</button>${G?`<button type="button" class="btn xs ghost" data-pop="editspot" data-id="${esc(P.id)}">고치기</button>`:''}</div>`}
+    ${(()=>{const ls=links().filter(l=>l.a===P.id||l.b===P.id).map(l=>N().data('spots',l.a===P.id?l.b:l.a)?{id:l.a===P.id?l.b:l.a,n:N().data('spots',l.a===P.id?l.b:l.a).name}:null).filter(Boolean);const rs=N().list('routes').filter(r=>(r.steps||[]).some(x=>x.spot===P.id));
+     return (ls.length?`<div class="mpl"><small>이어진 곳</small>${ls.map(x=>`<button type="button" class="chip xs" data-pop="spot" data-id="${esc(x.id)}">→ ${esc(x.n)}</button>`).join('')}</div>`:'')+(rs.length?`<div class="mpl"><small>시나리오</small>${rs.map(r=>`<button type="button" class="chip xs" data-pop="route" data-id="${esc(r.id)}" style="border-color:${esc(r.color||'#888')}">${esc(r.name||'루트')} ${(r.steps||[]).findIndex(x=>x.spot===P.id)+1}단계</button>`).join('')}</div>`:'')})()}
+   <div class="mpa">${G?`${N().visBadge(N().doc('spots',P.id).vis,'spots',P.id)}<button type="button" class="btn xs ${m0.party===P.id?'pri':'ghost'}" data-pop="party" data-id="${esc(P.id)}" title="PC 들이 지금 있는 곳으로 표시">${m0.party===P.id?'📍 PC 여기':'PC 위치로'}</button>`:''}${window.NT_FAV?NT_FAV.btn('spots',P.id,s.name):''}<span class="sp"></span><button type="button" class="btn xs" data-pop="detail" data-id="${esc(P.id)}">자세히</button>${G?`<button type="button" class="btn xs ghost" data-pop="editspot" data-id="${esc(P.id)}">고치기</button>`:''}</div>`}
   const e=N().data('ents',P.id);if(!e)return '';const t=window.NT_ENTS?NT_ENTS.tc(e.type):['','','#888'];const rows=(e.rows||[]).filter(r=>r.k&&r.v).slice(0,4);
   return `<div class="mph ent" style="--c:${e.color||t[2]}"><span class="mpbig" style="${e.face?`background-image:url('${cssu(e.face)}')`:''}">${e.face?'':esc((e.title||'?')[0])}</span><div style="min-width:0;flex:1"><h4>${esc(e.title||'인물')}</h4><div class="mpm">${esc(e.type||'')}${e.sub?' · '+esc(e.sub):''}</div></div><button type="button" class="mpx" data-pop="close" title="닫기">✕</button></div>
    ${e.body?`<p class="mps">${esc(e.body)}</p>`:''}
    ${rows.length?`<dl class="mpr">${rows.map(r=>`<dt>${esc(r.k)}</dt><dd>${esc(r.v)}</dd>`).join('')}</dl>`:''}
-   <div class="mpa"><button type="button" class="btn xs" data-pop="openent" data-id="${esc(P.id)}">항목에서 보기</button>${G?`<button type="button" class="btn xs ghost" data-pop="editent" data-id="${esc(P.id)}">고치기</button>`:''}${P.at&&N().data('spots',P.at)?`<button type="button" class="btn xs ghost" data-pop="spot" data-id="${esc(P.at)}">📍 ${esc(N().data('spots',P.at).name||'')}</button>`:''}</div>`}
+   <div class="mpa">${G?N().visBadge(N().doc('ents',P.id).vis,'ents',P.id):''}${window.NT_FAV?NT_FAV.btn('ents',P.id,e.title):''}<span class="sp"></span><button type="button" class="btn xs" data-pop="openent" data-id="${esc(P.id)}">항목에서 보기</button>${G?`<button type="button" class="btn xs ghost" data-pop="editent" data-id="${esc(P.id)}">고치기</button>`:''}${P.at&&N().data('spots',P.at)?`<button type="button" class="btn xs ghost" data-pop="spot" data-id="${esc(P.at)}">📍 ${esc(N().data('spots',P.at).name||'')}</button>`:''}</div>`}
  function showPop(el){const w=$('#mapWrap',el);if(!w)return;let p=$('#mapPop',el);const h=popHtml();
   if(!h){if(p)p.remove();return}
   if(!p){p=document.createElement('div');p.id='mapPop';p.className='mpop';w.appendChild(p)}
@@ -135,10 +137,12 @@
   const r=a.getBoundingClientRect();let x=r.left-wr.left+r.width/2-pw/2,y=r.top-wr.top-ph-10;
   if(y<8)y=r.bottom-wr.top+10;x=Math.max(8,Math.min(wr.width-pw-8,x));y=Math.max(8,Math.min(wr.height-ph-8,y));
   p.style.left=x+'px';p.style.top=y+'px'}
- function popAct(k,id){const el=document.getElementById('ntMain')||document;
+ async function popAct(k,id){const el=document.getElementById('ntMain')||document;
   if(k==='close'){U.pop=null;const p=document.getElementById('mapPop');if(p)p.remove();return}
   if(k==='ent'){U.pop={k:'ent',id,at:U.pop&&U.pop.k==='spot'?U.pop.id:''};showPop(el);return}
   if(k==='spot'||k==='detail'){U.sel=id;U.pop=k==='spot'?{k:'spot',id}:U.pop;N().render();if(k==='detail'){const sd=document.getElementById('mapSide');if(sd){const r=sd.getBoundingClientRect();if(r.top>innerHeight-80||r.bottom<0)sd.scrollIntoView({behavior:'smooth',block:'start'});sd.classList.add('flash');setTimeout(()=>sd.classList.remove('flash'),900)}}return}
+  if(k==='party'){const m=curMap();if(!m)return;await N().patch('maps',m.id,x=>{x.party=x.party===id?'':id});return}
+  if(k==='route'){U.pop=null;N().go('scen');setTimeout(()=>{const c=document.querySelector(`.fcard[data-route="${CSS.escape(id)}"],.lane[data-route="${CSS.escape(id)}"]`);if(c){c.scrollIntoView({behavior:'smooth',block:'center'});c.classList.add('flash');setTimeout(()=>c.classList.remove('flash'),1200)}},60);return}
   if(k==='editspot')return editSpot(id);
   if(k==='openent'){U.pop=null;N().go('ents');setTimeout(()=>window.NT_ENTS&&NT_ENTS.select(id),0);return}
   if(k==='editent'){if(window.NT_ENTS&&NT_ENTS.edit)NT_ENTS.edit(id);return}}
