@@ -20,19 +20,46 @@
   el.addEventListener('click',e=>{const t=e.target;const sv=t.closest('[data-sv]');if(sv){U2.view=sv.dataset.sv;N().render();return}
    const sg=t.closest('[data-sg]');if(sg){U.group=sg.dataset.sg;N().render();return}
    const nx=t.closest('[data-gonext]');if(nx){const c=el.querySelector(`.fcard[data-route="${CSS.escape(nx.dataset.gonext)}"]`);if(c){c.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});c.classList.add('flash');setTimeout(()=>c.classList.remove('flash'),1200)}return}
-   const st=t.closest('[data-step]');if(st){const rid=st.closest('[data-route]').dataset.route;const i=+st.dataset.step;if(G)return stepMenu(rid,i);const s=(N().data('routes',rid).steps||[])[i];if(s&&s.spot){N().go('map');setTimeout(()=>{NT_MAP.select(s.spot);N().render()},0)}return}
+   const st=t.closest('[data-step]');if(st){const rid=st.closest('[data-route]').dataset.route;const i=+st.dataset.step;if(G&&(e.shiftKey||e.altKey)){e.preventDefault();return cycleStep(rid,i)}if(G)return stepMenu(rid,i);const s=(N().data('routes',rid).steps||[])[i];if(s&&s.spot){N().go('map');setTimeout(()=>{NT_MAP.select(s.spot);N().render()},0)}return}
    const b=t.closest('[data-s]');if(b)act(b.dataset.s,b)});
-  if(U2.view==='flow')requestAnimationFrame(()=>drawFlow(el))}
+  /* 10-26: 우클릭 · 길게 누르기 메뉴 (루트 카드 · 단계) */
+  N().bindCtx(el,'[data-route]',(t,e)=>{const rid=t.dataset.route;const st=e.target.closest&&e.target.closest('[data-step]');return st&&t.contains(st)?stepCtx(rid,+st.dataset.step):routeCtx(rid)});
+  if(G){/* 끌어서 순서 바꾸기: 루트는 머리글을 잡고, 단계는 칩을 잡고 */
+   $$('.fcards,.sgroup',el).forEach(c=>N().sortable(c,'[data-route]',ids=>orderRoutes(ids),{handleSel:'header,.laneh'}));
+   $$('.fsteps',el).forEach(c=>{const rid=c.closest('[data-route]').dataset.route;N().sortable(c,'.fstep[data-id]',ids=>orderSteps(rid,ids))});
+   $$('.steps',el).forEach(c=>{const rid=c.closest('[data-route]').dataset.route;N().sortable(c,'.step[data-id]',ids=>orderSteps(rid,ids),{horizontal:true})})}
+  if(U2.view==='flow'){requestAnimationFrame(()=>drawFlow(el));watchFlow(el)}}
+ /* ---- 10-26 공용: 단계 상태 · 루트 지우기 · 순서 · 메뉴 ---- */
+ const STL={'':'예정',now:'진행 중',done:'끝',skip:'건너뜀',fail:'실패'};
+ async function setStep(rid,i,v){const r=N().data('routes',rid);const s=r&&(r.steps||[])[i];if(!s)return;await N().patch('routes',rid,rr=>{const st=rr.steps[i];if(!st)return false;if(v==='now')rr.steps.forEach(x=>{if(x.st==='now')x.st=''});st.st=v});N().toast(`「${stepTitle(s)}」 → ${STL[v]||v}`)}
+ function cycleStep(rid,i){const r=N().data('routes',rid);const s=r&&(r.steps||[])[i];if(!s)return;const cur=s.st||'';return setStep(rid,i,cur==='now'?'done':cur==='done'?'':'now')}
+ async function delRoute(id){const r=N().data('routes',id);if(!r)return false;if(!await N().confirmBox(`「${r.name||'루트'}」 루트를 지울까요? 단계도 함께 사라져요.`,'지우기'))return false;await N().del('routes',id);if(N().doc('sec','route:'+id))await N().del('sec','route:'+id);N().toast('루트를 지웠어요');return true}
+ /* 한 묶음(열 · 분류) 안에서 바뀐 순서를 전체 순서에 끼워 넣는다 — 다른 묶음의 자리 번호는 그대로 */
+ function orderRoutes(ids){const set=new Set(ids);let k=0;const merged=routes().map(r=>set.has(r.id)?ids[k++]:r.id);return N().reorder('routes',merged)}
+ function orderSteps(rid,ids){return N().patch('routes',rid,r=>{const S=r.steps||[];const idx=ids.map(Number).filter(i=>S[i]);if(idx.length!==S.length)return false;r.steps=idx.map(i=>S[i])})}
+ function visItems(kind,id){const d=N().doc(kind,id);if(!d||!N().gm())return [];const cur=d.vis||'pub';const o=[['pub','👥 모두에게'],['gm','🔒 GM만']].concat((N().ST.seats||[]).map(x=>['pl:'+x.seat,'👤 '+(N().seatName(x.seat)||x.seat)+' 에게만']));
+  return o.map(([v,l])=>({t:(v===cur?'✓ ':'　')+l,on:async()=>{if(v===cur)return;await N().put(kind,id,N().clone(d.data),v);N().toast('공개 범위: '+N().visLabel(v))}}))}
+ function routeCtx(rid){const r=N().data('routes',rid);if(!r)return null;const G=N().gm();const L=[];
+  if(G)L.push(...visItems('routes',rid),'-',{t:'✎ 고치기',on:()=>edit(rid)});
+  if(window.NT_FAV)L.push({t:(NT_FAV.has('routes',rid)?'★ 즐겨찾기에서 빼기':'☆ 즐겨찾기에 넣기'),on:()=>NT_FAV.toggle('routes',rid,r.name)});
+  if(G)L.push('-',{t:'🗑 루트 지우기',danger:true,on:()=>delRoute(rid)});return L}
+ function stepCtx(rid,i){if(!N().gm())return null;const r=N().data('routes',rid);const s=r&&(r.steps||[])[i];if(!s)return null;
+  return [{t:'▶ 진행 중으로',on:()=>setStep(rid,i,'now')},{t:'✓ 끝으로',on:()=>setStep(rid,i,'done')},{t:'○ 초기화 (예정)',on:()=>setStep(rid,i,'')},'-',{t:'✎ 고치기',on:()=>stepMenu(rid,i)},{t:'빼기',danger:true,on:async()=>{if(!await N().confirmBox(`「${stepTitle(s)}」 단계를 뺄까요?`,'빼기'))return;await N().patch('routes',rid,rr=>{rr.steps.splice(i,1)})}}]}
+ /* 흐름도 화살표: 크기가 바뀌거나 글꼴이 늦게 오면 다시 긋는다 (관찰자는 하나만) */
+ let RO=null;
+ function watchFlow(el){const fl=el.querySelector('#flow');if(!fl)return;if(RO){try{RO.disconnect()}catch(e){}RO=null}
+  if(window.ResizeObserver){RO=new ResizeObserver(()=>{if(fl.isConnected)requestAnimationFrame(()=>drawFlow(el))});RO.observe(fl);$$('.fcol',fl).forEach(c=>RO.observe(c))}
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(fl.isConnected)drawFlow(el)}).catch(()=>{})}
  /* ---- 흐름도: 부(group)마다 세로 열, 루트 카드 안에 단계 체크리스트, next[] 는 화살표 ---- */
  const STI={done:'✓',now:'▶',skip:'↷',fail:'✗','':''};
  function flowHtml(all,gs){const G=N().gm();
   return `<div class="flow" id="flow"><svg class="flowsvg"></svg>${gs.map(g=>`<div class="fcol"><div class="fcolh">${esc(g||'분류 없음')}</div><div class="fcards">${all.filter(r=>(r.group||'').trim()===g).map(fcard).join('')}</div></div>`).join('')}</div>`}
  function fcard(r){const G=N().gm();const p=prog(r);const c=r.color||'#888';const nx=(r.next||[]).map(id=>N().data('routes',id)).filter(Boolean);const hid=r.visible===false||r._vis!=='pub';const S=N().data.bind(N());
-  return `<article class="fcard ${hid?'hid':''} ${p.now>=0?'active':p.n&&p.done===p.n?'done':''}" data-route="${esc(r.id)}" style="--c:${c}">
-   <header><b>${esc(r.name||'루트')}</b>${window.NT_FAV?NT_FAV.btn('routes',r.id,r.name):''}${N().visBadge(r._vis,'routes',r.id)}${r.visible===false?'<span class="visb gm" title="지도에 선을 그리지 않음">지도 숨김</span>':''}<span class="sp"></span><span class="prog">${p.done}/${p.n}</span>${G?`<button class="btn xs ghost" data-s="edit" data-id="${esc(r.id)}" title="루트 고치기">✎</button>`:''}</header>
+  return `<article class="fcard ${hid?'hid':''} ${p.now>=0?'active':p.n&&p.done===p.n?'done':''}" data-route="${esc(r.id)}" data-id="${esc(r.id)}" style="--c:${c}">
+   <header class="${G?'dragh':''}"><b>${esc(r.name||'루트')}</b>${window.NT_FAV?NT_FAV.btn('routes',r.id,r.name):''}${N().visBadge(r._vis,'routes',r.id)}${r.visible===false?'<span class="visb gm" title="지도에 선을 그리지 않음">지도 숨김</span>':''}<span class="sp"></span><span class="prog">${p.done}/${p.n}</span>${G?`<button class="btn xs ghost" data-s="edit" data-id="${esc(r.id)}" title="루트 고치기">✎</button><button class="btn xs ghost danger rdel" data-s="del" data-id="${esc(r.id)}" title="루트 지우기">🗑</button>`:''}</header>
    <div class="bar"><i style="width:${p.pct}%"></i></div>
    ${r.entry?`<div class="entry"><span>들어오는 조건</span>${esc(r.entry)}</div>`:''}
-   <ol class="fsteps">${(r.steps||[]).map((s,i)=>{const sp=s.spot?S('spots',s.spot):null;return `<li class="fstep ${s.st||''}" data-step="${i}" title="${esc(s.note||'')}"><i>${STI[s.st||'']||i+1}</i><div><b>${esc(stepTitle(s))}</b>${sp&&s.title?`<small>📍 ${esc(spotName(s.spot))}</small>`:''}${s.note?`<small>${esc(s.note)}</small>`:''}</div></li>`}).join('')}${G?`<li class="fstep add" data-s="addstep" data-id="${esc(r.id)}">＋ 단계</li>`:''}</ol>
+   <ol class="fsteps">${(r.steps||[]).map((s,i)=>{const sp=s.spot?S('spots',s.spot):null;return `<li class="fstep ${s.st||''}" data-step="${i}" data-id="${i}" title="${esc(s.note||'')}${G?(s.note?'\n':'')+'Shift+클릭: 예정 → 진행 중 → 끝 · 우클릭: 메뉴 · 끌어서 순서':''}"><i>${STI[s.st||'']||i+1}</i><div><b>${esc(stepTitle(s))}</b>${sp&&s.title?`<small>📍 ${esc(spotName(s.spot))}</small>`:''}${s.note?`<small>${esc(s.note)}</small>`:''}</div></li>`}).join('')}${G?`<li class="fstep add" data-s="addstep" data-id="${esc(r.id)}">＋ 단계</li>`:''}</ol>
    ${r.goal?`<div class="goal"><span>도착</span>${esc(r.goal)}</div>`:''}
    ${nx.length?`<div class="fnext">${nx.map(x=>`<button type="button" class="chip" data-gonext="${esc(x.id)}" style="border-color:${esc(x.color||'#888')}">→ ${esc(x.name)}</button>`).join('')}</div>`:''}
    ${G&&N().data('sec','route:'+r.id)?`<div class="gmnote"><b>GM 메모</b><div class="pre">${esc(N().data('sec','route:'+r.id).t||'')}</div></div>`:''}</article>`}
@@ -50,9 +77,9 @@
   if(!cur.length&&!nx.length)return '';
   return `<div class="nowstrip">${cur.map(({r,i})=>{const st=r.steps[i];const sp=st.spot?N().data('spots',st.spot):null;const after=r.steps.slice(i+1).find(x=>!x.st);return `<div class="nowcard" style="--c:${r.color||'#888'}"><small>지금 · ${esc(r.name||'')} ${i+1}/${r.steps.length}</small><b>${esc(stepTitle(st))}</b>${sp&&st.title?`<span>📍 ${esc(spotName(st.spot))}</span>`:''}${st.note?`<span>${esc(st.note)}</span>`:''}${after?`<span class="dim">다음 → ${esc(stepTitle(after))}</span>`:'<span class="dim">마지막 단계</span>'}<div class="row" style="gap:4px;margin-top:6px">${st.spot?`<button class="btn xs ghost" data-s="gomap" data-id="${esc(st.spot)}">지도</button>`:''}${G?`<button class="btn xs pri" data-s="adv" data-id="${esc(r.id)}">끝 → 다음</button>`:''}</div></div>`}).join('')}${!cur.length?`<div class="nowcard idle"><small>진행 중인 단계가 없어요</small><b>${nx.slice(0,3).map(r=>esc(r.name)).join(' · ')}${nx.length>3?' …':''}</b>${G?'<span class="dim">루트의 단계를 눌러 「진행 중」으로 두면 여기 보여요</span>':''}</div>`:''}</div>`}
  function lane(r){const G=N().gm();const p=prog(r);const c=r.color||'#888';const nx=(r.next||[]).map(id=>N().data('routes',id)).filter(Boolean);
-  return `<div class="lane ${r.visible===false?'hidden-route':''}" data-route="${esc(r.id)}" style="--c:${c}"><div class="laneh"><h3>${esc(r.name||'루트')}</h3>${N().visBadge(r._vis,'routes',r.id)}${r.visible===false?'<span class="visb gm">지도에 선 숨김</span>':''}<span class="bar"><i style="width:${p.pct}%"></i></span><span class="prog">${p.done}/${p.n}</span>${G?`<button class="btn xs" data-s="edit" data-id="${esc(r.id)}">고치기</button>`:''}</div>
+  return `<div class="lane ${r.visible===false?'hidden-route':''}" data-route="${esc(r.id)}" data-id="${esc(r.id)}" style="--c:${c}"><div class="laneh ${G?'dragh':''}"><h3>${esc(r.name||'루트')}</h3>${window.NT_FAV?NT_FAV.btn('routes',r.id,r.name):''}${N().visBadge(r._vis,'routes',r.id)}${r.visible===false?'<span class="visb gm">지도에 선 숨김</span>':''}<span class="bar"><i style="width:${p.pct}%"></i></span><span class="prog">${p.done}/${p.n}</span>${G?`<button class="btn xs" data-s="edit" data-id="${esc(r.id)}">고치기</button><button class="btn xs ghost danger rdel" data-s="del" data-id="${esc(r.id)}" title="루트 지우기">🗑</button>`:''}</div>
    ${r.entry?`<div class="entry">들어오는 조건 · ${esc(r.entry)}</div>`:''}${r.goal?`<div class="goal">${esc(r.goal)}</div>`:''}
-   <div class="steps">${(r.steps||[]).map((s,i)=>`<button type="button" class="step ${s.st||''} ${U.sel===r.id&&U.step===i?'on':''}" data-step="${i}" title="${esc(s.note||'')}"><span class="sno">${i+1}</span><span class="st">${s.st==='done'?'✓':s.st==='now'?'▶':s.st==='skip'?'↷':s.st==='fail'?'✗':''}</span><b>${esc(stepTitle(s))}</b>${s.note?`<small>${esc(s.note)}</small>`:''}</button>`).join('')}${G?`<button type="button" class="stepadd" data-s="addstep" data-id="${esc(r.id)}" title="단계 더하기">＋</button>`:''}</div>
+   <div class="steps">${(r.steps||[]).map((s,i)=>`<button type="button" class="step ${s.st||''} ${U.sel===r.id&&U.step===i?'on':''}" data-step="${i}" data-id="${i}" ${G?'data-drag':''} title="${esc(s.note||'')}${G?(s.note?'\n':'')+'Shift+클릭: 예정 → 진행 중 → 끝 · 우클릭: 메뉴 · 끌어서 순서':''}"><span class="sno">${i+1}</span><span class="st">${s.st==='done'?'✓':s.st==='now'?'▶':s.st==='skip'?'↷':s.st==='fail'?'✗':''}</span><b>${esc(stepTitle(s))}</b>${s.note?`<small>${esc(s.note)}</small>`:''}</button>`).join('')}${G?`<button type="button" class="stepadd" data-s="addstep" data-id="${esc(r.id)}" title="단계 더하기">＋</button>`:''}</div>
    ${r.note&&(G||true)?`<div class="small pre" style="color:var(--fg2);margin-top:4px">${esc(r.note)}</div>`:''}
    ${nx.length?`<div class="next">→ 다음: ${nx.map(x=>`<span style="color:${esc(x.color||'#fff')}">${esc(x.name)}</span>`).join(' · ')}</div>`:''}
    ${G&&N().data('sec','route:'+r.id)?`<div class="gmnote"><b>GM 메모</b><div class="pre">${esc(N().data('sec','route:'+r.id).t||'')}</div></div>`:''}</div>`}
@@ -61,6 +88,7 @@
   if(k==='adv'){await N().patch('routes',id,r=>{const i=(r.steps||[]).findIndex(x=>x.st==='now');if(i<0)return;r.steps[i].st='done';const j=r.steps.findIndex((x,ix)=>ix>i&&!x.st);if(j>=0)r.steps[j].st='now'});return}
   if(k==='new'){const nid=N().uid('r');await N().put('routes',nid,{name:'새 루트',group:U.group||'',color:PAL[routes().length%PAL.length],entry:'',goal:'',note:'',next:[],order:routes().length,visible:true,steps:[]},'gm');edit(nid);N().armDraft('routes',nid);return}
   if(k==='edit')return edit(id);
+  if(k==='del')return delRoute(id);
   if(k==='addstep')return addStep(id)}
  async function addStep(rid){const spots=N().list('spots').sort((a,b)=>String(a.num||'').localeCompare(String(b.num||''),'ko',{numeric:true}));
   const md=N().openModal(`<div class="mhead"><h2>단계 더하기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div class="mrow"><label class="lbl">장소 (지도)<select id="asSpot"><option value="">— 장소 없이 제목만 —</option>${spots.map(s=>`<option value="${esc(s.id)}">${esc((s.num?s.num+'. ':'')+s.name)}</option>`).join('')}</select></label><label class="lbl">제목 (비우면 장소 이름)<input id="asTitle" type="text"></label></div><label class="lbl">메모<input id="asNote" type="text" placeholder="예: 3세션 커뮤 ② · 편 고르기"></label><div class="row" style="margin-top:12px"><span class="sp"></span><button class="btn pri" id="asOk">넣기</button></div>`);
@@ -97,7 +125,7 @@
   $$('.chk input',md).forEach(c=>c.onchange=()=>c.closest('label').classList.toggle('on',c.checked));
   $('#rtOk',md).onclick=async()=>{await N().put('routes',id,Object.assign({},r,{name:$('#rtName',md).value.trim()||'루트',group:$('#rtGroup',md).value.trim(),color:$('#rtColor',md).value,order:+$('#rtOrd',md).value||0,entry:$('#rtEntry',md).value.trim(),goal:$('#rtGoal',md).value.trim(),note:$('#rtNote',md).value.trim(),next:$$('.chk input[value]:checked',md).map(c=>c.value),visible:$('#rtVisible',md).checked}),$('#rtVis',md).value);
    const t=$('#rtSec',md).value.trim();if(t)await N().put('sec','route:'+id,{t},'gm');else if(N().doc('sec','route:'+id))await N().del('sec','route:'+id);N().closeModal()};
-  $('#rtDel',md).onclick=async()=>{if(!await N().confirmBox(`「${r.name}」 루트를 지울까요?`,'지우기'))return;await N().del('routes',id);if(N().doc('sec','route:'+id))await N().del('sec','route:'+id);N().closeModal()}}
+  $('#rtDel',md).onclick=async()=>{if(await delRoute(id))N().closeModal()}}
  N().MOD.scen={render};
  window.NT_SCEN={routes,prog};
 })();
