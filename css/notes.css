@@ -296,3 +296,23 @@ table.poll td.ops{text-align:right}
 .linkbox{display:flex;gap:6px;align-items:center;margin-top:4px}
 .linkbox input{flex:1;font-family:var(--mono);font-size:12px}
 @media(max-width:760px){.part>h3{flex-wrap:wrap;row-gap:2px}.part>h3 small{flex-basis:100%;order:5}.nowstrip{grid-template-columns:1fr}.nowcard b{font-size:14px}}
+/* 10-26 망령: 지도 위 말풍선 (핀 = 장소 요약, 얼굴 = 인물 카드) */
+.mpop{position:absolute;z-index:20;width:300px;max-width:calc(100% - 16px);background:var(--panel);border:1px solid var(--line2);border-top:3px solid var(--c,var(--yel));box-shadow:0 10px 30px rgba(0,0,0,.55);padding:10px 12px 10px;display:flex;flex-direction:column;gap:6px;cursor:default;user-select:text;transition:opacity .15s}
+.mpop.fade{opacity:.25;pointer-events:none}
+.mpop.dock{width:auto;max-height:55%;overflow:auto}
+.mpop .mph{display:flex;align-items:center;gap:8px;--c:var(--yel)}
+.mpop .mph h4{margin:0;font-family:var(--lab);font-weight:400;font-size:18px;line-height:1.2;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.mpop .mph .num{font-family:var(--head);font-size:16px;color:var(--c)}
+.mpop .mph .kdot{width:10px;height:10px;border-radius:50%;flex:none}
+.mpop .mpx{margin-left:auto;background:none;border:0;color:var(--mute);font-size:14px;cursor:pointer;padding:2px 4px;flex:none}
+.mpop .mpx:hover{color:var(--fg)}
+.mpop .mpm{font-size:12px;color:var(--mute)}
+.mpop .mps{margin:0;font-size:13px;line-height:1.55;white-space:pre-wrap;max-height:9.5em;overflow:auto}
+.mpop .mpf{display:flex;flex-wrap:wrap;gap:6px}
+.mpop .mpface{width:34px;height:34px;border-radius:50%;border:2px solid var(--line2);background:#333 center/cover no-repeat;color:#fff;font-size:13px;cursor:pointer;padding:0}
+.mpop .mpface:hover{border-color:var(--yel)}
+.mpop .mpbig{width:52px;height:52px;border-radius:50%;flex:none;border:2px solid var(--c);background:#333 center/cover no-repeat;display:grid;place-items:center;font-size:20px;color:#fff}
+.mpop .mpr{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0;font-size:12.5px}
+.mpop .mpr dt{color:var(--mute)}.mpop .mpr dd{margin:0}
+.mpop .mpa{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+#mapSide.flash{outline:2px solid var(--yel);outline-offset:2px}

@@ -36,7 +36,7 @@
   return `<svg class="maplinks" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${seg}${rp}</svg>`}
  /* 장소에 있는 인물(얼굴 있는 항목)을 핀 옆에 둥근 초상으로 */
  function npcLayer(m,sp){const ents=N().list('ents').filter(e=>e.face&&(e.at||[]).length);const out=[];
-  for(const s of sp){const es=ents.filter(e=>e.at.includes(s.id));es.forEach((e,i)=>out.push(`<button type="button" class="mnpc ${e._vis!=='pub'?'hid':''}" data-ent="${esc(e.id)}" style="left:calc(${s.x}% + ${14+i*26}px);top:${s.y}%;background-image:url('${cssu(e.face)}')" title="${esc(e.title)}"><i>${esc(e.title)}</i></button>`))}
+  for(const s of sp){const es=ents.filter(e=>e.at.includes(s.id));es.forEach((e,i)=>out.push(`<button type="button" class="mnpc ${e._vis!=='pub'?'hid':''}" data-ent="${esc(e.id)}" data-at="${esc(s.id)}" style="left:calc(${s.x}% + ${14+i*26}px);top:${s.y}%;background-image:url('${cssu(e.face)}')" title="${esc(e.title)}"><i>${esc(e.title)}</i></button>`))}
   return out.join('')}
 
  function mapSelHtml(m){const G=N().gm();return maps().length>1||G?`<select id="mapSel">${maps().map(x=>`<option value="${esc(x.id)}" ${x.id===m.id?'selected':''}>${esc(x.name||'지도')}${x.kind==='globe'?' (지구본)':''}</option>`).join('')}</select>`:''}
@@ -59,7 +59,7 @@
      ${npcLayer(m,sp)}
     </div></div>
     <aside class="side" id="mapSide">${sel?spotPanel(sel,m):mapPanel(m,sp)}</aside></div>`;
-  bind(el);fit(el,m)}
+  bind(el);fit(el,m);showPop(el)}
  function legendHtml(){return `<div class="legend">${KINDS.map(([k,,c])=>`<span><i style="background:${c}"></i>${k}</span>`).join('')}<span><i class="pc"></i>PC 위치</span></div>`}
  function routeLegend(mid){const G=N().gm();const S=N().data.bind(N());const rs=N().list('routes').filter(r=>(r.visible!==false||G)&&(r.steps||[]).some(x=>x.spot&&S('spots',x.spot)&&S('spots',x.spot).map===mid)).sort((a,b)=>(a.order||0)-(b.order||0));if(!rs.length)return '';
   return `<div class="sec">루트 <small class="dim">이름을 누르면 지도에서 감추기 · 보이기</small></div><div class="rlegend">${rs.map(r=>`<div class="rl ${U.hideR&&U.hideR[r.id]?'off':''}"><button type="button" class="rlname" data-rt="${esc(r.id)}"><i style="background:${esc(r.color||'#888')}"></i><span>${esc(r.name||'')}</span></button>${r._vis!=='pub'?'<em class="visb gm">🔒 GM</em>':''}${G?`<button type="button" class="btn xs ${r._vis==='pub'?'':'ghost'}" data-rvis="${esc(r.id)}" title="${r._vis==='pub'?'누르면 PL 에게 감춤 (GM만)':'누르면 PL 에게 공개'}">${r._vis==='pub'?'👁 공개':'🔒 비공개'}</button>`:''}</div>`).join('')}</div>`}
@@ -78,33 +78,71 @@
   return head+body}
 
  function fit(el,m){const w=$('#mapWrap',el);if(!w)return;if(!U.fitDone||U.fitMap!==m.id){U.zoom=1;U.px=0;U.py=0;U.fitDone=true;U.fitMap=m.id;const inner=$('#mapInner',el);inner.style.transform=`translate(0px,0px) scale(1)`}}
- function apply(el){const inner=$('#mapInner',el);if(inner)inner.style.transform=`translate(${U.px}px,${U.py}px) scale(${U.zoom})`;const w=$('#mapWrap',el);if(w)w.classList.toggle('lbl',U.zoom>=1.8)}
+ function apply(el){const inner=$('#mapInner',el);if(inner)inner.style.transform=`translate(${U.px}px,${U.py}px) scale(${U.zoom})`;const w=$('#mapWrap',el);if(w)w.classList.toggle('lbl',U.zoom>=1.8);placePop(el)}
  function bind(el){
   const sel=$('#mapSel',el);if(sel)sel.onchange=()=>{U.map=sel.value;U.sel='';U.fitDone=false;N().render()};
   $$('#mapKinds button',el).forEach(b=>b.onclick=()=>{U.filter=b.dataset.k;N().render()});
   $$('[data-mode]',el).forEach(b=>b.onclick=()=>{U.mode=b.dataset.mode;N().render()});
-  el.addEventListener('click',e=>{const t=e.target;const g=t.closest('[data-go]');if(g){U.sel=g.dataset.go;N().render();return}
+  if(!el._mapClick){el._mapClick=1;el.addEventListener('click',e=>{if(N().ST.view!=='map')return;const t=e.target;
+   const pa=t.closest('[data-pop]');if(pa){return popAct(pa.dataset.pop,pa.dataset.id)}
+   const g=t.closest('[data-go]');if(g){U.sel=g.dataset.go;U.pop=g.dataset.go?{k:'spot',id:g.dataset.go}:null;N().render();return}
    const rt=t.closest('[data-rt]');if(rt){U.hideR=U.hideR||{};U.hideR[rt.dataset.rt]=!U.hideR[rt.dataset.rt];N().render();return}
    const rv=t.closest('[data-rvis]');if(rv){const r=N().doc('routes',rv.dataset.rvis);if(r)N().put('routes',rv.dataset.rvis,r.data,r.vis==='pub'?'gm':'pub');return}
-   const en=t.closest('[data-ent]');if(en){N().go('ents');setTimeout(()=>window.NT_ENTS&&NT_ENTS.select(en.dataset.ent),0);return}
+   const en=t.closest('[data-ent]');if(en&&!en.closest('#mapWrap')){N().go('ents');setTimeout(()=>window.NT_ENTS&&NT_ENTS.select(en.dataset.ent),0);return}
    const big=t.closest('img[data-big]');if(big){N().openModal(`<img src="${esc(big.dataset.big)}" style="max-width:100%;max-height:80vh;display:block;margin:auto">`,'wide');return}
-   const mb=t.closest('[data-m]');if(mb)return act(mb.dataset.m)});
+   const mb=t.closest('[data-m]');if(mb)return act(mb.dataset.m)})}
   const w=$('#mapWrap',el);if(!w)return;
   w.addEventListener('wheel',e=>{e.preventDefault();const r=w.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;const z0=U.zoom;const z=Math.max(.4,Math.min(6,z0*(e.deltaY<0?1.15:1/1.15)));U.px=mx-(mx-U.px)*z/z0;U.py=my-(my-U.py)*z/z0;U.zoom=z;apply(el)},{passive:false});
   let pd=null;const pts=new Map();let pinch=null;
-  w.addEventListener('pointerdown',e=>{pts.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pts.size===2){const [a,b]=[...pts.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y),z:U.zoom,cx:(a.x+b.x)/2,cy:(a.y+b.y)/2,px:U.px,py:U.py};pd=null;return}if(e.button!==0)return;const pin=e.target.closest('.pin');pd={x:e.clientX,y:e.clientY,px:U.px,py:U.py,pin:pin&&N().gm()&&U.mode==='sel'?pin:null,moved:false,id:e.pointerId};w.setPointerCapture(e.pointerId)});
+  w.addEventListener('pointerdown',e=>{pts.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pts.size===2){const [a,b]=[...pts.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y),z:U.zoom,cx:(a.x+b.x)/2,cy:(a.y+b.y)/2,px:U.px,py:U.py};pd=null;return}if(e.button!==0)return;if(e.target.closest('.mpop'))return;const pin=e.target.closest('.pin'),face=e.target.closest('.mnpc');pd={x:e.clientX,y:e.clientY,px:U.px,py:U.py,pin:pin&&N().gm()&&U.mode==='sel'?pin:null,downPin:pin,downFace:face,moved:false,id:e.pointerId}});
   w.addEventListener('pointermove',e=>{if(pts.has(e.pointerId))pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
    if(pinch&&pts.size>=2){const [a,b]=[...pts.values()];const d=Math.hypot(a.x-b.x,a.y-b.y)||1;const z=Math.max(.4,Math.min(6,pinch.z*d/pinch.d));const r=w.getBoundingClientRect();const mx=pinch.cx-r.left,my=pinch.cy-r.top;U.px=mx-(mx-pinch.px)*z/pinch.z;U.py=my-(my-pinch.py)*z/pinch.z;U.zoom=z;apply(el);return}
-   if(!pd)return;const dx=e.clientX-pd.x,dy=e.clientY-pd.y;if(!pd.moved&&Math.hypot(dx,dy)<4)return;pd.moved=true;
+   if(!pd)return;const dx=e.clientX-pd.x,dy=e.clientY-pd.y;if(!pd.moved&&Math.hypot(dx,dy)<5)return;if(!pd.moved){try{w.setPointerCapture(pd.id)}catch(x){}const pp=$('#mapPop',el);if(pp&&!pd.pin)pp.classList.add('fade')}pd.moved=true;
    if(pd.pin){const r=$('#mapInner',el).getBoundingClientRect();pd.pin.style.left=((e.clientX-r.left)/r.width*100)+'%';pd.pin.style.top=((e.clientY-r.top)/r.height*100)+'%';pd.pin.classList.add('dragging')}
    else{U.px=pd.px+dx;U.py=pd.py+dy;apply(el)}});
   const up=async e=>{pts.delete(e.pointerId);if(pinch){if(pts.size<2)pinch=null;return}if(!pd)return;const p=pd;pd=null;try{w.releasePointerCapture(p.id)}catch(x){}
    if(p.pin&&p.moved){const r=$('#mapInner',el).getBoundingClientRect();const x=+((e.clientX-r.left)/r.width*100).toFixed(2),y=+((e.clientY-r.top)/r.height*100).toFixed(2);await N().patch('spots',p.pin.dataset.pin,s=>{s.x=Math.max(0,Math.min(100,x));s.y=Math.max(0,Math.min(100,y))});return}
-   if(p.moved)return;
-   const pin=e.target.closest('.pin');if(pin){U.sel=pin.dataset.pin;N().render();return}
+   if(p.moved){const pp=$('#mapPop',el);if(pp)pp.classList.remove('fade');return}
+   /* 10-26 망령: 누른 곳 기준으로 판정 (포인터 캡처 뒤에는 e.target 이 지도 전체가 돼서 핀 · 얼굴 클릭이 먹지 않았다) */
+   if(p.downFace){const sp0=p.downFace.dataset.at||'';U.pop={k:'ent',id:p.downFace.dataset.ent,at:sp0};showPop(el);return}
+   if(p.downPin){const id=p.downPin.dataset.pin;U.sel=id;U.pop={k:'spot',id};N().render();return}
+   if(U.pop&&!(N().gm()&&U.mode==='add')){U.pop=null;showPop(el);return}
    if(N().gm()&&U.mode==='add'){const r=$('#mapInner',el).getBoundingClientRect();const x=+((e.clientX-r.left)/r.width*100).toFixed(2),y=+((e.clientY-r.top)/r.height*100).toFixed(2);if(x<0||x>100||y<0||y>100)return;addSpot(x,y)}};
   w.addEventListener('pointerup',up);w.addEventListener('pointercancel',e=>{pts.delete(e.pointerId);pd=null;if(pts.size<2)pinch=null})}
 
+ /* ---------- 지도 위 말풍선: 핀 = 장소 요약, 얼굴 = 인물 카드 ---------- */
+ function popHtml(){const P=U.pop;if(!P)return '';const G=N().gm();
+  if(P.k==='spot'){const s=N().data('spots',P.id);if(!s)return '';const k=kc(s.kind);const faces=N().list('ents').filter(e=>(e.at||[]).includes(P.id));
+   return `<div class="mph" style="--c:${k[2]}"><i class="kdot" style="background:${k[2]}"></i>${s.num?`<b class="num">${esc(s.num)}</b>`:''}<h4>${esc(s.name||'장소')}</h4><button type="button" class="mpx" data-pop="close" title="닫기">✕</button></div>
+    <div class="mpm">${esc(s.kind||'')}${s.area?' · '+esc(s.area):''}${N().doc('spots',P.id).vis!=='pub'?' · '+esc(N().visLabel(N().doc('spots',P.id).vis)):''}</div>
+    ${s.summary?`<p class="mps">${esc(s.summary)}</p>`:'<p class="mps dim">요약이 아직 없어요.</p>'}
+    ${faces.length?`<div class="mpf">${faces.map(e=>`<button type="button" class="mpface" data-pop="ent" data-id="${esc(e.id)}" title="${esc(e.title)}" style="${e.face?`background-image:url('${cssu(e.face)}')`:''}">${e.face?'':esc((e.title||'?')[0])}</button>`).join('')}</div>`:''}
+    <div class="mpa"><button type="button" class="btn xs" data-pop="detail" data-id="${esc(P.id)}">자세히</button>${G?`<button type="button" class="btn xs ghost" data-pop="editspot" data-id="${esc(P.id)}">고치기</button>`:''}</div>`}
+  const e=N().data('ents',P.id);if(!e)return '';const t=window.NT_ENTS?NT_ENTS.tc(e.type):['','','#888'];const rows=(e.rows||[]).filter(r=>r.k&&r.v).slice(0,4);
+  return `<div class="mph ent" style="--c:${e.color||t[2]}"><span class="mpbig" style="${e.face?`background-image:url('${cssu(e.face)}')`:''}">${e.face?'':esc((e.title||'?')[0])}</span><div style="min-width:0;flex:1"><h4>${esc(e.title||'인물')}</h4><div class="mpm">${esc(e.type||'')}${e.sub?' · '+esc(e.sub):''}</div></div><button type="button" class="mpx" data-pop="close" title="닫기">✕</button></div>
+   ${e.body?`<p class="mps">${esc(e.body)}</p>`:''}
+   ${rows.length?`<dl class="mpr">${rows.map(r=>`<dt>${esc(r.k)}</dt><dd>${esc(r.v)}</dd>`).join('')}</dl>`:''}
+   <div class="mpa"><button type="button" class="btn xs" data-pop="openent" data-id="${esc(P.id)}">항목에서 보기</button>${G?`<button type="button" class="btn xs ghost" data-pop="editent" data-id="${esc(P.id)}">고치기</button>`:''}${P.at&&N().data('spots',P.at)?`<button type="button" class="btn xs ghost" data-pop="spot" data-id="${esc(P.at)}">📍 ${esc(N().data('spots',P.at).name||'')}</button>`:''}</div>`}
+ function showPop(el){const w=$('#mapWrap',el);if(!w)return;let p=$('#mapPop',el);const h=popHtml();
+  if(!h){if(p)p.remove();return}
+  if(!p){p=document.createElement('div');p.id='mapPop';p.className='mpop';w.appendChild(p)}
+  p.innerHTML=h;p.classList.toggle('isent',U.pop.k==='ent');placePop(el)}
+ function placePop(el){const p=$('#mapPop',el),w=$('#mapWrap',el);if(!p||!w||!U.pop)return;
+  const a=U.pop.k==='spot'?$(`.pin[data-pin="${CSS.escape(U.pop.id)}"]`,w):($(`.mnpc[data-ent="${CSS.escape(U.pop.id)}"][data-at="${CSS.escape(U.pop.at||'')}"]`,w)||$(`.mnpc[data-ent="${CSS.escape(U.pop.id)}"]`,w));
+  const wr=w.getBoundingClientRect();const pw=p.offsetWidth,ph=p.offsetHeight;
+  if(!a||wr.width<520){p.style.left='8px';p.style.right='8px';p.style.top='auto';p.style.bottom='8px';p.classList.add('dock');return}
+  p.classList.remove('dock');p.style.right='auto';p.style.bottom='auto';
+  const r=a.getBoundingClientRect();let x=r.left-wr.left+r.width/2-pw/2,y=r.top-wr.top-ph-10;
+  if(y<8)y=r.bottom-wr.top+10;x=Math.max(8,Math.min(wr.width-pw-8,x));y=Math.max(8,Math.min(wr.height-ph-8,y));
+  p.style.left=x+'px';p.style.top=y+'px'}
+ function popAct(k,id){const el=document.getElementById('ntMain')||document;
+  if(k==='close'){U.pop=null;const p=document.getElementById('mapPop');if(p)p.remove();return}
+  if(k==='ent'){U.pop={k:'ent',id,at:U.pop&&U.pop.k==='spot'?U.pop.id:''};showPop(el);return}
+  if(k==='spot'||k==='detail'){U.sel=id;U.pop=k==='spot'?{k:'spot',id}:U.pop;N().render();if(k==='detail'){const sd=document.getElementById('mapSide');if(sd){const r=sd.getBoundingClientRect();if(r.top>innerHeight-80||r.bottom<0)sd.scrollIntoView({behavior:'smooth',block:'start'});sd.classList.add('flash');setTimeout(()=>sd.classList.remove('flash'),900)}}return}
+  if(k==='editspot')return editSpot(id);
+  if(k==='openent'){U.pop=null;N().go('ents');setTimeout(()=>window.NT_ENTS&&NT_ENTS.select(id),0);return}
+  if(k==='editent'){if(window.NT_ENTS&&NT_ENTS.edit)NT_ENTS.edit(id);return}}
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&U.pop&&!document.querySelector('.modalbg')){U.pop=null;const p=document.getElementById('mapPop');if(p)p.remove()}});
  async function addSpot(x,y){const m=curMap();const n=spots(m.id).length+1;const id=N().uid('s');const ok=await N().put('spots',id,{map:m.id,x,y,name:'새 장소',num:String(n),kind:'대화',area:'',summary:'',items:'',img:'',imgs:[]},'gm');if(ok){U.sel=id;U.mode='sel';N().render();editSpot(id)}}
  async function act(k){const m=curMap();
   if(k==='newmap'){const name=await N().promptBox('지도 이름','','예: 무진 전체');if(name==null)return;const id=N().uid('m');await N().put('maps',id,{name:name.trim()||'지도',img:'',w:0,h:0,order:maps().length,d:''});U.map=id;U.fitDone=false;N().render();editMap(id);return}
