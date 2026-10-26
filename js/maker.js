@@ -13,5 +13,14 @@ window.NT_MAKER=(()=>{
  const mons=tid=>{const t=trainer(tid);if(!t)return [];const ids=new Set(t.pids||[]);const out=M.pokemon.filter(p=>ids.has(p.id)||p.tid===tid);out.sort((a,b)=>[...ids].indexOf(a.id)-[...ids].indexOf(b.id));return out};
  const img=m=>m&&(m.image||m.img||'')||'';
  const folderName=id=>{const f=M.folders.find(x=>x.id===id);return f?f.name:(id||'')};
- return {load,trainers,trainer,mons,img,folderName,M};
+ /* 10-26 망령: 파티를 제작기 값 그대로 — 기술 표(타입 · 분류 · 위력)와 육성 기본 레벨은 제작기 기본 DB(data/db.js) + 공유 DB 의 기술 수정(dbedit)에서.
+    특성 · 소지품 · 포텐셜 효과 글은 포켓몬 문서의 effTxt(제작기가 저장할 때 같이 적는 사본)를 쓴다 */
+ const DBX={p:null,moves:null,lvl:[]};
+ function db(){if(DBX.p)return DBX.p;DBX.p=new Promise(res=>{const fin=()=>{const D=window.MKM_DB||{};const mv=new Map();for(const r of D.moves||[])if(r&&r[2])mv.set(r[2],r);DBX.lvl=D.lvl||[];
+    N().DBS().makerDocs('dbedit').then(L=>{for(const x of L||[]){const d=x.data||{};if(d.kind!=='moves')continue;if(d.deleted)mv.delete(d.key);else if(Array.isArray(d.row))mv.set(d.key,d.row)}}).catch(()=>{}).finally(()=>{DBX.moves=mv;res(DBX)})};
+   if(window.MKM_DB)return fin();const sc=document.createElement('script');sc.src=String((window.NT_CONFIG||{}).makerUrl||'').replace(/\/?$/,'/')+'data/db.js';sc.onload=fin;sc.onerror=()=>{DBX.moves=new Map();res(DBX)};document.head.appendChild(sc)});return DBX.p}
+ const dbReady=()=>!!DBX.moves;
+ const move=n=>(DBX.moves&&DBX.moves.get(n))||null;
+ const baseLv=rank=>{const L=DBX.lvl||[];const r=L.find(x=>x[0]===rank)||L.find(x=>x[0]===String(rank||'').replace(/[+-]+$/,''));return r?+r[2]:100};
+ return {load,trainers,trainer,mons,img,folderName,M,db,dbReady,move,baseLv};
 })();

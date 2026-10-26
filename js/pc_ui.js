@@ -19,6 +19,7 @@
    ${L.length?`<div class="split"><div><div class="pcgrid">${L.map(p=>card(p)).join('')}</div>${sel?sheet(sel):''}</div><aside class="side">${sel?sideInfo(sel):''}</aside></div>`:`<div class="empty">아직 ${NPC?'NPC':'PC'} 가 없어요.${G?` 「＋ ${NPC?'NPC':'PC'}」로 제작기 트레이너를 골라 넣어요.`:''}${!NPC&&N().me()?' 「내 PC 시트 만들기」를 눌러요.':''}</div>`}`;
   el.addEventListener('click',e=>{const pm=e.target.closest('[data-pm]');if(pm){U.mode=pm.dataset.pm;U.sel='';N().render();return}
    const en=e.target.closest('[data-goent]');if(en){N().go('ents');setTimeout(()=>window.NT_ENTS&&NT_ENTS.select(en.dataset.goent),0);return}
+   const pg=e.target.closest('[data-pmgo]');if(pg){e.preventDefault();const t=document.getElementById('pm-'+pg.dataset.pmgo);if(t){t.scrollIntoView({behavior:'smooth',block:'start'});t.classList.add('flash');setTimeout(()=>t.classList.remove('flash'),900)}return}
    const c=e.target.closest('[data-pc]');if(c){U.sel=c.dataset.pc;N().render();const sh=$('.pcsheet');if(sh)sh.scrollIntoView({behavior:'smooth',block:'start'});return}
    const b=e.target.closest('[data-p]');if(b)act(b.dataset.p,b)});
   /* 10-26 망령: 카드 끌어서 순서 바꾸기(GM) · 우클릭 · 길게 누르기 메뉴 */
@@ -37,17 +38,46 @@
   return `<div class="pcsheet" style="margin-top:14px"><div class="hero"><span class="por" style="${img?`background-image:url('${cssu(img)}')`:''}"></span><div style="flex:1;min-width:200px"><div class="row"><h2>${esc(p.name||(t&&t.name)||id)}</h2>${window.NT_FAV?NT_FAV.btn(KD,id,p.name||(t&&t.name)||id):''}${N().visBadge((N().doc(KD,id)||{}).vis,KD,id)}${ent?`<button class="btn xs ghost" data-goent="${esc(ent.id)}" title="항목(인물)으로">📇 항목</button>`:''}<span class="sp"></span>${E?`<button class="btn xs" data-p="edit" data-id="${esc(id)}">기본 칸 고치기</button>`:''}${E?`<button class="btn xs ghost" data-p="tomk" data-id="${esc(id)}" title="이 시트의 이름 · 초상 · 공개 칸을 제작기 트레이너로 보내요${t?'':' (제작기에 새로 만들어요)'}">⇪ 제작기로</button>`:''}${E&&t?`<button class="btn xs ghost" data-p="frommk" data-id="${esc(id)}" title="제작기의 이름 · 초상 · 공개 칸을 이 시트로 다시 가져와요">⇩ 제작기에서</button>`:''}${G?`<button class="btn xs ghost danger" data-p="del" data-id="${esc(id)}">빼기</button>`:''}</div>
     <div class="dim">${esc(p.player?'플레이어 · '+p.player:'')}${p.sub?(p.player?' · ':'')+esc(p.sub):''}</div>
     ${t?`<div class="rk">${['지시','육성','통솔','능력'].map(k=>`<span>${k}<b>${esc(rk[k]||'-')}</b></span>`).join('')}</div><div class="small dim">제작기 시트 · ${esc(t.kind==='npc'?'NPC':'PC')}${t.folder?' · '+esc(t.folder):''} <a href="${esc((window.NT_CONFIG||{}).makerUrl||'#')}" target="_blank" rel="noopener">제작기에서 열기</a></div>`:`<div class="small dim">제작기에 이 id 의 트레이너가 없어요 — 노트에서만 쓰는 시트${E?' · 「⇪ 제작기로」로 제작기에 만들 수 있어요':''}</div>`}
-    ${ms.length?`<div class="party">${ms.map(m=>`<div class="mon"><i style="${MK().img(m)?`background-image:url('${cssu(MK().img(m))}')`:''}"></i>${esc(m.name||'')}</div>`).join('')}</div>`:''}</div></div>
+    ${ms.length?`<div class="party">${ms.map(m=>`<a class="mon" href="#pm-${esc(m.id)}" data-pmgo="${esc(m.id)}">${monPic(m)}${esc(m.name||'')}</a>`).join('')}</div>`:''}</div></div>
+   ${partySec(t,ms)}
    <div class="rpgrid">${PUB().map(([k,l])=>box(k,l,p[k],'',E,KD)).join('')}${(!NPC&&(E||G))?PRIV.map(([k,l])=>box(k,l,priv[k],'priv',E,'pcp')).join(''):''}${G?box('t',NPC?'GM 메모 · 숨기는 것':'GM 메모',sec.t,'gm',true,'sec'):''}</div>
-   ${NPC&&ms.length?`<div class="rpbox" style="margin-top:10px"><h4>포켓몬 ${ms.length}체 <small class="dim">제작기 값</small></h4><div class="monlist">${ms.map(monRow).join('')}</div></div>`:''}
    <div class="rpbox" style="margin-top:10px"><h4>세션 기록<span class="sp"></span>${E?`<button class="btn xs ghost" data-p="logadd" data-id="${esc(id)}">＋ 기록</button>`:''}</h4><div class="sesslog">${(p.log||[]).slice().reverse().map((x,i)=>`<div class="ent"><b>${esc(x.s||'')}</b>${esc(x.t||'')}${E?` <button class="linkbtn small" data-p="logdel" data-id="${esc(id)}" data-i="${(p.log||[]).length-1-i}">지우기</button>`:''}</div>`).join('')||'<span class="dim small">세션마다 한 줄씩 남겨요</span>'}</div></div></div>`}
  const T2C={'노말':'#9aa','불꽃':'#f08030','물':'#6890f0','풀':'#78c850','전기':'#f8d030','얼음':'#98d8d8','격투':'#c03028','독':'#a040a0','땅':'#e0c068','비행':'#a890f0','에스퍼':'#f85888','벌레':'#a8b820','바위':'#b8a038','고스트':'#705898','드래곤':'#7038f8','악':'#705848','강철':'#b8b8d0','페어리':'#ee99ac'};
  const tchip=t=>t&&t!=='-'?`<em class="tch" style="background:${T2C[t]||'#666'}">${esc(t)}</em>`:'';
+ /* 10-26 망령: 파티 = 제작기 시트 그대로 (레벨 · 타입 · 종족치 · 특성 · 소지품 · 기술 · 전용 · 포텐셜) */
+ const monPic=m=>{const u=MK().img(m);return `<i class="${u?'':'noimg'}" style="${u?`background-image:url('${cssu(u)}')`:''}">${u?'':esc([...(m.name||'?')][0]||'?')}</i>`};
+ const brN=v=>String(v==null?'':v).replace(/<br\s*\/?>/gi,'\n').replace(/\\n/g,'\n');
+ const STL=['HP','공격','방어','특공','특방','스피드'];
+ function partySec(t,ms){if(!ms.length)return '';if(!MK().dbReady())MK().db().then(()=>N().render());
+  return `<div class="rpbox pty" style="margin-top:10px"><h4>파티 ${ms.length}체 <small class="dim">제작기 값 · 읽기 전용${t?'':' · 제작기에 없는 트레이너'}</small></h4><div class="ptygrid">${ms.map(m=>monCard(t||{},m)).join('')}</div></div>`}
+ function monCard(t,m){const E=m.effTxt||{};const rk=(t.ranks||{})['육성'];const lv=MK().baseLv(rk)+(Math.round(+m.dist)||0);
+  const b0=(m.base||[]).map(v=>+v||0),bu=m.baseUp&&Array.isArray(m.baseUp.base)?m.baseUp.base.map(v=>+v||0):null,bs=bu||b0,tot=bs.reduce((a,v)=>a+v,0);
+  const types=[m.t1,m.t2,m.t3].filter(x=>x&&x!=='-');
+  const mv=(m.moves||[]).map(x=>typeof x==='string'?{name:x}:x).filter(x=>x&&x.name);
+  const pots=(m.pots||[]).map((n,i)=>({n:String(n||'').replace(/[『』]/g,''),i})).filter(x=>x.n&&x.n!=='-');
+  const kindOf=i=>String((E.kinds||[])[i]||(m.potKind||[])[i]||'').replace(/^\d+(\.\d+)*\.\s*/,'');
+  const effOf=i=>brN((E.pots||[])[i]||(m.potEff||[])[i]||'');
+  const ex=[m.excl,...(m.exclX||[])].filter(x=>x&&x.name&&x.name!=='전용 포텐셜');
+  const items=[m.item?{n:m.item,e:E.it}:null,...(m.items2||[]).filter(x=>x&&x.item).map((x,k)=>({n:x.item,e:((E.its2||[])[k]||{}).it}))].filter(Boolean);
+  const line=(lab,name,eff)=>`<div class="pml"><span class="pmk">${lab}</span><b>${esc(name)}</b>${eff?`<div class="pme pre">${esc(brN(eff))}</div>`:''}</div>`;
+  return `<div class="pmc" id="pm-${esc(m.id)}">
+   <div class="pmh">${monPic(m)}<div class="pmt"><div class="row" style="gap:6px;flex-wrap:wrap"><b class="pmn">${esc(m.name||'')}</b>${m.partner?'<small class="pmb">★ 파트너</small>':''}</div>
+    <div class="row" style="gap:4px;flex-wrap:wrap;margin-top:3px"><span class="pmlv">Lv ${lv}</span>${m.pride?`<span class="pmb">프라이드 ${esc(m.pride)}</span>`:''}${types.map(tchip).join('')}${m.tera&&m.tera!=='-'?`<small class="dim">테라 ${esc(m.tera)}</small>`:''}${m.gender&&m.gender!=='-'?`<small class="dim">${esc(m.gender)}</small>`:''}</div>
+    <div class="small dim" style="margin-top:2px">${[m.egg1,m.egg2].filter(x=>x&&x!=='-').map(esc).join(' · ')}${(m.forms||[]).filter(f=>f&&f.name).length?` · 폼 ${(m.forms||[]).filter(f=>f&&f.name).map(f=>esc(f.name)).join(' · ')}`:''}</div></div></div>
+   <div class="pmst">${STL.map((l,i)=>`<span class="${bu&&bu[i]!==b0[i]?'up':''}" title="${bu&&bu[i]!==b0[i]?`포텐셜로 ${b0[i]} → ${bu[i]}`:''}"><small>${l}</small><b>${bs[i]||'-'}</b></span>`).join('')}<span class="tot"><small>합</small><b>${tot}</b></span></div>
+   ${m.ability?line('특성',m.ability,E.ab):''}${items.map(x=>line('소지품',x.n,x.e)).join('')}
+   ${mv.length?`<div class="pmmv">${mv.map(x=>{const r=MK().move(x.name);return `<div class="pmm" title="${esc(r?brN(r[13]||''):'')}">${r?tchip(r[5]):''}<b>${esc(x.name)}</b>${x.half?'<small class="pmb">할인</small>':''}<span class="sp"></span><small class="dim">${r?`${esc(r[6]||'')}${+r[7]?` · ${esc(r[7])}`:''}${r[8]&&r[8]!=='0'&&r[8]!=='-'?` · ${esc(r[8])}%`:''}`:''}</small></div>`}).join('')}</div>`:''}
+   ${ex.map(x=>line('전용',x.name,x.eff)).join('')}
+   ${pots.length?`<details class="pmpot"><summary>포텐셜 ${pots.length} <span class="dim small">${pots.map(x=>esc(x.n)).join(' · ')}</span></summary>${pots.map(x=>`<div class="pml"><span class="pmk">${esc(kindOf(x.i)||'포텐셜')}</span><b>『${esc(x.n)}』</b>${effOf(x.i)?`<div class="pme pre">${esc(effOf(x.i))}</div>`:''}</div>`).join('')}</details>`:''}
+   ${m.memo?`<details class="pmpot"><summary>메모</summary><div class="pme pre">${esc(m.memo)}</div></details>`:''}
+  </div>`}
+ window.NT_PCX={partySec,monCard};   /* 미리보기 · 점검용 */
  function monRow(m){const mv=(m.moves||[]).map(x=>typeof x==='string'?x:(x&&(x.name||x.n))||'').filter(Boolean);const pots=(m.pots||[]).filter(Boolean);
   return `<div class="monrow"><i style="${MK().img(m)?`background-image:url('${cssu(MK().img(m))}')`:''}"></i><div class="mb"><div class="row" style="gap:6px"><b>${esc(m.name||'')}</b>${tchip(m.t1)}${tchip(m.t2)}${m.tera&&m.tera!=='-'?`<small class="dim">테라 ${esc(m.tera)}</small>`:''}</div><div class="small">${m.ability?'특성 '+esc(m.ability):''}${m.item?' · 소지품 '+esc(m.item):''}${m.dist?' · 분배 '+esc(m.dist):''}</div>${mv.length?`<div class="small dim">기술 · ${mv.map(esc).join(' · ')}</div>`:''}${pots.length?`<div class="small dim">포텐셜 · ${pots.map(esc).join(' · ')}</div>`:''}${m.memo?`<div class="small pre" style="margin-top:3px">${esc(m.memo)}</div>`:''}</div></div>`}
  function sideInfo(id){const t=MK().trainer(id);if(!t)return '';const u=(t.unique||[]).filter(x=>x&&x.name);const base=t.base||{};const det=t.detail||{};
   return `<div class="card"><h3>제작기 정보 <small>읽기 전용</small></h3>${u.length?`<div class="sec">고유 포텐셜</div>${u.map(x=>`<div style="margin-bottom:6px"><b>${esc(x.name)}</b><div class="small pre dim">${esc(String(x.eff||'').replace(/<br\s*\/?>/gi,'\n'))}</div></div>`).join('')}`:''}
-   ${Object.keys(det).length?`<div class="sec">상세</div><div class="kv">${Object.entries(det).filter(([k,v])=>v).slice(0,12).map(([k,v])=>`<b>${esc(k)}</b><span class="pre">${esc(String(v))}</span>`).join('')}</div>`:''}
+   ${(t.bio||[]).filter(x=>x&&String(x.v||'').trim()).map(x=>`<div class="sec">${esc(x.k||'메모')}</div><div class="small pre">${esc(x.v)}</div>`).join('')}
+   ${Object.keys(det).length?`<div class="sec">자질 메모</div><div class="kv">${Object.entries(det).filter(([k,v])=>v).slice(0,12).map(([k,v])=>`<b>${esc(k)}</b><span class="pre">${esc(String(v))}</span>`).join('')}</div>`:''}
    ${Object.keys(base).length?`<div class="sec">기본</div><div class="kv">${Object.entries(base).filter(([k,v])=>v&&typeof v!=='object').slice(0,12).map(([k,v])=>`<b>${esc(k)}</b><span>${esc(String(v))}</span>`).join('')}</div>`:''}</div>`}
  /* ---------- 제작기 ↔ 노트 (10-26 망령) ----------
    제작기 트레이너 doc: {ord, data:{name, kind, image, folder, priv, owner, ownerName, rp:{bg,goal,bond,style,note}, pids, …}}.
