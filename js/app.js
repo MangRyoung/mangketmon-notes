@@ -46,30 +46,31 @@ window.NT=(()=>{
   return `<select class="vissel" ${id?`id="${id}"`:''} data-vis title="공개 설정">${o.map(([v,l])=>`<option value="${v}" ${v===cur?'selected':''}>${l}</option>`).join('')}</select>`}
  const visBadge=v=>!v||v==='pub'?'':`<span class="visb ${v==='gm'?'gm':'pl'}" title="${esc(visLabel(v))}">${v==='gm'?'🔒 GM':'👤 '+esc(seatName(v.slice(3))||'PL')}</span>`;
 
- async function put(kind,id,obj,vis){if(!ST.camp)return false;const cur=doc(kind,id);const v=vis||(cur?cur.vis:'pub');
+ async function put(kind,id,obj,vis){if(!ST.camp)return false;mark(kind,id);const cur=doc(kind,id);const v=vis||(cur?cur.vis:'pub');
   try{const t=await DBS().put(ST.camp,ST.secret,kind,id,obj,v);col(kind)[id]={data:clone(obj),vis:v,updated_at:typeof t==='string'?t:new Date().toISOString()};
    if(v!=='pub')DBS().ping(ST.camp,{t:'doc',kind,id});render();return true}
   catch(e){toast('저장 실패: '+e.message);return false}}
  async function patch(kind,id,fn,vis){const cur=data(kind,id);if(!cur)return false;const n=clone(cur);const r=fn(n);if(r===false)return false;return put(kind,id,n,vis)}
- async function del(kind,id){if(!ST.camp)return false;try{await DBS().del(ST.camp,ST.secret,kind,id);const had=doc(kind,id);delete col(kind)[id];if(had&&had.vis!=='pub')DBS().ping(ST.camp,{t:'del',kind,id});render();return true}catch(e){toast('지우기 실패: '+e.message);return false}}
+ async function del(kind,id){if(!ST.camp)return false;mark(kind,id);try{await DBS().del(ST.camp,ST.secret,kind,id);const had=doc(kind,id);delete col(kind)[id];if(had&&had.vis!=='pub')DBS().ping(ST.camp,{t:'del',kind,id});render();return true}catch(e){toast('지우기 실패: '+e.message);return false}}
  /* GM: 여러 문서의 공개 범위를 한 번에 (vis 'pub'|'gm'). filter(id,doc) 로 고른다 */
  async function bulkVis(kind,vis,filter,label){if(!gm())return;const rows=[];for(const [id,d] of Object.entries(col(kind))){if(filter&&!filter(id,d))continue;if(d.vis===vis)continue;rows.push({kind,id,data:d.data,vis})}
   if(!rows.length)return toast('바꿀 게 없어요');if(!await confirmBox(`${label||kind} ${rows.length}개를 ${vis==='pub'?'「모두」에게 공개':'「GM만」으로'} 할까요?`,vis==='pub'?'공개':'비공개'))return;await putMany(rows);toast(`${rows.length}개를 바꿨어요`)}
  const bulkBtns=(kind,filter,label)=>gm()?`<span class="seg bulk" title="이 탭의 문서 공개 범위를 한 번에"><button type="button" data-bulk="${kind}|gm" data-bl="${esc(label||'')}">🔒 전부 GM만</button><button type="button" data-bulk="${kind}|pub" data-bl="${esc(label||'')}">👁 전부 공개</button></span>`:'';
  document.addEventListener('click',e=>{const b=e.target.closest('[data-bulk]');if(!b)return;const [kind,vis]=b.dataset.bulk.split('|');const f=BULKF[kind];bulkVis(kind,vis,f&&f(),b.dataset.bl)});
  const BULKF={};
- async function putMany(rows){try{const n=await DBS().putMany(ST.camp,ST.secret,rows);for(const r of rows)col(r.kind)[r.id]={data:clone(r.data),vis:r.vis||'pub',updated_at:new Date().toISOString()};DBS().ping(ST.camp,{t:'all'});render();return n}catch(e){toast('가져오기 실패: '+e.message);return 0}}
+ async function putMany(rows){for(const r of rows)mark(r.kind,r.id);try{const n=await DBS().putMany(ST.camp,ST.secret,rows);for(const r of rows)col(r.kind)[r.id]={data:clone(r.data),vis:r.vis||'pub',updated_at:new Date().toISOString()};DBS().ping(ST.camp,{t:'all'});render();return n}catch(e){toast('가져오기 실패: '+e.message);return 0}}
 
  async function loadAll(){const rows=await DBS().all(ST.camp,ST.secret,null);for(const k in D)delete D[k];let mx=null;for(const r of rows){col(r.kind)[r.id]={data:r.data||{},vis:r.vis,updated_at:r.updated_at};if(!mx||r.updated_at>mx)mx=r.updated_at}ST.since=mx}
  /* 다시 맞추기: 바뀐 것만 + 지워진 것 */
  async function resync(){if(!ST.camp)return;try{const rows=await DBS().all(ST.camp,ST.secret,ST.since);for(const r of rows){col(r.kind)[r.id]={data:r.data||{},vis:r.vis,updated_at:r.updated_at};if(!ST.since||r.updated_at>ST.since)ST.since=r.updated_at}
   const ids=await DBS().ids(ST.camp,ST.secret);const have=new Set(ids.map(x=>x.kind+'/'+x.id));for(const k in D)for(const id in D[k])if(!have.has(k+'/'+id))delete D[k][id];render()}catch(e){console.warn('resync',e)}}
  let unsub=null;
+ const MINE=new Map();const mark=(k,id)=>MINE.set(k+'/'+id,Date.now());const recent=(k,id)=>{const t=MINE.get(k+'/'+id);return t&&Date.now()-t<6000};
  function listen(){if(unsub)unsub();unsub=DBS().subscribe(ST.camp,{
-  onDoc(kind,id,dat,vis,at){if(!canSee(vis)){if(doc(kind,id))delete col(kind)[id];render();return}const cur=doc(kind,id);if(cur&&cur.updated_at>=at)return;col(kind)[id]={data:dat||{},vis,updated_at:at};if(at>(ST.since||''))ST.since=at;render()},
-  onDel(kind,id){if(doc(kind,id)){delete col(kind)[id];render()}},
-  async onPing(p){if(!p)return;if(p.t==='all')return resync();if(p.t==='del'){if(doc(p.kind,p.id)){delete col(p.kind)[p.id];render()}return}
-   if(p.t==='doc'){try{const r=await DBS().get(ST.camp,ST.secret,p.kind,p.id);if(r){col(p.kind)[p.id]={data:r.data||{},vis:r.vis,updated_at:r.updated_at}}else delete col(p.kind)[p.id];render()}catch(e){}}},
+  onDoc(kind,id,dat,vis,at){if(!canSee(vis)){if(doc(kind,id))delete col(kind)[id];render();return}const cur=doc(kind,id);if(cur&&cur.updated_at>=at)return;col(kind)[id]={data:dat||{},vis,updated_at:at};if(at>(ST.since||''))ST.since=at;if(window.NT_NOTICE&&!recent(kind,id))NT_NOTICE.push(kind,id,cur?'edit':'new',dat);render()},
+  onDel(kind,id){const had=doc(kind,id);if(had){if(window.NT_NOTICE&&!recent(kind,id))NT_NOTICE.push(kind,id,'del',had.data);delete col(kind)[id];render()}},
+  async onPing(p){if(!p)return;if(p.t==='all')return resync();if(p.t==='del'){const had=doc(p.kind,p.id);if(had){if(window.NT_NOTICE&&!recent(p.kind,p.id))NT_NOTICE.push(p.kind,p.id,'del',had.data);delete col(p.kind)[p.id];render()}return}
+   if(p.t==='doc'){try{const had=doc(p.kind,p.id);const r=await DBS().get(ST.camp,ST.secret,p.kind,p.id);if(r){if(had&&had.updated_at>=r.updated_at)return;col(p.kind)[p.id]={data:r.data||{},vis:r.vis,updated_at:r.updated_at};if(window.NT_NOTICE&&!recent(p.kind,p.id))NT_NOTICE.push(p.kind,p.id,had?'edit':'new',r.data)}else delete col(p.kind)[p.id];render()}catch(e){}}},
   onStatus(st){ST.online=st==='SUBSCRIBED';const b=$('#ntLive');if(b){b.classList.toggle('on',ST.online);b.title=ST.online?'실시간 연결됨':'실시간 끊김 — 새로고침'}if(ST.online&&ST.since)resync()}})}
 
  /* ----- 그림 올리기 (줄여서) ----- */
@@ -103,7 +104,7 @@ window.NT=(()=>{
  function renderTop(top){const c=ST.campInfo||{};const role=gm()?'<span class="badge gm">GM</span>':me()?`<span class="badge seat">${esc(seatName(me())||me())}</span>`:'<span class="badge">구경</span>';
   const tabs=VIEWS.filter(([k])=>k!=='set'||gm()||me()).map(([k,n])=>`<button data-v="${k}" class="${ST.view===k?'on':''}">${n}</button>`).join('');
   top.innerHTML=`<a class="back" href="#" data-lobby>← 캠페인</a><h1 class="camp name"><b>${esc(c.name||'…')}</b>${c.data&&c.data.sub?`<small>${esc(c.data.sub)}</small>`:''}</h1>${role}<nav class="tabs" id="sceneTabs">${tabs}</nav><span class="sp"></span>
-   <span id="ntLive" class="live ${ST.online?'on':''}" title="${ST.online?'실시간 연결됨':'연결 중…'}"></span>${!ST.role?'<button class="btn xs" data-login>비밀구</button>':'<button class="btn xs ghost" data-logout title="이 브라우저에서 비밀구 지우기">나가기</button>'}
+   ${window.NT_NOTICE?NT_NOTICE.bellHtml():''}<button type="button" class="favtop" data-favdrawer title="즐겨찾기">★</button><span id="ntLive" class="live ${ST.online?'on':''}" title="${ST.online?'실시간 연결됨':'연결 중…'}"></span>${!ST.role?'<button class="btn xs" data-login>비밀구</button>':'<button class="btn xs ghost" data-logout title="이 브라우저에서 비밀구 지우기">나가기</button>'}
    <span class="vtsw compact"><button type="button" class="vtcur">${(VT.find(x=>x[0]===vtGet())||[])[1]}<i>▾</i></button><span class="vtmenu">${VT.map(([k,l])=>`<button type="button" data-vt="${k}" class="${k===vtGet()?'on':''}">${l}</button>`).join('')}</span></span>`;
   top.onclick=e=>{const t=e.target;const b=t.closest('button[data-v]');if(b){go(b.dataset.v);return}
    if(t.closest('[data-lobby]')){e.preventDefault();leave();return}

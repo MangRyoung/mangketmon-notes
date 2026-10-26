@@ -26,7 +26,9 @@
  function rail(){const L=get().filter(alive);const open=(()=>{try{return localStorage.getItem('nt_fav_open')!=='0'}catch(e){return true}})();
   return `<aside id="ntFav" class="${open?'':'closed'}"><button type="button" class="favh" data-favtoggle title="즐겨찾기 접기 · 펴기">★ 즐겨찾기 <small>${L.length}</small></button>
    ${open?`<div class="favl">${L.map((f,i)=>`<button type="button" class="favi" data-favgo="${i}"><i>${ICON[f.kind]||'•'}</i><span>${esc(labelOf(f))}</span><em data-favx="${i}" title="빼기">×</em></button>`).join('')||'<div class="small dim" style="padding:8px 10px;line-height:1.5">장소 · 항목 · 루트 · 시트 · 세션 · 로그의 ☆ 를 누르면 여기 모여요. 누르면 바로 가요.</div>'}</div>`:''}</aside>`}
- document.addEventListener('click',e=>{const t=e.target;const b=t.closest('[data-fav]');if(b){e.stopPropagation();const [k,id]=b.dataset.fav.split('|');toggle(k,id,b.dataset.favl);return}
+ document.addEventListener('click',e=>{const t=e.target;if(t.closest('[data-favdrawer]')){document.body.classList.toggle('favopen');return}
+  if(document.body.classList.contains('favopen')&&(t.closest('[data-favgo]')||(!t.closest('#ntFav')&&!t.closest('[data-fav]'))))document.body.classList.remove('favopen');
+  const b=t.closest('[data-fav]');if(b){e.stopPropagation();const [k,id]=b.dataset.fav.split('|');toggle(k,id,b.dataset.favl);return}
   const x=t.closest('[data-favx]');if(x){e.stopPropagation();const L=get();L.splice(+x.dataset.favx,1);set(L);N().render();return}
   const g=t.closest('[data-favgo]');if(g){const L=get().filter(alive);const f=L[+g.dataset.favgo];if(f)go(f);return}
   const tg=t.closest('[data-favtoggle]');if(tg){try{localStorage.setItem('nt_fav_open',localStorage.getItem('nt_fav_open')==='0'?'1':'0')}catch(e){}N().render()}});
