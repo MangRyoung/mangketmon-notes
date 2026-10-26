@@ -16,10 +16,28 @@
  const entsAt=sid=>N().list('ents').filter(e=>(e.at||[]).includes(sid));
  const routeOf=id=>N().data('routes',id);
  /* 지도 위 선: 루트의 이웃 단계(장소가 있는 것끼리) + 자유 연결(links). 지도에 선 숨김(visible=false)인 루트는 GM 에게만 점선으로 */
- function segs(mid){const out=[];const S=N().data.bind(N());const G=N().gm();
-  for(const r of N().list('routes')){if(r.visible===false&&!G)continue;const st=(r.steps||[]).filter(x=>x.spot&&S('spots',x.spot)&&S('spots',x.spot).map===mid);for(let i=1;i<st.length;i++){const a=S('spots',st[i-1].spot),b=S('spots',st[i].spot);out.push({a,b,color:r.color||'#fff',dash:r.visible===false,done:['done','skip','fail'].includes(st[i].st),now:st[i].st==='now'})}}
-  for(const l of links()){const a=S('spots',l.a),b=S('spots',l.b);if(a&&b&&a.map===mid&&b.map===mid)out.push({a,b,color:(routeOf(l.route)||{}).color||'#9aa',dash:false})}
+ function segs(mid){const out=[];const S=N().data.bind(N());
+  for(const l of links()){const a=S('spots',l.a),b=S('spots',l.b);if(a&&b&&a.map===mid&&b.map===mid)out.push({a,b,color:(routeOf(l.route)||{}).color||'#9aa'})}
   return out}
+ /* 루트 한 줄 = 그 지도의 단계 장소를 차례로 이은 폴리라인 (픽셀 좌표). 다른 지도의 단계는 건너뛴다 */
+ function routePaths(m){const S=N().data.bind(N());const G=N().gm();const W=+m.w||1000,H=+m.h||700;const out=[];
+  for(const r of N().list('routes').sort((a,b)=>(a.order||0)-(b.order||0))){if(r.visible===false&&!G)continue;if(U.hideR&&U.hideR[r.id])continue;
+   const pts=(r.steps||[]).map((st,i)=>{const sp=st.spot&&S('spots',st.spot);return sp&&sp.map===m.id?{x:sp.x/100*W,y:sp.y/100*H,st:st.st||'',i}:null}).filter(Boolean);if(pts.length<1)continue;
+   out.push({r,pts,hidden:r.visible===false||r._vis!=='pub'})}
+  return out}
+ function routeSvg(m){const W=+m.w||1000,H=+m.h||700;const k=Math.max(W,H)/1000;/* 지도 크기에 맞춘 굵기 */
+  const seg=segs(m.id).map(g=>`<line x1="${g.a.x/100*W}" y1="${g.a.y/100*H}" x2="${g.b.x/100*W}" y2="${g.b.y/100*H}" stroke="${esc(g.color)}" stroke-width="${4*k}" stroke-dasharray="${8*k} ${8*k}" opacity=".7"/>`).join('');
+  const rp=routePaths(m).map(({r,pts,hidden})=>{const c=esc(r.color||'#e4002b');const d=pts.map((p,i)=>(i?'L':'M')+p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' ');
+   const nowI=pts.findIndex(p=>p.st==='now');
+   const lab=pts.length>1?{x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2}:{x:pts[0].x,y:pts[0].y-30*k};
+   return `<g class="rt ${hidden?'hid':''}" data-rid="${esc(r.id)}">${pts.length>1?`<path d="${d}" stroke="#000" stroke-width="${11*k}" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".5"/><path d="${d}" stroke="${c}" stroke-width="${7*k}" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="${hidden?.5:.9}" ${hidden?`stroke-dasharray="${18*k} ${14*k}"`:''}/>`:''}
+    ${pts.map((p,i)=>`<circle cx="${p.x}" cy="${p.y}" r="${(p.st==='now'?15:11)*k}" fill="${['done','skip','fail'].includes(p.st)?'#222':c}" stroke="${p.st==='now'?'#fff':'#fff'}" stroke-width="${3*k}" opacity="${['done','skip','fail'].includes(p.st)?.9:1}"/><text x="${p.x}" y="${p.y+4.5*k}" font-size="${12*k}" text-anchor="middle" fill="#fff" font-weight="bold" paint-order="stroke" stroke="#000" stroke-width="${2*k}">${p.i+1}</text>`).join('')}
+    <text x="${lab.x+14*k}" y="${lab.y-10*k}" font-size="${15*k}" fill="${c}" stroke="#000" stroke-width="${4*k}" paint-order="stroke" font-weight="bold">${esc(r.name||'')}${nowI>=0?' ▶':''}</text></g>`}).join('');
+  return `<svg class="maplinks" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${seg}${rp}</svg>`}
+ /* 장소에 있는 인물(얼굴 있는 항목)을 핀 옆에 둥근 초상으로 */
+ function npcLayer(m,sp){const ents=N().list('ents').filter(e=>e.face&&(e.at||[]).length);const out=[];
+  for(const s of sp){const es=ents.filter(e=>e.at.includes(s.id));es.forEach((e,i)=>out.push(`<button type="button" class="mnpc ${e._vis!=='pub'?'hid':''}" data-ent="${esc(e.id)}" style="left:calc(${s.x}% + ${14+i*26}px);top:${s.y}%;background-image:url('${cssu(e.face)}')" title="${esc(e.title)}"><i>${esc(e.title)}</i></button>`))}
+  return out.join('')}
 
  function render(el){const m=curMap(),G=N().gm();
   if(!m){el.innerHTML=`<div class="toolbar"><h2>지도</h2></div><div class="empty">아직 지도가 없어요.${G?'<br><button class="btn sm pri" data-m="newmap" style="margin-top:10px">＋ 지도 만들기 (그림 올리기)</button>':''}</div>`;bind(el);return}
@@ -33,13 +51,16 @@
    <div class="split">
     <div class="mapwrap" id="mapWrap" data-mode="${U.mode}" style="--ar:${m.w&&m.h?(m.h/m.w).toFixed(4):0.66}"><div class="mapinner" id="mapInner" style="transform:translate(${U.px}px,${U.py}px) scale(${U.zoom});${m.w?`aspect-ratio:${m.w}/${m.h}`:''}">
      ${m.img?`<img class="mapimg" src="${esc(m.img)}" alt="${esc(m.name)}" draggable="false">`:'<div class="mapimg blank"></div>'}
-     <svg class="maplinks" viewBox="0 0 100 100" preserveAspectRatio="none">${segs(m.id).map(g=>`<line x1="${g.a.x}" y1="${g.a.y}" x2="${g.b.x}" y2="${g.b.y}" stroke="${esc(g.color)}" stroke-width="${g.now?3.2:2.2}" ${g.dash?'stroke-dasharray="6 5"':''} vector-effect="non-scaling-stroke" opacity="${g.done?'.95':'.7'}"/>`).join('')}</svg>
+     ${routeSvg(m)}
      ${sp.map(s=>{const k=kc(s.kind);const party=m.party===s.id;return `<button type="button" class="pin ${s.id===U.sel?'on':''} ${s._vis!=='pub'?'hid':''} ${party?'party':''}" data-pin="${esc(s.id)}" style="left:${s.x}%;top:${s.y}%;--c:${k[2]}" title="${esc(s.name)}${s._vis!=='pub'?' ('+N().visLabel(s._vis)+')':''}"><i></i><b>${esc(s.num||'')}</b><span>${esc(s.name)}</span>${party?'<em>PC</em>':''}</button>`}).join('')}
+     ${npcLayer(m,sp)}
     </div></div>
     <aside class="side" id="mapSide">${sel?spotPanel(sel,m):mapPanel(m,sp)}</aside></div>`;
   bind(el);fit(el,m)}
  function legendHtml(){return `<div class="legend">${KINDS.map(([k,,c])=>`<span><i style="background:${c}"></i>${k}</span>`).join('')}<span><i class="pc"></i>PC 위치</span></div>`}
- function mapPanel(m,sp){const G=N().gm();return `<div class="card"><h3>${esc(m.name||'지도')} ${N().visBadge(m._vis)}</h3>${m.d?`<p class="pre small">${esc(m.d)}</p>`:''}${legendHtml()}
+ function routeLegend(mid){const G=N().gm();const S=N().data.bind(N());const rs=N().list('routes').filter(r=>(r.visible!==false||G)&&(r.steps||[]).some(x=>x.spot&&S('spots',x.spot)&&S('spots',x.spot).map===mid)).sort((a,b)=>(a.order||0)-(b.order||0));if(!rs.length)return '';
+  return `<div class="sec">루트 <small class="dim">이름을 누르면 지도에서 감추기 · 보이기</small></div><div class="rlegend">${rs.map(r=>`<div class="rl ${U.hideR&&U.hideR[r.id]?'off':''}"><button type="button" class="rlname" data-rt="${esc(r.id)}"><i style="background:${esc(r.color||'#888')}"></i><span>${esc(r.name||'')}</span></button>${r._vis!=='pub'?'<em class="visb gm">🔒 GM</em>':''}${G?`<button type="button" class="btn xs ${r._vis==='pub'?'':'ghost'}" data-rvis="${esc(r.id)}" title="${r._vis==='pub'?'누르면 PL 에게 감춤 (GM만)':'누르면 PL 에게 공개'}">${r._vis==='pub'?'👁 공개':'🔒 비공개'}</button>`:''}</div>`).join('')}</div>`}
+ function mapPanel(m,sp){const G=N().gm();return `<div class="card"><h3>${esc(m.name||'지도')} ${N().visBadge(m._vis)}</h3>${m.d?`<p class="pre small">${esc(m.d)}</p>`:''}${legendHtml()}${routeLegend(m.id)}
    <div class="splist">${sp.sort((a,b)=>String(a.num||'').localeCompare(String(b.num||''),'ko',{numeric:true})).map(s=>`<button type="button" class="sprow" data-go="${esc(s.id)}"><i style="background:${kc(s.kind)[2]}"></i><b>${esc(s.num||'')}</b><span>${esc(s.name)}</span><small>${esc(s.area||'')}</small>${N().visBadge(s._vis)}</button>`).join('')||'<div class="small dim">장소가 없어요. '+(G?'「＋ 장소 찍기」로 지도 위를 눌러요.':'')+'</div>'}</div></div>`}
  function spotPanel(s,m){const G=N().gm(),k=kc(s.kind);const ents=entsAt(s.id);const ls=links().filter(l=>l.a===s.id||l.b===s.id);
   const head=`<div class="card spot" style="--c:${k[2]}"><div class="row" style="gap:6px"><button class="linkbtn" data-go="">← 목록</button><span class="sp"></span>${G?`<button class="btn xs" data-m="edit">고치기</button><button class="btn xs ${m.party===s.id?'pri':'ghost'}" data-m="party" title="PC 들이 지금 있는 곳">PC 위치</button>`:''}</div>
@@ -60,6 +81,8 @@
   $$('#mapKinds button',el).forEach(b=>b.onclick=()=>{U.filter=b.dataset.k;N().render()});
   $$('[data-mode]',el).forEach(b=>b.onclick=()=>{U.mode=b.dataset.mode;N().render()});
   el.addEventListener('click',e=>{const t=e.target;const g=t.closest('[data-go]');if(g){U.sel=g.dataset.go;N().render();return}
+   const rt=t.closest('[data-rt]');if(rt){U.hideR=U.hideR||{};U.hideR[rt.dataset.rt]=!U.hideR[rt.dataset.rt];N().render();return}
+   const rv=t.closest('[data-rvis]');if(rv){const r=N().doc('routes',rv.dataset.rvis);if(r)N().put('routes',rv.dataset.rvis,r.data,r.vis==='pub'?'gm':'pub');return}
    const en=t.closest('[data-ent]');if(en){N().go('ents');setTimeout(()=>window.NT_ENTS&&NT_ENTS.select(en.dataset.ent),0);return}
    const big=t.closest('img[data-big]');if(big){N().openModal(`<img src="${esc(big.dataset.big)}" style="max-width:100%;max-height:80vh;display:block;margin:auto">`,'wide');return}
    const mb=t.closest('[data-m]');if(mb)return act(mb.dataset.m)});

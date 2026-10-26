@@ -3,14 +3,15 @@
 "use strict";
 window.NT_MAKER=(()=>{
  const N=()=>window.NT;
- const M={trainers:[],pokemon:[],at:0,loading:null};
+ const M={trainers:[],pokemon:[],folders:[],at:0,loading:null};
  const unwrap=doc=>{const d=(doc.data&&doc.data.data)||doc.data||{};return Object.assign({id:doc.id},d)};
  async function load(force){if(M.loading)return M.loading;if(!force&&M.at&&Date.now()-M.at<600000)return M;
-  M.loading=(async()=>{try{const [t,p]=await Promise.all([N().DBS().makerDocs('trainers'),N().DBS().makerDocs('pokemon')]);M.trainers=t.map(unwrap);M.pokemon=p.map(unwrap);M.at=Date.now()}catch(e){console.warn('maker',e)}finally{M.loading=null}return M})();return M.loading}
+  M.loading=(async()=>{try{const [t,p,f]=await Promise.all([N().DBS().makerDocs('trainers'),N().DBS().makerDocs('pokemon'),N().DBS().makerDocs('folders').catch(()=>[])]);M.trainers=t.map(unwrap);M.pokemon=p.map(unwrap);M.folders=f.map(unwrap);M.at=Date.now()}catch(e){console.warn('maker',e)}finally{M.loading=null}return M})();return M.loading}
  const visible=t=>!t.priv||N().gm()||t.id===N().me();
  const trainers=()=>M.trainers.filter(visible).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ko'));
  const trainer=id=>M.trainers.find(t=>t.id===id)||null;
  const mons=tid=>{const t=trainer(tid);if(!t)return [];const ids=new Set(t.pids||[]);const out=M.pokemon.filter(p=>ids.has(p.id)||p.tid===tid);out.sort((a,b)=>[...ids].indexOf(a.id)-[...ids].indexOf(b.id));return out};
  const img=m=>m&&(m.image||m.img||'')||'';
- return {load,trainers,trainer,mons,img,M};
+ const folderName=id=>{const f=M.folders.find(x=>x.id===id);return f?f.name:(id||'')};
+ return {load,trainers,trainer,mons,img,folderName,M};
 })();

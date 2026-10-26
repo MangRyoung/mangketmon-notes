@@ -6,7 +6,8 @@
  const N=()=>window.NT;const {$,$$,esc,cssu}=window.NT;
  const TYPES=[['인물','person','#1e88e5'],['조직','org','#8e44ad'],['설정','lore','#00a676'],['이벤트','event','#f08a00'],['아이템','item','#ffd23f'],['기타','etc','#8e8e8e']];
  const tc=t=>TYPES.find(x=>x[0]===t)||TYPES[TYPES.length-1];
- const U={sel:'',type:'',tag:'',q:''};
+ const U={sel:'',type:'',tag:'',q:'',tagsOpen:false,fold:{}};
+ const TAGMAX=10;
  const ents=()=>N().list('ents').sort((a,b)=>(a.order||0)-(b.order||0)||String(a.title||'').localeCompare(String(b.title||''),'ko'));
  const tags=()=>[...new Set(ents().flatMap(e=>e.tags||[]))].sort((a,b)=>a.localeCompare(b,'ko'));
  const spotName=id=>{const s=N().data('spots',id);return s?(s.num?s.num+'. ':'')+s.name:''};
@@ -16,16 +17,19 @@
   const sel=U.sel?N().data('ents',U.sel):null;
   el.innerHTML=`<div class="toolbar"><h2>항목</h2><div class="seg" id="enTypes"><button data-t="" class="${!U.type?'on':''}">전체 ${all.length}</button>${TYPES.map(([t,,c])=>{const n=all.filter(e=>e.type===t).length;return n||G?`<button data-t="${t}" class="${U.type===t?'on':''}" style="--c:${c}"><i class="kdot"></i>${t} ${n}</button>`:''}).join('')}</div>
    <input type="search" id="enQ" placeholder="찾기" value="${esc(U.q)}" style="width:150px"><span class="sp"></span>${G?'<button class="btn sm pri" data-e="new">＋ 항목</button>':''}</div>
-   ${tags().length?`<div class="tagbar">${tags().map(t=>`<button class="chip ${U.tag===t?'on':''}" data-tag="${esc(t)}">${esc(t)}</button>`).join('')}${U.tag?'<button class="chip" data-tag="">× 태그 해제</button>':''}</div>`:''}
-   <div class="split wideR"><div class="entgrid">${L.map(card).join('')||'<div class="empty">항목이 없어요.</div>'}</div><aside class="side" id="entSide">${sel?detail(sel):'<div class="card dim small">항목을 누르면 여기에 자세히 나와요.</div>'}</aside></div>`;
+   ${(()=>{const T=tags();if(!T.length)return '';const cnt=t=>all.filter(e=>(e.tags||[]).includes(t)).length;const sorted=[...T].sort((a,b)=>cnt(b)-cnt(a)||a.localeCompare(b,'ko'));const show=U.tagsOpen||U.tag?sorted:sorted.slice(0,TAGMAX);
+    return `<div class="tagbar">${U.tag?`<button class="chip on" data-tag="">${esc(U.tag)} ×</button>`:''}${show.filter(t=>t!==U.tag).map(t=>`<button class="chip" data-tag="${esc(t)}">${esc(t)}<small>${cnt(t)}</small></button>`).join('')}${sorted.length>TAGMAX&&!U.tag?`<button class="chip ghost" data-tagmore>${U.tagsOpen?'접기':'+'+(sorted.length-TAGMAX)+' 태그'}</button>`:''}</div>`})()}
+   <div class="split wideR"><div class="entcol">${U.type||q||U.tag?`<div class="entgrid">${L.map(card).join('')||'<div class="empty">항목이 없어요.</div>'}</div>`:TYPES.map(([t,,c])=>{const g=L.filter(e=>e.type===t);if(!g.length)return '';const fold=U.fold[t];return `<section class="entsec ${fold?'fold':''}" style="--c:${c}"><h3 data-fold="${t}"><i class="kdot"></i>${t}<small>${g.length}</small><span class="sp"></span><em>${fold?'펼치기 ▾':'접기 ▴'}</em></h3>${fold?'':`<div class="entgrid">${g.map(card).join('')}</div>`}</section>`}).join('')||'<div class="empty">항목이 없어요.</div>'}</div><aside class="side" id="entSide">${sel?detail(sel):'<div class="card dim small">항목을 누르면 여기에 자세히 나와요.</div>'}</aside></div>`;
   const qi=$('#enQ',el);qi.oninput=()=>{U.q=qi.value;const v=qi.value;N().render();const q2=$('#enQ');if(q2){q2.focus();q2.setSelectionRange(v.length,v.length)}};
   el.addEventListener('click',e=>{const t=e.target;const tb=t.closest('#enTypes button');if(tb){U.type=tb.dataset.t;N().render();return}
-   const tg=t.closest('[data-tag]');if(tg){U.tag=tg.dataset.tag;N().render();return}
+   const tm=t.closest('[data-tagmore]');if(tm){U.tagsOpen=!U.tagsOpen;N().render();return}
+   const fd=t.closest('[data-fold]');if(fd){U.fold[fd.dataset.fold]=!U.fold[fd.dataset.fold];N().render();return}
+   const tg=t.closest('[data-tag]');if(tg){U.tag=tg.dataset.tag===U.tag?'':tg.dataset.tag;N().render();return}
    const c=t.closest('[data-sel]');if(c&&!t.closest('button.btn')){U.sel=c.dataset.sel;N().render();const s=$('#entSide');if(s&&innerWidth<1000)s.scrollIntoView({behavior:'smooth',block:'start'});return}
    const go=t.closest('[data-spot]');if(go){N().go('map');setTimeout(()=>{window.NT_MAP.select(go.dataset.spot);N().render()},0);return}
    const big=t.closest('img[data-big]');if(big){N().openModal(`<img src="${esc(big.dataset.big)}" style="max-width:100%;max-height:80vh;display:block;margin:auto">`,'wide');return}
    const b=t.closest('[data-e]');if(b)act(b.dataset.e,b)})}
- function card(e){const t=tc(e.type);return `<button type="button" class="entcard ${e.id===U.sel?'on':''}" data-sel="${esc(e.id)}" style="--c:${e.color||t[2]}"><span class="face" style="${e.face?`background-image:url('${cssu(e.face)}')`:''}">${e.face?'':t[0][0]}</span><span class="eb"><b>${esc(e.title||'(제목 없음)')}</b><small>${esc(e.sub||'')}</small><span class="etags"><em class="ty">${esc(e.type||'')}</em>${(e.tags||[]).slice(0,4).map(x=>`<em>${esc(x)}</em>`).join('')}${N().visBadge(e._vis)}</span></span></button>`}
+ function card(e){const t=tc(e.type);return `<button type="button" class="entcard ${e.id===U.sel?'on':''}" data-sel="${esc(e.id)}" style="--c:${e.color||t[2]}"><span class="face" style="${e.face?`background-image:url('${cssu(e.face)}')`:''}">${e.face?'':t[0][0]}</span><span class="eb"><b>${esc(e.title||'(제목 없음)')}</b><small>${esc(e.sub||'')}</small><span class="etags">${(e.tags||[]).slice(0,3).map(x=>`<em>${esc(x)}</em>`).join('')}${(e.tags||[]).length>3?`<em class="more">+${e.tags.length-3}</em>`:''}${N().visBadge(e._vis)}</span></span></button>`}
  function detail(e){const G=N().gm(),t=tc(e.type);const sec=N().data('sec','ent:'+e.id);const rels=N().list('rels').filter(r=>r.a===e.id||r.b===e.id);
   return `<div class="card entd" style="--c:${e.color||t[2]}"><div class="row" style="gap:6px"><span class="chip static" style="border-color:var(--c);color:var(--c)">${esc(e.type||'')}</span>${N().visBadge(e._vis)}<span class="sp"></span>${G?`<button class="btn xs" data-e="edit" data-id="${esc(e.id)}">고치기</button><button class="btn xs ghost danger" data-e="del" data-id="${esc(e.id)}">지우기</button>`:''}</div>
    <div class="enthead">${e.face?`<img class="face" src="${esc(e.face)}" alt="" data-big="${esc(e.face)}">`:''}<div><h3>${esc(e.title||'')}</h3>${e.sub?`<div class="dim">${esc(e.sub)}</div>`:''}${(e.tags||[]).length?`<div class="etags">${e.tags.map(x=>`<em>${esc(x)}</em>`).join('')}</div>`:''}</div></div>
