@@ -74,8 +74,8 @@ window.NT_GLOBE=(()=>{
   if(sec&&sec.t)h+=`<div class="conf"><div class="ck">GM 전용 · 미공개</div><div class="pre">${esc(sec.t)}</div></div>`;
   if(it.img)h+=`<div class="gmap"><img src="${esc(it.img)}" alt="${esc(it.title)} 지도" data-big="${esc(it.img)}"></div>`;
   const ents=N().list('ents').filter(e=>(e.at||[]).includes(it.id));if(ents.length)h+=`<h3>관련 인물 · 항목</h3><div class="row" style="gap:4px;flex-wrap:wrap">${ents.map(e=>`<button type="button" class="chip" data-ent="${esc(e.id)}">${esc(e.title)}</button>`).join('')}</div>`;
-  const LG=N().MOD.logs;const logs=it.logf&&LG?LG.inFolder(it.logf):[];
-  h+=`<h3>기록 · 레이시프트</h3>${logs.length?`<div class="glogs">${logs.map(l=>`<a href="${esc(LG.viewUrl(l.id))}" target="_blank" rel="noopener">${esc((l.meta&&l.meta.ep?l.meta.ep+' · ':'')+l.title)}</a>`).join('')}</div>`:`<p class="none">아직 남은 기록이 없다.${G&&!it.logf?' <span class="small">(고치기 → 기록 폴더를 고르면 그 폴더의 로그가 여기 붙어요)</span>':''}</p>`}`;
+  const LG=N().MOD.logs;const logs=(it.logf&&LG?LG.inFolder(it.logf):[]).slice();/* 직접 쓴 기록 중 「폴더」 칸이 이 특이점 이름과 같은 것도 붙인다 */N().list('logs').filter(l=>!String(l.id).startsWith('mt_')&&l.folder&&l.folder===it.title).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))).forEach(l=>logs.push({id:l.id,title:l.title,meta:{ep:l.ep},own:1,url:l.url}));
+  h+=`<h3>기록 · 레이시프트</h3>${logs.length?`<div class="glogs">${logs.map(l=>`<a href="${esc(l.own?(l.url||'#'):LG.viewUrl(l.id))}" target="_blank" rel="noopener">${esc((l.meta&&l.meta.ep?l.meta.ep+' · ':'')+l.title)}</a>`).join('')}</div>`:`<p class="none">아직 남은 기록이 없다.${G&&!it.logf?' <span class="small">(고치기 → 기록 폴더를 고르거나, 직접 쓴 기록의 「폴더」 칸에 이 특이점 이름을 적으면 여기 붙어요)</span>':''}</p>`}`;
   return h}
  function pick(id,el){st.sel=id;const it=id?items(N().data('maps',(N().list('spots').find(s=>s.id===id)||{}).map)||curMapFor(el)).find(x=>x.id===id):null;
   if(!it){st.dive=false;animTo(20*RAD,st.lon,1,1100)}else if(it.redacted||it.lat==null){st.dive=false;animTo(st.lat,st.lon,1,1800,2*Math.PI)}else{st.dive=true;animTo(Math.max(-75,Math.min(75,it.lat))*RAD,it.lon*RAD,2.8,2000,2*Math.PI)}}
