@@ -12,7 +12,7 @@
  const ICON={spots:'📍',ents:'📇',routes:'🧭',pc:'🧑',npc:'🎭',sess:'📅',logs:'📜',map:'🗺'};
  /* 지금 이름(문서가 바뀌었을 수 있으니 저장된 label 보다 문서 우선) */
  function labelOf(f){const d=f.kind==='sess'?N().data('plan',f.id):f.kind==='logs'?null:N().data(f.kind,f.id);
-  if(f.kind==='spots'&&d)return (d.num?d.num+'. ':'')+d.name;if(f.kind==='ents'&&d)return d.title;if(f.kind==='routes'&&d)return d.name;if((f.kind==='pc'||f.kind==='npc')&&d)return d.name||f.id;if(f.kind==='sess'&&d)return (d.label?d.label+' ':'')+(d.what||'세션');if(f.kind==='map'&&d)return d.name;return f.label||f.id}
+  if(f.kind==='spots'&&d)return (d.num?d.num+'. ':'')+d.name;if(f.kind==='ents'&&d)return d.title;if(f.kind==='routes'&&d)return d.name;if((f.kind==='pc'||f.kind==='npc')&&d)return d.name||f.id;if(f.kind==='logs'){const x=N().data('logs',f.id);if(x)return x.title||f.label}if(f.kind==='sess'&&d)return (d.label?d.label+' ':'')+(d.what||'세션');if(f.kind==='map'&&d)return d.name;return f.label||f.id}
  const alive=f=>f.kind==='logs'||!!(f.kind==='sess'?N().data('plan',f.id):N().data(f.kind,f.id));
  function go(f){const L=N().MOD;
   if(f.kind==='spots'){N().go('map');setTimeout(()=>{window.NT_MAP.select(f.id);N().render()},0);return}
@@ -21,7 +21,7 @@
   if(f.kind==='routes'){N().go('scen');setTimeout(()=>{const c=document.querySelector(`.fcard[data-route="${CSS.escape(f.id)}"],.lane[data-route="${CSS.escape(f.id)}"]`);if(c){c.scrollIntoView({behavior:'smooth',block:'center'});c.classList.add('flash');setTimeout(()=>c.classList.remove('flash'),1200)}},50);return}
   if(f.kind==='pc'||f.kind==='npc'){if(L.pc&&L.pc.mode)L.pc.mode(f.kind);if(L.pc&&L.pc.select)L.pc.select(f.id);N().go('pc');return}
   if(f.kind==='sess'){N().go('plan');setTimeout(()=>{const r=document.querySelector(`[data-sess="${CSS.escape(f.id)}"]`);if(r){r.scrollIntoView({behavior:'smooth',block:'center'});r.classList.add('flash');setTimeout(()=>r.classList.remove('flash'),1200)}},50);return}
-  if(f.kind==='logs'){if(L.logs)window.open(L.logs.viewUrl(f.id),'_blank','noopener');return}}
+  if(f.kind==='logs'){if(L.logs&&N().doc('logs',f.id)&&!String(f.id).startsWith('mt_'))return L.logs.read(f.id);if(L.logs)window.open(L.logs.viewUrl(f.id),'_blank','noopener');return}}
  const btn=(kind,id,label)=>`<button type="button" class="favb ${has(kind,id)?'on':''}" data-fav="${esc(kind)}|${esc(id)}" data-favl="${esc(label||'')}" title="${has(kind,id)?'즐겨찾기에서 빼기':'즐겨찾기에 넣기'}">${has(kind,id)?'★':'☆'}</button>`;
  function rail(){const L=get().filter(alive);const open=(()=>{try{return localStorage.getItem('nt_fav_open')!=='0'}catch(e){return true}})();
   return `<aside id="ntFav" class="${open?'':'closed'}"><button type="button" class="favh" data-favtoggle title="즐겨찾기 접기 · 펴기">★ 즐겨찾기 <small>${L.length}</small></button>

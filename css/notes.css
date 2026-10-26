@@ -176,6 +176,9 @@ ul.lnk{margin:4px 0 0;padding-left:16px;font-size:13px}ul.lnk li{margin:2px 0}
 .tch{font-style:normal;font-size:10px;padding:1px 6px;color:#fff;border-radius:2px;letter-spacing:.04em;text-shadow:0 0 2px #000}
 .graphwrap text.lock{font-size:14px;pointer-events:none}
 /* ===== 기록 ===== */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}@media(max-width:640px){.grid2{grid-template-columns:1fr}}
+.logbody{white-space:pre-wrap;font-size:14px;line-height:1.7;background:var(--bg2);border:1px solid var(--line);padding:12px 14px;max-height:62vh;overflow:auto}
+.btn.danger:hover{color:var(--red2);border-color:var(--red)}
 .loglist{display:flex;flex-direction:column;gap:16px}
 .logsec h3{font-family:var(--lab);font-weight:400;letter-spacing:.08em;font-size:15px;margin:0 0 6px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line2);padding-bottom:4px}
 .logsec h3 small{font-family:var(--mono);color:var(--mute);font-size:12px}
