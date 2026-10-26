@@ -111,6 +111,38 @@ window.NT=(()=>{
  const vtSet=v=>{document.documentElement.setAttribute('data-vt',v);try{localStorage.setItem('om_vt',v)}catch(e){}render()};
  document.documentElement.setAttribute('data-vt',vtGet());
 
+
+ /* ----- 공용 조작 (10-26 망령) ----- */
+ /* 끌어서 순서 바꾸기. container 안의 itemSel 요소들을 pointer 로 끈다(모바일도). 놓으면 onOrder(ids) — ids 는 data-id 순서. 핸들이 있으면 handleSel 안에서만 시작. */
+ function sortable(container,itemSel,onOrder,opt){opt=opt||{};if(!container||container._ntSort)return;container._ntSort=1;let d=null;
+  container.addEventListener('pointerdown',e=>{if(e.button!==0)return;const it=e.target.closest(itemSel);if(!it||!container.contains(it))return;if(opt.handleSel&&!e.target.closest(opt.handleSel))return;if(e.target.closest('input,textarea,select,button:not([data-drag]),a,[data-visq],[data-fav]'))return;
+   d={it,x:e.clientX,y:e.clientY,id:e.pointerId,moved:false,ph:null}});
+  container.addEventListener('pointermove',e=>{if(!d||d.id!==e.pointerId)return;const dx=e.clientX-d.x,dy=e.clientY-d.y;if(!d.moved){if(Math.hypot(dx,dy)<6)return;d.moved=true;try{container.setPointerCapture(e.pointerId)}catch(x){}d.it.classList.add('nt-dragging');d.ph=d.it.cloneNode(true);d.ph.className+=' nt-ghost';d.ph.style.cssText+=';position:fixed;pointer-events:none;z-index:2000;opacity:.85;width:'+d.it.offsetWidth+'px;left:'+(d.it.getBoundingClientRect().left)+'px;top:'+(d.it.getBoundingClientRect().top)+'px;margin:0';document.body.appendChild(d.ph);d.ox=e.clientX-d.it.getBoundingClientRect().left;d.oy=e.clientY-d.it.getBoundingClientRect().top;document.body.classList.add('nt-sorting')}
+   e.preventDefault();d.ph.style.left=(e.clientX-d.ox)+'px';d.ph.style.top=(e.clientY-d.oy)+'px';
+   const items=$$(itemSel,container).filter(x=>x!==d.it);const horiz=opt.horizontal;let before=null;for(const x of items){const r=x.getBoundingClientRect();const mid=horiz?r.left+r.width/2:r.top+r.height/2;if((horiz?e.clientX:e.clientY)<mid){before=x;break}}
+   if(before)before.parentNode.insertBefore(d.it,before);else{const last=items[items.length-1];if(last)last.parentNode.insertBefore(d.it,last.nextSibling)}});
+  const end=e=>{if(!d||d.id!==e.pointerId)return;const was=d;d=null;try{container.releasePointerCapture(e.pointerId)}catch(x){}if(was.ph)was.ph.remove();was.it.classList.remove('nt-dragging');document.body.classList.remove('nt-sorting');
+   if(!was.moved)return;const ids=$$(itemSel,container).map(x=>x.dataset.id).filter(Boolean);if(onOrder)onOrder(ids);container.dataset.sorted='1';setTimeout(()=>{delete container.dataset.sorted},0)};
+  container.addEventListener('pointerup',end);container.addEventListener('pointercancel',end);
+  container.addEventListener('click',e=>{if(container.dataset.sorted){e.stopPropagation();e.preventDefault()}},true)}
+ /* 순서 저장 도우미: kind 문서들의 order 를 ids 순서대로 다시 매긴다 */
+ async function reorder(kind,ids,field){field=field||'order';const rows=[];ids.forEach((id,i)=>{const dd=doc(kind,id);if(dd&&dd.data[field]!==i)rows.push({kind,id,data:Object.assign({},dd.data,{[field]:i}),vis:dd.vis})});if(rows.length)await putMany(rows)}
+ /* 우클릭 · 길게 누르기 메뉴. items: [{t:'글', k:'키', danger:true, on:fn}] */
+ function ctxMenu(x,y,items){$$('.ntctx').forEach(m=>m.remove());if(!items||!items.length)return;const m=document.createElement('div');m.className='ntctx';m.innerHTML=items.map((it,i)=>it==='-'?'<hr>':`<button type="button" data-i="${i}" class="${it.danger?'danger':''}">${esc(it.t)}</button>`).join('');document.body.appendChild(m);
+  const W=m.offsetWidth,H=m.offsetHeight;m.style.left=Math.max(4,Math.min(innerWidth-W-4,x))+'px';m.style.top=Math.max(4,Math.min(innerHeight-H-4,y))+'px';
+  m.addEventListener('click',e=>{const b=e.target.closest('[data-i]');if(!b)return;e.stopPropagation();m.remove();const it=items[+b.dataset.i];if(it&&it.on)it.on()});
+  setTimeout(()=>{const off=e=>{if(!m.contains(e.target)){m.remove();document.removeEventListener('pointerdown',off,true)}};document.addEventListener('pointerdown',off,true)},0);return m}
+ /* 요소에 우클릭 + 길게 누르기(500ms) 를 건다. getItems(target,e) 가 items 를 돌려주면 메뉴를 띄운다. */
+ function bindCtx(root,sel,getItems){if(!root||root._ntCtx)return;root._ntCtx=1;
+  root.addEventListener('contextmenu',e=>{const t=e.target.closest(sel);if(!t||!root.contains(t))return;const items=getItems(t,e);if(!items||!items.length)return;e.preventDefault();ctxMenu(e.clientX,e.clientY,items)});
+  let lp=null;root.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')return;const t=e.target.closest(sel);if(!t)return;const x=e.clientX,y=e.clientY;lp={t,x,y,tm:setTimeout(()=>{lp=null;const items=getItems(t,e);if(items&&items.length){ctxMenu(x,y,items);if(navigator.vibrate)try{navigator.vibrate(10)}catch(z){}}},500)}},{passive:true});
+  const cancel=e=>{if(lp&&(e.type!=='pointermove'||Math.hypot(e.clientX-lp.x,e.clientY-lp.y)>8)){clearTimeout(lp.tm);lp=null}};root.addEventListener('pointermove',cancel,{passive:true});root.addEventListener('pointerup',cancel);root.addEventListener('pointercancel',cancel)}
+ /* 손가락 두 개 확대. el 에 걸고, get()→{zoom,px,py}, set({zoom,px,py}) 로 상태를 주고받는다. 한 손가락 끌기는 건드리지 않는다. */
+ function pinch(el,get,set,lim){lim=lim||[.3,6];const pts=new Map();let p0=null;
+  el.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pts.size===2){const [a,b]=[...pts.values()];const s=get();p0={d:Math.hypot(a.x-b.x,a.y-b.y)||1,z:s.zoom,cx:(a.x+b.x)/2,cy:(a.y+b.y)/2,px:s.px,py:s.py};el.dataset.pinching='1'}},{passive:true});
+  el.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId))return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});if(!p0||pts.size<2)return;const [a,b]=[...pts.values()];const d=Math.hypot(a.x-b.x,a.y-b.y)||1;const z=Math.max(lim[0],Math.min(lim[1],p0.z*d/p0.d));const r=el.getBoundingClientRect();const mx=p0.cx-r.left,my=p0.cy-r.top;set({zoom:z,px:mx-(mx-p0.px)*z/p0.z,py:my-(my-p0.py)*z/p0.z})},{passive:true});
+  const up=e=>{pts.delete(e.pointerId);if(pts.size<2){p0=null;setTimeout(()=>{delete el.dataset.pinching},0)}};el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up)}
+
  /* ----- 화면 ----- */
  /* 10-26 망령: 다시 그려도 안쪽 스크롤 · 입력 포커스가 안 튄다 (실시간 갱신이 올 때마다 초기화되던 것) */
  const KEEPSEL='.flow,.steps,.side,.tblwrap,.loglist,.entlist,.entgrid,.splist,.notes-grid,.pcsheet,.sess-list,[data-keep]';
@@ -170,5 +202,5 @@ window.NT=(()=>{
  window.addEventListener('DOMContentLoaded',()=>{const q=readHash();if(q.camp)open(q.camp,q.view);else render()});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&ST.camp)resync()});
 
- return {ST,D,$,$$,esc,uid,clone,cssu,gm,me,canSee,canEdit,toast,openModal,closeModal,confirmBox,promptBox,armDraft,doc,data,list,put,patch,del,putMany,bulkVis,bulkBtns,BULKF,upload,shrink,bindDrop,visSelect,visBadge,visLabel,seatName,render,go,open,leave,refreshCamp,resync,MOD,VIEWS,DBS};
+ return {ST,D,$,$$,esc,uid,clone,cssu,gm,me,canSee,canEdit,toast,openModal,closeModal,confirmBox,promptBox,armDraft,sortable,reorder,ctxMenu,bindCtx,pinch,doc,data,list,put,patch,del,putMany,bulkVis,bulkBtns,BULKF,upload,shrink,bindDrop,visSelect,visBadge,visLabel,seatName,render,go,open,leave,refreshCamp,resync,MOD,VIEWS,DBS};
 })();

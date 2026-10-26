@@ -232,3 +232,8 @@ table.t th{background:#000;font-family:var(--lab);font-weight:400;letter-spacing
 .modal.shake{animation:ntshake .3s}
 /* 10-26 망령: 터치 기기 — 호버로만 보이던 것을 늘 보이게, 작은 버튼은 누르기 쉽게 */
 @media(hover:none){#ntFav .favi em{opacity:1}.mnpc i{display:block}.visq,.favb,.mpx{min-height:30px;min-width:30px;display:inline-flex;align-items:center;justify-content:center}.mfoot{bottom:-12px}}
+
+/* 공용: 끌어 정렬 · 우클릭 메뉴 */
+.nt-dragging{opacity:.35}.nt-ghost{box-shadow:0 10px 30px rgba(0,0,0,.6);transform:rotate(-1deg)}body.nt-sorting{cursor:grabbing;user-select:none}
+.ntctx{position:fixed;z-index:1500;min-width:170px;background:var(--panel);border:1px solid var(--line2);box-shadow:6px 6px 0 #000;padding:4px;display:flex;flex-direction:column}
+.ntctx button{font:inherit;font-size:13px;text-align:left;padding:8px 12px;background:transparent;border:0;color:var(--fg);cursor:pointer}.ntctx button:hover{background:rgba(255,255,255,.08)}.ntctx button.danger{color:var(--red2)}.ntctx hr{border:0;border-top:1px solid var(--line);margin:3px 0}
