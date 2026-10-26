@@ -44,7 +44,10 @@ window.NT_STORE=(()=>{
   ping(camp,msg){try{if(S._ch)S._ch.send({type:'broadcast',event:'nt',payload:msg})}catch(e){}},
   async makerDocs(kind){const out=[];let from=0;const PAGE=1000;
    for(;;){const r=await sb().from(cfg().makerTable||'docs').select('id,data').eq('kind',kind).order('id').range(from,from+PAGE-1);if(r.error)throw err(r.error);const rows=r.data||[];out.push(...rows);if(rows.length<PAGE)break;from+=PAGE}
-   return out}
+   return out},
+  /* 로그 정리기 보관소 (kind mtlog): 목록은 제목 · 폴더 · 줄 수 · 날짜 · 세션 정보만 (본문은 안 받는다) */
+  async mtlogIndex(){const r=await sb().from(cfg().makerTable||'docs').select('id,title:data->>title,folder:data->>folder,count:data->>count,created:data->>created,updated:data->>updated,meta:data->meta').eq('kind','mtlog').order('id');if(r.error)throw err(r.error);return r.data||[]},
+  async mtlogMeta(){const r=await sb().from(cfg().makerTable||'docs').select('id,data').eq('kind','mtlogmeta');if(r.error)throw err(r.error);return r.data||[]}
  };
 
  /* ===== localStorage (시험 · 설정 없을 때) ===== */
@@ -73,7 +76,9 @@ window.NT_STORE=(()=>{
   async uploadImage(path,blob){return await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(blob)})},
   subscribe(camp,h){this._h=h;setTimeout(()=>h.onStatus&&h.onStatus('SUBSCRIBED'),10);return ()=>{this._h=null}},
   ping(){},
-  async makerDocs(){return []}
+  async makerDocs(){return []},
+  async mtlogIndex(){return [{id:'lg1',title:'1세션 · 무진 도착 (예시)',folder:'f1',count:420,created:Date.now()-86400000*7,updated:Date.now(),meta:{ep:'①',date:'2026.10.19',players:'명운 · 소라',tags:['무진','도입'],summary:'밀수입로로 들어와 눈먼 갈매기 술집에서 네 사람을 만났다.'}},{id:'lg2',title:'2세션 · 번역소 공통 배틀 (예시)',folder:'f1',count:610,created:Date.now()-86400000,updated:Date.now(),meta:{ep:'②',date:'2026.10.26',players:'명운 · 소라',tags:['배틀'],summary:''}}]},
+  async mtlogMeta(){return [{id:'tree',data:{folders:[{id:'f1',name:'무진'}],order:[['lg1','f1'],['lg2','f1']]}}]}
  };
  const api=configured()?S:L;
  api.configured=configured;

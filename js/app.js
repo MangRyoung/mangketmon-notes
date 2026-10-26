@@ -14,7 +14,7 @@ window.NT=(()=>{
  const DBS=()=>window.NT_STORE;
  const gm=()=>ST.role==='gm';
  const me=()=>ST.role&&ST.role!=='gm'?ST.role:'';
- const VIEWS=[['map','지도'],['graph','관계도'],['ents','항목'],['pc','PC 시트'],['scen','시나리오'],['plan','일정'],['set','설정']];
+ const VIEWS=[['map','지도'],['graph','관계도'],['ents','항목'],['pc','PC 시트'],['scen','시나리오'],['plan','일정'],['logs','기록'],['set','설정']];
  const MOD={};  /* view → {render(el), onDoc?} — 각 *_ui.js 가 등록 */
 
  /* ----- 알림 · 창 ----- */
