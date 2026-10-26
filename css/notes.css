@@ -383,3 +383,4 @@ table.poll td.ops{text-align:right}
 .pmpot summary{cursor:pointer;font-size:12.5px;padding:2px 0}
 .pmpot .pml{margin:5px 0 0 4px}
 @media(max-width:760px){.pty .ptygrid{grid-template-columns:1fr}.pmmv{grid-template-columns:1fr}}
+.rpgrid .rpadd{border:1px dashed var(--line2);background:transparent;color:#bbb;cursor:pointer;min-height:64px;font:inherit;font-size:13px}.rpgrid .rpadd:hover{color:#fff;border-color:var(--yel,#f5d000)}
