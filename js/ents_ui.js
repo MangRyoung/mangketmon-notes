@@ -48,18 +48,31 @@
   if(k==='del'){const e=N().data('ents',id);if(!e||!await N().confirmBox(`「${e.title}」 항목을 지울까요? 관계선도 같이 지워져요.`,'지우기'))return;for(const r of N().list('rels').filter(r=>r.a===id||r.b===id))await N().del('rels',r.id);await N().del('ents',id);if(N().doc('sec','ent:'+id))await N().del('sec','ent:'+id);U.sel='';return}}
  function edit(id){const e=N().data('ents',id);if(!e)return;const sec=N().data('sec','ent:'+id)||{};const spots=N().list('spots');
   const rows=N().clone(e.rows||[]);let face=e.face||'',photo=e.photo||'';
-  const md=N().openModal(`<div class="mhead"><h2>항목 고치기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
-   <div class="mrow"><label class="lbl">종류<select id="etType">${TYPES.map(([t])=>`<option ${t===e.type?'selected':''}>${t}</option>`).join('')}</select></label><label class="lbl" style="grid-column:span 2">제목<input id="etTitle" type="text" value="${esc(e.title||'')}"></label><label class="lbl">공개${N().visSelect(N().doc('ents',id).vis,'etVis')}</label></div>
-   <label class="lbl">한 줄 소개<input id="etSub" type="text" value="${esc(e.sub||'')}"></label>
-   <label class="lbl" style="margin-top:6px">본문<textarea id="etBody" rows="5">${esc(e.body||'')}</textarea></label>
-   <div class="mrow"><label class="lbl">태그 (쉼표로)<input id="etTags" type="text" value="${esc((e.tags||[]).join(', '))}" list="etTagL"><datalist id="etTagL">${tags().map(t=>`<option value="${esc(t)}">`).join('')}</datalist></label><label class="lbl">소속 · 편 (쉼표로)<input id="etTeams" type="text" value="${esc((e.teams||[]).join(', '))}"></label><label class="lbl">색<input id="etColor" type="color" value="${esc(e.color||tc(e.type)[2])}"></label></div>
-   <div class="sec">상세 칸 <button class="btn xs ghost" id="etRowAdd">＋ 칸</button></div><div id="etRows"></div>
-   <div class="sec">장소</div><div class="row" id="etAt">${spots.sort((a,b)=>String(a.num||'').localeCompare(String(b.num||''),'ko',{numeric:true})).map(s=>`<label class="chk chip ${(e.at||[]).includes(s.id)?'on':''}"><input type="checkbox" value="${esc(s.id)}" ${(e.at||[]).includes(s.id)?'checked':''} hidden>${esc((s.num?s.num+'. ':'')+s.name)}</label>`).join('')||'<span class="small dim">지도에 장소를 먼저 찍어요</span>'}</div>
-   <div class="sec">그림</div><div class="row" style="align-items:stretch"><div class="updz" id="etFace" style="width:120px"><div class="pv" style="${face?`background-image:url('${cssu(face)}')`:''}"></div><b>얼굴</b></div><div class="updz" id="etPhoto" style="flex:1;min-width:160px"><div class="pv" style="${photo?`background-image:url('${cssu(photo)}')`:''}"></div><b>큰 그림</b><span>끌어 놓기 · 클릭 · Ctrl+V</span></div></div>
-   <div class="row small" style="margin-top:4px"><button class="btn xs ghost" id="etFaceX">얼굴 빼기</button><button class="btn xs ghost" id="etPhotoX">큰 그림 빼기</button></div>
-   <div class="sec">GM 메모 <span class="dim">(GM 에게만 보여요)</span></div><textarea id="etSec" rows="3">${esc(sec.t||'')}</textarea>
-   <div class="row" style="margin-top:14px"><span class="sp"></span><button class="btn pri" id="etOk">저장</button></div>`);
-  const drawRows=()=>{$('#etRows',md).innerHTML=rows.map((r,i)=>`<div class="row etrow" data-i="${i}"><input type="text" data-k value="${esc(r.k)}" placeholder="칸 이름" style="width:110px"><input type="text" data-v value="${esc(r.v)}" placeholder="내용" style="flex:1"><button class="btn xs ghost danger" data-del>×</button></div>`).join('');
+  const md=N().openModal(`<div class="mhead" style="border-color:${esc(e.color||tc(e.type)[2])}"><h2>항목 고치기 <small class="dim" style="font-size:13px;font-family:var(--body)">${esc(e.title||'')}</small></h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
+   <div class="ed2">
+    <div class="edL">
+     <div class="updz face" id="etFace"><div class="pv" style="${face?`background-image:url('${cssu(face)}')`:''}"></div><b>얼굴</b><span>카드 · 관계도 · 지도 핀 옆</span></div>
+     <div class="updz" id="etPhoto"><div class="pv" style="${photo?`background-image:url('${cssu(photo)}')`:''}"></div><b>큰 그림</b><span>끌어 놓기 · 클릭 · Ctrl+V</span></div>
+     <div class="row small" style="gap:4px"><button class="btn xs ghost" id="etFaceX">얼굴 빼기</button><button class="btn xs ghost" id="etPhotoX">큰 그림 빼기</button></div>
+     <label class="lbl">종류<select id="etType">${TYPES.map(([t])=>`<option ${t===e.type?'selected':''}>${t}</option>`).join('')}</select></label>
+     <label class="lbl">공개${N().visSelect(N().doc('ents',id).vis,'etVis')}</label>
+     <label class="lbl">색<input id="etColor" type="color" value="${esc(e.color||tc(e.type)[2])}"></label>
+    </div>
+    <div class="edR">
+     <label class="lbl">제목<input id="etTitle" type="text" value="${esc(e.title||'')}" class="big"></label>
+     <label class="lbl">한 줄 소개<input id="etSub" type="text" value="${esc(e.sub||'')}"></label>
+     <label class="lbl">본문<textarea id="etBody" rows="5">${esc(e.body||'')}</textarea></label>
+     <div class="sec">상세 칸 <small class="dim">정체 · 외모 · 원하는 것 …</small><span class="sp"></span><button class="btn xs" id="etRowAdd">＋ 칸</button></div><div id="etRows" class="rowsed"></div>
+     <div class="sec">태그 · 소속</div>
+     <div class="mrow"><label class="lbl">태그 (쉼표로)<input id="etTags" type="text" value="${esc((e.tags||[]).join(', '))}"></label><label class="lbl">소속 · 편 (쉼표로)<input id="etTeams" type="text" value="${esc((e.teams||[]).join(', '))}"></label></div>
+     <div class="row" style="gap:4px;flex-wrap:wrap">${tags().slice(0,24).map(t=>`<button type="button" class="chip xs" data-addtag="${esc(t)}">${esc(t)}</button>`).join('')}</div>
+     <div class="sec">장소</div><div class="row" id="etAt" style="flex-wrap:wrap;gap:4px">${spots.sort((a,b)=>String(a.num||'').localeCompare(String(b.num||''),'ko',{numeric:true})).map(s=>`<label class="chk chip ${(e.at||[]).includes(s.id)?'on':''}"><input type="checkbox" value="${esc(s.id)}" ${(e.at||[]).includes(s.id)?'checked':''} hidden>${esc((s.num?s.num+'. ':'')+s.name)}</label>`).join('')||'<span class="small dim">지도에 장소를 먼저 찍어요</span>'}</div>
+     <div class="sec">GM 메모 <span class="dim">(GM 에게만 보여요)</span></div><textarea id="etSec" rows="3">${esc(sec.t||'')}</textarea>
+    </div>
+   </div>
+   <div class="mfoot"><button class="btn ghost" data-x>취소</button><span class="sp"></span><button class="btn pri" id="etOk">저장</button></div>`,'wide');
+  $$('[data-addtag]',md).forEach(b=>b.onclick=()=>{const i=$('#etTags',md);const cur=i.value.split(',').map(x=>x.trim()).filter(Boolean);if(!cur.includes(b.dataset.addtag))cur.push(b.dataset.addtag);i.value=cur.join(', ')});
+  const drawRows=()=>{$('#etRows',md).innerHTML=rows.map((r,i)=>`<div class="etrow" data-i="${i}"><input type="text" data-k value="${esc(r.k)}" placeholder="칸 이름"><textarea data-v rows="1" placeholder="내용">${esc(r.v)}</textarea><button class="btn xs ghost danger" data-del title="칸 빼기">×</button></div>`).join('');$$('#etRows textarea',md).forEach(t=>{const g=()=>{t.style.height='auto';t.style.height=Math.min(160,t.scrollHeight+2)+'px'};t.oninput=g;g()});
    $$('.etrow',md).forEach(r=>{const i=+r.dataset.i;r.querySelector('[data-k]').oninput=ev=>rows[i].k=ev.target.value;r.querySelector('[data-v]').oninput=ev=>rows[i].v=ev.target.value;r.querySelector('[data-del]').onclick=()=>{rows.splice(i,1);drawRows()}})};
   drawRows();$('#etRowAdd',md).onclick=()=>{rows.push({k:'',v:''});drawRows();const last=$$('.etrow [data-k]',md).pop();if(last)last.focus()};
   $$('#etAt input',md).forEach(c=>c.onchange=()=>c.closest('label').classList.toggle('on',c.checked));
