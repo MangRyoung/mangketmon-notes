@@ -4,7 +4,7 @@
 window.NT_MAKER=(()=>{
  const N=()=>window.NT;
  const M={trainers:[],pokemon:[],folders:[],at:0,loading:null};
- const unwrap=doc=>{const d=(doc.data&&doc.data.data)||doc.data||{};return Object.assign({id:doc.id},d)};
+ const unwrap=doc=>{const d=(doc.data&&doc.data.data)||doc.data||{};return Object.assign({id:doc.id,_ord:doc.data&&doc.data.ord!=null?+doc.data.ord:null},d)};
  async function load(force){if(M.loading)return M.loading;if(!force&&M.at&&Date.now()-M.at<600000)return M;
   M.loading=(async()=>{try{const [t,p,f]=await Promise.all([N().DBS().makerDocs('trainers'),N().DBS().makerDocs('pokemon'),N().DBS().makerDocs('folders').catch(()=>[])]);M.trainers=t.map(unwrap);M.pokemon=p.map(unwrap);M.folders=f.map(unwrap);M.at=Date.now()}catch(e){console.warn('maker',e)}finally{M.loading=null}return M})();return M.loading}
  const visible=t=>!t.priv||N().gm()||t.id===N().me();

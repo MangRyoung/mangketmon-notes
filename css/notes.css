@@ -357,3 +357,6 @@ table.poll td.ops{text-align:right}
 .morow .grip{color:var(--mute);letter-spacing:-2px;cursor:grab}
 .morow.nt-dragging{opacity:.35}
 .morow b{font-weight:600}
+
+/* 제작기로 보내기 10-26 */
+.tomk{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13.5px;background:var(--bg2);border:1px solid var(--line);padding:10px 12px}.tomk>div{display:contents}.tomk b{color:var(--mute);font-weight:600}
