@@ -129,7 +129,25 @@ label.chk{display:inline-flex;align-items:center;gap:6px}
 .vtsw.compact .vtmenu{display:none;position:absolute;right:-1px;top:100%;flex-direction:column;background:#000;border:1px solid rgba(255,255,255,.25);z-index:30;min-width:56px}
 .vtsw.compact.open .vtmenu{display:flex}
 .vtsw .vtcur i{font-style:normal;margin-left:4px;opacity:.7}
-#ntMain{flex:1;min-height:0;padding:14px max(14px,env(safe-area-inset-right,0px)) 40px max(14px,env(safe-area-inset-left,0px))}
+#ntBody{flex:1;display:flex;align-items:stretch;min-height:0}
+#ntMain{flex:1;min-width:0;min-height:0;padding:14px max(14px,env(safe-area-inset-right,0px)) 40px max(14px,env(safe-area-inset-left,0px))}
+#ntFavSlot{flex:none}
+#ntFav{width:220px;position:sticky;top:60px;align-self:flex-start;max-height:calc(100dvh - 70px);overflow:auto;margin:14px 0 0 14px;background:var(--panel);border:1px solid var(--line);scrollbar-width:thin}
+#ntFav.closed{width:auto}
+#ntFav .favh{all:unset;display:flex;align-items:center;gap:6px;width:100%;box-sizing:border-box;padding:8px 10px;font-family:var(--lab);letter-spacing:.08em;font-size:13px;color:var(--yel);cursor:pointer;border-bottom:1px solid var(--line)}
+#ntFav.closed .favh{border-bottom:0;writing-mode:vertical-rl;padding:10px 6px}
+#ntFav .favh small{font-family:var(--mono);color:var(--mute)}
+#ntFav .favl{display:flex;flex-direction:column;padding:4px}
+#ntFav .favi{all:unset;display:flex;align-items:center;gap:6px;padding:6px 6px;font-size:13px;cursor:pointer;border-radius:3px;color:var(--fg)}
+#ntFav .favi:hover{background:rgba(255,255,255,.06)}
+#ntFav .favi i{font-style:normal;flex:none;width:18px;text-align:center}
+#ntFav .favi span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ntFav .favi em{font-style:normal;color:var(--mute);opacity:0;padding:0 4px}
+#ntFav .favi:hover em{opacity:1}
+.favb{background:none;border:0;color:var(--mute);font-size:16px;cursor:pointer;padding:0 4px;line-height:1}
+.favb.on{color:var(--yel)}
+.flash{outline:3px solid #fff;outline-offset:2px}
+@media(max-width:1200px){#ntFavSlot{display:none}}
 @media(max-width:760px){
  .top{gap:6px;padding:6px 10px}
  .top .name{font-size:19px;max-width:48vw}
