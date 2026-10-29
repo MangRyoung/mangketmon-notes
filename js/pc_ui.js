@@ -70,10 +70,11 @@
   const UNIV=N().skin&&N().skin()==='univ';
   const X=window.NT_UNIV;
   /* 10-29 망령: 대학 — 학생증 오른쪽 = 자질 메모 · 기본 · 고유 포텐셜, 아래 = 휴대폰 · 덱 */
-  const side=UNIV?`${heroIn}${(()=>{const a=memoSec(t)+ptSec(id,t,ms,E),b=X&&t?X.uniqSec(id,t,E):'';return a||b?`<div class="idinfo">${a?`<div class="idcol">${a}</div>`:''}${b?`<div class="idcol">${b}</div>`:''}</div>`:''})()}`:heroIn;
+  const side=UNIV?`${heroIn}${(()=>{const a=memoSec(t)+ptSec(id,t,ms,E,'gauge'),b=X&&t?X.uniqSec(id,t,E):'';return a||b?`<div class="idinfo">${a?`<div class="idcol">${a}</div>`:''}${b?`<div class="idcol">${b}</div>`:''}</div>`:''})()}`:heroIn;
   const low=UNIV?(window.NT_PHONE&&NT_PHONE.panel?NT_PHONE.panel(id):'')+(X&&t?X.deckSec(id,t,E):''):(X&&t?X.uniqSec(id,t,E)+X.deckSec(id,t,E):'');
   return `<div class="pcsheet" style="margin-top:14px">${UNIV?idHero(id,p,t,rk,img,NPC,side):`<div class="hero">${heroIn}</div>`}
    ${low?`<div class="uxrow ${UNIV?'ulow':''}">${low}</div>`:''}
+   ${UNIV?ptSec(id,t,ms,E,'mons'):''}
    ${partySec(t,ms,E&&!!t)}
    <div class="rpgrid">${sheetBio(id,NPC).map((x,i)=>bioBox(id,x,E,i)).join('')}${E?`<button type="button" class="rpbox rpadd" data-p="bioadd" data-id="${esc(id)}" title="제작기 「상세」의 「+ 항목」과 같아요">＋ 항목</button>`:''}${(!NPC&&(E||G))?PRIV.map(([k,l])=>box(k,l,priv[k],'priv',E,'pcp')).join(''):''}${G?box('t',NPC?'GM 메모 · 숨기는 것':'GM 메모',sec.t,'gm',true,'sec'):''}</div>
    <div class="rpbox" style="margin-top:10px"><h4>세션 기록<span class="sp"></span>${E?`<button class="btn xs ghost" data-p="logadd" data-id="${esc(id)}">＋ 기록</button>`:''}</h4><div class="sesslog">${(p.log||[]).slice().reverse().map((x,i)=>`<div class="ent"><b>${esc(x.s||'')}</b>${esc(x.t||'')}${E?` <button class="linkbtn small" data-p="logdel" data-id="${esc(id)}" data-i="${(p.log||[]).length-1-i}">지우기</button>`:''}</div>`).join('')||'<span class="dim small">세션마다 한 줄씩 남겨요</span>'}</div></div></div>`}
@@ -81,10 +82,11 @@
  const CREST='<svg viewBox="0 0 40 46" aria-hidden="true"><path d="M20 2 37 8v14c0 11-7.5 18.5-17 22C10.5 40.5 3 33 3 22V8Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M11 16h18v14H11z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 16v14M11 16c3-2 6-2 9 0 3-2 6-2 9 0" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="20" cy="9.5" r="2.2" fill="currentColor"/></svg>';
  const stuNo=id=>{let h=7;for(const ch of String(id))h=(h*31+ch.charCodeAt(0))>>>0;return '2026-'+String(h%10000).padStart(4,'0')};
  function idHero(id,p,t,rk,img,npc,heroIn){const name=nmOf(p,t)||id;const ini=esc([...String(name)][0]||'?');
-  return `<div class="hero idwrap"><div class="idcard ${npc?'staff':''}" aria-label="${npc?'교직원증':'학생증'}">
+  const ed=canEditPc(id);
+  return `<div class="hero idwrap"><div class="idcard ${npc?'staff':''} ${ed?'ided':''}" aria-label="${npc?'교직원증':'학생증'}"${ed?` data-p="idedit" data-id="${esc(id)}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" title="눌러서 ${npc?'교직원증':'학생증'} 칸 고치기 (이름 · 소속 · 번호 · 담당 · 자질 · 사진)"`:''}>
    <div class="idc-head"><i class="idc-crest">${CREST}</i><div class="idc-org"><b>MISAG UNIVERSITY</b><small>미사그 대학교</small></div><span class="idc-kind">${npc?'교직원증<small>STAFF</small>':'학생증<small>STUDENT ID</small>'}</span></div>
    <div class="idc-body"><span class="idc-photo ${img?'':'noimg'}" style="${img?`background-image:url('${cssu(img)}')`:''}">${img?'':ini}</span>
-    <dl class="idc-f"><dt>성명</dt><dd class="idc-name">${esc(name)}</dd><dt>${npc?'직위':'소속'}</dt><dd>${esc(p.sub||'—')}</dd><dt>${npc?'번호':'학번'}</dt><dd class="idc-no">${esc(stuNo(id))}</dd>${npc?'':`<dt>담당</dt><dd>${esc(p.player||'—')}</dd>`}</dl></div>
+    <dl class="idc-f"><dt>성명</dt><dd class="idc-name">${esc(name)}</dd><dt>${npc?'직위':'소속'}</dt><dd>${esc(p.sub||'—')}</dd><dt>${npc?'번호':'학번'}</dt><dd class="idc-no">${esc(p.stuNo||stuNo(id))}</dd>${npc?'':`<dt>담당</dt><dd>${esc(p.player||'—')}</dd>`}</dl></div>
    ${t?`<div class="idc-rk">${['지시','육성','통솔','능력'].map(k=>`<span><small>${k}</small><b>${esc(rk[k]||'-')}</b></span>`).join('')}</div>`:''}
    <div class="idc-foot"><span class="idc-bar" aria-hidden="true"></span><span class="idc-yr">2026학년도</span><span class="idc-seal" aria-hidden="true">미사그<br>대학인</span></div>
   </div><div class="idside">${!npc&&window.NT_AWK?NT_AWK.idCard(id):''}${heroIn}</div></div>`}
@@ -137,7 +139,8 @@
   return {items,mons,sock:null,snap:false}}
  const ptLab=n=>{const s=String(n);const m=s.match(/^【(.+)】$/);if(m)return `<em class="ux-tag">${esc(m[1])}</em>`;const q=s.match(/^「(.+)」$/);return esc(q?q[1]:s)};
  const fmt=x=>String(Math.round((+x||0)*100)/100);
- function ptSec(id,t,ms,E){if(!t)return '';const D=ptData(t,ms);if(!D.items.length&&!ms.length)return '';
+ /* 10-30 망령 「포켓몬 서머리를 저기 붙이니 길이가 감당 안 돼 — 휴대폰 · 덱 아래 파티 부근으로 따로」: part = 'gauge'(학생증 옆, 기본 요소 막대) | 'mons'(파티 위, 포켓몬 줄) | 없음(둘 다) */
+ function ptSec(id,t,ms,E,part){if(!t)return '';const D=ptData(t,ms);const G=part!=='mons',Mo=part!=='gauge';if(!(G&&D.items.length)&&!(Mo&&ms.length))return '';
   const col=i=>PTC[i%PTC.length];const per={pride:'cost',dist:'dist',disc:'disc',once:'once'};
   const gauge=it=>{if(it.use==null)return `<div class="ptg"><span class="ptl">${ptLab(it.n)}</span><div class="ptb none"><span>제작기에서 한 번 저장하면 보여요</span></div><span class="ptn"><b>—</b> / ${fmt(it.max)}</span></div>`;
    const k=per[it.auto];const tot=Math.max(it.max,it.use)||1;const over=it.use>it.max+1e-9;let segs='',acc=0;
@@ -149,10 +152,10 @@
    return `<div class="ptm" style="--pc:${col(i)}"><a class="ptm-pic" href="#pm-${esc(m.id)}" data-pmgo="${esc(m.id)}">${monPic(m)}</a><div class="ptm-b"><div class="ptm-n"><b>${esc(m.name||'')}</b>${x.lv?`<span class="ptm-lv">Lv ${x.lv}</span>`:''}${types.map(tchip).join('')}${x.aw?`<small class="ptm-aw">각성 ${x.aw==='c'?'보조':'대가'}</small>`:''}</div>
     <div class="ptm-s">${x.pride?`<span class="ptm-pr">${esc(x.pride)}</span><span>통솔 <b>${fmt(x.cost)}</b></span>`:''}${x.dist?`<span>분배 <b>${x.dist>0?'+':''}${x.dist}</b></span>`:''}${x.disc?`<span>할인 <b>${x.disc}</b></span>`:''}${x.once?`<span><em class="ux-tag">1/시</em> <b>${x.once}</b></span>`:''}${sc?`<span>소켓 <b>${sc}</b></span>`:''}</div>
     <div class="ptm-a">${m.ability?`<span>${esc(m.ability)}</span>`:''}${m.item?`<span>${esc(m.item)}</span>`:''}</div></div>${E&&window.NT_MONED?`<button type="button" class="btn xs ghost" data-moned="${esc(m.id)}" data-id="${esc(id)}" title="제작기 화면으로 고치기">✎</button>`:''}</div>`};
-  return `<section class="ux-sec ux-pt"><h4 class="ux-h"><span>PT 서머리</span><small>${ms.length}체</small><span class="sp"></span>${D.sock?`<small class="ptsk ${D.sock.u>D.sock.m?'warn':''}">PT 기술점 <b>${fmt(D.sock.u)}</b> / ${fmt(D.sock.m)}</small>`:''}</h4>
-   ${D.items.length?`<div class="ptgs">${D.items.map(gauge).join('')}</div>`:''}
-   ${ms.length?`<div class="ptms">${ms.map(mon).join('')}</div>`:''}
-   ${D.snap?'':'<div class="small dim" style="margin-top:6px">제작기에서 이 트레이너를 한 번 저장하면 통솔점 · 프라이드 · 소켓까지 보여요</div>'}</section>`}
+  return `<section class="ux-sec ux-pt ${part==='mons'?'ux-ptm':''}"><h4 class="ux-h"><span>${part==='mons'?'파티 서머리':'PT 서머리'}</span><small>${ms.length}체</small><span class="sp"></span>${D.sock?`<small class="ptsk ${D.sock.u>D.sock.m?'warn':''}">PT 기술점 <b>${fmt(D.sock.u)}</b> / ${fmt(D.sock.m)}</small>`:''}</h4>
+   ${G&&D.items.length?`<div class="ptgs">${D.items.map(gauge).join('')}</div>`:''}
+   ${Mo&&ms.length?`<div class="ptms">${ms.map(mon).join('')}</div>`:''}
+   ${D.snap||part==='mons'?'':'<div class="small dim" style="margin-top:6px">제작기에서 이 트레이너를 한 번 저장하면 통솔점 · 프라이드 · 소켓까지 보여요</div>'}</section>`}
  function sideInfo(id){const t=MK().trainer(id);if(!t)return '';const u=(t.unique||[]).filter(x=>x&&x.name);const base=t.base||{};const det=t.detail||{};
   if(N().skin&&N().skin()==='univ')return '';
   if(window.NT_UNIV&&!Object.values(det).some(Boolean)&&!Object.values(base).some(v=>v&&typeof v!=='object'))return '';
@@ -201,6 +204,21 @@
     /* 10-29 망령: 제작기 트레이너면 이름 · 초상을 제작기에도 쓴다 (노트 칸은 사본) */
     if(tk&&(name&&name!==tk.name||image!==(tk.image||''))){const DB=N().DBS();if(DB.makerPut)try{const cur=await DB.makerGet('trainers',id);if(cur){const doc=JSON.parse(JSON.stringify(cur.data||{}));const d=doc.data||doc;if(name)d.name=name;d.image=image;await DB.makerPut('trainers',id,doc);Object.assign(tk,{name:name||tk.name,image})}}catch(x){N().toast('제작기에 못 썼어요: '+x.message)}}
     await N().put(KD,id,Object.assign({},p,{name,player:$('#pcPl',md).value.trim(),sub:$('#pcSub',md).value.trim(),image}),v?v.value:undefined);N().closeModal()};return}
+  /* 10-30 망령 「학생증은 클릭하면 안쪽 내용(이름 소속 학번 담당 자질 등)을 바꿀 수 있게」.
+     이름 · 사진 · 자질은 제작기 트레이너에 쓴다(제작기에 없으면 이 시트에만). 소속 = p.sub · 학번 = p.stuNo(비우면 자동) · 담당 = p.player */
+  if(k==='idedit'){const p=N().data(KD,id);if(!p||!canEditPc(id))return;const tk=MK().trainer(id);const rk=Object.assign({},(tk&&tk.ranks)||{});
+   const RK=['S','AAA+','AAA','AAA-','AA+','AA','AA-','A+','A','A-','B+','B','B-','C+','C','C-','D+','D','D-','E+','E','E-'];
+   const md=N().openModal(`<div class="mhead"><h2>${NPC?'교직원증':'학생증'} 고치기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>${tk?'<p class="small dim" style="margin:0 0 6px">이름 · 사진 · 자질은 제작기 트레이너에도 같이 저장돼요.</p>':''}
+    <div class="idedit"><div class="updz" id="idDz"><div class="pv" style="${imOf(p,tk)?`background-image:url('${cssu(imOf(p,tk))}')`:''}"></div><b>사진</b><span>끌어다 놓기 · 누르기</span></div>
+    <div class="mrow idef"><label class="lbl">성명<input id="idName" type="text" value="${esc(nmOf(p,tk))}"></label><label class="lbl">${NPC?'직위':'소속'}<input id="idSub" type="text" value="${esc(p.sub||'')}" placeholder="예: 고고학과 2학년"></label>
+     <label class="lbl">${NPC?'번호':'학번'}<input id="idNo" type="text" value="${esc(p.stuNo||'')}" placeholder="${esc(stuNo(id))} (비우면 자동)"></label>${NPC?'':`<label class="lbl">담당<input id="idPl" type="text" value="${esc(p.player||'')}" placeholder="플레이어"></label>`}</div></div>
+    ${tk?`<div class="sec">자질</div><div class="idrk">${['지시','육성','통솔','능력'].map(q=>`<label class="lbl">${q}<input data-rk="${q}" type="text" list="idRkL" value="${esc(rk[q]||'')}" autocomplete="off"></label>`).join('')}</div><datalist id="idRkL">${RK.map(r=>`<option value="${r}">`).join('')}</datalist><p class="small dim" style="margin:4px 0 0">자질을 바꾸면 제작기의 포인트 · 레벨 계산도 따라 바뀌어요. 템플릿 다시 적용은 제작기에서.</p>`:''}
+    <div class="row" style="margin-top:12px"><button class="btn xs ghost" id="idImgX">사진 빼기</button><span class="sp"></span><button class="btn pri" id="idOk">저장</button></div>`);
+   let image=imOf(p,tk);N().bindDrop($('#idDz',md),async fs=>{try{image=await N().upload(fs[0],'face','pc');$('#idDz .pv',md).style.backgroundImage=`url('${cssu(image)}')`}catch(x){N().toast('올리기 실패: '+x.message)}});$('#idImgX',md).onclick=()=>{image='';$('#idDz .pv',md).style.backgroundImage=''};
+   $('#idOk',md).onclick=async()=>{const b=$('#idOk',md);b.disabled=true;const name=$('#idName',md).value.trim();const R={};$$('[data-rk]',md).forEach(x=>{R[x.dataset.rk]=x.value.trim().toUpperCase()});
+    const rkCh=tk&&Object.keys(R).some(q=>R[q]!==(rk[q]||''));const mkCh=tk&&(name&&name!==tk.name||image!==(tk.image||'')||rkCh);
+    try{if(mkCh)await MK().edit('trainers',id,d=>{if(name)d.name=name;d.image=image;if(rkCh)d.ranks=Object.assign({},d.ranks||{},R)})}catch(x){N().toast('제작기에 못 썼어요: '+(x.message||x))}
+    const pl=$('#idPl',md);await N().put(KD,id,Object.assign({},p,{name,sub:$('#idSub',md).value.trim(),stuNo:$('#idNo',md).value.trim(),player:pl?pl.value.trim():(p.player||''),image}));N().closeModal();N().render()};return}
   if(k==='editbox'){const key=b.dataset.k,kind=b.dataset.kind;const docId=kind==='sec'?KD+':'+id:id;const cur=N().data(kind,docId)||{};const lab=([...PUB(),...PRIV,['t','GM 메모']].find(x=>x[0]===key)||['','메모'])[1];
    const md=N().openModal(`<div class="mhead"><h2>${esc(lab)}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><textarea id="bxT" rows="8">${esc(cur[key]||'')}</textarea><div class="row" style="margin-top:10px"><span class="small dim">${kind==='pc'||kind==='npc'?'이 시트의 공개 설정대로 보여요':kind==='pcp'?'본인과 GM 에게만 보여요':'GM 에게만 보여요'}</span><span class="sp"></span><button class="btn pri" id="bxOk">저장</button></div>`);
    $('#bxT',md).focus();$('#bxOk',md).onclick=async()=>{const n=Object.assign({},cur,{[key]:$('#bxT',md).value.trim()});const vis=kind==='pc'||kind==='npc'?undefined:kind==='pcp'?'pl:'+id:'gm';if((kind==='pc'||kind==='npc')&&!N().doc(kind,id))return N().toast('시트를 찾지 못했어요 — 새로고침해 주세요');await N().put(kind,docId,n,vis);N().closeModal()};return}

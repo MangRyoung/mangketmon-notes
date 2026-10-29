@@ -285,3 +285,16 @@ html[data-skin="univ"] .ptm-pr{background:var(--crim)}
 @media(max-width:640px){.modal.mked{width:100vw;height:100dvh;border-radius:0}.ptg{grid-template-columns:5.4em minmax(0,1fr) 6.6em}}
 .mked-w[hidden]{display:none}
 html[data-skin="univ"] .idside .party{display:none}   /* PT 서머리에 포켓몬이 있으니 큰 얼굴 줄은 숨김 */
+/* 10-30 망령: 학생증 누르면 고치기 · 포켓몬 줄은 파티 위 따로(파티 서머리) */
+html[data-skin="univ"] .idcard.ided{cursor:pointer;transition:box-shadow .15s}
+html[data-skin="univ"] .idcard.ided:hover,html[data-skin="univ"] .idcard.ided:focus-visible{outline:none;box-shadow:0 0 0 1px #b9a77f,0 0 0 4px var(--paper),0 0 0 5px var(--gold),0 0 0 7px rgba(207,174,110,.35),0 16px 34px rgba(0,0,0,.5)}
+html[data-skin="univ"] .idcard.ided::after{content:"✎";position:absolute;right:10px;bottom:72px;font-size:13px;color:var(--ink3);opacity:0;transition:opacity .15s}
+html[data-skin="univ"] .idcard.ided:hover::after{opacity:.8}
+.idedit{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.idedit .updz{width:120px;height:156px;flex:none}
+.idedit .idef{flex:1;min-width:220px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}
+.idrk{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.idrk input{text-transform:uppercase}
+@media(max-width:480px){.idrk{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ux-ptm{margin-top:10px}
+.ux-ptm .ptms{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:8px;border-top:0;padding-top:0}
