@@ -286,7 +286,7 @@ window.NT_AWK=(()=>{
    <div class="awes"><div class="row" style="gap:6px"><b>각성체 ${x.n}</b>${fx?`<span class="awfix">✦ 확정 · ${esc(fx.n)}</span>`:''}</div>
     <small>${x.mname?`제작기 「${esc(x.mname)}」${x.own?' · 올린 그림':''} · `:x.own?'올린 그림 · ':''}${x.kind==='c'?'보조':x.kind==='free'?'대가':''}${x.pride?' · 프라이드 '+esc(x.pride):''}</small>
     <div class="pre small awenote">${x.note?esc(x.note):'<span class="dim">코멘트 없음</span>'}</div>
-    ${G?`<div class="row" style="gap:6px;flex-wrap:wrap"><span class="small dim">${fx?'':pk?'✓ 원전 · '+esc(pk.n):(r.cands||[]).length?'후보 '+r.cands.length+'명':r.read?'추천 받음':'아직'}</span><span class="sp"></span>${pk?`<button class="btn xs ${fx?'':'pri'}" data-aw="fix" data-v="${esc(x.sid)}">${fx?'확정 풀기':'✦ 확정'}</button>`:''}<button class="btn xs" data-aw="godb" data-v="${esc(x.sid)}">추천 보기 →</button></div>`:''}</div>${prefHtml(x)}</div>`}
+    ${G?`<div class="row" style="gap:6px;flex-wrap:wrap"><span class="small dim">${fx?'':pk?'✓ 원전 · '+esc(pk.n):(r.cands||[]).length?'후보 '+r.cands.length+'명':r.read?'추천 받음':'아직'}</span><span class="sp"></span><button class="btn xs ${fx||!pk?'':'pri'}" data-aw="fix" data-v="${esc(x.sid)}" title="${fx?'확정을 풀고 다시 보내기 목록에 넣어요':'원전을 직접 정해 확정해요 (고른 후보가 있으면 그 이름이 먼저 들어가요)'}">${fx?'확정 풀기':'✦ 확정'}</button><button class="btn xs" data-aw="godb" data-v="${esc(x.sid)}">추천 보기 →</button></div>`:''}</div>${prefHtml(x)}</div>`}
  /* 10-30 망령 「대가를 요구하는 메인 각성체 지정 · 프라이드 몇으로 할지」:
     칸마다 「메인 (대가)」 하나 + 프라이드. 노트 사본 = pcp/<pc>.awk[n-1].main · .pride (PL 본인 · GM).
     그 칸에 제작기 각성체 시트가 있으면 제작기 값(awaken 'free' = 대가 · 'c' = 보조, pride)을 보이고, 고치면 제작기에도 넣는다.
@@ -315,7 +315,10 @@ window.NT_AWK=(()=>{
  function sendCard(pc,big){const G=N().gm();const S=[1,2].map(n=>slot(sidOf(pc,n)));const all=S.every(x=>x.fixed);
   return `<div class="awe card ${big?'big':''} ${all?'fixed':''}"><div class="awebody"><div class="row"><h3>${esc(pcName(pc))}</h3><span class="sp"></span>${canSend(pc)?`<button class="btn xs" data-aw="sendedit" data-v="${esc(pc)}">✎ 그림 · 코멘트</button>`:''}</div><div class="aweslots">${S.map(x=>slotHtml(x,G)).join('')}</div></div></div>`}
  /* 확정: pcp 의 그 칸에 {id,n,at} — 묶음에서 빠지고 테두리가 바뀐다. 풀면 지운다 */
- async function toggleFix(sid){const x=slot(sid);const r=rec(sid);const e=r.pick&&byId(r.pick);if(!x.fixed&&!e)return N().toast('먼저 「✓ 이걸로」로 원전을 정해 주세요');
+ /* 10-29 망령 「각성체 탭에서도 확정 — 내가 정해도 되니까」: 고른 후보가 없어도 GM 이 원전 이름을 적어 확정한다. 이름이 DB 에 있으면 그 항목 id 를 붙인다 */
+ async function toggleFix(sid){const x=slot(sid);const r=rec(sid);let e=r.pick&&byId(r.pick);
+  if(!x.fixed){const nm=String(await N().promptBox(`각성체 ${x.n} 원전 확정`,e?e.n:'','원전 이름 (예: 잔 다르크)')||'').trim();if(!nm)return;
+   if(!e||nm!==e.n){const L=DB.base?all():[];const hit=L.find(q=>q.n===nm)||L.find(q=>(q.n||'').replace(/\s/g,'')===nm.replace(/\s/g,''));e=hit?{id:hit.id,n:hit.n}:{id:'',n:nm}}}
   const cur=Object.assign({},pcp(x.pc));const L=Array.isArray(cur.awk)?cur.awk.map(o=>Object.assign({},o)):[];while(L.length<x.n)L.push({});
   if(x.fixed)delete L[x.n-1].fixed;else L[x.n-1].fixed={id:e.id,n:e.n,at:new Date().toISOString()};cur.awk=L;await N().put('pcp',x.pc,cur,'pl:'+x.pc);N().toast(x.fixed?'확정을 풀었어요':`「${e.n}」로 확정했어요`)}
  /* 각성체 칸 그림 눌러 바꾸기 */

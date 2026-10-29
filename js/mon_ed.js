@@ -10,9 +10,14 @@ window.NT_MONED=(()=>{
  function open(tid,pid,sec){   /* sec: 제작기에서 그 칸으로 (tord = 지시 체계) */const t=MK().trainer(tid);const m=pid&&MK().M.pokemon.find(p=>p.id===pid);
   const md=N().openModal(`<div class="mked-h"><b>제작기</b><span class="dim">${esc((t&&t.name)||'')}${m?' · '+esc(m.name||''):''}</span><span class="sp"></span><a class="btn xs ghost" href="${esc(url(tid,pid,sec).replace(/&embed=1/,''))}" target="_blank" rel="noopener" title="제작기를 새 창에서 (다른 트레이너도 보고 싶을 때)">새 창 ↗</a><button type="button" class="btn xs pri" id="mkedX">저장하고 닫기</button></div>
    <div class="mked-b"><iframe id="mkedF" title="제작기" src="${esc(url(tid,pid,sec))}"></iframe><div class="mked-w" id="mkedW" hidden>제작기에 저장하는 중…</div></div>`,'mked');
-  const bg=md.parentElement;bg._dirty=1;   /* 바깥을 눌러 닫히지 않게 (저장 확인을 거치도록) */
+  const bg=md.parentElement;
+  /* 10-29 망령 「고친 게 없어도 고친 게 있다고 떠」: 예전엔 bg._dirty=1 로 늘 막아 「고친 내용이 있어요」가 떴다.
+     이제 바깥 누르기 · Esc 도 「저장하고 닫기」와 같은 길(제작기에 flush → 확인 뒤 닫기)로 보낸다. 실제로 안 올라간 게 없으면 제작기가 바로 답해 곧장 닫힌다 */
+  bg.addEventListener('click',e=>{if(e.target===bg){e.stopImmediatePropagation();$('#mkedX',md).click()}},true);
+  const esc_=e=>{if(e.key!=='Escape'||e.isComposing||!bg.isConnected)return;const L=document.querySelectorAll('.modalbg');if(L[L.length-1]!==bg)return;e.stopImmediatePropagation();e.preventDefault();$('#mkedX',md).click()};
+  document.addEventListener('keydown',esc_,true);bg.addEventListener('nt:close',()=>document.removeEventListener('keydown',esc_,true));
   let closing=false;
-  const fin=()=>{bg.remove();if(!$('.modalbg'))document.body.classList.remove('modal-open');reload()};
+  const fin=()=>{document.removeEventListener('keydown',esc_,true);bg.remove();if(!$('.modalbg'))document.body.classList.remove('modal-open');reload()};
   $('#mkedX',md).onclick=()=>{if(closing)return;closing=true;const f=$('#mkedF',md);const w=$('#mkedW',md);w.hidden=false;
    let done=false;const on=e=>{const d=e.data;if(!d||d.mkm!=='flushed'||e.source!==(f&&f.contentWindow))return;done=true;window.removeEventListener('message',on);if(!d.ok)N().toast(d.ro?'제작기가 읽기 전용으로 열려 있었어요 — 고친 것이 올라가지 않았을 수 있어요':'제작기 저장을 다 확인하지 못했어요 — 제작기에서 한 번 열어 확인해 주세요');fin()};
    window.addEventListener('message',on);
