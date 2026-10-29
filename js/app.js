@@ -15,6 +15,15 @@ window.NT=(()=>{
  const gm=()=>ST.role==='gm';
  const me=()=>ST.role&&ST.role!=='gm'?ST.role:'';
  const VIEWS=[['map','지도'],['graph','관계도'],['ents','항목'],['pc','PC 시트'],['scen','시나리오'],['plan','일정'],['logs','기록'],['set','설정']];
+ /* 10-29 망령: 위 탭은 6개 — 자료(항목 · 관계도) · 지도 · 시트 · 일정(일정 · 기록) · 시나리오 · 설정. 화면(VIEWS)과 주소는 그대로라 예전 링크 · 알림도 그대로 간다 */
+ const TABS=[['ents','자료',['ents','graph']],['map','지도',['map']],['pc','시트',['pc']],['plan','일정',['plan','logs']],['scen','시나리오',['scen']],['set','설정',['set']]];
+ const tabOf=v=>TABS.find(t=>t[2].includes(v))||TABS[0];
+ const subGet=t=>{try{const v=localStorage.getItem('nt_sub_'+t[0]);return t[2].includes(v)?v:t[2][0]}catch(e){return t[2][0]}};
+ /* 묶인 화면은 머리글(h2) 자리에 「항목 · 관계도」 같은 작은 탭을 둔다 */
+ function subTabs(main){const t=tabOf(ST.view);if(t[2].length<2)return;try{localStorage.setItem('nt_sub_'+t[0],ST.view)}catch(e){}
+  const h=main.querySelector(':scope>.toolbar>h2');const html=`<div class="subtabs" role="tablist">${t[2].map(v=>`<button type="button" data-subv="${v}" class="${v===ST.view?'on':''}">${esc((VIEWS.find(x=>x[0]===v)||[])[1]||v)}</button>`).join('')}</div>`;
+  if(h)h.outerHTML=html;else main.insertAdjacentHTML('afterbegin',`<div class="toolbar">${html}</div>`);
+  const st=main.querySelector('.subtabs');if(st)st.addEventListener('click',e=>{const b=e.target.closest('[data-subv]');if(!b)return;e.stopPropagation();if(b.dataset.subv!==ST.view)go(b.dataset.subv)})}
  const MOD={};  /* view → {render(el), onDoc?} — 각 *_ui.js 가 등록 */
 
  /* ----- 알림 · 창 ----- */
@@ -95,8 +104,8 @@ window.NT=(()=>{
  const SIZES={map:[3200,3200,.86],photo:[1600,1600,.84],face:[512,512,.86],thumb:[900,900,.84]};
  async function upload(f,kind,tag){const [W,H,q]=SIZES[kind]||SIZES.photo;const b=await shrink(f,W,H,q);toast('올리는 중…');const u=await DBS().uploadImage(`notes/${ST.camp}/${tag||kind}`,b);toast('올렸다');return u}
  /* 끌어 놓기 · 클릭 · Ctrl+V 로 파일 받기 */
- function bindDrop(el,onFiles,multi){if(!el||el._dz)return;el._dz=1;const fi=el.querySelector('input[type=file]')||(()=>{const i=document.createElement('input');i.type='file';i.accept='image/*';i.hidden=true;if(multi)i.multiple=true;el.appendChild(i);return i})();
-  const give=fs=>{fs=[...fs].filter(f=>/^image\//.test(f.type));if(fs.length)onFiles(multi?fs:[fs[0]])};
+ function bindDrop(el,onFiles,multi,accept){if(!el||el._dz)return;el._dz=1;const fi=el.querySelector('input[type=file]')||(()=>{const i=document.createElement('input');i.type='file';i.accept=accept||'image/*';i.hidden=true;if(multi)i.multiple=true;el.appendChild(i);return i})();
+  const give=fs=>{fs=[...fs].filter(f=>accept||/^image\//.test(f.type));if(fs.length)onFiles(multi?fs:[fs[0]])};
   el.addEventListener('click',e=>{if(e.target.closest('button,a,input:not([type=file])'))return;fi.click()});fi.onchange=()=>{give(fi.files);fi.value=''};
   el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('over')});el.addEventListener('dragleave',()=>el.classList.remove('over'));el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('over');give(e.dataTransfer.files)});
   el.addEventListener('paste',e=>{const fs=[...(e.clipboardData||{}).files||[]];if(fs.length){e.preventDefault();give(fs)}})}
@@ -162,11 +171,11 @@ window.NT=(()=>{
  function render(){const app=$('#app');if(!app)return;if(!ST.camp)return renderLobby(app);
   let sh=$('#ntShell',app);if(!sh){app.innerHTML=`<div id="ntShell"><header class="top"></header><div id="ntBody"><div id="ntFavSlot"></div><main id="ntMain"></main></div></div>`;sh=$('#ntShell',app)}
   renderTop($('.top',sh));const fs=$('#ntFavSlot',sh);if(fs&&window.NT_FAV)fs.innerHTML=NT_FAV.rail();const old=$('#ntMain',sh);const keep=keepState(old);const main=old.cloneNode(false);old.replaceWith(main);main.dataset.view=ST.view;/* 탭 모듈이 render 마다 el.addEventListener 를 붙이므로, 매번 새 요소로 바꿔 처리기가 쌓이거나 다른 탭 것과 섞이지 않게 한다 */const M=MOD[ST.view];
-  try{if(M)M.render(main);else main.innerHTML='<div class="empty">준비 중</div>';restoreState(main,keep)}catch(e){console.error(e);main.innerHTML=`<div class="empty vfail"><b>「${esc((VIEWS.find(v=>v[0]===ST.view)||[])[1]||ST.view)}」 화면을 그리지 못했어요.</b><div class="small dim" style="margin-top:6px;word-break:break-all">${esc(e&&e.message||e)}</div><button class="btn sm" onclick="NT.go('map')">지도로</button></div>`}}
+  try{if(M)M.render(main);else main.innerHTML='<div class="empty">준비 중</div>';subTabs(main);restoreState(main,keep)}catch(e){console.error(e);main.innerHTML=`<div class="empty vfail"><b>「${esc((VIEWS.find(v=>v[0]===ST.view)||[])[1]||ST.view)}」 화면을 그리지 못했어요.</b><div class="small dim" style="margin-top:6px;word-break:break-all">${esc(e&&e.message||e)}</div><button class="btn sm" onclick="NT.go('map')">지도로</button></div>`}}
  function renderTop(top){const c=ST.campInfo||{};const role=gm()?'<span class="badge gm">GM</span>':me()?`<span class="badge seat">${esc(seatName(me())||me())}</span>`:'<span class="badge">구경</span>';
-  const tabs=VIEWS.filter(([k])=>k!=='set'||gm()||me()).map(([k,n])=>`<button data-v="${k}" class="${ST.view===k?'on':''}">${n}</button>`).join('');
+  const cur=tabOf(ST.view)[0];const tabs=TABS.filter(([k])=>k!=='set'||gm()||me()).map(t=>`<button data-v="${t[0]===cur?ST.view:subGet(t)}" data-tab="${t[0]}" class="${t[0]===cur?'on':''}">${t[1]}</button>`).join('');
   top.innerHTML=`<a class="back" href="#" data-lobby>← 캠페인</a><h1 class="camp name"><b>${esc(c.name||'…')}</b>${c.data&&c.data.sub?`<small>${esc(c.data.sub)}</small>`:''}</h1>${role}<nav class="tabs" id="sceneTabs">${tabs}</nav><span class="sp"></span>
-   ${window.NT_NOTICE?NT_NOTICE.bellHtml():''}<button type="button" class="favtop" data-favdrawer title="즐겨찾기">★</button><span id="ntLive" class="live ${ST.online?'on':''}" title="${ST.online?'실시간 연결됨':'연결 중…'}"></span>${!ST.role?'<button class="btn xs" data-login>비밀구</button>':'<button class="btn xs ghost" data-logout title="이 브라우저에서 비밀구 지우기">나가기</button>'}
+   ${(()=>{const r=((c.data||{}).om||{}).room;return r&&window.NT_LINK?`<a class="btn xs omgo" href="${esc(NT_LINK.omUrl(r))}" target="oremas" rel="noopener" title="이 캠페인과 이어진 웹툴 방 열기">🎲 웹툴</a>`:''})()}${window.NT_NOTICE?NT_NOTICE.bellHtml():''}<button type="button" class="favtop" data-favdrawer title="즐겨찾기">★</button><span id="ntLive" class="live ${ST.online?'on':''}" title="${ST.online?'실시간 연결됨':'연결 중…'}"></span>${!ST.role?'<button class="btn xs" data-login>비밀구</button>':'<button class="btn xs ghost" data-logout title="이 브라우저에서 비밀구 지우기">나가기</button>'}
    <span class="vtsw compact"><button type="button" class="vtcur">${(VT.find(x=>x[0]===vtGet())||[])[1]}<i>▾</i></button><span class="vtmenu">${VT.map(([k,l])=>`<button type="button" data-vt="${k}" class="${k===vtGet()?'on':''}">${l}</button>`).join('')}</span></span>`;
   top.onclick=e=>{const t=e.target;const b=t.closest('button[data-v]');if(b){go(b.dataset.v);return}
    if(t.closest('[data-lobby]')){e.preventDefault();leave();return}
@@ -212,5 +221,5 @@ window.NT=(()=>{
  window.addEventListener('DOMContentLoaded',()=>{const q=readHash();if(q.camp)open(q.camp,q.view);else render()});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&ST.camp)resync()});
 
- return {ST,D,$,$$,esc,uid,clone,cssu,gm,me,canSee,canEdit,toast,openModal,closeModal,confirmBox,promptBox,armDraft,sortable,reorder,ctxMenu,bindCtx,pinch,doc,data,list,put,patch,del,putMany,bulkVis,bulkBtns,BULKF,upload,shrink,bindDrop,visSelect,visBadge,visLabel,seatName,render,go,open,leave,refreshCamp,resync,MOD,VIEWS,DBS,VT,SKINS,skin};
+ return {ST,D,$,$$,esc,uid,clone,cssu,gm,me,canSee,canEdit,toast,openModal,closeModal,confirmBox,promptBox,armDraft,sortable,reorder,ctxMenu,bindCtx,pinch,doc,data,list,put,patch,del,putMany,bulkVis,bulkBtns,BULKF,upload,shrink,bindDrop,visSelect,visBadge,visLabel,seatName,render,go,open,leave,refreshCamp,resync,MOD,VIEWS,TABS,DBS,VT,SKINS,skin};
 })();

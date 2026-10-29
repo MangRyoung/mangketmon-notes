@@ -22,12 +22,13 @@
    <div class="card"><h3>링크</h3><div class="small dim">공개 링크 — 링크만 있으면 「모두」로 둔 것만 보여요</div><div class="linkbox"><input type="text" readonly value="${esc(link())}" id="lkPub"><button class="btn xs" data-copy="lkPub">복사</button></div>
     <div class="small dim" style="margin-top:8px">GM 링크 — 비밀구가 들어 있어요. 내 다른 기기에서만 열어요</div><div class="linkbox"><input type="text" readonly value="${esc(base()+'?c='+encodeURIComponent(S.camp)+'&gm='+encodeURIComponent(S.secret)+'#c='+encodeURIComponent(S.camp))}" id="lkGm"><button class="btn xs" data-copy="lkGm">복사</button></div>
     <div class="acts"><button class="btn xs ghost" id="gmSecBtn">GM 비밀구 바꾸기</button></div></div>
+   ${linkCard(d)}
    <div class="card" style="grid-column:1/-1"><h3>PL 좌석 <small>좌석 id = 제작기 트레이너 id · 그 PL 은 자기 PC 시트만 고칠 수 있어요</small></h3>
     <div id="seatList">${(S.seats||[]).map(s=>`<div class="seatrow"><div><b>${esc(N().seatName(s.seat)||s.seat)}</b> <small>${esc(s.name||'')} · <code>${esc(s.seat)}</code></small></div><div class="row" style="gap:4px"><button class="btn xs" data-seat="link" data-id="${esc(s.seat)}">초대 링크</button><button class="btn xs ghost" data-seat="reset" data-id="${esc(s.seat)}">비밀구 다시</button><button class="btn xs ghost danger" data-seat="del" data-id="${esc(s.seat)}">빼기</button></div></div>`).join('')||'<div class="small dim">좌석이 없어요</div>'}</div>
     <div class="acts"><button class="btn sm pri" id="seatAdd">＋ 좌석 (PC 시트의 트레이너에게)</button></div></div>
    <div class="card"><h3>자료</h3><div class="acts"><button class="btn sm" id="dlJson">전체 내려받기 (JSON)</button><button class="btn sm ghost" id="ulJson">JSON 올리기 (덮어쓰기)</button><input type="file" id="ulFile" accept="application/json" hidden></div><p class="small dim">그림은 주소만 들어 있어요 (Supabase 저장소).</p></div>
    <div class="card"><h3>위험</h3><div class="acts"><button class="btn sm ghost danger" id="cpDel">캠페인 지우기</button></div></div></div>`;
-  bindCopy(el);
+  bindCopy(el);bindLink(el,d);
   $('#cpName',el).oninput=e=>{dr.name=e.target.value};$('#cpSub',el).oninput=e=>{dr.sub=e.target.value};$('#cpTheme',el).onchange=e=>{dr.theme=e.target.value};$('#cpSkin',el).onchange=e=>{dr.skin=e.target.value};
   N().bindDrop($('#cpDz',el),async fs=>{try{dr.cover=await N().upload(fs[0],'thumb','cover');$('#cpDz .pv',el).style.backgroundImage=`url('${cssu(dr.cover)}')`}catch(e){N().toast('올리기 실패: '+e.message)}});
   $('#cpCoverX',el).onclick=()=>{dr.cover='';$('#cpDz .pv',el).style.backgroundImage=''};
@@ -51,7 +52,27 @@
     if(j.camp&&j.camp.data&&j.camp.data.sub&&!d.sub){try{await N().DBS().campUpdate(S.camp,S.secret,null,Object.assign({},d,{sub:j.camp.data.sub}));N().refreshCamp()}catch(e){}}
     N().toast('올렸어요 · '+rows.length+'개')}catch(e){N().toast('실패: '+e.message)}$('#ulFile',el).value=''};
   $('#cpDel',el).onclick=async()=>{const v=await N().promptBox(`정말 지우려면 캠페인 이름 「${c.name}」 을 적어요`,'','');if(v==null)return;if(v.trim()!==c.name)return N().toast('이름이 달라요');try{await N().DBS().campDel(S.camp,S.secret);try{localStorage.removeItem('nt_sec_'+S.camp)}catch(e){}N().toast('지웠어요');N().ST.camps=[];N().leave()}catch(e){N().toast('실패: '+e.message)}}}
+ /* 10-29 망령: 세 도구 잇기 — 제작기 폴더 · 웹툴 방 · 룰북. 웹툴 방 목록은 같은 주소(mangryoung.github.io)의 오레마스가 이 브라우저에 남긴 「최근 방」에서 */
+ const omRooms=()=>{try{return (JSON.parse(localStorage.getItem('om_rooms')||'[]')||[]).filter(r=>r&&r.id)}catch(e){return []}};
+ const roomId=v=>{const m=String(v||'').match(/[#&?]r=([a-z0-9]+)/i);return m?m[1]:/^[a-z0-9]{4,}$/i.test(String(v||'').trim())?String(v).trim():''};
+ async function campPatch(fn){const S=N().ST;const c=S.campInfo||{};const d=JSON.parse(JSON.stringify(c.data||{}));fn(d);await N().DBS().campUpdate(S.camp,S.secret,null,d);if(S.campInfo)S.campInfo.data=d;await N().refreshCamp()}
+ function linkCard(d){const MK=window.NT_MAKER;const fl=MK?MK.linked():[];const om=(d.om||{}).room||'';const R=omRooms();const rn=(R.find(r=>r.id===om)||{}).name||'';
+  const nRb=N().list('ents').filter(e=>e.rb&&e.rb.ch).length,nMk=N().list('ents').filter(e=>e.mk).length;
+  return `<div class="card linkcard" style="grid-column:1/-1"><h3>세 도구 잇기 <small>제작기 · 웹툴 · 룰북</small></h3><div class="lkgrid">
+   <div class="lkc"><b>📁 제작기 폴더</b><p class="small dim">이 폴더에 만든 트레이너가 시트 탭에 「아직 안 넣은 트레이너」로 떠요.</p><div class="lkv">${fl.length?fl.map(id=>`<span class="chip static">📁 ${esc(MK.fpath(id)||MK.folderName(id))}</span>`).join(' '):'<span class="dim small">이어진 폴더 없음</span>'}</div><div class="acts"><button class="btn xs" id="lkMk">${fl.length?'폴더 바꾸기':'폴더 잇기'}</button></div></div>
+   <div class="lkc"><b>🎲 웹툴 방</b><p class="small dim">이으면 위 막대에 「웹툴」 단추가 생기고, 웹툴에서 이 캠페인의 지도 · 관계도를 비밀구 없이 한 번에 가져와요.</p>
+    <div class="lkv">${om?`<span class="chip static">🎲 ${esc(rn||'방')} <code>${esc(om)}</code></span> <a class="btn xs ghost" href="${esc(omUrl(om))}" target="oremas" rel="noopener">열기 ↗</a>`:'<span class="dim small">이어진 방 없음</span>'}</div>
+    <div class="row" style="gap:4px;flex-wrap:wrap;margin-top:6px">${R.length?`<select id="lkOmSel"><option value="">이 브라우저의 최근 방에서 고르기</option>${R.map(r=>`<option value="${esc(r.id)}" ${r.id===om?'selected':''}>${esc(r.name||r.id)}</option>`).join('')}</select>`:''}<input id="lkOmIn" type="text" placeholder="또는 방 링크 · id 붙여 넣기" style="flex:1;min-width:150px"><button class="btn xs pri" id="lkOmOk">잇기</button>${om?'<button class="btn xs ghost" id="lkOmX">풀기</button>':''}</div></div>
+   <div class="lkc"><b>📖 룰북</b><p class="small dim">자료 탭에서 항목을 고칠 때 「제작기 룰북 장」을 고르면, 룰북 원문을 그대로 보여 줘요. 룰북을 고치면 같이 바뀌어요.</p><div class="lkv small">룰북과 이어진 항목 <b>${nRb}</b>개 · 제작기 트레이너와 이어진 항목 <b>${nMk}</b>개</div><div class="acts"><a class="btn xs ghost" href="${esc(window.NT_RB?NT_RB.link(''):'#')}" target="_blank" rel="noopener">룰북 열기 ↗</a></div></div>
+  </div></div>`}
+ const omUrl=room=>String((window.NT_CONFIG||{}).oremasUrl||'https://mangryoung.github.io/oremas/').replace(/#.*$/,'')+'#r='+encodeURIComponent(room);
+ function bindLink(el,d){const b=$('#lkMk',el);if(b)b.onclick=()=>window.NT_MAKER&&NT_MAKER.pickLinked();
+  const ok=$('#lkOmOk',el);if(ok)ok.onclick=async()=>{const v=roomId(($('#lkOmIn',el)||{}).value)||(($('#lkOmSel',el)||{}).value||'');if(!v)return N().toast('방 링크나 id 를 적거나 골라 주세요');
+   try{await campPatch(x=>{x.om=Object.assign({},x.om||{},{room:v})});N().toast('웹툴 방을 이었어요');N().render()}catch(e){N().toast('저장 실패: '+e.message)}};
+  const sel=$('#lkOmSel',el);if(sel)sel.onchange=()=>{const i=$('#lkOmIn',el);if(i)i.value=''};
+  const x=$('#lkOmX',el);if(x)x.onclick=async()=>{try{await campPatch(y=>{delete y.om});N().toast('웹툴 방 잇기를 풀었어요');N().render()}catch(e){N().toast('저장 실패: '+e.message)}}}
  function showLink(seat,sec){const u=link(sec);N().openModal(`<div class="mhead"><h2>초대 링크 — ${esc(N().seatName(seat)||seat)}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div class="linkbox"><input type="text" readonly value="${esc(u)}" id="lkSeat"><button class="btn xs" data-copy="lkSeat">복사</button></div><p class="small dim">이 링크를 한 번 열면 그 브라우저에 좌석 비밀구가 저장돼요. 비밀구: <code>${esc(sec)}</code></p>`);bindCopy(document)}
  function bindCopy(root){$$('[data-copy]',root).forEach(b=>b.onclick=()=>{const i=$('#'+b.dataset.copy);if(!i)return;i.select();const done=()=>N().toast('복사했어요');if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(i.value).then(done,()=>{document.execCommand('copy');done()});else{document.execCommand('copy');done()}})}
  N().MOD.set={render};
+ window.NT_LINK={omUrl,omRooms};
 })();
