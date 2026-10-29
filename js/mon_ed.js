@@ -6,9 +6,9 @@
 window.NT_MONED=(()=>{
  const N=()=>window.NT;const MK=()=>window.NT_MAKER;const {$,esc}=window.NT;
  const canEd=id=>N().gm()||N().me()===id;
- const url=(tid,pid)=>String((window.NT_CONFIG||{}).makerUrl||'').replace(/\/?$/,'/')+'?focus='+encodeURIComponent(tid)+(pid?'&p='+encodeURIComponent(pid):'')+'&embed=1';
+ const url=(tid,pid)=>String((window.NT_CONFIG||{}).makerUrl||'').replace(/\/?$/,'/')+'?focus='+encodeURIComponent(tid)+(pid?'&p='+encodeURIComponent(pid):'')+'&embed=1&t='+Date.now().toString(36);   /* 10-30: 브라우저가 들고 있는 옛 제작기 index.html(최대 10분) 대신 늘 새로 받게 */
  function open(tid,pid){const t=MK().trainer(tid);const m=pid&&MK().M.pokemon.find(p=>p.id===pid);
-  const md=N().openModal(`<div class="mked-h"><b>제작기</b><span class="dim">${esc((t&&t.name)||'')}${m?' · '+esc(m.name||''):''}</span><span class="sp"></span><a class="btn xs ghost" href="${esc(url(tid,pid).replace('&embed=1',''))}" target="_blank" rel="noopener" title="제작기를 새 창에서 (다른 트레이너도 보고 싶을 때)">새 창 ↗</a><button type="button" class="btn xs pri" id="mkedX">저장하고 닫기</button></div>
+  const md=N().openModal(`<div class="mked-h"><b>제작기</b><span class="dim">${esc((t&&t.name)||'')}${m?' · '+esc(m.name||''):''}</span><span class="sp"></span><a class="btn xs ghost" href="${esc(url(tid,pid).replace(/&embed=1/,''))}" target="_blank" rel="noopener" title="제작기를 새 창에서 (다른 트레이너도 보고 싶을 때)">새 창 ↗</a><button type="button" class="btn xs pri" id="mkedX">저장하고 닫기</button></div>
    <div class="mked-b"><iframe id="mkedF" title="제작기" src="${esc(url(tid,pid))}"></iframe><div class="mked-w" id="mkedW" hidden>제작기에 저장하는 중…</div></div>`,'mked');
   const bg=md.parentElement;bg._dirty=1;   /* 바깥을 눌러 닫히지 않게 (저장 확인을 거치도록) */
   let closing=false;
