@@ -70,7 +70,7 @@
   const UNIV=N().skin&&N().skin()==='univ';
   const X=window.NT_UNIV;
   /* 10-29 망령: 대학 — 학생증 오른쪽 = 자질 메모 · 기본 · 고유 포텐셜, 아래 = 휴대폰 · 덱 */
-  const side=UNIV?`${heroIn}${(()=>{const a=memoSec(t)+ptSec(id,t,ms,E,'gauge'),b=X&&t?X.uniqSec(id,t,E):'';return a||b?`<div class="idinfo">${a?`<div class="idcol">${a}</div>`:''}${b?`<div class="idcol">${b}</div>`:''}</div>`:''})()}`:heroIn;
+  const side=UNIV?`${heroIn}${(()=>{const a=memoSec(t)+ptSec(id,t,ms,E,'gauge'),b=X&&t?X.uniqSec(id,t,E)+(X.ordSec?X.ordSec(id,t,E):''):'';return a||b?`<div class="idinfo">${a?`<div class="idcol">${a}</div>`:''}${b?`<div class="idcol">${b}</div>`:''}</div>`:''})()}`:heroIn;
   const low=UNIV?(window.NT_PHONE&&NT_PHONE.panel?NT_PHONE.panel(id):'')+(X&&t?X.deckSec(id,t,E):''):(X&&t?X.uniqSec(id,t,E)+X.deckSec(id,t,E):'');
   return `<div class="pcsheet" style="margin-top:14px">${UNIV?idHero(id,p,t,rk,img,NPC,side):`<div class="hero">${heroIn}</div>`}
    ${low?`<div class="uxrow ${UNIV?'ulow':''}">${low}</div>`:''}

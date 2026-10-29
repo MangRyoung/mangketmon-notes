@@ -17,18 +17,18 @@ const MODEL = Deno.env.get("AWAKEN_MODEL") || "claude-opus-5-5";
 
 /* 돌려받는 꼴 — 노트의 applyRead 가 읽는 것과 같다 */
 const pickItem = {
-  type: "object", additionalProperties: false, required: ["id", "n", "why"],
-  properties: { id: { type: "string" }, n: { type: "string" }, why: { type: "string" } },
+  type: "object", additionalProperties: false, required: ["id", "n", "why", "cost"],
+  properties: { id: { type: "string" }, n: { type: "string" }, why: { type: "string" }, cost: { type: "string" } },
 };
 const extraItem = {
   type: "object", additionalProperties: false,
-  required: ["n", "o", "r", "e", "c", "f", "l", "d", "k", "t", "w", "g", "why"],
+  required: ["n", "o", "r", "e", "c", "f", "l", "d", "k", "t", "w", "g", "why", "cost"],
   properties: {
     n: { type: "string" }, o: { type: "string" }, r: { type: "string" }, e: { type: "string" },
     c: { type: "string" }, f: { type: "integer" }, l: { type: "string" }, d: { type: "string" },
     k: { type: "string" }, t: { type: "array", items: { type: "string" } },
     w: { type: "string", enum: ["지시", "육성", "통솔", "능력"] },
-    g: { type: "array", items: { type: "string" } }, why: { type: "string" },
+    g: { type: "array", items: { type: "string" } }, why: { type: "string" }, cost: { type: "string" },
   },
 };
 const SCHEMA = {
@@ -48,7 +48,10 @@ const RULES = `너는 TRPG 「망켓몬 · 미사그 대학」 캠페인의 GM �
 고르는 법
 - 먼저 그림에서 보이는 것만 읽는다: 분위기, 머리 · 체형 같은 모습, 복장, 소품, 모티프, 색, 동양풍 · 서양풍 같은 풍. 보이지 않는 것을 지어내지 않는다.
 - tags 는 아래 「태그 목록」에 있는 낱말만, 6~12개.
-- picks 는 아래 「후보 DB」에서 6~10명. id 는 DB 의 첫 칸 그대로, n 은 이름. why 는 그림의 어떤 점(모습 · 복장 · 소품 · 분위기)이 그 인물의 이야기와 닿는지 한두 문장. 그 인물이 열화된 모습으로 오면 이 그림처럼 보일 만한 인물을 앞에 둔다. 지명도(다섯째 칸) 1~3 을 먼저 고른다.
+- picks 는 아래 「후보 DB」에서 3~5명. id 는 DB 의 첫 칸 그대로, n 은 이름. why 는 그림의 어떤 점(모습 · 복장 · 소품 · 분위기)이 그 인물의 이야기와 닿는지 한두 문장. 그 인물이 열화된 모습으로 오면 이 그림처럼 보일 만한 인물을 앞에 둔다. 지명도(다섯째 칸)는 아래 「격」에 맞춘다.
+- 격: 각성체 프라이드가 원전의 격을 정한다 — 파워 차이만큼 격 차이. C · C+ = 격 낮음(이름만 남은 사람 · 민담 조연, 지명도 1~2), B · B+ = 격 중간(한 고장 전설의 주인공, 지명도 2~3), A = 격 높음(한 나라에 알려진 인물 · 신화 조연급, 유명 인물은 열화된 한 시절, 지명도 3~4). 각성 (보조)는 C 권장. 프라이드를 모르면 지명도 1~3.
+- cost 는 후보마다 그 인물에 어울리는 대가 하나를 아래 목록 안에서 「분류 · 항목」으로 (예: "통솔 · B-2 『역할』 1개 무효"). 프라이드 C · C+ 이거나 각성 (보조)면 "없음". A 는 B 에 더해 A 항목까지.
+  대가 목록: 지시 B 『6령』 2개 빼기 / A 『4식』 1개 더 · 육성 B 분배레벨 −10 / A −10 더 · 통솔 B-1 PT 에 특정 타입 2체 이상 · B-2 『역할』 1개 무효 / A-1 필드 위 다른 아군에 지정 타입이 없으면 자기 포텐셜 무효 · A-2 필드 위 아군 한 체의 『역할』 무효 · 능력 B 『전용 포텐셜』 −1 / A 고유 포텐셜 점수 −0.5
 - extra 는 DB 에 없지만 잘 맞는 인물 0~3명. 실존했거나 설화 · 신화 · 문학에 실제로 있는 인물만(지어내지 않는다). 죽은 지 100년이 안 된 실존 인물, 아직 살아 있는 인물은 넣지 않는다. 확실하지 않으면 넣지 않는다.
   n 이름(한국어), o 원어 · 한자, r 지역, e 시대, c 분류(역사 · 설화 · 신화 · 전설 · 문학 · 괴담 · 서사시 · 민요 중), f 지명도 1(아주 마이너)~5(누구나 앎), l 누구인지 한 문장, d 각성체로 올 때의 열화 · 마이너한 모습, k 은열쇠(그 인물을 부르는 물건 하나), t 포켓몬 타입 1~2개(노말 불꽃 물 풀 전기 얼음 격투 독 땅 비행 에스퍼 벌레 바위 고스트 드래곤 악 강철 페어리), w 대가 성향(지시 · 육성 · 통솔 · 능력 중 하나), g 태그 목록의 낱말 몇 개, why 고른 까닭.
 - sum 은 그림을 읽은 것을 2~4문장으로. GM 이 읽을 말이니 한국어로, 담백하게.
@@ -59,7 +62,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return out({ error: "POST 만 받아요" }, 405);
   let b: any;
   try { b = await req.json(); } catch { return out({ error: "JSON 이 아니에요" }, 400); }
-  const { camp, secret, image, name, bio, vocab, db } = b || {};
+  const { camp, secret, image, name, bio, grade, vocab, db } = b || {};
   if (!camp || !secret) return out({ error: "GM 비밀구로 들어와 주세요" }, 401);
   if (!image || (!image.url && !image.data)) return out({ error: "각성체 그림이 없어요" }, 400);
 
@@ -110,7 +113,7 @@ Deno.serve(async (req) => {
           { type: "image", source: src },
           {
             type: "text",
-            text: `각성체: ${String(name || "").slice(0, 80)}\n${bio ? "플레이어 코멘트:\n" + String(bio).slice(0, 1500) + "\n" : ""}이 각성체 그림에 어울리는 원전 인물을 골라 줘.`,
+            text: `각성체: ${String(name || "").slice(0, 80)}\n${grade ? "격: " + String(grade).slice(0, 300) + "\n" : ""}${bio ? "플레이어 코멘트:\n" + String(bio).slice(0, 1500) + "\n" : ""}이 각성체 그림에 어울리는 원전 인물을 골라 줘.`,
           },
         ],
       }],

@@ -13,9 +13,9 @@
 .ux-no{font-style:normal;display:inline-block;min-width:1.2em;color:var(--red2,#ff5a6e);font-weight:700}
 /* 고유 포텐셜 = 각인 카드 */
 .ux-uqg{display:flex;flex-direction:column;gap:8px}
-.ux-uc{position:relative;display:flex;gap:0;border:1px solid var(--line2);border-radius:6px;overflow:hidden;background:linear-gradient(135deg,rgba(255,209,46,.07),transparent 55%),var(--panel2)}
+.ux-uc{position:relative;display:flex;flex-direction:column;gap:0;border:1px solid var(--line2);border-radius:6px;overflow:hidden;background:linear-gradient(135deg,rgba(255,209,46,.07),transparent 55%),var(--panel2)}
 .ux-uc::before{content:"";position:absolute;inset:0;border-radius:6px;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(255,209,46,.18)}
-.ux-line{flex:none;writing-mode:vertical-rl;text-orientation:upright;padding:10px 6px;font-family:'Noto Serif KR','Noto Serif CJK KR',serif;font-weight:900;font-size:13px;letter-spacing:.18em;color:#fff;background:linear-gradient(180deg,var(--red,#e4002b),#7a0018);max-height:260px;overflow:hidden;text-shadow:0 1px 0 rgba(0,0,0,.4)}
+.ux-line{writing-mode:horizontal-tb;padding:4px 12px;font-family:'Noto Serif KR','Noto Serif CJK KR',serif;font-weight:900;font-size:12.5px;letter-spacing:.32em;line-height:1.5;color:#fff;background:linear-gradient(90deg,var(--red,#e4002b),#7a0018);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}   /* 10-29 망령 「세로로 적으니 너무 늘어난다」 → 카드 위 가로 띠 */
 .ux-ub{flex:1;min-width:0;padding:9px 12px 10px}
 .ux-un{display:flex;align-items:center;gap:7px;margin-bottom:4px}
 .ux-un b{font-size:15.5px;font-weight:800;letter-spacing:.02em}
@@ -85,7 +85,7 @@ html[data-skin="univ"] .ux-h{border-bottom:1px solid var(--gold2);padding-bottom
 html[data-skin="univ"] .ux-h>span:first-child{font-family:'Noto Serif KR',serif;font-weight:900;letter-spacing:.2em;color:var(--crim)}
 html[data-skin="univ"] .ux-uc{background:rgba(255,255,255,.4);border:1px solid #b9a77f;border-radius:4px;box-shadow:inset 0 0 0 3px rgba(255,255,255,.35),inset 0 0 0 4px rgba(143,123,82,.35)}
 html[data-skin="univ"] .ux-uc::before{display:none}
-html[data-skin="univ"] .ux-line{background:linear-gradient(180deg,var(--crim),#4a0a12);color:var(--gold);font-weight:700}
+html[data-skin="univ"] .ux-line{background:linear-gradient(90deg,var(--crim),#4a0a12);color:var(--gold);font-weight:700}
 html[data-skin="univ"] .ux-un b{font-family:'Noto Serif KR',serif;font-weight:900;color:var(--ink)}
 html[data-skin="univ"] .ux-gem{background:linear-gradient(135deg,var(--gold),var(--gold2));box-shadow:none}
 html[data-skin="univ"] .ux-tag{background:rgba(110,16,25,.08);color:var(--crim2);border-color:rgba(110,16,25,.35)}
@@ -315,3 +315,48 @@ html[data-skin="univ"] .idcard.ided:hover::after{opacity:.8}
 html[data-skin="univ"] .idwrap>.idside>.idinfo{align-self:stretch;align-items:stretch}
 html[data-skin="univ"] .idinfo .idcol>.ux-sec:last-child{flex:1}
 @container pcs (max-width:760px){html[data-skin="univ"] .idwrap>.idside>.idinfo{align-self:start;align-items:start}html[data-skin="univ"] .idinfo .idcol>.ux-sec:last-child{flex:none}}
+
+/* ===== 10-29 망령: 지시 체계 (4식 · 6령) — 고유 아래 (univ_ui.js ordSec) ===== */
+.ux-ordb+.ux-ordb{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)}
+.ux-ordt{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.ux-ordt b{font-size:13.5px}
+.ux-ordt small{color:var(--mute);font-size:11.5px}
+.ux-ord .ordk{font-size:9.5px;font-weight:800;letter-spacing:.08em;padding:1px 6px;border-radius:3px;color:#fff}
+.ux-ord .ordk.o{background:#2e7dbd}
+.ux-ord .ordk.c{background:#c98a1b}
+.ux-ordl{display:flex;flex-wrap:wrap;gap:5px}
+.oc{display:inline-flex;align-items:center;gap:6px;padding:3px 4px 3px 9px;border:1px solid var(--line2);border-radius:999px;font-size:12.5px;background:rgba(127,127,127,.08)}
+.oc b{display:inline-grid;place-items:center;min-width:20px;height:20px;border-radius:50%;background:#2b3240;color:#fff;font-size:11.5px}
+.oc i{font-style:normal;font-size:10px;color:var(--mute)}
+.oc.z{opacity:.45}
+.oc.z b{background:rgba(127,127,127,.5)}
+.oc.pk{border-color:#c98a1b;box-shadow:inset 0 0 0 1px #c98a1b}
+.oc.pk>span::before{content:"★ ";color:#c98a1b}
+.oc.off{opacity:.5}
+.oc.off>span{text-decoration:line-through}
+.ux-ordp{font-size:11.5px;color:var(--mute);margin-top:5px}
+.ux-ordp.need b{color:var(--red,#e4002b)}
+html[data-skin="univ"] .ux-ord .ordk.o{background:#2a4f8a}
+html[data-skin="univ"] .ux-ord .ordk.c{background:var(--crim)}
+html[data-skin="univ"] .oc{background:rgba(255,255,255,.45);border-color:#b9a77f}
+html[data-skin="univ"] .oc b{background:var(--crim)}
+html[data-skin="univ"] .oc.pk{border-color:#8f7b52;box-shadow:inset 0 0 0 1px #8f7b52}
+html[data-skin="univ"] .oc.pk>span::before{color:#8f7b52}
+
+/* ===== 10-29 망령: 지도 인물 자유 자리 (map_ui.js atPos) — 놓은 점이 얼굴 가운데 ===== */
+.mapinner .mnpc.free,.mapinner .mnpc.dragging{transform:translate(-50%,-50%)}
+.mapinner .mnpc.dragging{z-index:6;cursor:grabbing;box-shadow:0 0 0 3px rgba(255,209,46,.85),0 4px 12px rgba(0,0,0,.7)}
+/* 핀에 맞추기 창 (map_ui.js alignMap) */
+.modal.malm{width:min(1200px,96vw);max-width:none}
+.malw{background:#111;border-radius:6px;padding:10px;overflow:hidden}
+.malst{position:relative;margin:0 auto;outline:2px dashed rgba(255,209,46,.7);outline-offset:0;cursor:grab;touch-action:none;user-select:none}
+.malst.grab{cursor:grabbing}
+.malold{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;opacity:.35;pointer-events:none}
+.malnew{position:absolute;max-width:none;height:auto;pointer-events:none;box-shadow:0 0 0 1px rgba(255,255,255,.4)}
+.malpin{position:absolute;transform:translate(-50%,-11px);pointer-events:none;font-style:normal;display:flex;flex-direction:column;align-items:center;z-index:2}
+.malpin b{display:grid;place-items:center;min-width:22px;height:22px;border-radius:50%;background:#e4002b;color:#fff;font-size:10.5px;box-shadow:0 0 0 2px #fff,0 2px 6px rgba(0,0,0,.6)}
+.malpin span{margin-top:4px;font-size:11px;font-weight:700;color:#fff;background:rgba(0,0,0,.72);padding:0 5px;border-radius:3px;white-space:nowrap}
+.malst.nonm .malpin span{display:none}
+.malc{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-top:10px;font-size:13px}
+.malc label{display:flex;align-items:center;gap:6px}
+.malc .sp{flex:1}

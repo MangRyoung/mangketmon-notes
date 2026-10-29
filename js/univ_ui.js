@@ -39,6 +39,20 @@ window.NT_UNIV=(()=>{
  const PAL=[['red','#c8504a','빨강'],['orange','#d9822b','주황'],['gold','#b8932a','금색'],['green','#4f9a5a','초록'],['teal','#2f948f','청록'],['blue','#4573c4','파랑'],['purple','#8a5cc4','보라'],['pink','#c45c9a','분홍'],['gray','#6b7286','회색'],['black','#30343f','검정']];
  const ccol=v=>{v=String(v||'').trim();const p=PAL.find(x=>x[0]===v||x[2]===v);return p?p[1]:(/^#[0-9a-f]{3,8}$/i.test(v)?v:'#6b7286')};
  const cimg=v=>{v=String(v||'').trim();return /^https?:\/\//.test(v)||/^data:image\//.test(v)?v:''};
+ /* ===== 지시 체계 (10-29 망령 「4식 6령 설정도 넣어야 되는데 고유 아래 여백 많으니 거기다가」) =====
+    제작기가 트레이너를 저장할 때 남기는 t.ordOut(제작기 ordSnap — 지시 체계 칸과 같은 규칙)을 그린다. 고치기는 제작기의 지시 체계 칸을 노트 안에서 연다(NT_MONED sec=tord) */
+ function ordSec(id,t,E){if(!t)return '';const S=t.ordOut;const has=t.orders&&t.orders.preset;if(!has&&!(E&&univ()))return '';
+  const ed=E&&window.NT_MONED?`<button type="button" class="btn xs ghost" data-moned="" data-sec="tord" data-id="${esc(id)}" title="제작기의 지시 체계 칸을 열어요 (지령 종류 · 항목별 계열 · 2체 기준 고르기)">✎ 제작기에서</button>`:'';
+  const head=sub=>`<h4 class="ux-h"><span>지시 체계</span>${sub?`<small>${sub}</small>`:''}<span class="sp"></span>${ed}</h4>`;
+  if(!has)return `<section class="ux-sec ux-ord">${head('')}<p class="small dim" style="margin:0">아직 지령 종류를 정하지 않았어요 (웹툴 방 설정을 따라요).</p></section>`;
+  if(!S||!S.preset)return `<section class="ux-sec ux-ord">${head('')}<p class="small dim" style="margin:0">제작기에서 이 트레이너를 한 번 열면(저장되면) 여기에 4식 · 6령이 보여요.</p></section>`;
+  const two=S.mode==='solo'||S.mode==='misag';
+  const chips=L=>L.map(x=>`<span class="oc ${x.n?'':'z'} ${two&&x.pick?'pk':''} ${x.off?'off':''}" title="${esc(x.nm)}${x.ex?' · 예외 계열 '+x.ex:''}${x.off?' · 각성체 대가로 뺌':''}${two&&x.pick?' · 2체 기준으로 고름':''}"><span>${esc(x.nm)}</span><b>${x.n}</b>${x.ex?'<i>예외</i>':''}</span>`).join('');
+  const pickLine=(kind,L)=>{if(!two)return '';const n=(S.pickN||{})[kind]||0;const pk=L.filter(x=>x.pick).length;return `<div class="ux-ordp ${pk===n?'':'need'}">${S.mode==='misag'?'2체로 합칠 때':'1인 기준'} 고른 것 <b>${pk}/${n}</b>${pk===n?'':' · 제작기에서 골라요'}</div>`};
+  const offLine=(kind,L)=>{const n=S.offN&&S.offN[kind];if(!n)return '';const k=L.filter(x=>x.off).length;return `<div class="ux-ordp ${k===n?'':'need'}">각성체 대가로 뺀 것 <b>${k}/${n}</b></div>`};
+  const blk=(kind,tag,lab,fam)=>{const L=S[kind]||[];return `<div class="ux-ordb"><div class="ux-ordt"><span class="ordk ${kind}">${tag}</span><b>${lab}</b><small>${esc(fam)}</small></div><div class="ux-ordl">${chips(L)}</div>${offLine(kind,L)}${pickLine(kind,L)}</div>`};
+  return `<section class="ux-sec ux-ord">${head(`지시 ${esc(S.rk||'-')} · ${esc(S.presetName||'')}`)}${blk('o','ORDER','명령 (4식)',S.oName)}${blk('c','COMMAND','지령 (6령)',S.cName)}</section>`}
+
  function deckSec(id,t,E){if(!t)return '';const L=t.deck||[];if(!L.length&&!(E&&univ()))return '';if(!MK().dbReady())MK().db().then(()=>N().render());
   const tot=L.reduce((a,x)=>a+(+x.q||0),0);
   const tile=(x,k)=>{const r=MK().card(x.n);const img=r?cimg(r[6]):'';const col=r?ccol(r[5]):'#6b7286';const cost=r&&r[3]!==''&&r[3]!=null?String(r[3]):'';
@@ -129,5 +143,5 @@ window.NT_UNIV=(()=>{
   if(a==='ddel'){const k=+b.dataset.k;return run('trainers',id,d=>{if(!(d.deck||[])[k])return false;d.deck.splice(k,1)})}
   if(a==='dname'){const t=MK().trainer(id)||{};return N().promptBox('덱 이름',t.deckName||'',(t.name||'트레이너')+'의 덱').then(v=>{if(v==null)return;run('trainers',id,d=>{d.deckName=v.trim()})})}
   if(a==='item')return itemEd(id,b.dataset.pid)});
- return {uniqSec,deckSec,itemEd,fx};
+ return {uniqSec,ordSec,deckSec,itemEd,fx};
 })();
