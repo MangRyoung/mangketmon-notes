@@ -298,3 +298,20 @@ html[data-skin="univ"] .idcard.ided:hover::after{opacity:.8}
 @media(max-width:480px){.idrk{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .ux-ptm{margin-top:10px}
 .ux-ptm .ptms{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:8px;border-top:0;padding-top:0}
+/* 10-30 망령 「서머리 바가 투머치 — 한 줄에 2개씩 압축해서 학생증 끝나는 길이랑 맞춰」:
+   학생증 옆 PT 서머리 = 2열 · 이름과 수치 한 줄 + 얇은 막대. 남음은 마우스를 올리면(title). 옆 열 아래 끝은 학생증 아래 끝에 맞춘다(내용이 더 길면 그만큼) */
+.idinfo .ux-pt .ptgs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;margin-bottom:0}
+.idinfo .ux-pt .ptg{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"l n" "b b";gap:3px 6px;font-size:12px}
+.idinfo .ux-pt .ptl{grid-area:l}
+.idinfo .ux-pt .ptn{grid-area:n;line-height:1.2}
+.idinfo .ux-pt .ptn b{font-size:13px}
+.idinfo .ux-pt .ptn small{display:none}
+.idinfo .ux-pt .ptg.over .ptn{color:var(--red,#e4002b)}
+.idinfo .ux-pt .ptb{grid-area:b;height:9px;border-radius:5px}
+.idinfo .ux-pt .ptb>i span{display:none}
+.idinfo .ux-pt .ptb.none span{display:none}
+.idinfo .ux-pt .ptb.none{padding:0;background:repeating-linear-gradient(135deg,rgba(127,127,127,.12) 0 4px,transparent 4px 8px)}
+.idinfo .ux-pt>.small.dim{display:none}
+html[data-skin="univ"] .idwrap>.idside>.idinfo{align-self:stretch;align-items:stretch}
+html[data-skin="univ"] .idinfo .idcol>.ux-sec:last-child{flex:1}
+@container pcs (max-width:760px){html[data-skin="univ"] .idwrap>.idside>.idinfo{align-self:start;align-items:start}html[data-skin="univ"] .idinfo .idcol>.ux-sec:last-child{flex:none}}
