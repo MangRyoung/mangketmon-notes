@@ -210,7 +210,10 @@ button.ntph-row:hover{background:var(--pp)}
 
 /* ===== 10-29 망령: 대학 시트 배치 — 학생증 오른쪽 = [자질 메모 · PT 서머리] + 고유, 아래 = 휴대폰 · 덱 ===== */
 .split.nside{grid-template-columns:minmax(0,1fr)}
-.idinfo{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:10px;margin-top:6px;align-items:start}
+.idinfo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:6px;align-items:stretch}   /* 두 줄 칸: [자질 메모 · PT 서머리 | 고유] 아래 [ORDER | COMMAND] — 양쪽 아랫줄이 맞게 늘인다 */
+.idinfo>.ux-ord.span{grid-column:1/-1}
+.idcol>.ux-sec:last-child{flex:1}
+@media(max-width:760px){.idinfo{grid-template-columns:minmax(0,1fr)}}
 .idcol{display:flex;flex-direction:column;gap:10px;min-width:0}
 .idinfo .ux-uqg{max-height:640px;overflow:auto}
 .ux-kv{display:grid;grid-template-columns:5.2em minmax(0,1fr);margin:0;font-size:13px;line-height:1.55}
