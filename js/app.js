@@ -185,12 +185,13 @@ window.NT=(()=>{
  function renderTop(top){const c=ST.campInfo||{};const role=gm()?'<span class="badge gm">GM</span>':me()?`<span class="badge seat">${esc(seatName(me())||me())}</span>`:'<span class="badge">구경</span>';
   const cur=tabOf(ST.view)[0];const tabs=TABS.filter(([k])=>k!=='set'||gm()||me()).map(t=>`<button data-v="${t[0]===cur?ST.view:subGet(t)}" data-tab="${t[0]}" class="${t[0]===cur?'on':''}">${t[1]}</button>`).join('');
   top.innerHTML=`<a class="back" href="#" data-lobby>← 캠페인</a><h1 class="camp name"><b>${esc(c.name||'…')}</b>${c.data&&c.data.sub?`<small>${esc(c.data.sub)}</small>`:''}</h1>${role}<nav class="tabs" id="sceneTabs">${tabs}</nav><span class="sp"></span>
-   ${(()=>{const r=((c.data||{}).om||{}).room;return r&&window.NT_LINK?`<a class="btn xs omgo" href="${esc(NT_LINK.omUrl(r))}" target="oremas" rel="noopener" title="이 캠페인과 이어진 웹툴 방 열기">🎲 웹툴</a>`:''})()}${window.NT_NOTICE?NT_NOTICE.bellHtml():''}<button type="button" class="favtop" data-favdrawer title="즐겨찾기">★</button><span id="ntLive" class="live ${ST.online?'on':''}" title="${ST.online?'실시간 연결됨':'연결 중…'}"></span>${!ST.role?`<button class="btn xs" data-login>${window.NT_ACCT&&NT_ACCT.tok()?'비밀구':'로그인'}</button>`:String(ST.secret).startsWith('u:')&&window.NT_ACCT?`<button class="btn xs ghost acmebtn" data-acme title="웹툴과 같은 계정 · 로그아웃">${esc(NT_ACCT.myName()||'계정')}</button>`:'<button class="btn xs ghost" data-logout title="이 브라우저에서 비밀구 지우기">나가기</button>'}
+   ${(()=>{const r=((c.data||{}).om||{}).room;return r&&window.NT_LINK?`<a class="btn xs omgo" href="${esc(NT_LINK.omUrl(r))}" target="oremas" rel="noopener" title="이 캠페인과 이어진 웹툴 방 열기">🎲 웹툴</a>`:''})()}${window.NT_NOTICE?NT_NOTICE.bellHtml():''}<button type="button" class="favtop" data-favdrawer title="즐겨찾기">★</button><span id="ntLive" class="live ${ST.online?'on':''}" title="${ST.online?'실시간 연결됨':'연결 중…'}"></span>${!ST.role&&ST.acct==='pl'&&window.NT_ACCT?'<button class="btn xs pri" data-seatpick title="빈 PC 시트를 골라 앉아요">🪑 자리 앉기</button>':''}${!ST.role?`<button class="btn xs" data-login>${window.NT_ACCT&&NT_ACCT.tok()?'비밀구':'로그인'}</button>`:String(ST.secret).startsWith('u:')&&window.NT_ACCT?`<button class="btn xs ghost acmebtn" data-acme title="웹툴과 같은 계정 · 로그아웃">${esc(NT_ACCT.myName()||'계정')}</button>`:'<button class="btn xs ghost" data-logout title="이 브라우저에서 비밀구 지우기">나가기</button>'}
    <span class="vtsw compact"><button type="button" class="vtcur">${(VT.find(x=>x[0]===vtGet())||[])[1]}<i>▾</i></button><span class="vtmenu">${VT.map(([k,l])=>`<button type="button" data-vt="${k}" class="${k===vtGet()?'on':''}">${l}</button>`).join('')}</span></span>`;
   top.onclick=e=>{const t=e.target;const b=t.closest('button[data-v]');if(b){go(b.dataset.v);return}
    if(t.closest('[data-lobby]')){e.preventDefault();leave();return}
    if(t.closest('[data-login]'))return window.NT_ACCT&&!NT_ACCT.tok()?NT_ACCT.loginModal():loginBox();   /* 10-29: 로그인 안 했으면 계정 로그인(비밀구는 그 창 아래), 계정은 있는데 권한이 없으면 비밀구 */
    if(t.closest('[data-acme]'))return NT_ACCT.meMenu();
+   if(t.closest('[data-seatpick]'))return NT_ACCT.seatPicker();
    if(t.closest('[data-logout]')){try{localStorage.removeItem(SK(ST.camp))}catch(x){}ST.secret='';ST.role=null;open(ST.camp);return}
    const v=t.closest('button[data-vt]');if(v){vtSet(v.dataset.vt);return}
    if(t.closest('.vtcur')){const s=t.closest('.vtsw');s.classList.toggle('open');return}};
@@ -226,11 +227,12 @@ window.NT=(()=>{
   try{if(!ST.camps.length)ST.camps=await DBS().camps();ST.campInfo=ST.camps.find(c=>c.id===camp)||null;if(!ST.campInfo){toast('없는 캠페인이에요');ST.camp='';setHash();return render()}campLook(ST.campInfo);
    /* 10-29 계정: 링크로 받은 비밀구가 없으면 계정(웹툴과 같은 로그인) 권한을 먼저 — 권한이 없으면 저장된 비밀구 */
    const tok=!given&&window.NT_ACCT?NT_ACCT.tok():'';
-   if(tok){try{const w=await DBS().whoami(camp,'u:'+tok);if(w){ST.role=w;ST.secret='u:'+tok}}catch(e){}}
+   ST.acct='';if(tok){/* 10-29 망령 「웹툴처럼 로그인한 PL 은 기본 PL 권한으로 자기가 자리에 앉게」: 열면 PL 권한(자리 없음)을 받는다 (patch_2026-10-29_PL기본.sql) */try{ST.acct=await DBS().acct.join(tok,camp)||''}catch(e){}
+    try{const w=await DBS().whoami(camp,'u:'+tok);if(w){ST.role=w;ST.secret='u:'+tok}}catch(e){}}
    if(!ST.role&&sec){ST.secret=sec;ST.role=await DBS().whoami(camp,sec);if(!ST.role){toast('저장된 비밀구가 맞지 않아 구경 모드예요');ST.secret=''}}
    try{ST.seats=await DBS().seats(camp)||[]}catch(e){ST.seats=[]}
    await loadAll();if(window.NT_MAKER)NT_MAKER.load().then(()=>render()).catch(()=>{});
-   setHash();app.innerHTML='';render();listen()}
+   setHash();app.innerHTML='';render();listen();if(window.NT_ACCT)NT_ACCT.afterOpen()}
   catch(e){app.innerHTML=`<div class="empty">열지 못했어요: ${esc(e.message)} <button class="btn sm" onclick="NT.leave()">캠페인 목록</button></div>`}}
  function leave(){if(unsub){unsub();unsub=null}ST.camp='';ST.role=null;ST.campInfo=null;campLook(null);for(const k in D)delete D[k];setHash();render()}
  async function refreshCamp(){try{ST.camps=await DBS().camps();ST.campInfo=ST.camps.find(c=>c.id===ST.camp)||ST.campInfo;campLook(ST.campInfo)}catch(e){}try{ST.seats=await DBS().seats(ST.camp)||[]}catch(e){}render()}

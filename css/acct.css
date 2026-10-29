@@ -50,3 +50,12 @@
  .onctl select,.mgt select{max-width:none}
  .mgt td:last-child{width:50%}
 }
+/* 10-29 자리 앉기 */
+.seatpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:10px}
+.seatcard{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;background:var(--bg2);border:1px solid var(--line2);color:var(--fg);cursor:pointer;text-align:center}
+.seatcard:hover:not(:disabled){border-color:var(--red)}
+.seatcard.on{border-color:var(--red);box-shadow:0 0 0 1px var(--red) inset}
+.seatcard:disabled{opacity:.45;cursor:default}
+.seatcard .sface{width:64px;height:64px;border-radius:50%;background:#000 center/cover;border:1px solid var(--line2)}
+.seatcard b{font-size:14px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seatcard small{font-size:11px;color:var(--mute)}

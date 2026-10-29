@@ -65,7 +65,7 @@ window.NT_STORE=(()=>{
   async mtlogMeta(){const r=await sb().from(cfg().makerTable||'docs').select('id,data').eq('kind','mtlogmeta');if(r.error)throw err(r.error);return r.data||[]},
   /* 10-29 망령 「세션 노트랑 웹툴이랑 로그인 체계를 같게」: 웹툴(오레마스) 계정 그대로. 로그인 · 가입 · 로그아웃은 웹툴 함수(om_*), 캠페인 권한은 nt_* (supabase/patch_2026-10-29_계정.sql) */
   acct:{login:(id,pw,dev)=>rpc('om_login',{p_id:id,p_pw:pw,p_device:dev||''}),signup:(id,pw,name)=>rpc('om_signup',{p_id:id,p_pw:pw,p_name:name}),logout:t=>rpc('om_logout',{p_token:t}),
-   me:t=>rpc('nt_me',{p_token:t}),campNew:(t,name)=>rpc('nt_camp_new',{p_token:t,p_name:name}),
+   me:t=>rpc('nt_me',{p_token:t}),join:(t,camp)=>rpc('nt_join',{p_token:t,p_camp:camp}),campNew:(t,name)=>rpc('nt_camp_new',{p_token:t,p_name:name}),
    adminList:t=>rpc('nt_admin_list',{p_token:t}),adminMember:(t,camp,uid,role,seat)=>rpc('nt_admin_member',{p_token:t,p_camp:camp,p_uid:uid,p_role:role??null,p_seat:seat??null})},
   /* 접속자: 실시간 presence 채널 하나(mk_online)에 노트를 연 사람이 저마다 {uid,name,camp,…} 를 올린다. 권한을 바꾸면 같은 채널로 「role」 알림 */
   online(key,info,h){const ch=sb().channel('mk_online',{config:{presence:{key},broadcast:{self:false}}});let cur=info;
