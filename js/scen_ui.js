@@ -1,5 +1,5 @@
 /* ---------- 시나리오 탭 ----------
-   routes: {name, group, color, entry(들어오는 조건), goal, note, next[route id], order, visible, steps:[{spot, title, note, read(낭독 · 묘사), ents[항목 id], st('' | now | done | skip | fail)}]}
+   routes: {name, group, color, entry(들어오는 조건), goal, note, next[route id], order, visible, links[{a,b,label}] (흐름도 갈림길 선, 단계 sid), steps:[{sid, spot, title, note, read(낭독 · 묘사), ents[항목 id], st('' | now | done | skip | fail), fx, fy (흐름도 자리)}]}
    단계는 장소(지도) 또는 제목만. 지도에는 같은 루트의 이웃 단계 사이에 선이 그어진다(map_ui). vis 로 PL 에게 숨길 수 있다. */
 "use strict";
 (()=>{
@@ -19,7 +19,7 @@
   const tot=all.reduce((a,r)=>a+(r.steps||[]).length,0),dn=all.reduce((a,r)=>a+prog(r).done,0);
   el.innerHTML=`<div class="toolbar"><h2>시나리오</h2><span class="note">${all.length}개 루트 · 단계 ${dn} / ${tot}</span><div class="seg">${G?`<button data-sv="write" class="${U2.view==='write'?'on':''}" title="루트 한 장을 창 없이 바로 써요">쓰기</button>`:''}<button data-sv="flow" class="${U2.view==='flow'?'on':''}">흐름도</button><button data-sv="list" class="${U2.view==='list'?'on':''}">목록</button></div>${gs.length>1&&U2.view==='list'?`<div class="seg"><button data-sg="" class="${!U.group?'on':''}">전체</button>${gs.map(g=>`<button data-sg="${esc(g)}" class="${U.group===g?'on':''}">${esc(g||'분류 없음')}</button>`).join('')}</div>`:''}<span class="sp"></span>${N().bulkBtns('routes',null,'루트')}${G?'<button class="btn sm pri" data-s="new">＋ 루트</button>':''}</div>
    ${U2.view==='write'?'':nowStrip(all)}
-   ${!all.length?`<div class="empty">시나리오 루트가 없어요.${G?' 「＋ 루트」로 만들고 단계(장소)를 차례로 넣어요.':''}</div>`:U2.view==='write'?writeHtml(all,gs):U2.view==='flow'?flowHtml(all,gs):gs.filter(g=>!U.group||U.group===g).map(g=>`<section class="sgroup"><div class="sgh"><span>${esc(g||'분류 없음')}</span><span class="small dim">${all.filter(r=>(r.group||'').trim()===g).length}개 루트</span></div>${all.filter(r=>(r.group||'').trim()===g).map(lane).join('')}</section>`).join('')}`;
+   ${!all.length?`<div class="empty">시나리오 루트가 없어요.${G?' 「＋ 루트」로 만들고 단계(장소)를 차례로 넣어요.':''}</div>`:U2.view==='write'?writeHtml(all,gs):U2.view==='flow'?(window.NT_FLOWMAP?NT_FLOWMAP.html():flowHtml(all,gs)):gs.filter(g=>!U.group||U.group===g).map(g=>`<section class="sgroup"><div class="sgh"><span>${esc(g||'분류 없음')}</span><span class="small dim">${all.filter(r=>(r.group||'').trim()===g).length}개 루트</span></div>${all.filter(r=>(r.group||'').trim()===g).map(lane).join('')}</section>`).join('')}`;
   el.addEventListener('click',e=>{const t=e.target;const sv=t.closest('[data-sv]');if(sv){U2.view=sv.dataset.sv;vSet(U2.view);N().render();return}
    if(U2.view==='write'&&wClick(e,t))return;
    const sg=t.closest('[data-sg]');if(sg){U.group=sg.dataset.sg;N().render();return}
@@ -32,7 +32,7 @@
    $$('.fcards,.sgroup',el).forEach(c=>N().sortable(c,'[data-route]',ids=>orderRoutes(ids),{handleSel:'header,.laneh'}));
    $$('.fsteps',el).forEach(c=>{const rid=c.closest('[data-route]').dataset.route;N().sortable(c,'.fstep[data-id]',ids=>orderSteps(rid,ids))});
    $$('.steps',el).forEach(c=>{const rid=c.closest('[data-route]').dataset.route;N().sortable(c,'.step[data-id]',ids=>orderSteps(rid,ids),{horizontal:true})})}
-  if(U2.view==='flow'){requestAnimationFrame(()=>drawFlow(el));watchFlow(el)}
+  if(U2.view==='flow'){if(window.NT_FLOWMAP)NT_FLOWMAP.mount(el);else{requestAnimationFrame(()=>drawFlow(el));watchFlow(el)}}
   if(U2.view==='write')wireWrite(el)}
  /* ---- 10-26 공용: 단계 상태 · 루트 지우기 · 순서 · 메뉴 ---- */
  const STL={'':'예정',now:'진행 중',done:'끝',skip:'건너뜀',fail:'실패'};
@@ -209,5 +209,5 @@
   $$('[data-goent]',md).forEach(b=>b.onclick=()=>{N().closeModal(true);N().go('ents');setTimeout(()=>window.NT_ENTS&&NT_ENTS.select(b.dataset.goent),0)});
   const mp=$('#srMap',md);if(mp)mp.onclick=()=>{N().closeModal(true);N().go('map');setTimeout(()=>{NT_MAP.select(s.spot);N().render()},0)}}
  N().MOD.scen={render};
- window.NT_SCEN={routes,prog,write};
+ window.NT_SCEN={routes,prog,write,stepMenu,stepRead,cycleStep};
 })();

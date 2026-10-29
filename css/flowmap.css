@@ -1,0 +1,41 @@
+/* 10-29 망령: 시나리오 흐름도 — 자유 배치 · 선 잇기 (js/flowmap.js) */
+.fm{position:relative;height:calc(100dvh - 210px);min-height:440px;overflow:hidden;border:1px solid var(--line);background-color:var(--bg2);
+ background-image:radial-gradient(circle,rgba(128,128,128,.22) 1px,transparent 1.4px);background-size:24px 24px;cursor:grab;touch-action:none;user-select:none}
+.fm:active{cursor:grabbing}
+.fm-world{position:absolute;left:0;top:0;transform-origin:0 0}
+.fm-svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+.fm-e{fill:none;stroke-width:2.4}
+.fm-e.seq{opacity:.9}
+.fm-e.nxt{stroke:var(--mute);stroke-dasharray:6 5}
+.fm-e.link{stroke:var(--yel2);stroke-width:2.2;stroke-dasharray:2 0}
+.fm-e.hit{stroke:transparent;stroke-width:16;pointer-events:stroke;cursor:pointer}
+.fm-lk text{fill:var(--yel2);font:12px var(--font);paint-order:stroke;stroke:var(--bg2);stroke-width:4px;pointer-events:none}
+.fm-lk:hover .fm-e.link{stroke-width:3.4}
+.fm-temp{fill:none;stroke:var(--yel2);stroke-width:2;stroke-dasharray:5 4}
+.fm-n{position:absolute;width:200px;background:var(--panel);border:1px solid var(--line2);border-top:3px solid var(--c);box-shadow:0 4px 14px rgba(0,0,0,.35);padding:6px 9px 7px;cursor:pointer;font-size:12px}
+.fm-n:hover{border-color:var(--c)}
+.fm-n.drag{cursor:grabbing;box-shadow:0 10px 26px rgba(0,0,0,.5);z-index:3}
+.fm-n.target{outline:2px solid var(--yel2);outline-offset:2px}
+.fm-h{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--mute)}
+.fm-h i{width:7px;height:7px;border-radius:50%;background:var(--c);flex:0 0 7px}
+.fm-h span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fm-h b{font:600 11px var(--mono);color:var(--fg2)}
+.fm-t{font-size:14px;font-weight:600;line-height:1.35;margin:3px 0 2px;color:var(--fg);word-break:keep-all}
+.fm-m{display:flex;flex-wrap:wrap;gap:4px 8px;color:var(--fg2);font-size:11px}
+.fm-m em{font-style:normal;padding:0 5px;border:1px solid var(--line2)}
+.fm-n.st-now{box-shadow:0 0 0 2px var(--c),0 4px 18px rgba(0,0,0,.4)}
+.fm-n.st-now .fm-m em{border-color:var(--c);color:var(--fg)}
+.fm-n.st-done,.fm-n.st-skip{opacity:.62}
+.fm-n.st-fail .fm-m em{border-color:var(--red);color:var(--red2)}
+.fm-port{position:absolute;right:-8px;top:50%;width:14px;height:14px;margin-top:-7px;border-radius:50%;background:var(--bg);border:2px solid var(--yel2);cursor:crosshair;opacity:.55}
+.fm-n:hover .fm-port,.fm.linking .fm-port{opacity:1}
+.fm-tools{position:absolute;right:10px;top:10px;display:flex;gap:4px;z-index:5}
+.fm-help{position:absolute;left:10px;bottom:8px;z-index:5;pointer-events:none;background:rgba(0,0,0,.35);padding:2px 8px}
+.fm-empty{position:absolute;left:40px;top:40px;width:320px}
+html[data-skin="univ"] .fm-n{background:#efe4c8;color:#2a2118;border-color:#b9a77f}
+html[data-skin="univ"] .fm-n .fm-t{color:#1d150e;font-family:'Noto Serif KR',serif}
+html[data-skin="univ"] .fm-n .fm-h,html[data-skin="univ"] .fm-n .fm-m{color:#6b5a40}
+html[data-skin="univ"] .fm-n .fm-h b{color:#3a2c1c}
+@media (max-width:640px){.fm{height:calc(100dvh - 240px)}.fm-help{display:none}}
+html[data-skin="univ"] .fm-n .fm-m em{color:#6b1018;border-color:#a8936a}
+html[data-skin="univ"] .fm-n.st-now .fm-m em{border-color:var(--c);color:#6b1018}

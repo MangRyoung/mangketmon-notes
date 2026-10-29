@@ -86,10 +86,20 @@ window.NT=(()=>{
  const BULKF={};
  async function putMany(rows){for(const r of rows)mark(r.kind,r.id);try{const n=await DBS().putMany(ST.camp,ST.secret,rows);for(const r of rows)col(r.kind)[r.id]={data:clone(r.data),vis:r.vis||'pub',updated_at:new Date().toISOString()};DBS().ping(ST.camp,{t:'all'});render();return n}catch(e){toast('가져오기 실패: '+e.message);return 0}}
 
- async function loadAll(){const rows=await DBS().all(ST.camp,ST.secret,null);for(const k in D)delete D[k];let mx=null;for(const r of rows){col(r.kind)[r.id]={data:r.data||{},vis:r.vis,updated_at:r.updated_at};if(!mx||r.updated_at>mx)mx=r.updated_at}ST.since=mx}
+ /* 10-29 망령 「변동 사항만 주고받게」: 받은 문서를 이 브라우저에 사본으로 두고(캠페인 · 역할마다), 다음에 열 때는 그 뒤에 바뀐 것만 받는다.
+    지워진 것 · 볼 수 없게 바뀐 것은 id 목록(nt_ids · 내용 없음)으로 걸러 낸다. 사본이 7일 넘었거나 3MB 를 넘으면 전부 새로 받는다 */
+ const CK=()=>'nt_cache_'+ST.camp+'_'+(ST.role||'x')+(me()?'_'+me():'');
+ function cacheGet(){try{if(DBS().mode!=='supabase')return null;const j=JSON.parse(localStorage.getItem(CK())||'null');return j&&j.v===1&&j.since&&Date.now()-j.t<7*864e5?j:null}catch(e){return null}}
+ let cacheT=0;function cacheSave(){if(!ST.camp||!ST.since)return;clearTimeout(cacheT);const key=CK();cacheT=setTimeout(()=>{try{const s=JSON.stringify({v:1,t:Date.now(),since:ST.since,D});if(s.length<3e6)localStorage.setItem(key,s);else localStorage.removeItem(key)}catch(e){try{localStorage.removeItem(key)}catch(e2){}}},1200)}
+ const SYNC={full:0,delta:0,last:''};
+ function apply(rows){for(const r of rows){col(r.kind)[r.id]={data:r.data||{},vis:r.vis,updated_at:r.updated_at};if(!ST.since||r.updated_at>ST.since)ST.since=r.updated_at}}
+ async function loadAll(){const c=cacheGet();for(const k in D)delete D[k];
+  if(c){Object.assign(D,c.D);ST.since=c.since;try{const ids=await DBS().ids(ST.camp,ST.secret);const rows=await DBS().all(ST.camp,ST.secret,ST.since);const have=new Set(ids.map(x=>x.kind+'/'+x.id).concat(rows.map(x=>x.kind+'/'+x.id)));
+    for(const k in D)for(const id in D[k])if(!have.has(k+'/'+id))delete D[k][id];apply(rows);SYNC.delta++;SYNC.last='바뀐 문서 '+rows.length+'개만 받음';cacheSave();return}catch(e){console.warn('cache',e);for(const k in D)delete D[k];ST.since=null}}
+  const rows=await DBS().all(ST.camp,ST.secret,null);ST.since=null;apply(rows);SYNC.full++;SYNC.last='전부 받음 '+rows.length+'개';cacheSave()}
  /* 다시 맞추기: 바뀐 것만 + 지워진 것 */
- async function resync(){if(!ST.camp)return;try{const rows=await DBS().all(ST.camp,ST.secret,ST.since);for(const r of rows){col(r.kind)[r.id]={data:r.data||{},vis:r.vis,updated_at:r.updated_at};if(!ST.since||r.updated_at>ST.since)ST.since=r.updated_at}
-  const ids=await DBS().ids(ST.camp,ST.secret);const have=new Set(ids.map(x=>x.kind+'/'+x.id));for(const k in D)for(const id in D[k])if(!have.has(k+'/'+id))delete D[k][id];render()}catch(e){console.warn('resync',e)}}
+ async function resync(){if(!ST.camp)return;try{const ids=await DBS().ids(ST.camp,ST.secret);const rows=await DBS().all(ST.camp,ST.secret,ST.since);apply(rows);
+  const have=new Set(ids.map(x=>x.kind+'/'+x.id).concat(rows.map(x=>x.kind+'/'+x.id)));for(const k in D)for(const id in D[k])if(!have.has(k+'/'+id))delete D[k][id];render()}catch(e){console.warn('resync',e)}}
  let unsub=null;
  const MINE=new Map();const mark=(k,id)=>MINE.set(k+'/'+id,Date.now());const recent=(k,id)=>{const t=MINE.get(k+'/'+id);return t&&Date.now()-t<6000};
  function listen(){if(unsub)unsub();unsub=DBS().subscribe(ST.camp,{
@@ -168,7 +178,7 @@ window.NT=(()=>{
  function keepState(root){if(!root)return null;const sc=[];root.querySelectorAll(KEEPSEL).forEach((e,i)=>{if(e.scrollTop||e.scrollLeft)sc.push([e.className,i,e.scrollLeft,e.scrollTop])});const a=document.activeElement;const f=a&&root.contains(a)&&a.id?{id:a.id,s:a.selectionStart,e:a.selectionEnd,v:a.matches&&a.matches('[data-live]')?a.value:null}:null;return {sc,f,view:ST.view,y:window.scrollY}}
  function restoreState(root,k){if(!k||k.view!==ST.view)return;const L=root.querySelectorAll(KEEPSEL);k.sc.forEach(([cls,i,l,t])=>{const e=L[i];if(e&&e.className===cls){e.scrollLeft=l;e.scrollTop=t}});if(k.f){const e=root.querySelector('#'+CSS.escape(k.f.id));if(e&&e!==document.activeElement){try{if(k.f.v!=null&&e.matches('[data-live]')&&e.value!==k.f.v){e.value=k.f.v;e.dispatchEvent(new Event('input'))}/* 10-29: 쓰고 있던 칸은 다시 그려져도 글을 지킨다 */e.focus({preventScroll:true});if(k.f.s!=null&&e.setSelectionRange)e.setSelectionRange(k.f.s,k.f.e)}catch(x){}}}}
 
- function render(){const app=$('#app');if(!app)return;if(!ST.camp)return renderLobby(app);
+ function render(){const app=$('#app');if(!app)return;if(!ST.camp)return renderLobby(app);cacheSave();
   let sh=$('#ntShell',app);if(!sh){app.innerHTML=`<div id="ntShell"><header class="top"></header><div id="ntBody"><div id="ntFavSlot"></div><main id="ntMain"></main></div></div>`;sh=$('#ntShell',app)}
   renderTop($('.top',sh));const fs=$('#ntFavSlot',sh);if(fs&&window.NT_FAV)fs.innerHTML=NT_FAV.rail();const old=$('#ntMain',sh);const keep=keepState(old);const main=old.cloneNode(false);old.replaceWith(main);main.dataset.view=ST.view;/* 탭 모듈이 render 마다 el.addEventListener 를 붙이므로, 매번 새 요소로 바꿔 처리기가 쌓이거나 다른 탭 것과 섞이지 않게 한다 */const M=MOD[ST.view];
   try{if(M)M.render(main);else main.innerHTML='<div class="empty">준비 중</div>';subTabs(main);restoreState(main,keep)}catch(e){console.error(e);main.innerHTML=`<div class="empty vfail"><b>「${esc((VIEWS.find(v=>v[0]===ST.view)||[])[1]||ST.view)}」 화면을 그리지 못했어요.</b><div class="small dim" style="margin-top:6px;word-break:break-all">${esc(e&&e.message||e)}</div><button class="btn sm" onclick="NT.go('map')">지도로</button></div>`}}
@@ -221,5 +231,5 @@ window.NT=(()=>{
  window.addEventListener('DOMContentLoaded',()=>{const q=readHash();if(q.camp)open(q.camp,q.view);else render()});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&ST.camp)resync()});
 
- return {ST,D,$,$$,esc,uid,clone,cssu,gm,me,canSee,canEdit,toast,openModal,closeModal,confirmBox,promptBox,armDraft,sortable,reorder,ctxMenu,bindCtx,pinch,doc,data,list,put,patch,del,putMany,bulkVis,bulkBtns,BULKF,upload,shrink,bindDrop,visSelect,visBadge,visLabel,seatName,render,go,open,leave,refreshCamp,resync,MOD,VIEWS,TABS,DBS,VT,SKINS,skin};
+ return {ST,D,SYNC,$,$$,esc,uid,clone,cssu,gm,me,canSee,canEdit,toast,openModal,closeModal,confirmBox,promptBox,armDraft,sortable,reorder,ctxMenu,bindCtx,pinch,doc,data,list,put,patch,del,putMany,bulkVis,bulkBtns,BULKF,upload,shrink,bindDrop,visSelect,visBadge,visLabel,seatName,render,go,open,leave,refreshCamp,resync,MOD,VIEWS,TABS,DBS,VT,SKINS,skin};
 })();

@@ -98,3 +98,11 @@ html[data-vt="mm"] .subtabs button.on{color:#e8dfcb;text-shadow:0 0 14px rgba(16
 .top .omgo{white-space:nowrap}
 @media (max-width:640px){.top .omgo{padding:2px 6px}}
 .rbbody th:first-child,.rbbody td:first-child{white-space:nowrap}
+/* 10-29 망령: 항목은 상세가 주인공 — 카드 칸 2 : 상세 3 */
+.split.entsplit{grid-template-columns:minmax(260px,2fr) minmax(420px,3fr)}
+.entsplit .entgrid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+.entsplit #entSide .entd .pre,.entsplit #entSide .entd p{font-size:15px;line-height:1.75}
+.entsplit #entSide .entd .kv{font-size:14.5px;line-height:1.7}
+.entsplit #entSide .entd .kv{grid-template-columns:max-content 1fr;column-gap:18px}
+@media(max-width:1000px){.split.entsplit{grid-template-columns:1fr}}
+.entsplit .entcard .eb b{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}

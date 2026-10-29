@@ -46,6 +46,9 @@ window.NT_STORE=(()=>{
    for(;;){const r=await sb().from(cfg().makerTable||'docs').select('id,data').eq('kind',kind).order('id').range(from,from+PAGE-1);if(r.error)throw err(r.error);const rows=r.data||[];out.push(...rows);if(rows.length<PAGE)break;from+=PAGE}
    return out},
   /* 10-26 망령: 노트 → 제작기 보내기. 제작기 문서 한 장 읽기 · 쓰기 (트레이너 doc = {ord, data:{…, pids}}) */
+  /* 10-29 변동 사항만: since 뒤에 바뀐 제작기 문서(updated_at) · 지금 있는 id 목록(내용 없이) */
+  async makerSince(kind,since){const out=[];let from=0;for(;;){let q=sb().from(cfg().makerTable||'docs').select('id,data,updated_at').eq('kind',kind);if(since)q=q.gt('updated_at',since);const r=await q.order('updated_at').order('id').range(from,from+999);if(r.error)throw err(r.error);const rows=r.data||[];out.push(...rows);if(rows.length<1000)break;from+=rows.length}return out},
+  async makerIds(kind){const out=[];let from=0;for(;;){const r=await sb().from(cfg().makerTable||'docs').select('id').eq('kind',kind).order('id').range(from,from+999);if(r.error)throw err(r.error);const rows=r.data||[];out.push(...rows.map(x=>x.id));if(rows.length<1000)break;from+=rows.length}return out},
   async makerGet(kind,id){const r=await sb().from(cfg().makerTable||'docs').select('id,data').eq('kind',kind).eq('id',id).maybeSingle();if(r.error)throw err(r.error);return r.data||null},
   async makerPut(kind,id,data){const r=await sb().from(cfg().makerTable||'docs').upsert({kind,id,data},{onConflict:'kind,id'});if(r.error)throw err(r.error);return true},
   /* 로그 정리기 보관소 (kind mtlog): 목록은 제목 · 폴더 · 줄 수 · 날짜 · 세션 정보만 (본문은 안 받는다) */

@@ -5,8 +5,17 @@ window.NT_MAKER=(()=>{
  const N=()=>window.NT;
  const M={trainers:[],pokemon:[],folders:[],at:0,loading:null};
  const unwrap=doc=>{const d=(doc.data&&doc.data.data)||doc.data||{};return Object.assign({id:doc.id,_ord:doc.data&&doc.data.ord!=null?+doc.data.ord:null},d)};
+ /* 10-29 망령 「변동 사항만」: 받은 제작기 문서를 이 브라우저에 두고, 다음에는 그 뒤에 바뀐 것(updated_at)만 받는다. 지워진 건 id 목록으로 걸러 낸다 */
+ const MKC='nt_mk_cache',KS=['trainers','pokemon','folders'];
+ async function pull(){const DB=N().DBS();if(!DB.makerSince||!DB.makerIds){const [t,p,f]=await Promise.all([DB.makerDocs('trainers'),DB.makerDocs('pokemon'),DB.makerDocs('folders').catch(()=>[])]);return {trainers:t,pokemon:p,folders:f}}
+  let c=null;try{c=JSON.parse(localStorage.getItem(MKC)||'null')}catch(e){}if(!c||c.v!==1||Date.now()-c.t>7*864e5)c={v:1,t:Date.now(),since:{},docs:{}};
+  let got=0;await Promise.all(KS.map(async k=>{const D=c.docs[k]=c.docs[k]||{};const had=Object.keys(D).length;const [ids,rows]=await Promise.all([had?DB.makerIds(k):null,DB.makerSince(k,had?c.since[k]:null)]);
+   for(const r of rows){D[r.id]={id:r.id,data:r.data};if(!c.since[k]||r.updated_at>c.since[k])c.since[k]=r.updated_at}got+=rows.length;
+   if(ids){const have=new Set(ids.concat(rows.map(r=>r.id)));for(const id of Object.keys(D))if(!have.has(id))delete D[id]}}));
+  M.got=got;try{const s=JSON.stringify(c);if(s.length<4e6)localStorage.setItem(MKC,s);else localStorage.removeItem(MKC)}catch(e){try{localStorage.removeItem(MKC)}catch(e2){}}
+  return Object.fromEntries(KS.map(k=>[k,Object.values(c.docs[k]||{})]))}
  async function load(force){if(M.loading)return M.loading;if(!force&&M.at&&Date.now()-M.at<600000)return M;
-  M.loading=(async()=>{try{const [t,p,f]=await Promise.all([N().DBS().makerDocs('trainers'),N().DBS().makerDocs('pokemon'),N().DBS().makerDocs('folders').catch(()=>[])]);M.trainers=t.map(unwrap);M.pokemon=p.map(unwrap);M.folders=f.map(unwrap);M.at=Date.now()}catch(e){console.warn('maker',e)}finally{M.loading=null}return M})();return M.loading}
+  M.loading=(async()=>{try{const x=await pull();M.trainers=x.trainers.map(unwrap);M.pokemon=x.pokemon.map(unwrap);M.folders=x.folders.map(unwrap);M.at=Date.now()}catch(e){console.warn('maker',e)}finally{M.loading=null}return M})();return M.loading}
  const visible=t=>!t.priv||N().gm()||t.id===N().me();
  const trainers=()=>M.trainers.filter(visible).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ko'));
  const trainer=id=>M.trainers.find(t=>t.id===id)||null;

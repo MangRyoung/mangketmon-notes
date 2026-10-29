@@ -84,9 +84,11 @@ window.NT_BOARD=(()=>{
   layoutAll();applyHidden();
   /* 10-26 망령: 다시 그릴 때 확대 · 스크롤 · 고른 카드 · 실 잇기 모드를 이어 간다 */
   const S0=opt.state;if(S0&&S0.scale){vp.style.height=S0.h||'';setScale(S0.scale);vp.scrollLeft=S0.l||0;vp.scrollTop=S0.t||0;if(S0.sel&&cards[S0.sel])select(S0.sel,true);else select(null);if(S0.link){const lb=el.querySelector('[data-cb="link"]');if(lb){lb.classList.add('on');board.classList.add('linkmode');lb.textContent='🧵 실 잇기 중 — 두 사람을 차례로'}if(S0.linkFrom&&cards[S0.linkFrom]){linkFrom=S0.linkFrom;cards[S0.linkFrom].classList.add('from')}}}else{fit();select(null)}
-  let lastW=vp.clientWidth;const ro=window.ResizeObserver?new ResizeObserver(()=>{if(Math.abs(vp.clientWidth-lastW)>8){lastW=vp.clientWidth;fit()}}):null;if(ro)ro.observe(vp);
+  /* 붙어 있을 때 마지막 모습 — 떼어진 뒤(다른 탭) 다시 그릴 때 이걸로 되살린다 */
+  const snap=()=>({scale,l:vp.scrollLeft,t:vp.scrollTop,h:vp.style.height,sel,link:board.classList.contains('linkmode'),linkFrom});let LAST=null;const keep=()=>{if(vp.isConnected&&vp.clientWidth>0)LAST=snap()};vp.addEventListener('scroll',keep,{passive:true});setTimeout(keep,0);
+  let lastW=vp.clientWidth;const ro=window.ResizeObserver?new ResizeObserver(()=>{if(!vp.isConnected||!vp.clientWidth)return;/* 10-29: 다른 탭으로 가며 떼어질 때(너비 0) 맞추면 판이 쪼그라든 채로 남았다 */if(Math.abs(vp.clientWidth-lastW)>8){lastW=vp.clientWidth;fit()}}):null;if(ro)ro.observe(vp);
   /* 바깥(메뉴)에서 「이 사람부터 실 잇기」 */
   function startLink(id){if(!opt.canEdit||!cards[id])return;const lb=el.querySelector('[data-cb="link"]');el.querySelectorAll('.cb-card.from').forEach(x=>x.classList.remove('from'));if(lb){lb.classList.add('on');lb.textContent='🧵 실 잇기 중 — 두 사람을 차례로'}board.classList.add('linkmode');linkFrom=id;cards[id].classList.add('from')}
-  return {select:id=>{select(id,true);scrollTo(id)},linkFrom:startLink,relayout:layoutAll,getState:()=>({scale,l:vp.scrollLeft,t:vp.scrollTop,h:vp.style.height,sel,link:board.classList.contains('linkmode'),linkFrom}),destroy:()=>{if(ro)ro.disconnect()}}}
+  return {select:id=>{select(id,true);scrollTo(id)},linkFrom:startLink,relayout:layoutAll,getState:()=>{const live=vp.isConnected&&vp.clientWidth>0;if(live)LAST=snap();return LAST},destroy:()=>{if(ro)ro.disconnect()}}}
  return {mount};
 })();

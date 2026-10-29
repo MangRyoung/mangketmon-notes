@@ -5,16 +5,16 @@
 (()=>{
  const N=()=>window.NT;const {$,$$,esc}=window.NT;
  const L=[];let unread=0,open=false;const baseTitle=document.title;
- const KL={ents:'항목',spots:'장소',maps:'지도',routes:'루트',rels:'관계',pc:'PC 시트',npc:'NPC 시트',pcp:'PC 비밀 칸',plan:'일정',avail:'일정 투표',sec:'GM 메모',links:'이음선',logs:'기록'};
+ const KL={ents:'항목',spots:'장소',maps:'지도',routes:'루트',rels:'관계',pc:'PC 시트',npc:'NPC 시트',pcp:'PC 비밀 칸',plan:'일정',avail:'일정 투표',sec:'GM 메모',links:'이음선',logs:'기록',dgs:'던전'};
  const nameOf=(kind,id,d)=>{d=d||N().data(kind,id)||{};if(kind==='ents')return d.title;if(kind==='spots'||kind==='maps'||kind==='routes'||kind==='pc'||kind==='npc')return d.name;if(kind==='rels'){const a=N().data('ents',d.a)||{},b=N().data('ents',d.b)||{};return (a.title||'?')+' → '+(b.title||'?')}
   if(kind==='plan')return d.t==='sess'?'세션 '+(d.label||'')+' '+(d.what||''):d.t==='note'?'메모 · '+(d.k||''):d.t==='cand'?'후보 날짜 '+(d.date||''):d.title||'';if(kind==='avail'){const seat=String(id).split('_').pop();return (N().seatName(seat)||seat)+(String(id).startsWith('wk_')?' · 평소 되는 요일':' · '+String(id).split('_')[0])}
-  if(kind==='logs')return d.title||'기록';if(kind==='sec')return String(id);if(kind==='pcp')return N().seatName(id)||id;return id};
+  if(kind==='logs')return d.title||'기록';if(kind==='dgs')return d.n||'던전';if(kind==='sec')return String(id);if(kind==='pcp')return N().seatName(id)||id;return id};
  const goOf=(kind,id)=>{if(kind==='sec'){const [k,i]=String(id).split(':');return goOf({spot:'spots',ent:'ents',route:'routes',pc:'pc',npc:'npc'}[k]||k,i)}if(kind==='pcp')return {kind:'pc',id};if(kind==='plan'){const d=N().data('plan',id)||{};return {kind:d.t==='sess'?'sess':'plan',id}}if(kind==='avail'||kind==='maps'||kind==='links')return {kind:'tab',id:kind==='maps'?'map':'plan'};if(kind==='rels')return {kind:'tab',id:'graph'};if(kind==='logs')return String(id).startsWith('mt_')?{kind:'tab',id:'logs'}:{kind:'logs',id};return {kind,id}};
  function push(kind,id,ev,data){if(!N().ST.camp)return;const t={kind,id,ev,at:Date.now(),name:nameOf(kind,id,data)||'',who:(data&&data._by)||''};L.unshift(t);if(L.length>50)L.pop();unread++;
   const txt=`${ev==='del'?'지움':ev==='new'?'새로':'고침'} · ${KL[kind]||kind} 「${t.name}」`;toastN(txt,t);paintBell();
   if(document.hidden){document.title=`(${unread}) ${baseTitle}`;try{if('Notification' in window&&Notification.permission==='granted')new Notification('세션 노트 · '+((N().ST.campInfo||{}).name||''),{body:txt,tag:'nt-'+kind+'-'+id})}catch(e){}}}
  function toastN(txt,t){let box=$('#ntNotices');if(!box){box=document.createElement('div');box.id='ntNotices';document.body.appendChild(box)}const d=document.createElement('div');d.className='ntn';d.innerHTML=`<span>📣 ${esc(txt)}</span>${t.ev!=='del'?'<b>보기</b>':''}`;d.onclick=()=>{d.remove();if(t.ev!=='del')go(t)};box.appendChild(d);setTimeout(()=>{d.classList.add('out');setTimeout(()=>d.remove(),400)},8000)}
- function go(t){const g=goOf(t.kind,t.id);if(g.kind==='tab')return N().go(g.id);if(window.NT_FAV)NT_FAV.go(g)}
+ function go(t){if(t.kind==='dgs'&&window.NT_DG)return NT_DG.openEd(t.id);const g=goOf(t.kind,t.id);if(g.kind==='tab')return N().go(g.id);if(window.NT_FAV)NT_FAV.go(g)}
  function paintBell(){const b=$('#ntBell');if(!b)return;b.classList.toggle('on',unread>0);const c=$('#ntBell i');if(c)c.textContent=unread||''}
  function bellHtml(){return `<button type="button" id="ntBell" class="bell ${unread?'on':''}" data-bell title="알림">🔔<i>${unread||''}</i></button>`}
  function panel(){open=!open;let p=$('#ntNoticePanel');if(p)p.remove();if(!open)return;unread=0;document.title=baseTitle;paintBell();
