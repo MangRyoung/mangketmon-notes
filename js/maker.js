@@ -26,13 +26,15 @@ window.NT_MAKER=(()=>{
  const folderName=id=>{const f=M.folders.find(x=>x.id===id);return f?f.name:(id||'')};
  /* 10-26 망령: 파티를 제작기 값 그대로 — 기술 표(타입 · 분류 · 위력)와 육성 기본 레벨은 제작기 기본 DB(data/db.js) + 공유 DB 의 기술 수정(dbedit)에서.
     특성 · 소지품 · 포텐셜 효과 글은 포켓몬 문서의 effTxt(제작기가 저장할 때 같이 적는 사본)를 쓴다 */
- const DBX={p:null,moves:null,lvl:[],items:new Map(),cards:new Map()};
+ const DBX={p:null,moves:null,lvl:[],items:new Map(),cards:new Map(),abil:new Map(),pots:new Map()};
  /* 10-29 망령: 소지품(items, 이름 = 1번 칸) · 카드(cards, 제작기 「카드 DB」 — 공유 DB 수정 행에만 있다)도 같이 읽는다. 대학 시트의 소지품 고치기 · 덱에서 쓴다 */
- function db(){if(DBX.p)return DBX.p;DBX.p=new Promise(res=>{const fin=()=>{const D=window.MKM_DB||{};const mv=new Map(),it=new Map(),cd=new Map();for(const r of D.moves||[])if(r&&r[2])mv.set(r[2],r);for(const r of D.items||[])if(r&&r[1])it.set(r[1],r);for(const r of D.cards||[])if(r&&r[1])cd.set(r[1],r);DBX.lvl=D.lvl||[];
-    const MP={moves:mv,items:it,cards:cd};
-    N().DBS().makerDocs('dbedit').then(L=>{for(const x of L||[]){const d=x.data||{};const m=MP[d.kind];if(!m)continue;if(d.deleted)m.delete(d.key);else if(Array.isArray(d.row))m.set(d.key,d.row)}}).catch(()=>{}).finally(()=>{DBX.moves=mv;DBX.items=it;DBX.cards=cd;res(DBX)})};
+ function db(){if(DBX.p)return DBX.p;DBX.p=new Promise(res=>{const fin=()=>{const D=window.MKM_DB||{};const mv=new Map(),it=new Map(),cd=new Map(),ab=new Map(),pt=new Map();for(const r of D.abil||[])if(r&&r[1])ab.set(r[1],r);for(const r of D.pots||[])if(r&&r[1])pt.set(r[1],r);for(const r of D.moves||[])if(r&&r[2])mv.set(r[2],r);for(const r of D.items||[])if(r&&r[1])it.set(r[1],r);for(const r of D.cards||[])if(r&&r[1])cd.set(r[1],r);DBX.lvl=D.lvl||[];
+    const MP={moves:mv,items:it,cards:cd,abil:ab,pots:pt};
+    N().DBS().makerDocs('dbedit').then(L=>{for(const x of L||[]){const d=x.data||{};const m=MP[d.kind];if(!m)continue;if(d.deleted)m.delete(d.key);else if(Array.isArray(d.row))m.set(d.key,d.row)}}).catch(()=>{}).finally(()=>{DBX.moves=mv;DBX.items=it;DBX.cards=cd;DBX.abil=ab;DBX.pots=pt;res(DBX)})};
    if(window.MKM_DB)return fin();const sc=document.createElement('script');sc.src=String((window.NT_CONFIG||{}).makerUrl||'').replace(/\/?$/,'/')+'data/db.js';sc.onload=fin;sc.onerror=()=>{DBX.moves=new Map();res(DBX)};document.head.appendChild(sc)});return DBX.p}
  const item=n=>(n&&DBX.items.get(n))||null;const card=n=>(n&&DBX.cards.get(n))||null;
+ /* 10-29 망령: 노트에서 포켓몬 고치기 — 특성(abil, 이름 = 1번 칸) · 포텐셜(pots, 이름 = 1번 칸) · 기술 목록 */
+ const abil=n=>(n&&DBX.abil.get(n))||null;const pot=n=>(n&&DBX.pots.get(String(n).replace(/[『』]/g,'').trim()))||null;const abilList=()=>[...DBX.abil.values()];const potList=()=>[...DBX.pots.values()];const moveList=()=>DBX.moves?[...DBX.moves.values()]:[];
  const itemList=()=>[...DBX.items.values()];const cardList=()=>[...DBX.cards.values()];const dbSet=(k,key,row)=>{const m=DBX[k];if(m&&m.set)m.set(key,row)};
  /* 10-29 망령: 노트에서 제작기 문서 한 장 고치기 (트레이너 · 포켓몬). fn(안쪽 data) 를 부르고 올린 뒤, 이 브라우저의 사본도 바로 바꾼다 */
  async function edit(kind,id,fn){const DB=N().DBS();if(!DB.makerPut||!DB.makerGet)throw new Error('이 화면에서는 제작기에 쓸 수 없어요');const cur=await DB.makerGet(kind,id);if(!cur)throw new Error('제작기 문서를 찾지 못했어요');
@@ -63,5 +65,5 @@ window.NT_MAKER=(()=>{
    const done=async ids=>{try{await saveLinked(ids);N().closeModal();N().toast(ids.length?'제작기 폴더를 이었어요':'폴더 잇기를 풀었어요');N().render();res(ids)}catch(e){N().toast('저장 실패: '+e.message)}};
    N().$('#mkfOk',md).onclick=()=>{let ids=N().$$('.mkflist input:checked',md).map(x=>x.value);const S=new Set(ids);ids=ids.filter(id=>{let c=M.folders.find(x=>x.id===id),n=0;while(c&&c.parent&&n++<8){if(S.has(c.parent))return false;c=M.folders.find(x=>x.id===c.parent)}return true});done(ids)};
    N().$('#mkfNone',md).onclick=()=>done([])})}
- return {load,trainers,trainer,mons,img,folderName,M,db,dbReady,move,baseLv,item,card,itemList,cardList,dbSet,edit,linked,linkedTrainers,missing,pickLinked,fpath,under};
+ return {load,trainers,trainer,mons,img,folderName,M,db,dbReady,move,baseLv,item,card,itemList,cardList,abil,pot,abilList,potList,moveList,dbSet,edit,linked,linkedTrainers,missing,pickLinked,fpath,under};
 })();

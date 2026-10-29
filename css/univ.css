@@ -207,3 +207,44 @@ button.ntph-row:hover{background:var(--pp)}
 .ntphpop-c em{font-style:normal;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ntphpop-x{align-self:flex-end;border:0;background:rgba(18,21,28,.9);color:#eef1f6;width:24px;height:24px;border-radius:50%;cursor:pointer}
 @media(max-width:480px){.ntph{border-radius:0;border-width:0;height:100dvh}.modal.ntphm{width:100%}}
+
+/* ===== 10-29 망령: 대학 시트 배치 — 학생증 오른쪽 = 자질 메모 · 기본 · 고유, 아래 = 휴대폰 · 덱 ===== */
+.split.nside{grid-template-columns:minmax(0,1fr)}
+.idinfo{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:10px;margin-top:6px;align-items:start}
+.idinfo .ux-uqg{max-height:520px;overflow:auto}
+.ux-kv{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 12px;margin:0;font-size:13px;line-height:1.55}
+.ux-kv dt{font-weight:700;color:var(--mute)}
+.ux-kv dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+html[data-skin="univ"] .ux-kv dt{font-family:'Noto Serif KR',serif;color:var(--crim2)}
+html[data-skin="univ"] .ux-kv dd{border-bottom:1px dotted #c9b994;padding-bottom:3px}
+.uxrow.ulow{grid-template-columns:minmax(280px,1fr) minmax(0,2fr);align-items:start}
+.uxrow.ulow>:only-child{grid-column:1/-1}
+@media(max-width:820px){.uxrow.ulow{grid-template-columns:1fr}}
+.ux-ph{--pt:var(--fg,inherit);--pm:var(--mute);--pp:rgba(127,127,127,.12);--pl:var(--line)}
+html[data-skin="univ"] .ux-ph{--pp:rgba(255,255,255,.45);--pl:#c9b994}
+.ux-ph .ux-h .btn em{font-style:normal;display:inline-grid;place-items:center;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--red,#e4002b);color:#fff;font-size:10px;font-weight:700;margin-left:4px}
+.ntph-pe{font-size:13px;color:var(--mute);padding:6px 2px;line-height:1.6}
+.ntph-papps{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px}
+.ntph-pa{display:flex;align-items:center;gap:8px;min-width:0;text-align:left;padding:8px 10px;border-radius:10px;border:1px solid var(--pl);background:var(--pp);color:var(--pt);cursor:pointer;font:inherit}
+.ntph-pa:hover{border-color:var(--line2)}
+.ntph-pa>i{font-style:normal;font-size:20px;flex:none}
+.ntph-pa>span:not(.ntph-pm){display:flex;flex-direction:column;min-width:0}
+.ntph-pa b{font-size:13.5px;display:flex;align-items:center}
+.ntph-pa b em{font-style:normal;display:inline-grid;place-items:center;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--red,#e4002b);color:#fff;font-size:10px;font-weight:700;margin-left:4px}
+.ntph-pa small{color:var(--pm);font-size:11.5px}
+.ntph-pm{display:flex;margin-left:auto}
+.ntph-pm .ntph-av{width:24px;height:24px;font-size:11px;margin-left:-6px;box-shadow:0 0 0 2px var(--pp)}
+.ux-ph .ntph-row{padding:6px 4px}
+
+/* ===== 10-29 망령: 포켓몬 고치기 (js/mon_ed.js) ===== */
+.ux-itbs{display:flex;gap:14px;flex-wrap:wrap}
+.me-sec{border:1px solid var(--line);background:var(--panel2);padding:8px 10px;margin-bottom:8px}
+.me-sec>h4{display:flex;align-items:center;gap:6px;margin:0 0 6px;font-size:13.5px}
+.me-sec>h4 .sp{flex:1}
+.me-sec input[type=text],.me-sec textarea{width:100%}
+.me-pv{margin-top:5px;font-size:12.5px}
+.me-mv{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px dashed var(--line);flex-wrap:wrap}
+.me-mv:last-of-type{border-bottom:0}
+.me-mv .tch{font-style:normal;color:#fff;font-size:11px;padding:0 6px;border-radius:3px}
+.me-pot{padding:5px 0;border-bottom:1px dashed var(--line)}
+.me-pot:last-child{border-bottom:0}

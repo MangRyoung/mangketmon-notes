@@ -134,14 +134,27 @@ window.NT_PHONE=(()=>{
   el.classList.remove('on');void el.offsetWidth;el.classList.add('on');clearTimeout(pop.tm);pop.tm=setTimeout(()=>el.classList.remove('on'),9000)}
  let AC=null;function beep(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const t0=AC.currentTime;[[1320,0],[1760,.13]].forEach(([f,dt])=>{const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,t0+dt);g.gain.linearRampToValueAtTime(.12,t0+dt+.01);g.gain.exponentialRampToValueAtTime(.0001,t0+dt+.22);o.connect(g).connect(AC.destination);o.start(t0+dt);o.stop(t0+dt+.25)})}catch(e){}}
  /* 시트의 📱 단추에 안 읽은 수 */
- function badges(){$$('[data-phone]').forEach(b=>{const t=trOf(b.dataset.phone);const n=t&&PH.st?unreadAll(t.id):0;let em=b.querySelector('em');if(!n){if(em)em.remove();return}if(!em){em=document.createElement('em');b.appendChild(em)}em.textContent=n})}
+ function badges(){panels();$$('.ntph-btn[data-phone]').forEach(b=>{const t=trOf(b.dataset.phone);const n=t&&PH.st?unreadAll(t.id):0;let em=b.querySelector('em');if(!n){if(em)em.remove();return}if(!em){em=document.createElement('em');b.appendChild(em)}em.textContent=n})}
+ /* 10-29 망령: 대학 시트 아래 휴대폰 칸 — 방 코드 · 파티원 · 최근 문자. 누르면 휴대폰 창의 그 화면으로 */
+ function panelIn(sid){const room=omRoom();const head=(n,x)=>`<h4 class="ux-h"><span>휴대폰</span>${x||''}<span class="sp"></span>${room?`<button type="button" class="btn xs" data-phone="${esc(sid)}">📱 열기${n?`<em>${n}</em>`:''}</button>`:''}</h4>`;
+  if(!room)return head()+`<div class="ntph-pe">이 캠페인에 웹툴 방이 이어져 있지 않아요.<br><small>${N().gm()?'설정 탭 「세 도구 잇기 → 웹툴 방」에서 이으면 파티 · 문자를 여기서 봐요.':'GM 이 웹툴 방을 이으면 파티 · 문자가 여기 떠요.'}</small></div>`;
+  if(!PH.st)return head()+`<div class="ntph-pe">${PH.err?'웹툴 방을 읽지 못했어요<br><small>'+esc(PH.err)+'</small>':'불러오는 중…'}</div>`;
+  const t=trOf(sid);if(!t)return head()+`<div class="ntph-pe">웹툴 방 명단에 이 트레이너가 아직 없어요.<br><small>${N().gm()?'시트의 「⚔ 웹툴로」로 명단에 넣으면 휴대폰이 생겨요.':'웹툴 시트 탭에서 「내 파티 불러오기」를 하면 휴대폰이 생겨요.'}</small></div>`;
+  const me=t.id,code=codeOf(me),un=unreadAll(me);const mem=code?Object.values(T()).filter(x=>x&&x.id!==me&&codeOf(x.id)===code&&shared(x.id)):[];
+  const rs=rooms(me).map(r=>({r,L:logsOf(r.id)})).filter(x=>x.L.length).slice(0,3);
+  return head(un,`<small>${code?'방 '+esc(code):'방 코드 없음'}${canWrite(t)?'':' · 보기 전용'}</small>`)+`
+   <div class="ntph-papps"><button type="button" class="ntph-pa" data-phone="${esc(sid)}" data-phscr="party"><i>👥</i><span><b>파티</b><small>${code?mem.length+1+'명':'코드를 맺어요'}</small></span><span class="ntph-pm">${mem.slice(0,5).map(x=>av(x.id,'sm')).join('')}</span></button><button type="button" class="ntph-pa" data-phone="${esc(sid)}" data-phscr="sms"><i>💬</i><span><b>문자${un?`<em>${un}</em>`:''}</b><small>${rooms(me).length}개 방</small></span></button></div>
+   ${rs.length?rs.map(({r,L})=>{const l=L[L.length-1];const u=unread(r.id,me);return `<button type="button" class="ntph-row" data-phone="${esc(sid)}" data-phscr="chat" data-room="${esc(r.id)}">${roomIcon(r)}<span class="ntph-rt"><b>${esc(r.name||'')}${u?`<em>${u}</em>`:''}</b><small>${esc(l.data.as||l.who||'')}: ${esc(l.data.t||(l.data.img?'(그림)':''))}</small></span><small class="ntph-tm">${hm(l.at)}</small></button>`}).join(''):'<div class="ntph-pe">아직 주고받은 문자가 없어요.</div>'}`}
+ function panel(sid){if(!(N().gm()||N().me()===sid))return '';if(omRoom()&&!PH.st&&!PH.loading&&!PH.err)setTimeout(()=>load(),0);
+  return `<section class="ux-sec ux-ph" data-phpanel="${esc(sid)}">${panelIn(sid)}</section>`}
+ function panels(){$$('[data-phpanel]').forEach(el=>{el.innerHTML=panelIn(el.dataset.phpanel)})}
  /* 시트 단추 — 이어 둔 웹툴 방이 있고, GM 이거나 제 시트일 때 */
  function btn(sid){if(!omRoom())return '';if(!(N().gm()||N().me()===sid))return '';const t=trOf(sid);const n=t&&PH.st?unreadAll(t.id):0;
   return `<button type="button" class="btn xs ntph-btn" data-phone="${esc(sid)}" title="웹툴 방의 이 트레이너 휴대폰 (파티 · 문자)">📱 휴대폰${n?`<em>${n}</em>`:''}</button>`}
- document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-phone]');if(!b)return;e.preventDefault();open(b.dataset.phone)});
+ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-phone]');if(!b)return;e.preventDefault();open(b.dataset.phone,b.dataset.phscr,b.dataset.room)});
  /* 알림 켜 두기: 캠페인에 웹툴 방이 있고 지켜볼 트레이너가 있으면 한 번 읽고 실시간으로 받는다. 탭이 다시 보이면 놓친 것만 */
  function boot(){try{if(!N()||!N().ST||!N().ST.camp)return;const room=omRoom();if(!room){if(PH.room)stopSub();return}if(watchSid()&&(PH.room!==room||(!PH.sub&&!PH.loading)))load()}catch(e){}}
  setInterval(boot,15000);setTimeout(boot,2500);
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&PH.sub&&Date.now()-PH.at>60000)load(true)});
- return {open,btn,boot,load,PH};
+ return {open,btn,panel,boot,load,PH};
 })();
