@@ -106,10 +106,18 @@ window.NT=(()=>{
  function cleanQuery(){if(location.search)history.replaceState(null,'',location.pathname+location.hash)}
 
  /* ----- 테마 (오레마스 vtheme.js 와 같은 키 om_vt 를 써서 두 툴이 같은 테마) ----- */
- const VT=[['p5','P5'],['p3','P3'],['p4','P4']];
- const vtGet=()=>{try{const v=localStorage.getItem('om_vt');return VT.some(x=>x[0]===v)?v:'p4'}catch(e){return 'p4'}};
- const vtSet=v=>{document.documentElement.setAttribute('data-vt',v);try{localStorage.setItem('om_vt',v)}catch(e){}render()};
- document.documentElement.setAttribute('data-vt',vtGet());
+ /* 10-29 망령: 망각(mm) 테마 추가. 캠페인 설정의 「기본 테마」(data.theme)가 있으면 그 캠페인을 여는 동안 그 테마로 보여 준다 — 위 띠에서 다른 테마를 고르면 그걸 따른다(이 브라우저에 남는 내 테마는 그대로).
+    「꾸밈」(data.skin)은 캠페인 분위기 장식: univ = 대학(학생증 PC 시트 · 도서 목록 카드 항목 · 도면 지도). html[data-skin] 으로 css/skin.css 가 덮는다 */
+ const VT=[['p5','P5'],['p3','P3'],['p4','P4'],['mm','망각']];
+ const SKINS=[['','없음'],['univ','대학 (학생증 · 도서 목록 카드 · 도면)']];
+ let vtCamp='';
+ const vtMine=()=>{try{const v=localStorage.getItem('om_vt');return VT.some(x=>x[0]===v)?v:'p4'}catch(e){return 'p4'}};
+ const vtGet=()=>vtCamp||vtMine();
+ const vtApply=()=>document.documentElement.setAttribute('data-vt',vtGet());
+ const vtSet=v=>{vtCamp='';try{localStorage.setItem('om_vt',v)}catch(e){}vtApply();render()};
+ const skin=()=>{const s=ST.campInfo&&ST.campInfo.data&&ST.campInfo.data.skin;return SKINS.some(x=>x[0]===s)?s:''};
+ function campLook(c){const t=c&&c.data&&c.data.theme;vtCamp=VT.some(x=>x[0]===t)?t:'';vtApply();const k=c?skin():'';if(k)document.documentElement.setAttribute('data-skin',k);else document.documentElement.removeAttribute('data-skin')}
+ vtApply();
 
 
  /* ----- 공용 조작 (10-26 망령) ----- */
@@ -189,18 +197,18 @@ window.NT=(()=>{
   const given=q.gm||q.pl;if(given){sec=given;try{localStorage.setItem(SK(camp),sec)}catch(e){}cleanQuery()}
   ST.secret=sec;ST.role=null;ST.view=view||q.view||(()=>{try{return localStorage.getItem('nt_view')}catch(e){return ''}})()||'map';if(!VIEWS.some(x=>x[0]===ST.view))ST.view='map';
   const app=$('#app');app.innerHTML='<div class="lobby dim">캠페인을 여는 중…</div>';
-  try{if(!ST.camps.length)ST.camps=await DBS().camps();ST.campInfo=ST.camps.find(c=>c.id===camp)||null;if(!ST.campInfo){toast('없는 캠페인이에요');ST.camp='';setHash();return render()}
+  try{if(!ST.camps.length)ST.camps=await DBS().camps();ST.campInfo=ST.camps.find(c=>c.id===camp)||null;if(!ST.campInfo){toast('없는 캠페인이에요');ST.camp='';setHash();return render()}campLook(ST.campInfo);
    if(sec){ST.role=await DBS().whoami(camp,sec);if(!ST.role){toast('저장된 비밀구가 맞지 않아 구경 모드예요');ST.secret=''}}
    try{ST.seats=await DBS().seats(camp)||[]}catch(e){ST.seats=[]}
    await loadAll();if(window.NT_MAKER)NT_MAKER.load().then(()=>render()).catch(()=>{});
    setHash();app.innerHTML='';render();listen()}
   catch(e){app.innerHTML=`<div class="empty">열지 못했어요: ${esc(e.message)} <button class="btn sm" onclick="NT.leave()">캠페인 목록</button></div>`}}
- function leave(){if(unsub){unsub();unsub=null}ST.camp='';ST.role=null;ST.campInfo=null;for(const k in D)delete D[k];setHash();render()}
- async function refreshCamp(){try{ST.camps=await DBS().camps();ST.campInfo=ST.camps.find(c=>c.id===ST.camp)||ST.campInfo}catch(e){}try{ST.seats=await DBS().seats(ST.camp)||[]}catch(e){}render()}
+ function leave(){if(unsub){unsub();unsub=null}ST.camp='';ST.role=null;ST.campInfo=null;campLook(null);for(const k in D)delete D[k];setHash();render()}
+ async function refreshCamp(){try{ST.camps=await DBS().camps();ST.campInfo=ST.camps.find(c=>c.id===ST.camp)||ST.campInfo;campLook(ST.campInfo)}catch(e){}try{ST.seats=await DBS().seats(ST.camp)||[]}catch(e){}render()}
 
  window.addEventListener('hashchange',()=>{const q=readHash();if(q.camp!==ST.camp){if(q.camp)open(q.camp,q.view);else leave()}else if(q.view&&q.view!==ST.view)go(q.view)});
  window.addEventListener('DOMContentLoaded',()=>{const q=readHash();if(q.camp)open(q.camp,q.view);else render()});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&ST.camp)resync()});
 
- return {ST,D,$,$$,esc,uid,clone,cssu,gm,me,canSee,canEdit,toast,openModal,closeModal,confirmBox,promptBox,armDraft,sortable,reorder,ctxMenu,bindCtx,pinch,doc,data,list,put,patch,del,putMany,bulkVis,bulkBtns,BULKF,upload,shrink,bindDrop,visSelect,visBadge,visLabel,seatName,render,go,open,leave,refreshCamp,resync,MOD,VIEWS,DBS};
+ return {ST,D,$,$$,esc,uid,clone,cssu,gm,me,canSee,canEdit,toast,openModal,closeModal,confirmBox,promptBox,armDraft,sortable,reorder,ctxMenu,bindCtx,pinch,doc,data,list,put,patch,del,putMany,bulkVis,bulkBtns,BULKF,upload,shrink,bindDrop,visSelect,visBadge,visLabel,seatName,render,go,open,leave,refreshCamp,resync,MOD,VIEWS,DBS,VT,SKINS,skin};
 })();

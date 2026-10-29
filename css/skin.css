@@ -1,0 +1,105 @@
+/* ---------- 캠페인 꾸밈 (html[data-skin]) — 10-29 망령 ----------
+   univ = 대학 (미사그 대학): 학생증 PC 시트 · 학생증 PC 카드 · 도서 목록 카드 항목 · 서류철 상세 · 도면 지도 틀.
+   테마(P5 · P3 · P4 · 망각)와 같이 쓴다. 종이 판은 테마와 상관없이 뼈빛 종이 · 먹 글씨라, 어떤 테마에서도 같은 학생증으로 보인다.
+   캠페인 설정 「꾸밈」에서 켠다 (camp.data.skin). */
+html[data-skin="univ"]{
+  --paper:#efe6d2;--paper2:#e4d8bd;--ink:#1a140d;--ink2:#4a3f30;--ink3:#7a6a50;--rule:rgba(90,110,150,.22);
+  --crim:#6e1019;--crim2:#8f1a26;--gold:#cfae6e;--gold2:#8f7b52;--seal:#b0202e;
+}
+/* 종이 판 공통: 판 안에서는 글씨 변수를 먹색으로 바꾼다 */
+html[data-skin="univ"] .idcard,html[data-skin="univ"] .pccard,html[data-skin="univ"] .entcard,html[data-skin="univ"] .card.entd{
+  --fg:var(--ink);--fg2:var(--ink2);--mute:var(--ink3);--line:#c9b994;--line2:#a8936a;color:var(--ink)}
+
+/* 위 띠: 캠페인 이름 앞에 교표 */
+html[data-skin="univ"] .top .name b{display:inline-flex;align-items:center;gap:8px}
+html[data-skin="univ"] .top .name b::before{content:"";width:22px;height:25px;flex:none;background:center/contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 46'%3E%3Cpath d='M20 2 37 8v14c0 11-7.5 18.5-17 22C10.5 40.5 3 33 3 22V8Z' fill='%236e1019' stroke='%23cfae6e' stroke-width='2'/%3E%3Cpath d='M11 16h18v14H11zM20 16v14' fill='none' stroke='%23cfae6e' stroke-width='1.6'/%3E%3Ccircle cx='20' cy='9.5' r='2.2' fill='%23cfae6e'/%3E%3C/svg%3E")}
+
+/* ===== 학생증 (PC 시트 머리) ===== */
+html[data-skin="univ"] .pcsheet .hero.idwrap{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
+html[data-skin="univ"] .idcard{position:relative;flex:0 1 430px;min-width:min(300px,100%);max-width:100%;border-radius:14px;overflow:hidden;
+  background:radial-gradient(circle at 78% 62%,rgba(110,16,25,.07) 0 18%,transparent 19%),repeating-radial-gradient(circle at 78% 62%,transparent 0 6px,rgba(143,123,82,.09) 6px 7px),linear-gradient(160deg,var(--paper),var(--paper2));
+  box-shadow:0 0 0 1px #b9a77f,0 0 0 4px var(--paper),0 0 0 5px #8f7b52,0 16px 34px rgba(0,0,0,.5);font-family:'Noto Sans KR','IBM Plex Sans KR',sans-serif}
+html[data-skin="univ"] .idc-head{display:flex;align-items:center;gap:10px;padding:10px 14px;background:linear-gradient(90deg,var(--crim),#4a0a12);color:var(--gold);border-bottom:2px solid var(--gold2)}
+html[data-skin="univ"] .idcard.staff .idc-head{background:linear-gradient(90deg,#1d2a3c,#0f1622)}
+html[data-skin="univ"] .idc-crest{display:block;width:30px;height:34px;flex:none;color:var(--gold)}
+html[data-skin="univ"] .idc-crest svg{width:100%;height:100%;display:block}
+html[data-skin="univ"] .idc-org{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+html[data-skin="univ"] .idc-org b{font-family:'Cinzel','Noto Serif KR',serif;font-weight:700;letter-spacing:.16em;font-size:15px;white-space:nowrap}
+html[data-skin="univ"] .idc-org small{font-family:'Noto Serif KR',serif;font-size:11px;letter-spacing:.3em;color:#e9dcc0}
+html[data-skin="univ"] .idc-kind{margin-left:auto;text-align:right;font-family:'Noto Serif KR',serif;font-weight:900;font-size:15px;color:#f3eadb;line-height:1.1;white-space:nowrap}
+html[data-skin="univ"] .idc-kind small{display:block;font-family:'Cinzel',serif;font-weight:500;font-size:9px;letter-spacing:.25em;color:var(--gold)}
+html[data-skin="univ"] .idc-body{display:flex;gap:14px;padding:14px 14px 8px}
+html[data-skin="univ"] .idc-photo{width:104px;height:136px;flex:none;background:#d8cbb0 center/cover no-repeat;border:1px solid #8f7b52;outline:1px solid var(--paper);outline-offset:-4px;box-shadow:2px 3px 0 rgba(0,0,0,.18);filter:sepia(.18) contrast(1.02)}
+html[data-skin="univ"] .idc-photo.noimg{display:flex;align-items:center;justify-content:center;font-family:'Noto Serif KR',serif;font-weight:900;font-size:46px;color:#8f7b52;background:repeating-linear-gradient(135deg,#e6dbc2 0 8px,#ddd0b2 8px 16px)}
+html[data-skin="univ"] .idc-f{display:grid;grid-template-columns:auto 1fr;gap:5px 10px;margin:2px 0 0;align-content:start;min-width:0;flex:1}
+html[data-skin="univ"] .idc-f dt{font-family:'Noto Serif KR',serif;font-size:11px;color:var(--ink3);letter-spacing:.2em;padding-top:2px;white-space:nowrap}
+html[data-skin="univ"] .idc-f dd{margin:0;font-size:13px;color:var(--ink);border-bottom:1px dotted #b9a77f;padding-bottom:2px;min-width:0;overflow-wrap:anywhere}
+html[data-skin="univ"] .idc-f dd.idc-name{font-family:'Noto Serif KR',serif;font-weight:900;font-size:22px;letter-spacing:.05em;line-height:1.15}
+html[data-skin="univ"] .idc-f dd.idc-no{font-family:'Special Elite','IBM Plex Mono',monospace;letter-spacing:.12em}
+html[data-skin="univ"] .idc-rk{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 14px 8px}
+html[data-skin="univ"] .idc-rk span{display:flex;align-items:baseline;justify-content:space-between;gap:4px;border:1px solid #b9a77f;padding:2px 8px;background:rgba(255,255,255,.25)}
+html[data-skin="univ"] .idc-rk small{font-family:'Noto Serif KR',serif;font-size:11px;color:var(--ink2)}
+html[data-skin="univ"] .idc-rk b{font-family:'Cinzel','Noto Serif KR',serif;font-weight:900;font-size:16px;color:var(--crim)}
+html[data-skin="univ"] .idc-foot{display:flex;align-items:center;gap:10px;padding:6px 14px 12px;border-top:1px solid #c9b994;margin:0 14px;padding-left:0;padding-right:0}
+html[data-skin="univ"] .idc-bar{flex:1;max-width:180px;height:26px;background:repeating-linear-gradient(90deg,var(--ink) 0 2px,transparent 2px 4px,var(--ink) 4px 5px,transparent 5px 8px,var(--ink) 8px 11px,transparent 11px 12px,var(--ink) 12px 13px,transparent 13px 16px);opacity:.85}
+html[data-skin="univ"] .idc-yr{font-family:'Special Elite','IBM Plex Mono',monospace;font-size:11px;color:var(--ink2);letter-spacing:.08em;white-space:nowrap}
+html[data-skin="univ"] .idc-seal{margin-left:auto;width:52px;height:52px;flex:none;border:2px solid var(--seal);border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;font-family:'Noto Serif KR',serif;font-weight:900;font-size:10px;line-height:1.15;color:var(--seal);transform:rotate(-12deg);opacity:.82;box-shadow:inset 0 0 0 3px var(--paper),inset 0 0 0 4px var(--seal);mix-blend-mode:multiply}
+/* 학생증 옆: 버튼 · 파티 · 제작기 안내 (이름 · 초상 · 랭크는 학생증에 있으니 숨김) */
+html[data-skin="univ"] .idside{flex:1 1 220px;min-width:0;display:flex;flex-direction:column;gap:6px}
+html[data-skin="univ"] .idside>.por,html[data-skin="univ"] .idside h2,html[data-skin="univ"] .idside .rk{display:none}
+html[data-skin="univ"] .idside>div{min-width:0!important}
+html[data-skin="univ"] .idside .party .mon i{border-radius:50%;border-color:#8f7b52}
+
+/* ===== PC 카드 = 작은 학생증 ===== */
+html[data-skin="univ"] .pccard{position:relative;border:0;border-radius:10px;padding:26px 12px 12px;overflow:hidden;
+  background:linear-gradient(var(--crim),#4a0a12) top/100% 16px no-repeat,linear-gradient(160deg,var(--paper),var(--paper2));
+  box-shadow:0 0 0 1px #b9a77f,0 8px 18px rgba(0,0,0,.45);color:var(--ink)}
+html[data-skin="univ"] .pccard::before{content:"MISAG UNIVERSITY · 학생증";position:absolute;left:12px;top:2px;font:700 9px/12px 'Cinzel','Noto Serif KR',serif;letter-spacing:.2em;color:var(--gold)}
+html[data-skin="univ"] .pccard:hover{box-shadow:0 0 0 1px var(--gold),0 10px 22px rgba(0,0,0,.5)}
+html[data-skin="univ"] .pccard.on{box-shadow:0 0 0 2px var(--crim2),0 0 0 4px var(--gold),0 10px 22px rgba(0,0,0,.5)}
+html[data-skin="univ"] .pccard .por{width:60px;height:78px;border:1px solid #8f7b52;background-color:#d8cbb0;filter:sepia(.18)}
+html[data-skin="univ"] .pccard b{font-family:'Noto Serif KR',serif;font-weight:900;color:var(--ink)}
+html[data-skin="univ"] .pccard small{color:var(--ink2)!important}
+html[data-skin="univ"] .pccard .rk span{border-color:#b9a77f;color:var(--ink2);background:rgba(255,255,255,.3);transform:none}
+html[data-skin="univ"] .pccard .mons i{border-radius:50%;border-color:#b9a77f;background-color:#d8cbb0}
+
+/* ===== 항목 = 도서 목록 카드 (괘선 · 붉은 여백선 · 청구 번호) ===== */
+html[data-skin="univ"] .entgrid{counter-reset:catno}
+html[data-skin="univ"] .entcard{position:relative;counter-increment:catno;border:0;border-radius:3px;padding:14px 12px 10px 22px;color:var(--ink);
+  background:linear-gradient(90deg,transparent 14px,rgba(176,32,46,.55) 14px 15px,transparent 15px),repeating-linear-gradient(transparent 0 21px,var(--rule) 21px 22px) 0 6px,linear-gradient(var(--paper),var(--paper2));
+  box-shadow:0 0 0 1px #c9b994,0 6px 14px rgba(0,0,0,.35);border-top:4px solid var(--c)}
+html[data-skin="univ"] .entcard::after{content:"No." counter(catno,decimal-leading-zero);position:absolute;right:8px;top:4px;font:11px/1 'Special Elite','IBM Plex Mono',monospace;color:var(--ink3);letter-spacing:.06em}
+html[data-skin="univ"] .entcard::before{content:"";position:absolute;left:2px;top:50%;width:9px;height:9px;margin-top:-4px;border-radius:50%;background:#2a2118;box-shadow:inset 0 1px 2px rgba(0,0,0,.6);opacity:.55}
+html[data-skin="univ"] .entcard:hover{box-shadow:0 0 0 1px var(--gold2),0 8px 18px rgba(0,0,0,.45)}
+html[data-skin="univ"] .entcard.on{outline:2px solid var(--crim2);outline-offset:2px}
+html[data-skin="univ"] .entcard .face{border-radius:2px;border:1px solid #8f7b52;background-color:#d8cbb0;color:var(--crim);filter:sepia(.25);font-family:'Noto Serif KR',serif;font-weight:900}
+html[data-skin="univ"] .entcard b{font-family:'Noto Serif KR',serif;font-weight:900;color:var(--ink)}
+html[data-skin="univ"] .entcard small{color:var(--ink2)}
+html[data-skin="univ"] .entcard .etags em{background:transparent;border-color:#b9a77f;color:var(--ink2)}
+html[data-skin="univ"] .entsec>h3{border-bottom:1px solid var(--gold2)}
+/* 항목 상세 = 서류철 */
+html[data-skin="univ"] .card.entd{position:relative;border:0;border-radius:0 6px 6px 6px;margin-top:22px;padding-top:14px;
+  background:linear-gradient(160deg,var(--paper),var(--paper2));box-shadow:0 0 0 1px #b9a77f,0 14px 30px rgba(0,0,0,.45);border-top:0}
+html[data-skin="univ"] .card.entd::before{content:"CONFIDENTIAL · 학적부";position:absolute;left:0;top:-20px;height:20px;padding:0 14px;display:flex;align-items:center;border-radius:6px 6px 0 0;background:var(--paper2);box-shadow:0 0 0 1px #b9a77f;font:700 10px/1 'Cinzel','Noto Serif KR',serif;letter-spacing:.2em;color:var(--crim)}
+html[data-skin="univ"] .card.entd h3,html[data-skin="univ"] .enthead h3{font-family:'Noto Serif KR',serif;font-weight:900;color:var(--ink)}
+html[data-skin="univ"] .card.entd .pre,html[data-skin="univ"] .card.entd p{color:var(--ink)}
+html[data-skin="univ"] .enthead img.face{border-radius:2px;border:1px solid #8f7b52;filter:sepia(.2)}
+html[data-skin="univ"] .card.entd .tag,html[data-skin="univ"] .card.entd .chip,html[data-skin="univ"] .card.entd .visb,html[data-skin="univ"] .card.entd .badge{background:transparent;border-color:#a8936a;color:var(--ink2)}
+html[data-skin="univ"] .card.entd table.t th{background:rgba(110,16,25,.08);color:var(--ink2)}
+html[data-skin="univ"] .card.entd table.t td{border-color:#c9b994}
+html[data-skin="univ"] .card.entd a{color:var(--crim2)}
+
+/* ===== 지도 = 도면 틀 ===== */
+html[data-skin="univ"] .mapwrap{border:1px solid var(--gold2);outline:1px solid var(--gold2);outline-offset:4px;margin:5px;background:repeating-linear-gradient(0deg,transparent 0 47px,rgba(207,174,110,.07) 47px 48px),repeating-linear-gradient(90deg,transparent 0 47px,rgba(207,174,110,.07) 47px 48px),#15110d}
+html[data-skin="univ"] .mapimg:not(.blank){box-shadow:0 10px 30px rgba(0,0,0,.55)}
+html[data-skin="univ"] .mapimg.blank{background:repeating-linear-gradient(0deg,transparent 0 39px,rgba(60,90,140,.18) 39px 40px),repeating-linear-gradient(90deg,transparent 0 39px,rgba(60,90,140,.18) 39px 40px),#ece3cc}
+html[data-skin="univ"] .pin span{font-family:'Noto Serif KR',serif}
+
+@media(max-width:640px){
+  html[data-skin="univ"] .idcard{flex-basis:100%}
+  html[data-skin="univ"] .idc-photo{width:84px;height:110px}
+  html[data-skin="univ"] .idc-f dd.idc-name{font-size:19px}
+  html[data-skin="univ"] .idc-org b{font-size:12px;letter-spacing:.1em}
+  html[data-skin="univ"] .idc-kind{font-size:13px}
+  html[data-skin="univ"] .idc-rk{grid-template-columns:repeat(2,1fr)}
+}

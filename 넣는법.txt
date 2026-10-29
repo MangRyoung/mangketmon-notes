@@ -1,0 +1,17 @@
+세션 노트 (mangketmon-notes) 2026-10-29 감우
+
+이 폴더의 파일은 GitHub 최신판(배포된 주소의 파일) 위에 고친 것이에요.
+PC의 D:\TRPG\망각\mangketmon-notes 는 10-26판이라 옛것이에요.
+
+넣는 순서
+1. D:\TRPG\망각\mangketmon-notes 에서 git pull (먼저 최신으로)
+2. 이 폴더의 파일을 같은 자리에 덮어쓰기
+   index.html
+   js\app.js  js\set_ui.js  js\pc_ui.js
+   css\vtheme.css  css\skin.css(새)  css\polish.css(새)
+3. 커밋 · push → GitHub Pages 에 반영
+
+바뀐 것
+- 화면 테마에 「망각」 추가 (망각전야풍: 먹색 바탕, 뼈빛 종이, 검붉은 피, 바랜 금, 명조 제목)
+- 설정 > 캠페인: 「기본 테마」(방마다 테마) · 「꾸밈」(대학: 학생증 PC 시트, 도서 목록 카드 항목, 서류철 상세, 도면 지도 틀)
+- 모든 테마 다듬기: 위 띠 한 줄 설명 글씨 번짐, 빈 초상 실루엣, 카드 고른 표시, 일정 「2세션」 줄바꿈, 휴대폰 머리 배치

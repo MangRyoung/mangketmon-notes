@@ -1,0 +1,54 @@
+/* ---------- 다듬기 (모든 테마) — 10-29 망령 「세션 노트 UI 를 전체적으로 손봐줘」 ----------
+   기존 규칙을 지우지 않고 위에 덮는다. 빼면 예전 모습. */
+
+/* 위 띠: 캠페인 한 줄 설명이 이름의 그림자 · 테두리를 물려받아 번지던 것 */
+.top .name small{text-shadow:none!important;-webkit-text-stroke:0!important;letter-spacing:0!important;font-family:var(--font)!important;font-size:12px!important;font-weight:400!important}
+html[data-vt="p4"] .top .name small{color:#3d3600!important}
+html[data-vt="p3"] .top .name small{color:#9fbfe6!important}
+html[data-vt="p5"] .top .name small{color:#b9adad!important}
+.top .name{gap:10px}
+
+/* 초상이 없을 때 까만 칸 대신 실루엣 */
+.pccard .por,.pcsheet .hero .por,.pmh .por{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Ccircle cx='30' cy='23' r='11' fill='%23888' fill-opacity='.35'/%3E%3Cpath d='M9 58c0-13 9.5-21 21-21s21 8 21 21z' fill='%23888' fill-opacity='.35'/%3E%3C/svg%3E");background-size:cover;background-position:center}
+.pccard .por{border-radius:2px}
+
+/* PC 카드: 높이 맞춤 · 고른 카드 표시 */
+.pcgrid{align-items:stretch}
+.pccard{transition:border-color .12s,box-shadow .12s,transform .12s}
+.pccard.on{border-color:var(--yel,#ffd12e);box-shadow:0 0 0 1px var(--yel,#ffd12e)}
+.pccard:hover{transform:translateY(-1px)}
+
+/* PC 시트: 버튼 줄이 이름 옆에서 넘칠 때 한 줄 아래로 깔끔하게 */
+.pcsheet .hero .row{row-gap:6px}
+.pcsheet .hero .row>.btn{flex:none}
+.rpgrid{gap:10px}
+.rpbox{transition:border-color .12s}
+.rpbox:hover{border-color:var(--line2)}
+.rpbox .pre{line-height:1.65;white-space:pre-wrap}
+
+/* 항목 카드: 세 줄(이름 · 한 줄 · 태그)이 들쭉날쭉하지 않게 */
+.entgrid{align-items:stretch}
+.entcard{transition:border-color .12s,box-shadow .12s,transform .12s}
+.entcard:hover{transform:translateY(-1px)}
+.entsec>h3{margin-top:4px}
+
+/* 일정: 「2세션」 이 두 줄로 꺾이던 것 */
+.sess{grid-template-columns:minmax(52px,max-content) 118px minmax(0,1fr) 48px}
+.sess .lab{white-space:nowrap}
+@media(max-width:640px){.sess{grid-template-columns:minmax(40px,max-content) minmax(0,1fr) 40px}.sess .lab{font-size:17px}}
+
+/* 빈 화면 안내를 조금 더 또렷하게 */
+.empty{line-height:1.7}
+
+/* 휴대폰: 위 띠 단추가 이름 아래로 떨어져 한 줄을 다 쓰던 것 · PC 시트 머리 */
+@media(max-width:640px){
+  .top{row-gap:6px}
+  .pcsheet .hero{gap:12px}
+  .pcsheet .hero .por{width:96px;height:96px}
+  .pcsheet .hero h2{font-size:24px}
+  .pcsheet .hero .row .btn.xs{padding:2px 7px}
+  .toolbar .note{flex-basis:100%;order:9}
+}
+
+/* 망각: 붉은 빛 그라데이션이 화면 높이마다 되풀이되어 띠가 지던 것 */
+html[data-vt="mm"] body{background-repeat:no-repeat,repeat!important;background-attachment:scroll!important}

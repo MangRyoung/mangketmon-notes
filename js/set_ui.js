@@ -7,7 +7,7 @@
  const base=()=>location.origin+location.pathname;
  /* 10-26 망령: 캠페인 칸 초안 — 실시간 갱신으로 다시 그려도 적던 글이 안 날아가게. 저장하면 비운다 */
  const DR={camp:'',name:null,sub:null,cover:null};
- const drFor=camp=>{if(DR.camp!==camp){DR.camp=camp;DR.name=DR.sub=DR.cover=null}return DR};
+ const drFor=camp=>{if(DR.camp!==camp){DR.camp=camp;DR.name=DR.sub=DR.cover=DR.theme=DR.skin=null}return DR};
  const link=(secret)=>`${base()}?c=${encodeURIComponent(N().ST.camp)}${secret?'&pl='+encodeURIComponent(secret):''}#c=${encodeURIComponent(N().ST.camp)}`;
  function render(el){const S=N().ST;const c=S.campInfo||{};const d=c.data||{};const G=N().gm();
   if(!G){el.innerHTML=`<div class="setgrid"><div class="card"><h3>내 좌석</h3><p>${N().me()?`<b>${esc(N().seatName(N().me())||N().me())}</b> 좌석으로 들어와 있어요. PC 시트 탭에서 내 시트를 고칠 수 있어요.`:'구경 모드예요. 위 「비밀구」로 GM 이 준 좌석 비밀구를 적으면 내 PC 시트를 고칠 수 있어요.'}</p><p class="small dim">비밀구는 이 브라우저에만 저장돼요. 다른 기기에서는 GM 이 준 링크를 한 번 열면 돼요.</p></div>
@@ -15,6 +15,8 @@
   const dr=drFor(S.camp);const vName=dr.name!=null?dr.name:(c.name||''),vSub=dr.sub!=null?dr.sub:(d.sub||''),vCover=dr.cover!=null?dr.cover:(d.cover||'');
   el.innerHTML=`<div class="setgrid">
    <div class="card"><h3>캠페인</h3><label class="lbl">이름<input id="cpName" type="text" value="${esc(vName)}"></label><label class="lbl" style="margin-top:6px">한 줄 (세션 수 · 기간 …)<input id="cpSub" type="text" value="${esc(vSub)}" placeholder="예: 13세션 · 1부 6 · 2부 6 · 최종 1"></label>
+    <div class="row" style="margin-top:6px;gap:8px;align-items:flex-end"><label class="lbl" style="flex:1;min-width:150px">기본 테마<select id="cpTheme"><option value="">정하지 않음 (각자 고른 테마)</option>${N().VT.map(([k,l])=>`<option value="${k}" ${(dr.theme!=null?dr.theme:d.theme||'')===k?'selected':''}>${esc(l)}</option>`).join('')}</select></label><label class="lbl" style="flex:1;min-width:150px">꾸밈<select id="cpSkin">${N().SKINS.map(([k,l])=>`<option value="${k}" ${(dr.skin!=null?dr.skin:d.skin||'')===k?'selected':''}>${esc(l)}</option>`).join('')}</select></label></div>
+    <p class="small dim" style="margin:4px 0 0">기본 테마 = 이 캠페인을 열면 그 테마로 보여요(위 띠에서 바꾸면 각자 고른 것). 꾸밈 = 캠페인 분위기 장식(대학: 학생증 PC 시트 · 도서 목록 카드 항목 · 도면 지도 틀).</p>
     <div class="sec">표지 그림 (캠페인 목록 카드)</div><div class="updz" id="cpDz"><div class="pv" style="${vCover?`background-image:url('${cssu(vCover)}')`:''}"></div><b>＋ 그림</b></div>
     <div class="acts"><button class="btn xs ghost" id="cpCoverX">표지 빼기</button><span class="sp"></span><button class="btn pri sm" id="cpOk">저장</button></div></div>
    <div class="card"><h3>링크</h3><div class="small dim">공개 링크 — 링크만 있으면 「모두」로 둔 것만 보여요</div><div class="linkbox"><input type="text" readonly value="${esc(link())}" id="lkPub"><button class="btn xs" data-copy="lkPub">복사</button></div>
@@ -26,10 +28,10 @@
    <div class="card"><h3>자료</h3><div class="acts"><button class="btn sm" id="dlJson">전체 내려받기 (JSON)</button><button class="btn sm ghost" id="ulJson">JSON 올리기 (덮어쓰기)</button><input type="file" id="ulFile" accept="application/json" hidden></div><p class="small dim">그림은 주소만 들어 있어요 (Supabase 저장소).</p></div>
    <div class="card"><h3>위험</h3><div class="acts"><button class="btn sm ghost danger" id="cpDel">캠페인 지우기</button></div></div></div>`;
   bindCopy(el);
-  $('#cpName',el).oninput=e=>{dr.name=e.target.value};$('#cpSub',el).oninput=e=>{dr.sub=e.target.value};
+  $('#cpName',el).oninput=e=>{dr.name=e.target.value};$('#cpSub',el).oninput=e=>{dr.sub=e.target.value};$('#cpTheme',el).onchange=e=>{dr.theme=e.target.value};$('#cpSkin',el).onchange=e=>{dr.skin=e.target.value};
   N().bindDrop($('#cpDz',el),async fs=>{try{dr.cover=await N().upload(fs[0],'thumb','cover');$('#cpDz .pv',el).style.backgroundImage=`url('${cssu(dr.cover)}')`}catch(e){N().toast('올리기 실패: '+e.message)}});
   $('#cpCoverX',el).onclick=()=>{dr.cover='';$('#cpDz .pv',el).style.backgroundImage=''};
-  $('#cpOk',el).onclick=async()=>{const cover=dr.cover!=null?dr.cover:(d.cover||'');try{await N().DBS().campUpdate(S.camp,S.secret,$('#cpName',el).value.trim()||c.name,Object.assign({},d,{sub:$('#cpSub',el).value.trim(),cover}));dr.name=dr.sub=dr.cover=null;N().toast('저장했어요');N().refreshCamp()}catch(e){N().toast('저장 실패: '+e.message)}};
+  $('#cpOk',el).onclick=async()=>{const cover=dr.cover!=null?dr.cover:(d.cover||'');try{await N().DBS().campUpdate(S.camp,S.secret,$('#cpName',el).value.trim()||c.name,Object.assign({},d,{sub:$('#cpSub',el).value.trim(),cover,theme:$('#cpTheme',el).value,skin:$('#cpSkin',el).value}));dr.name=dr.sub=dr.cover=dr.theme=dr.skin=null;N().toast('저장했어요');N().refreshCamp()}catch(e){N().toast('저장 실패: '+e.message)}};
   $('#gmSecBtn',el).onclick=async()=>{const v=await N().promptBox('새 GM 비밀구 (6자 이상)','','');if(v==null)return;try{await N().DBS().gmSecret(S.camp,S.secret,v.trim());S.secret=v.trim();try{localStorage.setItem('nt_sec_'+S.camp,S.secret)}catch(e){}N().toast('바꿨어요');N().render()}catch(e){N().toast('실패: '+e.message)}};
   $('#seatAdd',el).onclick=async()=>{const pcs=N().list('pc').filter(p=>!(S.seats||[]).some(s=>s.seat===p.id));if(!pcs.length)return N().toast('좌석을 줄 PC 가 없어요 — PC 시트 탭에서 먼저 PC 를 넣어요');
    const md=N().openModal(`<div class="mhead"><h2>PL 좌석 만들기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div class="mrow"><label class="lbl">PC<select id="stPc">${pcs.map(p=>`<option value="${esc(p.id)}">${esc(p.name||p.id)}</option>`).join('')}</select></label><label class="lbl">플레이어 이름<input id="stName" type="text"></label><label class="lbl">비밀구 (4자 이상)<input id="stSec" type="text" value="${esc(Math.random().toString(36).slice(2,8))}"></label></div><p class="small dim">만든 뒤 「초대 링크」를 그 플레이어에게 보내요. 링크에 비밀구가 들어 있어요.</p><div class="row" style="margin-top:12px"><span class="sp"></span><button class="btn pri" id="stOk">만들기</button></div>`);
