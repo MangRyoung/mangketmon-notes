@@ -51,6 +51,14 @@ window.NT_STORE=(()=>{
   async makerIds(kind){const out=[];let from=0;for(;;){const r=await sb().from(cfg().makerTable||'docs').select('id').eq('kind',kind).order('id').range(from,from+999);if(r.error)throw err(r.error);const rows=r.data||[];out.push(...rows.map(x=>x.id));if(rows.length<1000)break;from+=rows.length}return out},
   async makerGet(kind,id){const r=await sb().from(cfg().makerTable||'docs').select('id,data').eq('kind',kind).eq('id',id).maybeSingle();if(r.error)throw err(r.error);return r.data||null},
   async makerPut(kind,id,data){const r=await sb().from(cfg().makerTable||'docs').upsert({kind,id,data},{onConflict:'kind,id'});if(r.error)throw err(r.error);return true},
+  /* 10-29 망령: PC 시트 휴대폰 — 이어 둔 웹툴 방(om_*)의 방 코드(파티) · 문자를 웹툴과 같은 표 · 같은 함수로 읽고 쓴다.
+     신분은 같은 주소의 웹툴이 이 브라우저에 남긴 계정 · GM 비밀값 · 좌석 비밀값으로 om_whoami 에 묻는다 */
+  omWho:(room,secret)=>rpc('om_whoami',{p_room:room,p_secret:secret||''}),
+  async omPhoneState(room){const r=await sb().from('om_state').select('tr:data->roster->trainers,pub:data->pub,nodes:data->graph->nodes,sms:data->rp->sms,seats:data->seats').eq('room',room).maybeSingle();if(r.error)throw err(r.error);return r.data||null},
+  async omSms(room,after){let q=sb().from('om_log').select('id,at,who,kind,data').eq('room',room).eq('kind','chat').not('data->>sms','is',null).order('id',{ascending:false}).limit(400);if(after)q=q.gt('id',after);const r=await q;if(r.error)throw err(r.error);return (r.data||[]).reverse()},
+  omLogAdd:(room,secret,kind,who,data)=>rpc('om_log_add',{p_room:room,p_secret:secret,p_kind:kind,p_who:who,p_data:data||{}}),
+  async omPut(room,secret,path,value){const args={p_room:room,p_secret:secret,p_path:path,p_value:value===undefined?null:value};const r=await sb().rpc('om_put',args);if(!r.error)return r.data;if(/PGRST202|Could not find the function|does not exist/i.test(String(r.error.message||r.error.code||'')))return rpc('om_set_state',args);throw err(r.error)},
+  omSub(room,onLog){const ch=sb().channel('ntom:'+room).on('postgres_changes',{event:'INSERT',schema:'public',table:'om_log',filter:'room=eq.'+room},p=>{try{if(p.new)onLog(p.new)}catch(e){}}).subscribe();return ()=>{try{sb().removeChannel(ch)}catch(e){}}},
   /* 로그 정리기 보관소 (kind mtlog): 목록은 제목 · 폴더 · 줄 수 · 날짜 · 세션 정보만 (본문은 안 받는다) */
   async mtlogIndex(){const r=await sb().from(cfg().makerTable||'docs').select('id,title:data->>title,folder:data->>folder,count:data->>count,created:data->>created,updated:data->>updated,meta:data->meta').eq('kind','mtlog').order('id');if(r.error)throw err(r.error);return r.data||[]},
   async mtlogMeta(){const r=await sb().from(cfg().makerTable||'docs').select('id,data').eq('kind','mtlogmeta');if(r.error)throw err(r.error);return r.data||[]}
@@ -86,6 +94,13 @@ window.NT_STORE=(()=>{
   async makerGet(kind,id){const v=(this._mk||{})[kind+'/'+id];return v?{id,data:v}:null},
   async makerPut(kind,id,data){this._mk=this._mk||{};this._mk[kind+'/'+id]=JSON.parse(JSON.stringify(data));return true},
   async mtlogIndex(){return [{id:'lg1',title:'1세션 · 무진 도착 (예시)',folder:'f1',count:420,created:Date.now()-86400000*7,updated:Date.now(),meta:{ep:'①',date:'2026.10.19',players:'명운 · 소라',tags:['무진','도입'],summary:'밀수입로로 들어와 눈먼 갈매기 술집에서 네 사람을 만났다.'}},{id:'lg2',title:'2세션 · 번역소 공통 배틀 (예시)',folder:'f1',count:610,created:Date.now()-86400000,updated:Date.now(),meta:{ep:'②',date:'2026.10.26',players:'명운 · 소라',tags:['배틀'],summary:''}}]},
+  /* 시험용 웹툴 방 (휴대폰) */
+  async omWho(){return this._omWho===undefined?'gm':this._omWho},
+  async omPhoneState(){return this._om||null},
+  async omSms(room,after){return (this._omLog||[]).filter(r=>r.kind==='chat'&&r.data&&r.data.sms&&(!after||r.id>after))},
+  async omLogAdd(room,secret,kind,who,data){this._omLog=this._omLog||[];const r={id:(this._omLog.length?this._omLog[this._omLog.length-1].id:0)+1,at:new Date().toISOString(),who,kind,data};this._omLog.push(r);setTimeout(()=>(this._omSubs||[]).forEach(f=>f(r)),20);return r.id},
+  async omPut(room,secret,path,value){this._om=this._om||{};let o=this._om;const P=path[0]==='pub'?['pub',...path.slice(1)]:path;for(let i=0;i<P.length-1;i++){o[P[i]]=o[P[i]]||{};o=o[P[i]]}o[P[P.length-1]]=value;return true},
+  omSub(room,f){this._omSubs=(this._omSubs||[]).concat(f);return ()=>{this._omSubs=(this._omSubs||[]).filter(x=>x!==f)}},
   async mtlogMeta(){return [{id:'tree',data:{folders:[{id:'f1',name:'무진'}],order:[['lg1','f1'],['lg2','f1']]}}]}
  };
  const api=configured()?S:L;

@@ -1,3 +1,15 @@
+세션 노트 — 각성체 추천 (2026-10-29 감우, 두 번째 묶음)
+
+넣을 파일 (같은 자리에 덮어쓰기 · 새 파일은 그냥 넣기)
+   index.html  js\app.js  js\config.js
+   js\awaken.js(새)  css\awaken.css(새)  data\awaken_db.json(새 · 후보 402명)
+   supabase\functions\awaken-read\index.ts(새) · 올리는법.txt(새)
+커밋 · push 하면 시트 탭 아래에 「각성체」가 생겨요 (GM 에게만 보여요).
+「🔍 포트 읽기」 단추는 Supabase 에 함수를 한 번 올려야 돌아가요 → supabase\functions\awaken-read\올리는법.txt
+함수 없이도 「📋 감우 결과 넣기」로 대화에서 받은 결과를 붙여 넣으면 같게 돼요.
+
+────────────────────────────────────────
+
 세션 노트 (mangketmon-notes) 2026-10-29 감우
 
 이 폴더의 파일은 GitHub 최신판(배포된 주소의 파일) 위에 고친 것이에요.

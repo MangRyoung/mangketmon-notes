@@ -1,0 +1,67 @@
+/* ---------- 각성체 추천 (10-29, 시트 탭 아래 · GM만) ---------- */
+.awk{display:grid;grid-template-columns:210px 1fr;gap:12px;align-items:start}
+.awpcs{display:flex;flex-direction:column;gap:6px;position:sticky;top:8px}
+.awpc{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);padding:5px 8px;cursor:pointer;color:var(--fg);text-align:left;font:inherit}
+.awpc:hover{border-color:var(--line2)}
+.awpc.on{border-color:var(--red);box-shadow:3px 3px 0 var(--red)}
+.awpc i{flex:none;width:34px;height:34px;background:#000 center/cover no-repeat;border:1px solid var(--line2)}
+.awpc span{display:flex;flex-direction:column;min-width:0}
+.awpc b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.awpc small{font-size:11px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.awmain{display:flex;flex-direction:column;gap:10px;min-width:0}
+.awhead{display:flex;gap:12px;align-items:flex-start}
+.awpor{flex:none;width:120px;height:150px;background:#000 center top/cover no-repeat;border:1px solid var(--line2)}
+.awpor.noimg{display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--mute)}
+.awinfo{flex:1;min-width:0}
+.awinfo .row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.awinfo h3{margin:0}
+.awread{margin-top:8px;font-size:13px;border-left:3px solid var(--yel);padding:4px 10px;background:rgba(128,128,128,.08)}
+.awread .pre{margin-top:3px;line-height:1.55}
+.awtags .row,.awpick .row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.awtg{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:4px 0}
+.awtg>span{flex:none;width:46px;font-size:11px;color:var(--mute);font-family:var(--lab)}
+.awtg label.chip{user-select:none}
+.awfil{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.awfil select,.awfil input[type=search]{font-size:12px}
+.awreg{display:flex;flex-wrap:wrap;gap:4px;width:100%}
+.awpk{font-size:14px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.awcands{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.awcands .chip{display:inline-flex;align-items:center;gap:4px}
+.awcands .linkbtn{font-size:11px;padding:0 2px}
+.awres{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+.awc{display:flex;flex-direction:column;gap:5px;min-width:0}
+.awc.on{border-color:var(--yel)}
+.awc.pk{border-color:var(--red);box-shadow:3px 3px 0 var(--red)}
+.awc.extra{border-style:dashed}
+.awch{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.awch b{font-size:15px}
+.awsc{font-family:var(--mono);font-size:11px;color:var(--mute);border:1px solid var(--line2);padding:0 5px}
+.awmeta{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11px;color:var(--fg2)}
+.awfm{letter-spacing:-1px;color:var(--yel);font-size:10px}
+.awx{font-size:10px;padding:0 5px;border:1px solid var(--red);color:var(--red)}
+.awx.own{border-color:var(--line2);color:var(--mute)}
+.awl{margin:0;font-size:13px;line-height:1.5}
+.awwhy{margin:0;font-size:12px;color:var(--yel);line-height:1.45}
+.awkv{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;font-size:12px;line-height:1.45}
+.awkv span{color:var(--mute);font-family:var(--lab);font-size:11px;padding-top:1px}
+.awkv p{margin:0;color:var(--fg2)}
+.awft{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.awcost{font-size:11px;color:var(--mute);margin-left:4px}
+.awhit{font-size:11px;color:var(--red)}
+.awtags2{display:flex;flex-wrap:wrap;gap:3px}
+.awbtn{display:flex;align-items:center;gap:6px;margin-top:auto;padding-top:4px;border-top:1px dashed var(--line)}
+.awtbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.awtbl th{text-align:left;font-family:var(--lab);font-size:11px;color:var(--mute);border-bottom:1px solid var(--line2);padding:4px 6px;position:sticky;top:0;background:var(--panel)}
+.awtbl td{border-bottom:1px solid var(--line);padding:5px 6px;vertical-align:top}
+.awtbl td:first-child{min-width:180px;max-width:320px}
+.awdb .tblwrap{max-height:72vh;overflow:auto;border:1px solid var(--line)}
+@media (max-width:760px){
+ .awk{grid-template-columns:1fr}
+ .awpcs{position:static;flex-direction:row;overflow-x:auto;padding-bottom:4px}
+ .awpc{flex:none;max-width:170px}
+ .awpor{width:84px;height:106px}
+ .awres{grid-template-columns:1fr}
+ .awtags .awtg{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;padding-bottom:2px}
+ .awtags .awtg .chip{flex:none}
+ .awtg>span{width:40px;flex:none}
+}

@@ -14,13 +14,13 @@ window.NT=(()=>{
  const DBS=()=>window.NT_STORE;
  const gm=()=>ST.role==='gm';
  const me=()=>ST.role&&ST.role!=='gm'?ST.role:'';
- const VIEWS=[['map','지도'],['graph','관계도'],['ents','항목'],['pc','PC 시트'],['scen','시나리오'],['plan','일정'],['logs','기록'],['set','설정']];
+ const VIEWS=[['map','지도'],['graph','관계도'],['ents','항목'],['pc','PC 시트'],['awk','각성체'],['scen','시나리오'],['plan','일정'],['logs','기록'],['set','설정']];
  /* 10-29 망령: 위 탭은 6개 — 자료(항목 · 관계도) · 지도 · 시트 · 일정(일정 · 기록) · 시나리오 · 설정. 화면(VIEWS)과 주소는 그대로라 예전 링크 · 알림도 그대로 간다 */
- const TABS=[['ents','자료',['ents','graph']],['map','지도',['map']],['pc','시트',['pc']],['plan','일정',['plan','logs']],['scen','시나리오',['scen']],['set','설정',['set']]];
+ const TABS=[['ents','자료',['ents','graph']],['map','지도',['map']],['pc','시트',['pc','awk']],['plan','일정',['plan','logs']],['scen','시나리오',['scen']],['set','설정',['set']]];
  const tabOf=v=>TABS.find(t=>t[2].includes(v))||TABS[0];
- const subGet=t=>{try{const v=localStorage.getItem('nt_sub_'+t[0]);return t[2].includes(v)?v:t[2][0]}catch(e){return t[2][0]}};
+ const subGet=t=>{try{const v=localStorage.getItem('nt_sub_'+t[0]);return t[2].includes(v)&&(v!=='awk'||gm())?v:t[2][0]}catch(e){return t[2][0]}};
  /* 묶인 화면은 머리글(h2) 자리에 「항목 · 관계도」 같은 작은 탭을 둔다 */
- function subTabs(main){const t=tabOf(ST.view);if(t[2].length<2)return;try{localStorage.setItem('nt_sub_'+t[0],ST.view)}catch(e){}
+ function subTabs(main){const t0=tabOf(ST.view);const t=[t0[0],t0[1],t0[2].filter(v=>v!=='awk'||gm())];/* 10-29: 각성체는 GM만 */if(t[2].length<2)return;try{localStorage.setItem('nt_sub_'+t[0],ST.view)}catch(e){}
   const h=main.querySelector(':scope>.toolbar>h2');const html=`<div class="subtabs" role="tablist">${t[2].map(v=>`<button type="button" data-subv="${v}" class="${v===ST.view?'on':''}">${esc((VIEWS.find(x=>x[0]===v)||[])[1]||v)}</button>`).join('')}</div>`;
   if(h)h.outerHTML=html;else main.insertAdjacentHTML('afterbegin',`<div class="toolbar">${html}</div>`);
   const st=main.querySelector('.subtabs');if(st)st.addEventListener('click',e=>{const b=e.target.closest('[data-subv]');if(!b)return;e.stopPropagation();if(b.dataset.subv!==ST.view)go(b.dataset.subv)})}
@@ -53,7 +53,7 @@ window.NT=(()=>{
  const canEdit=(k,id)=>gm()||!!(me()&&(((k==='pc'||k==='pcp')&&id===me())||(k==='avail'&&String(id).endsWith('_'+me()))));
  const VISL={pub:'모두',gm:'GM만'};
  const visLabel=v=>v==='pub'?'모두':v==='gm'?'GM만':v&&v.startsWith('pl:')?'PL 전용 · '+(seatName(v.slice(3))||v.slice(3)):v;
- const seatName=s=>{const t=data('pc',s);const mk=(window.NT_MAKER&&NT_MAKER.trainer(s))||null;return (t&&t.name)||(mk&&mk.name)||((ST.seats.find(x=>x.seat===s)||{}).name)||''};
+ const seatName=s=>{const t=data('pc',s);const mk=(window.NT_MAKER&&NT_MAKER.trainer(s))||null;return (mk&&mk.name)||(t&&t.name)||((ST.seats.find(x=>x.seat===s)||{}).name)||''};
  /* 공개 설정 고르기 칸. 값: pub · gm · pl:<seat> */
  function visSelect(cur,id,opt){opt=opt||{};const seats=ST.seats.length?ST.seats:[];cur=cur||'pub';
   const o=[['pub','👥 모두'],['gm','🔒 GM만']].concat(opt.noPl?[]:seats.map(s=>['pl:'+s.seat,'👤 '+(seatName(s.seat)||s.seat)+' 에게만']));

@@ -1,0 +1,32 @@
+각성체 「🔍 포트 읽기」 단추 올리는 법 (2026-10-29 감우)
+
+이 함수가 없어도 각성체 화면은 다 돼요. 없으면 「📋 감우 결과 넣기」로 대화에서 받은 결과를 붙여 넣으면 돼요.
+단추를 쓰려면 아래를 한 번만 해 주세요. (5~10분)
+
+1. Claude API 키 만들기
+   - https://console.anthropic.com 에 들어가 로그인
+   - Settings > Billing 에서 결제 수단을 넣고 크레딧을 조금(예: 5달러) 충전
+     · 한 번 읽을 때 100~300원쯤 (후보 DB 400명 목록을 같이 보내서). 같은 날 다시 읽으면 목록 부분이 캐시돼 더 싸요.
+   - Settings > API Keys > Create Key → 나온 키(sk-ant-…)를 복사 (다시 안 보여요)
+
+2. Supabase 에 함수 만들기 (오레마스 · 제작기 · 노트와 같은 프로젝트)
+   - https://supabase.com/dashboard → 프로젝트 → 왼쪽 Edge Functions
+   - 「Deploy a new function」 > 「Via Editor」
+   - 이름: awaken-read   (js/config.js 의 awakenFn 과 같아야 해요)
+   - 편집기 내용을 다 지우고 이 폴더의 index.ts 를 통째로 붙여 넣기 → Deploy
+
+3. 함수 설정
+   - 방금 만든 awaken-read > Details(또는 Settings) 에서 「Verify JWT with legacy secret」(Enforce JWT) 를 끄기
+     · 노트는 공개 키(sb_publishable_…)로 부르는데 이건 JWT 가 아니라서, 켜 두면 401 이 나요.
+     · 대신 함수가 캠페인 GM 비밀구를 nt_whoami 로 직접 확인해요. GM 이 아니면 거절.
+   - 왼쪽 Edge Functions > Secrets(또는 Manage secrets) 에서
+     이름 ANTHROPIC_API_KEY, 값 = 1에서 복사한 키 → Save
+
+4. 확인
+   - 노트를 GM 으로 열고 시트 > 각성체 > 초상이 있는 PC > 「🔍 포트 읽기」
+   - 「포트를 읽었어요」가 뜨면 끝. 오류 글자가 뜨면 그대로 감우에게 보여 주세요.
+     · 「API 키가 맞지 않아요」 → 3의 비밀값 확인
+     · 401 / Failed to fetch → 3의 JWT 끄기 확인, 함수 이름 확인
+     · 「GM 만 쓸 수 있어요」 → GM 비밀구로 들어왔는지
+
+비용을 막고 싶을 때: Secrets 에서 ANTHROPIC_API_KEY 를 지우면 단추가 바로 멈춰요. Console 에서 월 한도(Limits)도 정할 수 있어요.

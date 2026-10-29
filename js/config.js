@@ -6,5 +6,6 @@ window.NT_CONFIG={
   bucket:"oremas",          /* 그림 저장소 (오레마스와 같이 쓴다, 경로 notes/<캠페인>/…) */
   makerTable:"docs",        /* 제작기 문서 표 (트레이너 · 포켓몬 읽기) */
   makerUrl:"https://mangryoung.github.io/mangketmon-maker/",
-  oremasUrl:"https://mangryoung.github.io/oremas/"
+  oremasUrl:"https://mangryoung.github.io/oremas/",
+  awakenFn:"awaken-read"    /* 각성체 「포트 읽기」 Edge Function 이름 (supabase/functions/awaken-read) */
 };

@@ -15,7 +15,9 @@ window.NT_MAKER=(()=>{
   M.got=got;try{const s=JSON.stringify(c);if(s.length<4e6)localStorage.setItem(MKC,s);else localStorage.removeItem(MKC)}catch(e){try{localStorage.removeItem(MKC)}catch(e2){}}
   return Object.fromEntries(KS.map(k=>[k,Object.values(c.docs[k]||{})]))}
  async function load(force){if(M.loading)return M.loading;if(!force&&M.at&&Date.now()-M.at<600000)return M;
-  M.loading=(async()=>{try{const x=await pull();M.trainers=x.trainers.map(unwrap);M.pokemon=x.pokemon.map(unwrap);M.folders=x.folders.map(unwrap);M.at=Date.now()}catch(e){console.warn('maker',e)}finally{M.loading=null}return M})();return M.loading}
+  M.loading=(async()=>{try{const x=await pull();M.trainers=x.trainers.map(unwrap);M.pokemon=x.pokemon.map(unwrap);M.folders=x.folders.map(unwrap);M.at=Date.now();heal()}catch(e){console.warn('maker',e)}finally{M.loading=null}return M})();return M.loading}
+ /* 10-29 망령 「제작기에서 이름을 바꿔도 노트엔 처음 이름」: GM 이 열 때 노트 칸의 이름 · 초상 사본을 제작기 값으로 맞춘다 (바뀐 것만) */
+ function heal(){try{if(!N().gm())return;const rows=[];for(const k of ['pc','npc'])for(const d of N().list(k)){const t=M.trainers.find(x=>x.id===d.id);if(!t)continue;const p=N().data(k,d.id)||{};const nm=t.name||p.name||'',im=t.image||p.image||'';if(nm!==(p.name||'')||im!==(p.image||''))rows.push({kind:k,id:d.id,data:Object.assign({},p,{name:nm,image:im}),vis:(N().doc(k,d.id)||{}).vis})}if(rows.length)N().putMany(rows)}catch(e){console.warn('heal',e)}}
  const visible=t=>!t.priv||N().gm()||t.id===N().me();
  const trainers=()=>M.trainers.filter(visible).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ko'));
  const trainer=id=>M.trainers.find(t=>t.id===id)||null;
@@ -24,10 +26,20 @@ window.NT_MAKER=(()=>{
  const folderName=id=>{const f=M.folders.find(x=>x.id===id);return f?f.name:(id||'')};
  /* 10-26 망령: 파티를 제작기 값 그대로 — 기술 표(타입 · 분류 · 위력)와 육성 기본 레벨은 제작기 기본 DB(data/db.js) + 공유 DB 의 기술 수정(dbedit)에서.
     특성 · 소지품 · 포텐셜 효과 글은 포켓몬 문서의 effTxt(제작기가 저장할 때 같이 적는 사본)를 쓴다 */
- const DBX={p:null,moves:null,lvl:[]};
- function db(){if(DBX.p)return DBX.p;DBX.p=new Promise(res=>{const fin=()=>{const D=window.MKM_DB||{};const mv=new Map();for(const r of D.moves||[])if(r&&r[2])mv.set(r[2],r);DBX.lvl=D.lvl||[];
-    N().DBS().makerDocs('dbedit').then(L=>{for(const x of L||[]){const d=x.data||{};if(d.kind!=='moves')continue;if(d.deleted)mv.delete(d.key);else if(Array.isArray(d.row))mv.set(d.key,d.row)}}).catch(()=>{}).finally(()=>{DBX.moves=mv;res(DBX)})};
+ const DBX={p:null,moves:null,lvl:[],items:new Map(),cards:new Map()};
+ /* 10-29 망령: 소지품(items, 이름 = 1번 칸) · 카드(cards, 제작기 「카드 DB」 — 공유 DB 수정 행에만 있다)도 같이 읽는다. 대학 시트의 소지품 고치기 · 덱에서 쓴다 */
+ function db(){if(DBX.p)return DBX.p;DBX.p=new Promise(res=>{const fin=()=>{const D=window.MKM_DB||{};const mv=new Map(),it=new Map(),cd=new Map();for(const r of D.moves||[])if(r&&r[2])mv.set(r[2],r);for(const r of D.items||[])if(r&&r[1])it.set(r[1],r);for(const r of D.cards||[])if(r&&r[1])cd.set(r[1],r);DBX.lvl=D.lvl||[];
+    const MP={moves:mv,items:it,cards:cd};
+    N().DBS().makerDocs('dbedit').then(L=>{for(const x of L||[]){const d=x.data||{};const m=MP[d.kind];if(!m)continue;if(d.deleted)m.delete(d.key);else if(Array.isArray(d.row))m.set(d.key,d.row)}}).catch(()=>{}).finally(()=>{DBX.moves=mv;DBX.items=it;DBX.cards=cd;res(DBX)})};
    if(window.MKM_DB)return fin();const sc=document.createElement('script');sc.src=String((window.NT_CONFIG||{}).makerUrl||'').replace(/\/?$/,'/')+'data/db.js';sc.onload=fin;sc.onerror=()=>{DBX.moves=new Map();res(DBX)};document.head.appendChild(sc)});return DBX.p}
+ const item=n=>(n&&DBX.items.get(n))||null;const card=n=>(n&&DBX.cards.get(n))||null;
+ const itemList=()=>[...DBX.items.values()];const cardList=()=>[...DBX.cards.values()];const dbSet=(k,key,row)=>{const m=DBX[k];if(m&&m.set)m.set(key,row)};
+ /* 10-29 망령: 노트에서 제작기 문서 한 장 고치기 (트레이너 · 포켓몬). fn(안쪽 data) 를 부르고 올린 뒤, 이 브라우저의 사본도 바로 바꾼다 */
+ async function edit(kind,id,fn){const DB=N().DBS();if(!DB.makerPut||!DB.makerGet)throw new Error('이 화면에서는 제작기에 쓸 수 없어요');const cur=await DB.makerGet(kind,id);if(!cur)throw new Error('제작기 문서를 찾지 못했어요');
+  const doc=JSON.parse(JSON.stringify(cur.data||{}));const d=doc.data||doc;const r=await fn(d,doc);if(r===false)return false;await DB.makerPut(kind,id,doc);
+  const L=kind==='trainers'?M.trainers:kind==='pokemon'?M.pokemon:null;if(L){const i=L.findIndex(x=>x.id===id);const o=unwrap({id,data:doc});if(i>=0)L[i]=o;else L.push(o)}
+  try{const c=JSON.parse(localStorage.getItem(MKC)||'null');if(c&&c.docs&&c.docs[kind]){c.docs[kind][id]={id,data:doc};localStorage.setItem(MKC,JSON.stringify(c))}}catch(e){}
+  return true}
  const dbReady=()=>!!DBX.moves;
  const move=n=>(DBX.moves&&DBX.moves.get(n))||null;
  const baseLv=rank=>{const L=DBX.lvl||[];const r=L.find(x=>x[0]===rank)||L.find(x=>x[0]===String(rank||'').replace(/[+-]+$/,''));return r?+r[2]:100};
@@ -51,5 +63,5 @@ window.NT_MAKER=(()=>{
    const done=async ids=>{try{await saveLinked(ids);N().closeModal();N().toast(ids.length?'제작기 폴더를 이었어요':'폴더 잇기를 풀었어요');N().render();res(ids)}catch(e){N().toast('저장 실패: '+e.message)}};
    N().$('#mkfOk',md).onclick=()=>{let ids=N().$$('.mkflist input:checked',md).map(x=>x.value);const S=new Set(ids);ids=ids.filter(id=>{let c=M.folders.find(x=>x.id===id),n=0;while(c&&c.parent&&n++<8){if(S.has(c.parent))return false;c=M.folders.find(x=>x.id===c.parent)}return true});done(ids)};
    N().$('#mkfNone',md).onclick=()=>done([])})}
- return {load,trainers,trainer,mons,img,folderName,M,db,dbReady,move,baseLv,linked,linkedTrainers,missing,pickLinked,fpath,under};
+ return {load,trainers,trainer,mons,img,folderName,M,db,dbReady,move,baseLv,item,card,itemList,cardList,dbSet,edit,linked,linkedTrainers,missing,pickLinked,fpath,under};
 })();

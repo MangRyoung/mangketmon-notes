@@ -29,6 +29,7 @@
 - `js/app.js` 뼈대 (문서 캐시 · 공개 범위 · 올리기 · 탭 · 로비 · 테마)
 - `js/maker.js` 제작기 트레이너 · 포켓몬 읽기
 - `js/map_ui.js` `ents_ui.js` `graph_ui.js` `pc_ui.js` `scen_ui.js` `plan_ui.js` `set_ui.js` 탭들
+- `js/awaken.js` `css/awaken.css` `data/awaken_db.json` 각성체 추천 (시트 탭 · GM만). 포트 읽기는 `supabase/functions/awaken-read` (올리는법.txt)
 - `supabase/schema.sql` 표 · 함수 · 정책
 
 ## Supabase 사용량 (무료 티어 기준)
