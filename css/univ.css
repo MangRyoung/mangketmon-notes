@@ -208,15 +208,18 @@ button.ntph-row:hover{background:var(--pp)}
 .ntphpop-x{align-self:flex-end;border:0;background:rgba(18,21,28,.9);color:#eef1f6;width:24px;height:24px;border-radius:50%;cursor:pointer}
 @media(max-width:480px){.ntph{border-radius:0;border-width:0;height:100dvh}.modal.ntphm{width:100%}}
 
-/* ===== 10-29 망령: 대학 시트 배치 — 학생증 오른쪽 = 자질 메모 · 기본 · 고유, 아래 = 휴대폰 · 덱 ===== */
+/* ===== 10-29 망령: 대학 시트 배치 — 학생증 오른쪽 = [자질 메모 · PT 서머리] + 고유, 아래 = 휴대폰 · 덱 ===== */
 .split.nside{grid-template-columns:minmax(0,1fr)}
-.idinfo{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:10px;margin-top:6px;align-items:start}
-.idinfo .ux-uqg{max-height:520px;overflow:auto}
-.ux-kv{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 12px;margin:0;font-size:13px;line-height:1.55}
-.ux-kv dt{font-weight:700;color:var(--mute)}
-.ux-kv dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.idinfo{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:10px;margin-top:6px;align-items:start}
+.idcol{display:flex;flex-direction:column;gap:10px;min-width:0}
+.idinfo .ux-uqg{max-height:640px;overflow:auto}
+.ux-kv{display:grid;grid-template-columns:5.2em minmax(0,1fr);margin:0;font-size:13px;line-height:1.55}
+.ux-kv dt,.ux-kv dd{margin:0;padding:4px 0;border-bottom:1px dotted var(--line)}
+.ux-kv dt{font-weight:700;color:var(--mute);padding-right:10px}
+.ux-kv dd{white-space:pre-wrap;overflow-wrap:anywhere}
+.ux-kv dt:last-of-type,.ux-kv dd:last-of-type{border-bottom:0}
 html[data-skin="univ"] .ux-kv dt{font-family:'Noto Serif KR',serif;color:var(--crim2)}
-html[data-skin="univ"] .ux-kv dd{border-bottom:1px dotted #c9b994;padding-bottom:3px}
+html[data-skin="univ"] .ux-kv dt,html[data-skin="univ"] .ux-kv dd{border-bottom-color:#c9b994}
 .uxrow.ulow{grid-template-columns:minmax(280px,1fr) minmax(0,2fr);align-items:start}
 .uxrow.ulow>:only-child{grid-column:1/-1}
 @media(max-width:820px){.uxrow.ulow{grid-template-columns:1fr}}
@@ -236,15 +239,49 @@ html[data-skin="univ"] .ux-ph{--pp:rgba(255,255,255,.45);--pl:#c9b994}
 .ntph-pm .ntph-av{width:24px;height:24px;font-size:11px;margin-left:-6px;box-shadow:0 0 0 2px var(--pp)}
 .ux-ph .ntph-row{padding:6px 4px}
 
-/* ===== 10-29 망령: 포켓몬 고치기 (js/mon_ed.js) ===== */
+/* ===== 10-29 망령: PT 서머리 (기본 요소 게이지 + 포켓몬) · 제작기 창 (js/mon_ed.js) ===== */
+.ptgs{display:flex;flex-direction:column;gap:7px;margin-bottom:10px}
+.ptg{display:grid;grid-template-columns:6.4em minmax(0,1fr) 7.6em;align-items:center;gap:8px;font-size:12.5px}
+.ptl{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ptl .ux-tag{margin:0}
+.ptb{position:relative;display:flex;height:20px;border-radius:4px;overflow:hidden;background:rgba(127,127,127,.18);box-shadow:inset 0 0 0 1px var(--line)}
+.ptb>i{display:flex;align-items:center;justify-content:center;min-width:0;color:#fff;font-style:normal;font-size:11px;font-weight:700;border-right:1px solid rgba(255,255,255,.55);overflow:hidden}
+.ptb>i span{white-space:nowrap;padding:0 3px;text-shadow:0 1px 1px rgba(0,0,0,.4)}
+.ptb>i.etc{background:repeating-linear-gradient(135deg,#8a7c63 0 5px,#9d8f74 5px 10px)}
+.ptb>.cap{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--red,#e4002b);transform:translateX(-1px)}
+.ptb.none{align-items:center;padding:0 8px;font-size:11px;color:var(--mute)}
+.ptg.over .ptb{box-shadow:inset 0 0 0 1px var(--red,#e4002b)}
+.ptn{text-align:right;white-space:nowrap}
+.ptn b{font-size:14px}
+.ptn small{display:block;font-size:10.5px;color:var(--mute);line-height:1.1}
+.ptn small.warn,.ptsk.warn b{color:var(--red,#e4002b)}
+.ptms{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:8px}
+.ptm{display:flex;align-items:center;gap:9px;padding:5px 6px;border-left:4px solid var(--pc);background:rgba(127,127,127,.08);border-radius:0 6px 6px 0}
+.ptm-pic{flex:none;display:block}
+.ptm-pic i{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:#2b3240 center/cover no-repeat;color:#fff;font-style:normal;font-weight:700;box-shadow:0 0 0 2px var(--pc)}
+.ptm-b{flex:1;min-width:0}
+.ptm-n{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.ptm-n b{font-size:14px}
+.ptm-lv{font-size:11px;font-weight:700;padding:0 5px;border-radius:3px;background:var(--pc);color:#fff}
+.ptm-n .tch{font-style:normal;color:#fff;font-size:10.5px;padding:0 5px;border-radius:3px}
+.ptm-aw{font-size:10.5px;border:1px solid var(--pc);color:var(--pc);padding:0 4px;border-radius:3px}
+.ptm-s{display:flex;flex-wrap:wrap;gap:3px 10px;font-size:11.5px;color:var(--mute);margin-top:2px}
+.ptm-s b{color:var(--fg,inherit);font-weight:700}
+.ptm-s .ux-tag{font-size:10px;line-height:15px}
+.ptm-pr{font-weight:800;color:#fff!important;background:#5b4a2a;padding:0 6px;border-radius:3px}
+.ptm-a{display:flex;flex-wrap:wrap;gap:2px 8px;font-size:11.5px;margin-top:1px}
+.ptm-a span+span::before{content:"· ";color:var(--mute)}
+html[data-skin="univ"] .ptb{background:rgba(110,90,50,.12);box-shadow:inset 0 0 0 1px #b9a77f}
+html[data-skin="univ"] .ptl{font-family:'Noto Serif KR',serif;color:var(--crim2)}
+html[data-skin="univ"] .ptm{background:rgba(255,255,255,.35)}
+html[data-skin="univ"] .ptm-pr{background:var(--crim)}
 .ux-itbs{display:flex;gap:14px;flex-wrap:wrap}
-.me-sec{border:1px solid var(--line);background:var(--panel2);padding:8px 10px;margin-bottom:8px}
-.me-sec>h4{display:flex;align-items:center;gap:6px;margin:0 0 6px;font-size:13.5px}
-.me-sec>h4 .sp{flex:1}
-.me-sec input[type=text],.me-sec textarea{width:100%}
-.me-pv{margin-top:5px;font-size:12.5px}
-.me-mv{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px dashed var(--line);flex-wrap:wrap}
-.me-mv:last-of-type{border-bottom:0}
-.me-mv .tch{font-style:normal;color:#fff;font-size:11px;padding:0 6px;border-radius:3px}
-.me-pot{padding:5px 0;border-bottom:1px dashed var(--line)}
-.me-pot:last-child{border-bottom:0}
+.modal.mked{width:min(1280px,96vw);max-width:none;height:min(92dvh,1100px);padding:0;display:flex;flex-direction:column;overflow:hidden}
+.mked-h{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.mked-h .sp{flex:1}
+.mked-b{position:relative;flex:1;min-height:0}
+.mked-b iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#111}
+.mked-w{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.55);color:#fff;font-weight:700}
+@media(max-width:640px){.modal.mked{width:100vw;height:100dvh;border-radius:0}.ptg{grid-template-columns:5.4em minmax(0,1fr) 6.6em}}
+.mked-w[hidden]{display:none}
+html[data-skin="univ"] .idside .party{display:none}   /* PT 서머리에 포켓몬이 있으니 큰 얼굴 줄은 숨김 */
