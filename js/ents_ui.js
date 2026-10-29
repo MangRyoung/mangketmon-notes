@@ -6,7 +6,10 @@
  const N=()=>window.NT;const {$,$$,esc,cssu}=window.NT;
  const TYPES=[['인물','person','#1e88e5'],['조직','org','#8e44ad'],['설정','lore','#00a676'],['이벤트','event','#f08a00'],['아이템','item','#ffd23f'],['기타','etc','#8e8e8e']];
  const tc=t=>TYPES.find(x=>x[0]===t)||TYPES[TYPES.length-1];
- const U={sel:'',type:'',tag:'',q:'',tagsOpen:false,fold:{}};
+ const VK='nt_ent_view';
+ const U={sel:'',type:'',tag:'',q:'',tagsOpen:false,fold:{},dense:(()=>{try{return localStorage.getItem(VK)==='list'}catch(e){return false}})(),ids:[]};
+ /* 10-29: 종류마다 기본 칸 (새 항목에 미리 깔고, 고치기 창의 「칸 틀」 로 빠진 것만 더한다. 빈 칸은 저장하지 않는다) */
+ const TPL={'인물':['정체','외모','성격 · 말투','원하는 것','비밀'],'조직':['목적','구성원','거점','가진 것','숨긴 것'],'설정':['요약','규칙','예외 · 주의'],'이벤트':['언제','어디서','무슨 일','결과'],'아이템':['효과','출처','값 · 구하는 법'],'기타':[]};
  const TAGMAX=10;
  const ents=()=>N().list('ents').sort((a,b)=>(a.order||0)-(b.order||0)||String(a.title||'').localeCompare(String(b.title||''),'ko'));
  const tags=()=>[...new Set(ents().flatMap(e=>e.tags||[]))].sort((a,b)=>a.localeCompare(b,'ko'));
@@ -14,14 +17,18 @@
 
  function render(el){const G=N().gm();const all=ents();const q=U.q.trim().toLowerCase();
   const L=all.filter(e=>(!U.type||e.type===U.type)&&(!U.tag||(e.tags||[]).includes(U.tag))&&(!q||[e.title,e.sub,e.body,(e.tags||[]).join(' '),(e.rows||[]).map(r=>r.k+' '+r.v).join(' ')].join(' ').toLowerCase().includes(q)));
+  U.ids=(U.type||q||U.tag?L:TYPES.flatMap(([t])=>U.fold[t]?[]:L.filter(e=>e.type===t))).map(e=>e.id);
   const sel=U.sel&&N().data('ents',U.sel)?Object.assign({id:U.sel,_vis:(N().doc('ents',U.sel)||{}).vis},N().data('ents',U.sel)):null;
   el.innerHTML=`<div class="toolbar"><h2>항목</h2><div class="seg" id="enTypes"><button data-t="" class="${!U.type?'on':''}">전체 ${all.length}</button>${TYPES.map(([t,,c])=>{const n=all.filter(e=>e.type===t).length;return n||G?`<button data-t="${t}" class="${U.type===t?'on':''}" style="--c:${c}"><i class="kdot"></i>${t} ${n}</button>`:''}).join('')}</div>
-   <input type="search" id="enQ" placeholder="찾기" value="${esc(U.q)}" style="width:150px"><span class="sp"></span>${N().bulkBtns('ents',null,'항목')}${G?'<button class="btn sm pri" data-e="new">＋ 항목</button>':''}</div>
+   <input type="search" id="enQ" placeholder="찾기" title="제목 · 한 줄 · 본문 · 상세 칸 · 태그에서 찾아요" value="${esc(U.q)}" style="width:160px"><div class="entview" title="카드로 보기 · 한 줄씩 보기"><button type="button" data-ev="card" class="${U.dense?'':'on'}">카드</button><button type="button" data-ev="list" class="${U.dense?'on':''}">목록</button></div><span class="sp"></span>${N().bulkBtns('ents',null,'항목')}${G?'<button class="btn sm pri" data-e="new">＋ 항목</button>':''}</div>
    ${(()=>{const T=tags();if(!T.length)return '';const cnt=t=>all.filter(e=>(e.tags||[]).includes(t)).length;const sorted=[...T].sort((a,b)=>cnt(b)-cnt(a)||a.localeCompare(b,'ko'));const show=U.tagsOpen||U.tag?sorted:sorted.slice(0,TAGMAX);
     return `<div class="tagbar">${U.tag?`<button class="chip on" data-tag="">${esc(U.tag)} ×</button>`:''}${show.filter(t=>t!==U.tag).map(t=>`<button class="chip" data-tag="${esc(t)}">${esc(t)}<small>${cnt(t)}</small></button>`).join('')}${sorted.length>TAGMAX&&!U.tag?`<button class="chip ghost" data-tagmore>${U.tagsOpen?'접기':'+'+(sorted.length-TAGMAX)+' 태그'}</button>`:''}</div>`})()}
-   <div class="split wideR"><div class="entcol">${U.type||q||U.tag?`<div class="entgrid">${L.map(card).join('')||emptyBox(G)}</div>`:TYPES.map(([t,,c])=>{const g=L.filter(e=>e.type===t);if(!g.length)return '';const fold=U.fold[t];return `<section class="entsec ${fold?'fold':''}" style="--c:${c}"><h3 data-fold="${t}"><i class="kdot"></i>${t}<small>${g.length}</small><span class="sp"></span><em>${fold?'펼치기 ▾':'접기 ▴'}</em></h3>${fold?'':`<div class="entgrid">${g.map(card).join('')}</div>`}</section>`}).join('')||emptyBox(G)}</div><aside class="side" id="entSide">${sel?detail(sel):'<div class="card dim small">항목을 누르면 여기에 자세히 나와요.</div>'}</aside></div>`;
+   <div class="split wideR"><div class="entcol">${U.type||q||U.tag?`<div class="entgrid ${U.dense?'dense':''}">${L.map(card).join('')||emptyBox(G)}</div>`:TYPES.map(([t,,c])=>{const g=L.filter(e=>e.type===t);if(!g.length)return '';const fold=U.fold[t];return `<section class="entsec ${fold?'fold':''}" style="--c:${c}"><h3 data-fold="${t}"><i class="kdot"></i>${t}<small>${g.length}</small><span class="sp"></span><em>${fold?'펼치기 ▾':'접기 ▴'}</em></h3>${fold?'':`<div class="entgrid ${U.dense?'dense':''}">${g.map(card).join('')}</div>`}</section>`}).join('')||emptyBox(G)}</div><aside class="side" id="entSide">${sel?detail(sel):'<div class="card dim small">항목을 누르면 여기에 자세히 나와요.</div>'}</aside></div>`;
   const qi=$('#enQ',el);qi.oncompositionend=()=>qi.oninput({isComposing:false});qi.oninput=e=>{if(e.isComposing)return;U.q=qi.value;const v=qi.value;N().render();const q2=$('#enQ');if(q2){q2.focus();q2.setSelectionRange(v.length,v.length)}};
   el.addEventListener('click',e=>{const t=e.target;const tb=t.closest('#enTypes button');if(tb){U.type=tb.dataset.t;N().render();return}
+   const ev=t.closest('[data-ev]');if(ev){U.dense=ev.dataset.ev==='list';try{localStorage.setItem(VK,U.dense?'list':'card')}catch(x){}N().render();return}
+   const nv=t.closest('[data-enav]');if(nv){const k=U.ids.indexOf(U.sel);const j=k+(+nv.dataset.enav);if(j>=0&&j<U.ids.length){U.sel=U.ids[j];N().render();const c=document.querySelector(`.entcard[data-sel="${CSS.escape(U.sel)}"]`);if(c)c.scrollIntoView({block:'nearest'})}return}
+   const ap=t.closest('[data-appear]');if(ap){const [rid,i]=ap.dataset.appear.split('|');if(window.NT_SCEN){if(N().gm())NT_SCEN.write(rid,'ws'+i+'n');else N().go('scen')}return}
    const tm=t.closest('[data-tagmore]');if(tm){U.tagsOpen=!U.tagsOpen;N().render();return}
    const fd=t.closest('[data-fold]');if(fd){U.fold[fd.dataset.fold]=!U.fold[fd.dataset.fold];N().render();return}
    const tg=t.closest('[data-tag]');if(tg){U.tag=tg.dataset.tag===U.tag?'':tg.dataset.tag;N().render();return}
@@ -43,18 +50,23 @@
   return it}
  function card(e){const t=tc(e.type);return `<button type="button" class="entcard ${e.id===U.sel?'on':''}" data-sel="${esc(e.id)}" data-id="${esc(e.id)}" data-drag style="--c:${e.color||t[2]}"><span class="face" style="${e.face?`background-image:url('${cssu(e.face)}')`:''}">${e.face?'':t[0][0]}</span><span class="eb"><b>${esc(e.title||'(제목 없음)')}</b><small>${esc(e.sub||'')}</small><span class="etags">${(e.tags||[]).slice(0,3).map(x=>`<em>${esc(x)}</em>`).join('')}${(e.tags||[]).length>3?`<em class="more">+${e.tags.length-3}</em>`:''}${N().visBadge(e._vis,'ents',e.id)}</span></span></button>`}
  function detail(e){const G=N().gm(),t=tc(e.type);const sec=N().data('sec','ent:'+e.id);const rels=N().list('rels').filter(r=>r.a===e.id||r.b===e.id);
-  return `<div class="card entd" style="--c:${e.color||t[2]}"><div class="row" style="gap:6px"><span class="chip static" style="border-color:var(--c);color:var(--c)">${esc(e.type||'')}</span>${window.NT_FAV?NT_FAV.btn('ents',e.id,e.title):''}${N().visBadge(e._vis,'ents',e.id)}<span class="sp"></span>${G?`<button class="btn xs" data-e="edit" data-id="${esc(e.id)}">고치기</button><button class="btn xs ghost danger" data-e="del" data-id="${esc(e.id)}">지우기</button>`:''}</div>
+  return `<div class="card entd" style="--c:${e.color||t[2]}"><div class="row" style="gap:6px"><span class="chip static" style="border-color:var(--c);color:var(--c)">${esc(e.type||'')}</span>${window.NT_FAV?NT_FAV.btn('ents',e.id,e.title):''}${N().visBadge(e._vis,'ents',e.id)}<span class="sp"></span>${U.ids.length>1&&U.ids.includes(e.id)?`<span class="entnav"><button class="btn xs ghost" data-enav="-1" ${U.ids[0]===e.id?'disabled':''} title="앞 항목">◀</button><button class="btn xs ghost" data-enav="1" ${U.ids[U.ids.length-1]===e.id?'disabled':''} title="다음 항목">▶</button></span>`:''}${G?`<button class="btn xs" data-e="edit" data-id="${esc(e.id)}">고치기</button><button class="btn xs ghost danger" data-e="del" data-id="${esc(e.id)}">지우기</button>`:''}</div>
    <div class="enthead">${e.face?`<img class="face" src="${esc(e.face)}" alt="" data-big="${esc(e.face)}">`:''}<div><h3>${esc(e.title||'')}</h3>${e.sub?`<div class="dim">${esc(e.sub)}</div>`:''}${(e.tags||[]).length?`<div class="etags">${e.tags.map(x=>`<em>${esc(x)}</em>`).join('')}</div>`:''}</div></div>
    ${e.photo?`<img class="photo" src="${esc(e.photo)}" alt="" data-big="${esc(e.photo)}" loading="lazy">`:''}
    ${e.body?`<p class="pre">${esc(e.body)}</p>`:''}
-   ${(e.rows||[]).length?`<div class="kv">${e.rows.map(r=>`<b>${esc(r.k)}</b><span class="pre">${esc(r.v)}</span>`).join('')}</div>`:''}
+   ${(e.rows||[]).some(r=>r.v)?`<div class="kv">${e.rows.filter(r=>r.v).map(r=>`<b>${esc(r.k)}</b><span class="pre">${esc(r.v)}</span>`).join('')}</div>`:''}
    ${(e.at||[]).length?`<div class="sec">장소</div><div class="row">${e.at.map(id=>`<button class="chip" data-spot="${esc(id)}">📍 ${esc(spotName(id)||id)}</button>`).join('')}</div>`:''}
    ${(e.teams||[]).length?`<div class="sec">소속 · 편</div><div class="row">${e.teams.map(x=>`<span class="chip static">${esc(x)}</span>`).join('')}</div>`:''}
    ${rels.length?`<div class="sec">관계</div><ul class="lnk">${rels.map(r=>{const oid=r.a===e.id?r.b:r.a;const o=N().data('ents',oid);return `<li><button class="linkbtn" data-sel="${esc(oid)}">${esc(o?o.title:'?')}</button> <span class="small dim">${r.a===e.id?'→':'←'} ${esc(r.label||'')}</span></li>`}).join('')}</ul><button class="btn xs ghost" data-e="graph" data-id="${esc(e.id)}">관계도에서 보기</button>`:''}
+   ${(()=>{const A=appears(e);return A.length?`<div class="sec">시나리오에 나오는 곳</div><ul class="appear">${A.map(a=>`<li style="--c:${esc(a.c)}"><i class="dot"></i><button class="linkbtn" data-appear="${esc(a.rid)}|${a.i}">${esc(a.route)} · ${a.i+1}. ${esc(a.title)}</button><span class="small dim">${a.why}</span></li>`).join('')}</ul>`:''})()}
    ${G&&sec&&sec.t?`<div class="gmnote"><b>GM 메모</b><div class="pre">${esc(sec.t)}</div></div>`:''}</div>`}
+ /* 이 항목이 나오는 시나리오 단계: 단계의 「등장 항목」 이거나, 항목의 장소에서 일어나는 단계 */
+ function appears(e){const out=[];const at=new Set(e.at||[]);const R=window.NT_SCEN?NT_SCEN.routes():[];
+  for(const r of R)(r.steps||[]).forEach((s,i)=>{const a=(s.ents||[]).includes(e.id),b=s.spot&&at.has(s.spot);if(!a&&!b)return;const sp=s.spot&&N().data('spots',s.spot);out.push({rid:r.id,i,route:r.name||'루트',c:r.color||'#888',title:s.title||(sp?sp.name:'(단계)'),why:a?'등장':'장소'})});
+  return out.slice(0,30)}
 
  async function act(k,b){const id=b.dataset.id||U.sel;
-  if(k==='new'){const nid=N().uid('e');await N().put('ents',nid,{type:U.type||'인물',title:'새 항목',sub:'',body:'',rows:[],tags:U.tag?[U.tag]:[],teams:[],face:'',photo:'',at:[],created:Date.now(),order:ents().length},'gm');U.sel=nid;edit(nid);N().armDraft('ents',nid);return}
+  if(k==='new'){const nid=N().uid('e');await N().put('ents',nid,{type:U.type||'인물',title:'새 항목',sub:'',body:'',rows:(TPL[U.type||'인물']||[]).map(k=>({k,v:''})),tags:U.tag?[U.tag]:[],teams:[],face:'',photo:'',at:[],created:Date.now(),order:ents().length},'gm');U.sel=nid;edit(nid);N().armDraft('ents',nid);return}
   if(k==='edit')return edit(id);
   if(k==='graph'){const id=U.sel;N().go('graph');setTimeout(()=>window.NT_GRAPH&&NT_GRAPH.focus&&NT_GRAPH.focus(id),0);return}
   if(k==='del'){const e=N().data('ents',id);if(!e||!await N().confirmBox(`「${e.title}」 항목을 지울까요? 관계선도 같이 지워져요.`,'지우기'))return;for(const r of N().list('rels').filter(r=>r.a===id||r.b===id))await N().del('rels',r.id);await N().del('ents',id);if(N().doc('sec','ent:'+id))await N().del('sec','ent:'+id);U.sel='';return}}
@@ -74,7 +86,7 @@
      <label class="lbl">제목<input id="etTitle" type="text" value="${esc(e.title||'')}" class="big"></label>
      <label class="lbl">한 줄 소개<input id="etSub" type="text" value="${esc(e.sub||'')}"></label>
      <label class="lbl">본문<textarea id="etBody" rows="5">${esc(e.body||'')}</textarea></label>
-     <div class="sec">상세 칸 <small class="dim">정체 · 외모 · 원하는 것 …</small><span class="sp"></span><button class="btn xs" id="etRowAdd">＋ 칸</button></div><div id="etRows" class="rowsed"></div>
+     <div class="sec">상세 칸 <small class="dim">내용이 빈 칸은 저장하지 않아요</small><span class="sp"></span><button class="btn xs ghost" id="etTpl" title="이 종류의 기본 칸 중 빠진 것을 더해요">칸 틀</button><button class="btn xs" id="etRowAdd">＋ 칸</button></div><div id="etRows" class="rowsed"></div>
      <div class="sec">태그 · 소속</div>
      <div class="mrow"><label class="lbl">태그 (쉼표로)<input id="etTags" type="text" value="${esc((e.tags||[]).join(', '))}"></label><label class="lbl">소속 · 편 (쉼표로)<input id="etTeams" type="text" value="${esc((e.teams||[]).join(', '))}"></label></div>
      <div class="row" style="gap:4px;flex-wrap:wrap">${tags().slice(0,24).map(t=>`<button type="button" class="chip xs" data-addtag="${esc(t)}">${esc(t)}</button>`).join('')}</div>
@@ -86,13 +98,14 @@
   $$('[data-addtag]',md).forEach(b=>b.onclick=()=>{const i=$('#etTags',md);const cur=i.value.split(',').map(x=>x.trim()).filter(Boolean);if(!cur.includes(b.dataset.addtag))cur.push(b.dataset.addtag);i.value=cur.join(', ')});
   const drawRows=()=>{$('#etRows',md).innerHTML=rows.map((r,i)=>`<div class="etrow" data-i="${i}"><input type="text" data-k value="${esc(r.k)}" placeholder="칸 이름"><textarea data-v rows="1" placeholder="내용">${esc(r.v)}</textarea><button class="btn xs ghost danger" data-del title="칸 빼기">×</button></div>`).join('');$$('#etRows textarea',md).forEach(t=>{const g=()=>{t.style.height='auto';t.style.height=Math.min(160,t.scrollHeight+2)+'px'};t.oninput=g;g()});
    $$('.etrow',md).forEach(r=>{const i=+r.dataset.i;r.querySelector('[data-k]').oninput=ev=>rows[i].k=ev.target.value;r.querySelector('[data-v]').oninput=ev=>rows[i].v=ev.target.value;r.querySelector('[data-del]').onclick=()=>{rows.splice(i,1);drawRows()}})};
+  $('#etTpl',md).onclick=()=>{const have=new Set(rows.map(r=>r.k.trim()));const add=(TPL[$('#etType',md).value]||[]).filter(k=>!have.has(k));if(!add.length)return N().toast('기본 칸이 이미 다 있어요');add.forEach(k=>rows.push({k,v:''}));drawRows()};
   drawRows();$('#etRowAdd',md).onclick=()=>{rows.push({k:'',v:''});drawRows();const last=$$('.etrow [data-k]',md).pop();if(last)last.focus()};
   $$('#etAt input',md).forEach(c=>c.onchange=()=>c.closest('label').classList.toggle('on',c.checked));
   N().bindDrop($('#etFace',md),async fs=>{try{face=await N().upload(fs[0],'face','face');$('#etFace .pv',md).style.backgroundImage=`url('${cssu(face)}')`}catch(x){N().toast('올리기 실패: '+x.message)}});
   N().bindDrop($('#etPhoto',md),async fs=>{try{photo=await N().upload(fs[0],'photo','photo');$('#etPhoto .pv',md).style.backgroundImage=`url('${cssu(photo)}')`}catch(x){N().toast('올리기 실패: '+x.message)}});
   $('#etFaceX',md).onclick=()=>{face='';$('#etFace .pv',md).style.backgroundImage=''};$('#etPhotoX',md).onclick=()=>{photo='';$('#etPhoto .pv',md).style.backgroundImage=''};
   $('#etOk',md).onclick=async()=>{const split=v=>v.split(',').map(x=>x.trim()).filter(Boolean);
-   const n=Object.assign({},e,{type:$('#etType',md).value,title:$('#etTitle',md).value.trim()||'항목',sub:$('#etSub',md).value.trim(),body:$('#etBody',md).value.trim(),rows:rows.filter(r=>r.k||r.v),tags:split($('#etTags',md).value),teams:split($('#etTeams',md).value),color:$('#etColor',md).value,at:$$('#etAt input:checked',md).map(c=>c.value),face,photo});
+   const n=Object.assign({},e,{type:$('#etType',md).value,title:$('#etTitle',md).value.trim()||'항목',sub:$('#etSub',md).value.trim(),body:$('#etBody',md).value.trim(),rows:rows.map(r=>({k:r.k.trim(),v:r.v.trim()})).filter(r=>r.v),tags:split($('#etTags',md).value),teams:split($('#etTeams',md).value),color:$('#etColor',md).value,at:$$('#etAt input:checked',md).map(c=>c.value),face,photo});
    await N().put('ents',id,n,$('#etVis',md).value);const t=$('#etSec',md).value.trim();if(t)await N().put('sec','ent:'+id,{t},'gm');else if(N().doc('sec','ent:'+id))await N().del('sec','ent:'+id);N().closeModal()}}
 
  N().MOD.ents={render};

@@ -23,7 +23,7 @@
   if(f.kind==='sess'){N().go('plan');setTimeout(()=>{const r=document.querySelector(`[data-sess="${CSS.escape(f.id)}"]`);if(r){r.scrollIntoView({behavior:'smooth',block:'center'});r.classList.add('flash');setTimeout(()=>r.classList.remove('flash'),1200)}},50);return}
   if(f.kind==='logs'){if(L.logs&&N().doc('logs',f.id)&&!String(f.id).startsWith('mt_'))return L.logs.read(f.id);if(L.logs)window.open(L.logs.viewUrl(f.id),'_blank','noopener');return}}
  const btn=(kind,id,label)=>`<button type="button" class="favb ${has(kind,id)?'on':''}" data-fav="${esc(kind)}|${esc(id)}" data-favl="${esc(label||'')}" title="${has(kind,id)?'즐겨찾기에서 빼기':'즐겨찾기에 넣기'}">${has(kind,id)?'★':'☆'}</button>`;
- function rail(){const L=get().filter(alive);const open=(()=>{try{return localStorage.getItem('nt_fav_open')!=='0'}catch(e){return true}})();
+ function rail(){const L=get().filter(alive);const open=(()=>{try{const v=localStorage.getItem('nt_fav_open');return v==null?L.length>0:v!=='0'}catch(e){return L.length>0}})();/* 10-29: 따로 정한 적이 없으면, 비었을 때는 접어 둬서 본문 자리를 넓힌다 */
   return `<aside id="ntFav" class="${open?'':'closed'}"><button type="button" class="favh" data-favtoggle title="즐겨찾기 접기 · 펴기">★ 즐겨찾기 <small>${L.length}</small></button>
    ${open?`<div class="favl">${L.map((f,i)=>`<button type="button" class="favi" data-favgo="${i}"><i>${ICON[f.kind]||'•'}</i><span>${esc(labelOf(f))}</span><em data-favx="${i}" title="빼기">×</em></button>`).join('')||'<div class="small dim" style="padding:8px 10px;line-height:1.5">장소 · 항목 · 루트 · 시트 · 세션 · 로그의 ☆ 를 누르면 여기 모여요. 누르면 바로 가요.</div>'}</div>`:''}</aside>`}
  document.addEventListener('click',e=>{const t=e.target;const fb=t.closest('[data-fav]');if(fb){e.preventDefault();e.stopPropagation();const [k,id]=fb.dataset.fav.split('|');toggle(k,id,fb.dataset.favl);return}},true);
@@ -32,6 +32,6 @@
   const b=t.closest('[data-fav]');if(b){e.stopPropagation();const [k,id]=b.dataset.fav.split('|');toggle(k,id,b.dataset.favl);return}
   const x=t.closest('[data-favx]');if(x){e.stopPropagation();const L=get();L.splice(+x.dataset.favx,1);set(L);N().render();return}
   const g=t.closest('[data-favgo]');if(g){const L=get().filter(alive);const f=L[+g.dataset.favgo];if(f)go(f);return}
-  const tg=t.closest('[data-favtoggle]');if(tg){try{localStorage.setItem('nt_fav_open',localStorage.getItem('nt_fav_open')==='0'?'1':'0')}catch(e){}N().render()}});
+  const tg=t.closest('[data-favtoggle]');if(tg){try{const cur=document.getElementById('ntFav');localStorage.setItem('nt_fav_open',cur&&!cur.classList.contains('closed')?'0':'1')}catch(e){}N().render()}});
  window.NT_FAV={get,has,toggle,btn,rail,go};
 })();

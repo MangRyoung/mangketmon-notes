@@ -1,0 +1,105 @@
+/* ---------- 10-29 시나리오 「쓰기」 화면 · 항목 다듬기 (모든 테마 공통, 색은 변수로) ---------- */
+.swrite{display:grid;grid-template-columns:230px minmax(0,1fr);gap:16px;align-items:start}
+.swlist{position:sticky;top:64px;max-height:calc(100dvh - 80px);overflow:auto;display:flex;flex-direction:column;gap:10px;padding-right:2px}
+.swg{display:flex;flex-direction:column;gap:4px}
+.swgh{font-family:var(--lab);font-size:12px;letter-spacing:.12em;color:var(--mute);padding:0 2px 3px;border-bottom:1px solid var(--line)}
+.swi{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--c);padding:7px 10px 9px;color:var(--fg);cursor:pointer;font:inherit;overflow:hidden}
+.swi b{font-size:14px;line-height:1.3}
+.swi small{font-size:11px;color:var(--mute);line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.swi>i{position:absolute;left:0;bottom:0;height:2px;background:var(--c);opacity:.8}
+.swi:hover{border-color:var(--line2);border-left-color:var(--c)}
+.swi.on{background:var(--panel2);box-shadow:inset 0 0 0 1px var(--c)}
+.swi.active b::after{content:" ▶";color:var(--c);font-size:11px}
+.swi.hid{border-style:dashed;border-left-style:solid}
+.swnew{align-self:flex-start;margin-top:2px}
+
+.swed{background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--c);padding:14px 16px 12px;min-width:0}
+.swhead{display:flex;align-items:center;gap:8px}
+.swname{flex:1;min-width:0;font-family:var(--head);font-size:24px;line-height:1.2;background:transparent;border:0;border-bottom:1px dashed transparent;color:var(--fg);padding:2px 0}
+.swname:hover{border-bottom-color:var(--line2)}.swname:focus{outline:0;border-bottom-color:var(--c)}
+.swmeta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:6px 0 10px;font-size:12px;color:var(--mute)}
+.swmeta label{display:flex;align-items:center;gap:5px}
+.swmeta input[type=text]{width:120px;padding:3px 6px}
+.swmeta input[type=color]{width:30px;height:24px;padding:0;border:1px solid var(--line2);background:none}
+.swprog{display:inline-block;width:90px;height:5px;background:var(--line);overflow:hidden}.swprog i{display:block;height:100%;background:var(--c)}
+.swpair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+.swed textarea{width:100%;resize:vertical;line-height:1.6;min-height:34px;overflow:hidden}
+.swsec{display:flex;align-items:baseline;gap:8px}
+.swsteps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.swstep{display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;background:var(--bg2);border:1px solid var(--line);padding:8px 10px 8px 8px;position:relative}
+.swstep.st-now{border-color:var(--c);box-shadow:0 0 0 1px var(--c)}
+.swstep.st-done,.swstep.st-skip{opacity:.72}.swstep.st-done:focus-within,.swstep.st-skip:focus-within{opacity:1}
+.swstep.st-fail{border-left:3px solid var(--red)}
+.swnum{display:flex;justify-content:center;cursor:grab;user-select:none;touch-action:none}
+.swnum b{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;border:2px solid var(--c);font-family:var(--head);font-size:14px;color:var(--fg)}
+.swstep.st-now .swnum b{background:var(--c);color:#000}
+.swstep.st-done .swnum b{background:transparent;border-style:dashed;border-color:var(--line2);color:var(--mute)}
+.swbody{display:flex;flex-direction:column;gap:6px;min-width:0}
+.swtop{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.swtitle{flex:1 1 200px;min-width:0;font-weight:700;font-size:15px}
+.swspot{flex:0 1 190px;min-width:0;font-size:12px}
+.swst{display:flex;border:1px solid var(--line2)}
+.swst button{width:28px;height:26px;background:transparent;border:0;border-left:1px solid var(--line);color:var(--mute);cursor:pointer;font-size:13px;padding:0}
+.swst button:first-child{border-left:0}
+.swst button:hover{color:var(--fg)}
+.swst button.on{background:var(--c);color:#000;font-weight:700}
+.swst button[data-wst=""].on{background:var(--panel2);color:var(--fg)}
+.swread{display:flex;flex-direction:column;gap:3px;border-left:3px solid var(--c);padding-left:8px}
+.swread span{font-size:11px;color:var(--mute);letter-spacing:.08em}
+.swread textarea{font-style:italic;font-family:'Noto Serif KR',serif}
+.swfoot{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+.swfoot .btn.xs{padding:1px 7px}
+.swent{display:inline-flex;align-items:center;border:1px solid var(--c);background:rgba(0,0,0,.25);font-size:11px}
+.swent button{background:none;border:0;color:var(--fg);cursor:pointer;padding:1px 6px;font:inherit}
+.swent button+button{color:var(--mute);border-left:1px solid var(--line);padding:1px 5px}
+.swent button+button:hover{color:var(--red2)}
+.swentadd{font-size:11px;padding:1px 4px;max-width:150px}
+.swadd{display:flex;gap:8px;align-items:flex-start;margin-top:8px;padding:8px 10px;border:1px dashed var(--line2);background:var(--bg2)}
+.swadd>span{font-family:var(--head);font-size:18px;color:var(--c);line-height:1.6}
+.swadd textarea{border:0;background:transparent;padding:4px 0}
+.swadd textarea:focus{outline:0}
+.swnext .chip{border-left:3px solid var(--c)}
+.swnext .chip.on{background:var(--c);color:#000;font-weight:700}
+.swhint{margin-top:10px;text-align:right}
+#wSaved{opacity:0;transition:opacity .3s;color:var(--ok)}#wSaved.on{opacity:1}
+.swquote{margin:0 0 12px;padding:10px 14px;border-left:3px solid var(--yel);background:rgba(255,255,255,.04);font-style:italic;line-height:1.75;font-family:'Noto Serif KR',serif}
+/* 흐름도 · 지금 칸: 긴 메모는 두 줄까지만 */
+.clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.fmeta{display:flex!important;flex-wrap:wrap;gap:3px;margin-top:2px}
+.fmeta span{font-size:10px;border:1px solid var(--line2);padding:0 5px;color:var(--fg2);line-height:1.5}
+.nowcard q{display:block;font-style:italic;color:var(--fg2);font-size:12px;border-left:2px solid var(--c);padding-left:6px;margin-top:2px}
+.nowcard q::before,.nowcard q::after{content:none}
+@media(max-width:900px){
+  .swrite{grid-template-columns:1fr}
+  .swlist{position:static;max-height:none;flex-direction:row;overflow-x:auto;gap:8px;padding-bottom:4px}
+  .swg{flex-direction:row;gap:6px;align-items:stretch}
+  .swgh{writing-mode:vertical-rl;border-bottom:0;border-right:1px solid var(--line);padding:2px 3px 2px 0}
+  .swi{min-width:150px;max-width:200px}
+  .swnew{align-self:center;margin:0}
+  .swpair{grid-template-columns:1fr}
+  .swed{padding:12px 10px}
+  .swstep{grid-template-columns:26px minmax(0,1fr);gap:7px;padding:8px 8px 8px 6px}
+  .swnum b{width:24px;height:24px;font-size:12px}
+  .swspot{flex:1 1 140px}
+}
+
+/* ---------- 항목 ---------- */
+.entview{display:flex;border:1px solid var(--line2)}
+.entview button{background:transparent;border:0;color:var(--mute);padding:3px 9px;cursor:pointer;font:inherit;font-size:12px}
+.entview button+button{border-left:1px solid var(--line)}
+.entview button.on{background:var(--panel2);color:var(--fg)}
+/* 목록 보기: 한 줄씩 촘촘히 */
+.entgrid.dense{grid-template-columns:1fr!important;gap:3px!important}
+.entgrid.dense .entcard{flex-direction:row;align-items:center;min-height:0;padding-top:5px;padding-bottom:5px}
+.entgrid.dense .entcard .face{width:28px;height:28px;font-size:13px;flex:none}
+.entgrid.dense .entcard .eb{display:flex;flex-direction:row;align-items:center;gap:10px;min-width:0;flex:1}
+.entgrid.dense .entcard .eb b{flex:0 0 auto;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.entgrid.dense .entcard .eb small{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.entgrid.dense .entcard .etags{flex:none}
+/* 상세: 이 항목이 나오는 곳 */
+.entd .appear{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px}
+.entd .appear li{display:flex;gap:6px;align-items:baseline;font-size:13px}
+.entd .appear li .dot{width:8px;height:8px;border-radius:50%;background:var(--c);flex:none;transform:translateY(1px)}
+.entd .entnav{display:flex;gap:4px;margin-left:4px}
+.entd .kv{row-gap:8px}
+.etrow.tpl input[data-k]{color:var(--mute)}

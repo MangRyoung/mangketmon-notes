@@ -59,6 +59,8 @@ window.NT=(()=>{
   document.body.appendChild(m);const r=b.getBoundingClientRect();m.style.left=Math.max(6,Math.min(innerWidth-m.offsetWidth-6,r.left))+'px';m.style.top=(r.bottom+4+m.offsetHeight>innerHeight?Math.max(6,r.top-m.offsetHeight-4):r.bottom+4)+'px';
   m.addEventListener('click',async e=>{const x=e.target.closest('[data-vq]');if(!x)return;e.stopPropagation();m.remove();const v=x.dataset.vq;if(v===cur)return;await put(kind,id,clone(d.data),v);toast('공개 범위: '+visLabel(v))})}
  document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[data-visq]')){e.preventDefault();visMenu(e.target)}});
+ /* 10-29: 창 안에서 Ctrl+S · Ctrl+Enter = 그 창의 저장 단추 */
+ document.addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey)||e.isComposing||!(e.key==='s'||e.key==='S'||e.key==='Enter'))return;const L=$$('.modalbg');if(!L.length)return;const m=L[L.length-1];const ok=$('.mfoot .btn.pri',m)||[...$$('.btn.pri',m)].pop();if(!ok||ok.disabled)return;e.preventDefault();const a=document.activeElement;if(a&&a.blur)a.blur();ok.click()});
  document.addEventListener('click',e=>{const b=e.target.closest('[data-visq]');if(b){e.preventDefault();e.stopPropagation();return visMenu(b)}if(!e.target.closest('.visqm'))document.querySelectorAll('.visqm').forEach(x=>x.remove())},true);
 
  async function put(kind,id,obj,vis){if(!ST.camp)return false;mark(kind,id);const cur=doc(kind,id);const v=vis||(cur?cur.vis:'pub');
@@ -154,8 +156,8 @@ window.NT=(()=>{
  /* ----- 화면 ----- */
  /* 10-26 망령: 다시 그려도 안쪽 스크롤 · 입력 포커스가 안 튄다 (실시간 갱신이 올 때마다 초기화되던 것) */
  const KEEPSEL='.flow,.steps,.side,.tblwrap,.loglist,.entlist,.entgrid,.splist,.notes-grid,.pcsheet,.sess-list,[data-keep]';
- function keepState(root){if(!root)return null;const sc=[];root.querySelectorAll(KEEPSEL).forEach((e,i)=>{if(e.scrollTop||e.scrollLeft)sc.push([e.className,i,e.scrollLeft,e.scrollTop])});const a=document.activeElement;const f=a&&root.contains(a)&&a.id?{id:a.id,s:a.selectionStart,e:a.selectionEnd}:null;return {sc,f,view:ST.view,y:window.scrollY}}
- function restoreState(root,k){if(!k||k.view!==ST.view)return;const L=root.querySelectorAll(KEEPSEL);k.sc.forEach(([cls,i,l,t])=>{const e=L[i];if(e&&e.className===cls){e.scrollLeft=l;e.scrollTop=t}});if(k.f){const e=root.querySelector('#'+CSS.escape(k.f.id));if(e&&e!==document.activeElement){try{e.focus({preventScroll:true});if(k.f.s!=null&&e.setSelectionRange)e.setSelectionRange(k.f.s,k.f.e)}catch(x){}}}}
+ function keepState(root){if(!root)return null;const sc=[];root.querySelectorAll(KEEPSEL).forEach((e,i)=>{if(e.scrollTop||e.scrollLeft)sc.push([e.className,i,e.scrollLeft,e.scrollTop])});const a=document.activeElement;const f=a&&root.contains(a)&&a.id?{id:a.id,s:a.selectionStart,e:a.selectionEnd,v:a.matches&&a.matches('[data-live]')?a.value:null}:null;return {sc,f,view:ST.view,y:window.scrollY}}
+ function restoreState(root,k){if(!k||k.view!==ST.view)return;const L=root.querySelectorAll(KEEPSEL);k.sc.forEach(([cls,i,l,t])=>{const e=L[i];if(e&&e.className===cls){e.scrollLeft=l;e.scrollTop=t}});if(k.f){const e=root.querySelector('#'+CSS.escape(k.f.id));if(e&&e!==document.activeElement){try{if(k.f.v!=null&&e.matches('[data-live]')&&e.value!==k.f.v){e.value=k.f.v;e.dispatchEvent(new Event('input'))}/* 10-29: 쓰고 있던 칸은 다시 그려져도 글을 지킨다 */e.focus({preventScroll:true});if(k.f.s!=null&&e.setSelectionRange)e.setSelectionRange(k.f.s,k.f.e)}catch(x){}}}}
 
  function render(){const app=$('#app');if(!app)return;if(!ST.camp)return renderLobby(app);
   let sh=$('#ntShell',app);if(!sh){app.innerHTML=`<div id="ntShell"><header class="top"></header><div id="ntBody"><div id="ntFavSlot"></div><main id="ntMain"></main></div></div>`;sh=$('#ntShell',app)}

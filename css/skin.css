@@ -103,3 +103,6 @@ html[data-skin="univ"] .pin span{font-family:'Noto Serif KR',serif}
   html[data-skin="univ"] .idc-kind{font-size:13px}
   html[data-skin="univ"] .idc-rk{grid-template-columns:repeat(2,1fr)}
 }
+/* 항목 목록 보기: 청구 번호는 오른쪽 위 대신 숨기고, 펀치 구멍만 */
+html[data-skin="univ"] .entgrid.dense .entcard::after{display:none}
+html[data-skin="univ"] .entgrid.dense .entcard{padding-top:6px;padding-bottom:6px;border-top-width:3px}
