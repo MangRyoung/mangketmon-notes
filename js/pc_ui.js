@@ -87,7 +87,7 @@
     <dl class="idc-f"><dt>성명</dt><dd class="idc-name">${esc(name)}</dd><dt>${npc?'직위':'소속'}</dt><dd>${esc(p.sub||'—')}</dd><dt>${npc?'번호':'학번'}</dt><dd class="idc-no">${esc(stuNo(id))}</dd>${npc?'':`<dt>담당</dt><dd>${esc(p.player||'—')}</dd>`}</dl></div>
    ${t?`<div class="idc-rk">${['지시','육성','통솔','능력'].map(k=>`<span><small>${k}</small><b>${esc(rk[k]||'-')}</b></span>`).join('')}</div>`:''}
    <div class="idc-foot"><span class="idc-bar" aria-hidden="true"></span><span class="idc-yr">2026학년도</span><span class="idc-seal" aria-hidden="true">미사그<br>대학인</span></div>
-  </div><div class="idside">${heroIn}</div></div>`}
+  </div><div class="idside">${!npc&&window.NT_AWK?NT_AWK.idCard(id):''}${heroIn}</div></div>`}
  const T2C={'노말':'#9aa','불꽃':'#f08030','물':'#6890f0','풀':'#78c850','전기':'#f8d030','얼음':'#98d8d8','격투':'#c03028','독':'#a040a0','땅':'#e0c068','비행':'#a890f0','에스퍼':'#f85888','벌레':'#a8b820','바위':'#b8a038','고스트':'#705898','드래곤':'#7038f8','악':'#705848','강철':'#b8b8d0','페어리':'#ee99ac'};
  const tchip=t=>t&&t!=='-'?`<em class="tch" style="background:${T2C[t]||'#666'}">${esc(t)}</em>`:'';
  /* 10-26 망령: 파티 = 제작기 시트 그대로 (레벨 · 타입 · 종족치 · 특성 · 소지품 · 기술 · 전용 · 포텐셜) */

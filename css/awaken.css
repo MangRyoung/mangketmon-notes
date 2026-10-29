@@ -65,3 +65,28 @@
  .awtags .awtg .chip{flex:none}
  .awtg>span{width:40px;flex:none}
 }
+/* 10-29 감우에게 보낼 그림 · 코멘트 · 묶음 */
+.awsend{display:flex;gap:10px;align-items:flex-start;margin-top:8px;flex-wrap:wrap}
+.awsimg{flex:none;width:64px;height:80px;border:1px dashed var(--line2);background:#000 center/cover no-repeat;display:flex;align-items:center;justify-content:center;text-align:center;font-size:10px;color:var(--mute);cursor:pointer;line-height:1.3}
+.awsimg.on{border-style:solid;border-color:var(--yel)}
+.awsimg.drop,.awsimg.over{border-color:var(--red)}
+.awsnote{flex:1;min-width:200px;margin:0}
+.awsnote textarea{width:100%;font-size:12.5px}
+.awbpcs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.awbprev{display:flex;justify-content:center;background:#000;border:1px solid var(--line);padding:6px;min-height:120px}
+/* 10-29 「각성체」 화면 (PL · GM) · 학생증 옆 카드 */
+.awegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.awegrid.one{grid-template-columns:minmax(0,560px)}
+.awe{display:flex;gap:12px;align-items:stretch}
+.awepor{flex:none;width:110px;height:140px;background:#000 center top/cover no-repeat;border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--mute)}
+.awe.big .awepor{width:150px;height:190px}
+.awebody{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.awebody h3{margin:0}
+.awenote{line-height:1.5;max-height:9em;overflow:auto}
+.awid{display:flex;align-items:center;gap:8px;border:1px solid var(--line2);background:var(--panel);padding:6px 8px;margin-bottom:8px;font-size:12px}
+.awid>b{flex:none;font-family:var(--lab);letter-spacing:.04em}
+.awidt{flex:1;min-width:0;display:flex;align-items:center;gap:6px}
+.awidt i{flex:none;width:26px;height:32px;background:#000 center/cover no-repeat;border:1px solid var(--line2)}
+.awidt small{color:var(--fg2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#awSImg{width:120px;height:150px}
+@media (max-width:760px){.awegrid{grid-template-columns:1fr}.awepor{width:84px;height:106px}}
