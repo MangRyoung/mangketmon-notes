@@ -1,0 +1,52 @@
+/* 10-29 계정 로그인 · 접속자 · 권한 (js/acct_ui.js) */
+.acbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 18px;padding:10px 14px;border:1px solid var(--line2);background:var(--panel)}
+.acbar.off{border-style:dashed;background:rgba(0,0,0,.25)}
+.acav{width:34px;height:34px;flex:none;display:grid;place-items:center;background:var(--red);color:#fff;font-family:var(--head);font-size:18px;transform:skew(var(--skew))}
+.acme{display:flex;flex-direction:column;min-width:0;flex:1 1 220px}
+.acme b{font-size:15px}.acme small{color:var(--fg2);font-size:12px}
+.acadm{color:var(--yel)}
+.acwarn{color:var(--yel)!important}
+.tag.acgm{background:var(--red);border-color:var(--red);color:#fff}
+.tag.acpl{background:#fff;border-color:#fff;color:#000}
+.acmebtn{max-width:12em;overflow:hidden;text-overflow:ellipsis}
+
+.acmodal{width:min(440px,100%)}
+.aclg form{display:flex;flex-direction:column;gap:10px;margin:10px 0}
+.aclg input[type=text],.aclg input[type=password]{width:100%;background:#000;border:1px solid var(--line2);border-radius:0;padding:7px 10px;color:var(--fg);font-size:15px}
+.aclg input:focus{outline:none;border-color:var(--red)}
+.aclg .lgtabs{display:flex;gap:0;border-bottom:1px solid var(--line2)}
+.aclg .lgtabs button{flex:1;background:none;border:0;border-bottom:3px solid transparent;padding:8px;cursor:pointer;color:var(--mute);font-family:var(--lab);font-size:15px}
+.aclg .lgtabs button.on{color:var(--fg);border-bottom-color:var(--red)}
+.ackeep{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg2)}
+.acmsg{margin:10px 0 0;color:var(--yel)}
+
+.mgmodal{width:min(860px,100%)}
+.mgtabs{display:flex;gap:4px;margin:6px 0 12px;border-bottom:1px solid var(--line2)}
+.mgtabs button{background:none;border:0;border-bottom:3px solid transparent;padding:6px 12px;cursor:pointer;color:var(--mute);font-family:var(--lab);font-size:15px}
+.mgtabs button.on{color:var(--fg);border-bottom-color:var(--red)}
+.onlist{display:flex;flex-direction:column;gap:6px}
+.onrow{display:grid;grid-template-columns:auto minmax(0,1.3fr) minmax(0,1fr) auto minmax(0,1.2fr);gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);background:var(--bg2)}
+.onrow.me{border-color:var(--red)}
+.ondot{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 6px var(--ok);display:inline-block;flex:none}
+.ondot.off{background:var(--line2);box-shadow:none}
+.mgt .ondot{margin-right:6px;vertical-align:middle}
+.onwho,.onwhere{display:flex;flex-direction:column;min-width:0}
+.onwho b,.onwhere b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.onwho small,.onwhere small{color:var(--mute);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.onctl select,.mgt select{width:100%;max-width:280px}
+.mgpick{margin-bottom:10px}
+.mgt{width:100%;border-collapse:collapse}
+.mgt th{text-align:left;font-family:var(--lab);font-weight:400;color:var(--mute);border-bottom:1px solid var(--line2);padding:4px 6px}
+.mgt td{padding:6px;border-bottom:1px solid var(--line);vertical-align:middle}
+.mgt td:last-child{width:min(300px,45%)}
+.mgleg{margin-top:12px;padding:8px 10px;border:1px dashed var(--line2);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.mgleg .small{flex-basis:100%}
+.mgmodal .pf-note{margin-top:12px}
+@media (max-width:720px){
+ .onrow{grid-template-columns:auto minmax(0,1fr) auto;row-gap:6px}
+ .onwhere{grid-column:2/3}
+ .onrole{grid-column:3/4;grid-row:1}
+ .onctl{grid-column:1/-1}
+ .onctl select,.mgt select{max-width:none}
+ .mgt td:last-child{width:50%}
+}

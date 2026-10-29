@@ -178,18 +178,19 @@ window.NT=(()=>{
  function keepState(root){if(!root)return null;const sc=[];root.querySelectorAll(KEEPSEL).forEach((e,i)=>{if(e.scrollTop||e.scrollLeft)sc.push([e.className,i,e.scrollLeft,e.scrollTop])});const a=document.activeElement;const f=a&&root.contains(a)&&a.id?{id:a.id,s:a.selectionStart,e:a.selectionEnd,v:a.matches&&a.matches('[data-live]')?a.value:null}:null;return {sc,f,view:ST.view,y:window.scrollY}}
  function restoreState(root,k){if(!k||k.view!==ST.view)return;const L=root.querySelectorAll(KEEPSEL);k.sc.forEach(([cls,i,l,t])=>{const e=L[i];if(e&&e.className===cls){e.scrollLeft=l;e.scrollTop=t}});if(k.f){const e=root.querySelector('#'+CSS.escape(k.f.id));if(e&&e!==document.activeElement){try{if(k.f.v!=null&&e.matches('[data-live]')&&e.value!==k.f.v){e.value=k.f.v;e.dispatchEvent(new Event('input'))}/* 10-29: 쓰고 있던 칸은 다시 그려져도 글을 지킨다 */e.focus({preventScroll:true});if(k.f.s!=null&&e.setSelectionRange)e.setSelectionRange(k.f.s,k.f.e)}catch(x){}}}}
 
- function render(){const app=$('#app');if(!app)return;if(!ST.camp)return renderLobby(app);cacheSave();
+ function render(){const app=$('#app');if(!app)return;if(window.NT_ACCT)NT_ACCT.track();/* 10-29 접속자 */if(!ST.camp)return renderLobby(app);cacheSave();
   let sh=$('#ntShell',app);if(!sh){app.innerHTML=`<div id="ntShell"><header class="top"></header><div id="ntBody"><div id="ntFavSlot"></div><main id="ntMain"></main></div></div>`;sh=$('#ntShell',app)}
   renderTop($('.top',sh));const fs=$('#ntFavSlot',sh);if(fs&&window.NT_FAV)fs.innerHTML=NT_FAV.rail();const old=$('#ntMain',sh);const keep=keepState(old);const main=old.cloneNode(false);old.replaceWith(main);main.dataset.view=ST.view;/* 탭 모듈이 render 마다 el.addEventListener 를 붙이므로, 매번 새 요소로 바꿔 처리기가 쌓이거나 다른 탭 것과 섞이지 않게 한다 */const M=MOD[ST.view];
   try{if(M)M.render(main);else main.innerHTML='<div class="empty">준비 중</div>';subTabs(main);restoreState(main,keep)}catch(e){console.error(e);main.innerHTML=`<div class="empty vfail"><b>「${esc((VIEWS.find(v=>v[0]===ST.view)||[])[1]||ST.view)}」 화면을 그리지 못했어요.</b><div class="small dim" style="margin-top:6px;word-break:break-all">${esc(e&&e.message||e)}</div><button class="btn sm" onclick="NT.go('map')">지도로</button></div>`}}
  function renderTop(top){const c=ST.campInfo||{};const role=gm()?'<span class="badge gm">GM</span>':me()?`<span class="badge seat">${esc(seatName(me())||me())}</span>`:'<span class="badge">구경</span>';
   const cur=tabOf(ST.view)[0];const tabs=TABS.filter(([k])=>k!=='set'||gm()||me()).map(t=>`<button data-v="${t[0]===cur?ST.view:subGet(t)}" data-tab="${t[0]}" class="${t[0]===cur?'on':''}">${t[1]}</button>`).join('');
   top.innerHTML=`<a class="back" href="#" data-lobby>← 캠페인</a><h1 class="camp name"><b>${esc(c.name||'…')}</b>${c.data&&c.data.sub?`<small>${esc(c.data.sub)}</small>`:''}</h1>${role}<nav class="tabs" id="sceneTabs">${tabs}</nav><span class="sp"></span>
-   ${(()=>{const r=((c.data||{}).om||{}).room;return r&&window.NT_LINK?`<a class="btn xs omgo" href="${esc(NT_LINK.omUrl(r))}" target="oremas" rel="noopener" title="이 캠페인과 이어진 웹툴 방 열기">🎲 웹툴</a>`:''})()}${window.NT_NOTICE?NT_NOTICE.bellHtml():''}<button type="button" class="favtop" data-favdrawer title="즐겨찾기">★</button><span id="ntLive" class="live ${ST.online?'on':''}" title="${ST.online?'실시간 연결됨':'연결 중…'}"></span>${!ST.role?'<button class="btn xs" data-login>비밀구</button>':'<button class="btn xs ghost" data-logout title="이 브라우저에서 비밀구 지우기">나가기</button>'}
+   ${(()=>{const r=((c.data||{}).om||{}).room;return r&&window.NT_LINK?`<a class="btn xs omgo" href="${esc(NT_LINK.omUrl(r))}" target="oremas" rel="noopener" title="이 캠페인과 이어진 웹툴 방 열기">🎲 웹툴</a>`:''})()}${window.NT_NOTICE?NT_NOTICE.bellHtml():''}<button type="button" class="favtop" data-favdrawer title="즐겨찾기">★</button><span id="ntLive" class="live ${ST.online?'on':''}" title="${ST.online?'실시간 연결됨':'연결 중…'}"></span>${!ST.role?`<button class="btn xs" data-login>${window.NT_ACCT&&NT_ACCT.tok()?'비밀구':'로그인'}</button>`:String(ST.secret).startsWith('u:')&&window.NT_ACCT?`<button class="btn xs ghost acmebtn" data-acme title="웹툴과 같은 계정 · 로그아웃">${esc(NT_ACCT.myName()||'계정')}</button>`:'<button class="btn xs ghost" data-logout title="이 브라우저에서 비밀구 지우기">나가기</button>'}
    <span class="vtsw compact"><button type="button" class="vtcur">${(VT.find(x=>x[0]===vtGet())||[])[1]}<i>▾</i></button><span class="vtmenu">${VT.map(([k,l])=>`<button type="button" data-vt="${k}" class="${k===vtGet()?'on':''}">${l}</button>`).join('')}</span></span>`;
   top.onclick=e=>{const t=e.target;const b=t.closest('button[data-v]');if(b){go(b.dataset.v);return}
    if(t.closest('[data-lobby]')){e.preventDefault();leave();return}
-   if(t.closest('[data-login]'))return loginBox();
+   if(t.closest('[data-login]'))return window.NT_ACCT&&!NT_ACCT.tok()?NT_ACCT.loginModal():loginBox();   /* 10-29: 로그인 안 했으면 계정 로그인(비밀구는 그 창 아래), 계정은 있는데 권한이 없으면 비밀구 */
+   if(t.closest('[data-acme]'))return NT_ACCT.meMenu();
    if(t.closest('[data-logout]')){try{localStorage.removeItem(SK(ST.camp))}catch(x){}ST.secret='';ST.role=null;open(ST.camp);return}
    const v=t.closest('button[data-vt]');if(v){vtSet(v.dataset.vt);return}
    if(t.closest('.vtcur')){const s=t.closest('.vtsw');s.classList.toggle('open');return}};
@@ -197,18 +198,22 @@ window.NT=(()=>{
  function go(v){ST.view=VIEWS.some(x=>x[0]===v)?v:'map';setHash();render();try{localStorage.setItem('nt_view',ST.view)}catch(e){}}
 
  /* ----- 로비 ----- */
- async function renderLobby(app){app.innerHTML=`<div class="lobby"><div class="lhead"><div><small>MANGKETMON · SESSION NOTES</small><h1>망켓몬 세션 노트</h1><p>캠페인마다 지도 · 관계도 · 항목 · PC 시트 · 시나리오 · 진행표. GM 비밀구로 들어오면 전부 보이고, 링크만 있으면 공개한 것만 보인다.</p></div>
+ async function renderLobby(app){if(window.NT_ACCT)await NT_ACCT.me();const AC=window.NT_ACCT&&NT_ACCT.tok()&&DBS().acct;
+  app.innerHTML=`<div class="lobby">${window.NT_ACCT?NT_ACCT.lobbyBar():''}<div class="lhead"><div><small>MANGKETMON · SESSION NOTES</small><h1>망켓몬 세션 노트</h1><p>캠페인마다 지도 · 관계도 · 항목 · PC 시트 · 시나리오 · 진행표. 웹툴과 같은 계정으로 로그인하면 받은 권한(GM · PL)대로 보이고, 링크만 있으면 공개한 것만 보인다.</p></div>
    <span class="vtsw">${VT.map(([k,l])=>`<button type="button" data-vt="${k}" class="${k===vtGet()?'on':''}">${l}</button>`).join('')}</span></div>
    <div class="camps" id="campList"><div class="dim">불러오는 중…</div></div>
-   <div class="newcamp"><h3>새 캠페인</h3><div class="row"><input type="text" id="ncName" placeholder="캠페인 이름 (예: 무진)" style="flex:1;min-width:160px"><input type="text" id="ncSec" placeholder="GM 비밀구 (6자 이상 · 잊으면 복구 불가)" style="flex:1;min-width:200px"><button class="btn pri" id="ncGo">만들기</button></div><p class="small dim">비밀구는 이 브라우저에 저장돼요. 다른 기기에서는 <code>?gm=비밀구</code> 를 주소 뒤에 붙여 한 번 열면 돼요. PL 에게는 <code>?pl=좌석비밀구</code> 링크를 줘요.</p></div>
+   ${AC?`<div class="newcamp"><h3>새 캠페인</h3><div class="row"><input type="text" id="ncName" placeholder="캠페인 이름 (예: 무진)" style="flex:1;min-width:160px"><button class="btn pri" id="ncGo">만들기</button></div><p class="small dim">만든 계정이 그 캠페인의 GM 이 돼요. 플레이어 권한은 「👥 접속자 · 권한」에서 줘요.</p></div>`
+   :`<div class="newcamp"><h3>새 캠페인</h3><div class="row"><input type="text" id="ncName" placeholder="캠페인 이름 (예: 무진)" style="flex:1;min-width:160px"><input type="text" id="ncSec" placeholder="GM 비밀구 (6자 이상 · 잊으면 복구 불가)" style="flex:1;min-width:200px"><button class="btn pri" id="ncGo">만들기</button></div><p class="small dim">로그인하면 비밀구 없이 계정으로 만들어요. 비밀구는 이 브라우저에 저장돼요. 다른 기기에서는 <code>?gm=비밀구</code> 를 주소 뒤에 붙여 한 번 열면 돼요. PL 에게는 <code>?pl=좌석비밀구</code> 링크를 줘요.</p></div>`}
    ${DBS().mode==='local'?'<p class="small dim">⚠ 공유 DB 설정이 없어 이 브라우저에만 저장돼요 (js/config.js).</p>':''}
    <p class="small dim foot">오레마스 · 제작기와 같은 Supabase 를 써요. <a href="${esc((window.NT_CONFIG||{}).oremasUrl||'#')}" target="_blank" rel="noopener">웹툴</a> · <a href="${esc((window.NT_CONFIG||{}).makerUrl||'#')}" target="_blank" rel="noopener">제작기</a></p></div>`;
-  app.onclick=e=>{const v=e.target.closest('button[data-vt]');if(v)vtSet(v.dataset.vt)};
-  $('#ncGo',app).onclick=async()=>{const n=$('#ncName',app).value.trim(),s=$('#ncSec',app).value.trim();if(!n)return toast('이름을 적어 줘');if(s.length<6)return toast('비밀구는 6자 이상');
+  app.onclick=e=>{const v=e.target.closest('button[data-vt]');if(v)vtSet(v.dataset.vt)};if(window.NT_ACCT)NT_ACCT.bindBar(app);
+  $('#ncGo',app).onclick=async()=>{const n=$('#ncName',app).value.trim();if(!n)return toast('이름을 적어 줘');
+   if(AC){try{const id=await DBS().acct.campNew(NT_ACCT.tok(),n);toast('캠페인을 만들었다');await NT_ACCT.me(true);ST.camps=[];open(id)}catch(err){toast('만들기 실패: '+err.message)}return}
+   const s=$('#ncSec',app).value.trim();if(s.length<6)return toast('비밀구는 6자 이상');
    try{const id=await DBS().create(n,s);try{localStorage.setItem(SK(id),s)}catch(x){}toast('캠페인을 만들었다');open(id)}catch(err){toast('만들기 실패: '+err.message)}};
   try{ST.camps=await DBS().camps()}catch(e){$('#campList',app).innerHTML=`<div class="empty">캠페인 목록을 못 읽었어요: ${esc(e.message)}<br><span class="small dim">Supabase 에 supabase/schema.sql 을 아직 안 넣었다면 먼저 넣어 주세요.</span></div>`;return}
   const L=$('#campList',app);if(!L)return;
-  L.innerHTML=ST.camps.length?ST.camps.map(c=>{let has='';try{has=localStorage.getItem(SK(c.id))?'<span class="tag ok">비밀구 있음</span>':''}catch(e){}const d=c.data||{};return `<button class="campcard" data-c="${esc(c.id)}" style="${d.cover?`--cv:url('${cssu(d.cover)}')`:''}"><span class="cvr"></span><b>${esc(c.name||'이름 없음')}</b><small>${esc(d.sub||'')}</small><span class="meta">${has}<span class="dim">${esc((c.updated_at||'').slice(0,10))}</span></span></button>`}).join(''):'<div class="empty">아직 캠페인이 없어요. 아래에서 만들어요.</div>';
+  L.innerHTML=ST.camps.length?ST.camps.map(c=>{let has=window.NT_ACCT?NT_ACCT.campTag(c.id):'';try{if(!has)has=localStorage.getItem(SK(c.id))?'<span class="tag ok">비밀구 있음</span>':''}catch(e){}const d=c.data||{};return `<button class="campcard" data-c="${esc(c.id)}" style="${d.cover?`--cv:url('${cssu(d.cover)}')`:''}"><span class="cvr"></span><b>${esc(c.name||'이름 없음')}</b><small>${esc(d.sub||'')}</small><span class="meta">${has}<span class="dim">${esc((c.updated_at||'').slice(0,10))}</span></span></button>`}).join(''):'<div class="empty">아직 캠페인이 없어요. 아래에서 만들어요.</div>';
   L.onclick=e=>{const b=e.target.closest('[data-c]');if(b)open(b.dataset.c)}}
 
  async function loginBox(){const v=await promptBox('비밀구 (GM 또는 PL 좌석)','','비밀구를 적으면 이 브라우저에 저장돼요');if(v==null)return;const s=v.trim();if(!s)return;
@@ -219,7 +224,10 @@ window.NT=(()=>{
   ST.secret=sec;ST.role=null;ST.view=view||q.view||(()=>{try{return localStorage.getItem('nt_view')}catch(e){return ''}})()||'map';if(!VIEWS.some(x=>x[0]===ST.view))ST.view='map';
   const app=$('#app');app.innerHTML='<div class="lobby dim">캠페인을 여는 중…</div>';
   try{if(!ST.camps.length)ST.camps=await DBS().camps();ST.campInfo=ST.camps.find(c=>c.id===camp)||null;if(!ST.campInfo){toast('없는 캠페인이에요');ST.camp='';setHash();return render()}campLook(ST.campInfo);
-   if(sec){ST.role=await DBS().whoami(camp,sec);if(!ST.role){toast('저장된 비밀구가 맞지 않아 구경 모드예요');ST.secret=''}}
+   /* 10-29 계정: 링크로 받은 비밀구가 없으면 계정(웹툴과 같은 로그인) 권한을 먼저 — 권한이 없으면 저장된 비밀구 */
+   const tok=!given&&window.NT_ACCT?NT_ACCT.tok():'';
+   if(tok){try{const w=await DBS().whoami(camp,'u:'+tok);if(w){ST.role=w;ST.secret='u:'+tok}}catch(e){}}
+   if(!ST.role&&sec){ST.secret=sec;ST.role=await DBS().whoami(camp,sec);if(!ST.role){toast('저장된 비밀구가 맞지 않아 구경 모드예요');ST.secret=''}}
    try{ST.seats=await DBS().seats(camp)||[]}catch(e){ST.seats=[]}
    await loadAll();if(window.NT_MAKER)NT_MAKER.load().then(()=>render()).catch(()=>{});
    setHash();app.innerHTML='';render();listen()}
@@ -231,5 +239,5 @@ window.NT=(()=>{
  window.addEventListener('DOMContentLoaded',()=>{const q=readHash();if(q.camp)open(q.camp,q.view);else render()});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&ST.camp)resync()});
 
- return {ST,D,SYNC,$,$$,esc,uid,clone,cssu,gm,me,canSee,canEdit,toast,openModal,closeModal,confirmBox,promptBox,armDraft,sortable,reorder,ctxMenu,bindCtx,pinch,doc,data,list,put,patch,del,putMany,bulkVis,bulkBtns,BULKF,upload,shrink,bindDrop,visSelect,visBadge,visLabel,seatName,render,go,open,leave,refreshCamp,resync,MOD,VIEWS,TABS,DBS,VT,SKINS,skin};
+ return {loginBox,ST,D,SYNC,$,$$,esc,uid,clone,cssu,gm,me,canSee,canEdit,toast,openModal,closeModal,confirmBox,promptBox,armDraft,sortable,reorder,ctxMenu,bindCtx,pinch,doc,data,list,put,patch,del,putMany,bulkVis,bulkBtns,BULKF,upload,shrink,bindDrop,visSelect,visBadge,visLabel,seatName,render,go,open,leave,refreshCamp,resync,MOD,VIEWS,TABS,DBS,VT,SKINS,skin};
 })();

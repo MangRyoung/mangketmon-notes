@@ -5,7 +5,8 @@
      all(camp,secret,since) → [{kind,id,data,vis,updated_at}] · ids(camp,secret) · get(camp,secret,kind,id)
      put(camp,secret,kind,id,data,vis) → updated_at · del · putMany(camp,secret,rows)
      uploadImage(path,blob) → 공개 주소 · subscribe(camp,{onDoc,onDel,onPing}) → 해제 함수 · ping(camp,msg)
-     makerDocs(kind) → 제작기 문서 [{id,data}] */
+     makerDocs(kind) → 제작기 문서 [{id,data}]
+     acct.{login,signup,logout,me,campNew,adminList,adminMember} · online(key,info,{onSync,onRole}) — 10-29 계정 · 접속자 (공유 DB 일 때만) */
 "use strict";
 window.NT_STORE=(()=>{
  const cfg=()=>window.NT_CONFIG||{};
@@ -61,7 +62,17 @@ window.NT_STORE=(()=>{
   omSub(room,onLog){const ch=sb().channel('ntom:'+room).on('postgres_changes',{event:'INSERT',schema:'public',table:'om_log',filter:'room=eq.'+room},p=>{try{if(p.new)onLog(p.new)}catch(e){}}).subscribe();return ()=>{try{sb().removeChannel(ch)}catch(e){}}},
   /* 로그 정리기 보관소 (kind mtlog): 목록은 제목 · 폴더 · 줄 수 · 날짜 · 세션 정보만 (본문은 안 받는다) */
   async mtlogIndex(){const r=await sb().from(cfg().makerTable||'docs').select('id,title:data->>title,folder:data->>folder,count:data->>count,created:data->>created,updated:data->>updated,meta:data->meta').eq('kind','mtlog').order('id');if(r.error)throw err(r.error);return r.data||[]},
-  async mtlogMeta(){const r=await sb().from(cfg().makerTable||'docs').select('id,data').eq('kind','mtlogmeta');if(r.error)throw err(r.error);return r.data||[]}
+  async mtlogMeta(){const r=await sb().from(cfg().makerTable||'docs').select('id,data').eq('kind','mtlogmeta');if(r.error)throw err(r.error);return r.data||[]},
+  /* 10-29 망령 「세션 노트랑 웹툴이랑 로그인 체계를 같게」: 웹툴(오레마스) 계정 그대로. 로그인 · 가입 · 로그아웃은 웹툴 함수(om_*), 캠페인 권한은 nt_* (supabase/patch_2026-10-29_계정.sql) */
+  acct:{login:(id,pw,dev)=>rpc('om_login',{p_id:id,p_pw:pw,p_device:dev||''}),signup:(id,pw,name)=>rpc('om_signup',{p_id:id,p_pw:pw,p_name:name}),logout:t=>rpc('om_logout',{p_token:t}),
+   me:t=>rpc('nt_me',{p_token:t}),campNew:(t,name)=>rpc('nt_camp_new',{p_token:t,p_name:name}),
+   adminList:t=>rpc('nt_admin_list',{p_token:t}),adminMember:(t,camp,uid,role,seat)=>rpc('nt_admin_member',{p_token:t,p_camp:camp,p_uid:uid,p_role:role??null,p_seat:seat??null})},
+  /* 접속자: 실시간 presence 채널 하나(mk_online)에 노트를 연 사람이 저마다 {uid,name,camp,…} 를 올린다. 권한을 바꾸면 같은 채널로 「role」 알림 */
+  online(key,info,h){const ch=sb().channel('mk_online',{config:{presence:{key},broadcast:{self:false}}});let cur=info;
+   ch.on('presence',{event:'sync'},()=>{try{h.onSync&&h.onSync(ch.presenceState())}catch(e){}});
+   ch.on('broadcast',{event:'role'},({payload})=>{try{h.onRole&&h.onRole(payload||{})}catch(e){}});
+   ch.subscribe(st=>{if(st==='SUBSCRIBED')ch.track(cur).catch(()=>{})});
+   return {update(i){cur=i;ch.track(i).catch(()=>{})},send(p){try{ch.send({type:'broadcast',event:'role',payload:p})}catch(e){}},state:()=>ch.presenceState(),leave(){try{sb().removeChannel(ch)}catch(e){}}}}
  };
 
  /* ===== localStorage (시험 · 설정 없을 때) ===== */
@@ -101,6 +112,7 @@ window.NT_STORE=(()=>{
   async omLogAdd(room,secret,kind,who,data){this._omLog=this._omLog||[];const r={id:(this._omLog.length?this._omLog[this._omLog.length-1].id:0)+1,at:new Date().toISOString(),who,kind,data};this._omLog.push(r);setTimeout(()=>(this._omSubs||[]).forEach(f=>f(r)),20);return r.id},
   async omPut(room,secret,path,value){this._om=this._om||{};let o=this._om;const P=path[0]==='pub'?['pub',...path.slice(1)]:path;for(let i=0;i<P.length-1;i++){o[P[i]]=o[P[i]]||{};o=o[P[i]]}o[P[P.length-1]]=value;return true},
   omSub(room,f){this._omSubs=(this._omSubs||[]).concat(f);return ()=>{this._omSubs=(this._omSubs||[]).filter(x=>x!==f)}},
+  acct:null,online:null,
   async mtlogMeta(){return [{id:'tree',data:{folders:[{id:'f1',name:'무진'}],order:[['lg1','f1'],['lg2','f1']]}}]}
  };
  const api=configured()?S:L;
