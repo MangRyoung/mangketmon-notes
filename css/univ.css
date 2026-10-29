@@ -98,9 +98,9 @@ html[data-skin="univ"] .ux-sec .btn.ghost{color:var(--ink2);border-color:#a8936a
 html[data-skin="univ"] .ux-sec .dim{color:var(--ink3)}
 
 /* ===== 지도: 인물 배치 (js/map_ui.js 10-29) — PC · NPC 얼굴 · 끌어 옮기기 · 구역별 목록 ===== */
-.mnpc.noimg{display:grid;place-items:center;color:#fff;font-size:13px;font-weight:700;background:#3a3f4b}
+.mnpc.noimg{display:grid;place-items:center;color:#fff;font-size:16px;font-weight:700;background:#3a3f4b}
 .mnpc.pcf{border-color:var(--red2,#ff2d55)}
-.mnpc.more{display:grid;place-items:center;background:#111;color:#fff;font-size:11px;font-weight:700;border-color:var(--line2)}
+.mnpc.more{display:grid;place-items:center;background:#111;color:#fff;font-size:13px;font-weight:700;border-color:var(--line2)}
 .mnpc.dragging{z-index:9;transform:translate(-50%,-50%) scale(1.25);pointer-events:none;box-shadow:0 0 0 3px var(--yel,#ffd12e),0 6px 16px rgba(0,0,0,.8)}
 .mapwrap.facedrag .pin{transition:transform .1s}
 .pin.droptgt{transform:translate(-50%,-100%) scale(1.2);filter:drop-shadow(0 0 6px var(--yel,#ffd12e))}

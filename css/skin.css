@@ -49,6 +49,20 @@ html[data-skin="univ"] .idside{flex:1 1 220px;min-width:0;display:flex;flex-dire
 html[data-skin="univ"] .idside>.por,html[data-skin="univ"] .idside h2,html[data-skin="univ"] .idside .rk{display:none}
 html[data-skin="univ"] .idside>div{min-width:0!important}
 html[data-skin="univ"] .idside .party .mon i{border-radius:50%;border-color:#8f7b52}
+/* 10-30 망령 「학생증이랑 옆 열이 안 맞아」: 각성체 띠 · 버튼 줄 · 제작기 안내를 맨 위 전체 너비로 올리고,
+   그 아래 학생증 | 자질 메모 · PT 서머리 | 고유 포텐셜 세 열의 윗선을 한 줄로 맞춘다. 좁으면(시트 폭 760px 미만) 한 줄로 쌓는다 */
+html[data-skin="univ"] .pcsheet{container:pcs/inline-size}
+html[data-skin="univ"] .pcsheet .hero.idwrap{display:grid;grid-template-columns:minmax(300px,430px) minmax(0,1fr);grid-template-areas:"awk awk" "bar bar" "card info";gap:0 18px;align-items:start}
+html[data-skin="univ"] .idwrap>.idside{display:contents}
+html[data-skin="univ"] .idwrap>.idcard{grid-area:card;min-width:0;width:calc(100% - 10px);margin:5px}   /* 바깥 금테(5px)까지 옆 칸 윗선 · 왼쪽 줄에 맞춤 */
+html[data-skin="univ"] .idwrap>.idside>.awid{grid-area:awk}
+html[data-skin="univ"] .idwrap>.idside>div:not(.awid):not(.idinfo){grid-area:bar;margin-bottom:12px}
+html[data-skin="univ"] .idwrap>.idside>.idinfo{grid-area:info;margin-top:0}
+@container pcs (max-width:760px){
+ html[data-skin="univ"] .pcsheet .hero.idwrap{grid-template-columns:minmax(0,1fr);grid-template-areas:"awk" "bar" "card" "info"}
+ html[data-skin="univ"] .idwrap>.idcard{max-width:430px}
+ html[data-skin="univ"] .idwrap>.idside>.idinfo{margin-top:14px}
+}
 
 /* ===== PC 카드 = 작은 학생증 ===== */
 html[data-skin="univ"] .pccard{position:relative;border:0;border-radius:10px;padding:26px 12px 12px;overflow:hidden;

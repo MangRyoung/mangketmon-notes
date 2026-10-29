@@ -9,7 +9,7 @@
 /* ===== 지도 ===== */
 .mapwrap{position:relative;overflow:hidden;background:#07080c;border:1px solid var(--line2);height:max(420px,calc(100dvh - 190px));touch-action:none;cursor:grab;user-select:none}
 .mapwrap[data-mode=add]{cursor:crosshair}
-@media(max-width:760px){.mapwrap{height:clamp(220px,calc((100vw - 22px) * var(--ar,.66)),62dvh)}.pin:not(.on):not(.party) span{display:none}.pin i{width:20px;height:20px}.pin b{font-size:10px;bottom:5px}.mnpc{width:22px;height:22px}}
+@media(max-width:760px){.mapwrap{height:clamp(220px,calc((100vw - 22px) * var(--ar,.66)),62dvh)}.pin:not(.on):not(.party) span{display:none}.pin i{width:20px;height:20px}.pin b{font-size:10px;bottom:5px}.mnpc{width:30px;height:30px}.mapwrap{--mnS:33px}}
 .mapwrap.lbl .pin span{display:inline-block!important}
 .mapinner{position:absolute;left:0;top:0;width:100%;transform-origin:0 0;will-change:transform}
 .mapimg{display:block;width:100%;height:auto}
@@ -158,10 +158,12 @@ ul.lnk{margin:4px 0 0;padding-left:16px;font-size:13px}ul.lnk li{margin:2px 0}
 .lane .next{font-size:12px;color:var(--mute)}
 
 .maplinks .rt.hid{opacity:.75}
-.mnpc{position:absolute;transform:translate(0,-50%);z-index:3;width:30px;height:30px;border-radius:50%;border:2px solid #fff;background:#333 center/cover no-repeat;box-shadow:0 2px 6px rgba(0,0,0,.7);padding:0;cursor:pointer}
-.mnpc i{position:absolute;left:50%;top:100%;transform:translateX(-50%);font-style:normal;font-size:10px;background:rgba(0,0,0,.8);color:#fff;padding:0 4px;white-space:nowrap;display:none}
+.mapwrap{--mnS:46px}   /* 10-30 인물 얼굴 크게 (30 → 42) */
+.mnpc{position:absolute;transform:translate(0,-50%);z-index:3;width:42px;height:42px;border-radius:50%;border:2px solid #fff;background:#333 center/cover no-repeat;box-shadow:0 2px 6px rgba(0,0,0,.7);padding:0;cursor:pointer}
+.mnpc i{position:absolute;left:50%;top:100%;transform:translateX(-50%);font-style:normal;font-size:11px;background:rgba(0,0,0,.8);color:#fff;padding:0 4px;white-space:nowrap;display:none}
 .mnpc:hover i,.mapwrap.lbl .mnpc i{display:block}
 .mnpc.hid{opacity:.55;border-style:dashed}
+@media(max-width:760px){.mapwrap{--mnS:33px}.mnpc{width:30px;height:30px}}   /* 위(12줄) 휴대폰 규칙은 이 .mnpc 정의보다 앞이라 안 먹던 것 */
 .rlegend{display:flex;flex-direction:column;gap:2px;margin-bottom:6px}
 .rlegend .rl{display:flex;align-items:center;gap:6px;font-size:13px}
 .rlegend .rl.off{opacity:.45}

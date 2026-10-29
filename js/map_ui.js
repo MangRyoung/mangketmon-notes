@@ -51,10 +51,11 @@
     <text x="${lab.x+14*k}" y="${lab.y-10*k}" font-size="${15*k}" fill="${c}" stroke="#000" stroke-width="${4*k}" paint-order="stroke" font-weight="bold">${esc(r.name||'')}${nowI>=0?' ▶':''}</text></g>`}).join('');
   return `<svg class="maplinks" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${seg}${rp}</svg>`}
  /* 장소에 있는 인물(얼굴 있는 항목)을 핀 옆에 둥근 초상으로 */
+ /* 10-30 망령 「배치된 인물 아이콘 좀 더 커도 될듯」: 30 → 42px (휴대폰 22 → 30). 간격은 CSS --mnS */
  function npcLayer(m,sp){const P=people().filter(x=>x.at.length&&(x.img||x.k!=='ents'));const out=[];
   for(const s of sp){const es=P.filter(x=>x.at.includes(s.id));const MAX=4;
-   es.slice(0,MAX).forEach((e,i)=>out.push(`<button type="button" class="mnpc ${e.vis&&e.vis!=='pub'?'hid':''} ${e.img?'':'noimg'} ${e.k!=='ents'?'pcf':''}" ${e.k==='ents'?`data-ent="${esc(e.id)}"`:''} data-pkey="${esc(pKey(e))}" data-at="${esc(s.id)}" style="left:calc(${s.x}% + ${14+i*26}px);top:${s.y}%;${e.img?`background-image:url('${cssu(e.img)}')`:''}" title="${esc(e.name)}">${e.img?'':esc([...(e.name||'?')][0]||'?')}<i>${esc(e.name)}</i></button>`));
-   if(es.length>MAX)out.push(`<button type="button" class="mnpc more" data-pmore="${esc(s.id)}" style="left:calc(${s.x}% + ${14+MAX*26}px);top:${s.y}%" title="${es.slice(MAX).map(x=>esc(x.name)).join(' · ')}">+${es.length-MAX}</button>`)}
+   es.slice(0,MAX).forEach((e,i)=>out.push(`<button type="button" class="mnpc ${e.vis&&e.vis!=='pub'?'hid':''} ${e.img?'':'noimg'} ${e.k!=='ents'?'pcf':''}" ${e.k==='ents'?`data-ent="${esc(e.id)}"`:''} data-pkey="${esc(pKey(e))}" data-at="${esc(s.id)}" style="left:calc(${s.x}% + 16px + ${i} * var(--mnS,46px));top:${s.y}%;${e.img?`background-image:url('${cssu(e.img)}')`:''}" title="${esc(e.name)}">${e.img?'':esc([...(e.name||'?')][0]||'?')}<i>${esc(e.name)}</i></button>`));
+   if(es.length>MAX)out.push(`<button type="button" class="mnpc more" data-pmore="${esc(s.id)}" style="left:calc(${s.x}% + 16px + ${MAX} * var(--mnS,46px));top:${s.y}%" title="${es.slice(MAX).map(x=>esc(x.name)).join(' · ')}">+${es.length-MAX}</button>`)}
   return out.join('')}
 
  function mapSelHtml(m){const G=N().gm();return maps().length>1||G?`<select id="mapSel">${maps().map(x=>`<option value="${esc(x.id)}" ${x.id===m.id?'selected':''}>${esc(x.name||'지도')}${x.kind==='globe'?' (지구본)':''}</option>`).join('')}</select>`:''}

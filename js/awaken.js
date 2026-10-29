@@ -247,16 +247,16 @@ window.NT_AWK=(()=>{
     try{const ren=$('#awRen',md).checked;await MK().edit('pokemon',m.id,d=>{const rest=String(d.memo||'').replace(/【각성체 원전】[\s\S]*?(\n\n|$)/,'').trim();d.memo=memoOf(e)+(rest?'\n\n'+rest:'');if(ren)d.name=e.n});
      await save(id,y=>{y.made={pid:m.id,id:e.id,at:new Date().toISOString()}});N().closeModal();N().toast('제작기 각성체 시트에 넣었어요')}
     catch(err){b.disabled=false;b.textContent='다시 시도';N().toast('넣지 못했어요: '+(err.message||err))}};return}
-  const aw=mkAw(pc);const hasFree=aw.some(q=>q.awaken==='free');
+  const aw=mkAw(pc);const hasFree=aw.some(q=>q.awaken==='free');const sp=slotRaw(pc,x.n),op=slotRaw(pc,x.n===1?2:1);const wantFree=!hasFree&&(sp.main||!op.main);
   if(aw.length>=2)return N().toast('이 트레이너는 각성체가 이미 2체예요');
   const md=N().openModal(`<div class="mhead"><h2>⇪ 제작기 각성체로</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
    <p class="small" style="margin-top:0">제작기의 <b>「${esc(t.name)}」</b> 트레이너에 각성체로 표시한 포켓몬 시트가 ${aw.length?'이 칸엔 ':''}없어서 하나 만들어요. 이름 · 타입 · 메모(원전 · 열화 · 은열쇠)${x.own?' · 그림':''}만 채우고, 종족치 · 포텐셜은 제작기에서 짜 주세요.${t.misag?'':' <b style="color:var(--red)">이 트레이너는 포인트 칸이 「미사그 대학 (4+2)」가 아니라서 각성체 칸이 제작기에서 안 보일 수 있어요.</b>'}</p>
    <div class="tomk"><div><b>이름</b><span>${esc(e.n)}</span></div><div><b>타입</b><span>${(e.t||[]).map(tchip).join(' ')||'—'}</span></div><div><b>메모</b><span class="pre small">${esc(memoOf(e))}</span></div></div>
-   <div class="mrow" style="margin-top:10px"><label class="lbl">각성체<select id="awKind"><option value="free" ${hasFree?'':'selected'} ${hasFree?'disabled':''}>각성 (대가) · 프라이드로 대가${hasFree?' — 이미 있음':''}</option><option value="c" ${hasFree?'selected':''}>각성 (보조) · C 권장 · 대가 없음</option></select></label></div>
+   <div class="mrow" style="margin-top:10px"><label class="lbl">각성체<select id="awKind"><option value="free" ${wantFree?'selected':''} ${hasFree?'disabled':''}>각성 (대가) · 프라이드로 대가${hasFree?' — 이미 있음':''}</option><option value="c" ${wantFree?'':'selected'}>각성 (보조) · C 권장 · 대가 없음</option></select></label></div>
    <div class="mfoot"><span class="sp"></span><button class="btn pri" id="awMk">만들기</button></div>`);
   $('#awMk',md).onclick=async()=>{const b=$('#awMk',md);b.disabled=true;b.textContent='만드는 중…';
    try{const cur=await DBS.makerGet('trainers',pc);if(!cur)throw new Error('제작기 트레이너 문서를 찾지 못했어요');const pid=Math.random().toString(36).slice(2,10);
-    const p=Object.assign(newPoke(),{id:pid,name:e.n,t1:(e.t||[])[0]||'-',t2:(e.t||[])[1]||'-',memo:memoOf(e),image:x.own?x.img:'',awaken:$('#awKind',md).value});
+    const p=Object.assign(newPoke(),{id:pid,name:e.n,t1:(e.t||[])[0]||'-',t2:(e.t||[])[1]||'-',memo:memoOf(e),image:x.own?x.img:'',awaken:$('#awKind',md).value,pride:PRIDES.includes(sp.pride)?sp.pride:''});
     await DBS.makerPut('pokemon',pid,{tid:pc,data:p});
     if(MK().edit)await MK().edit('trainers',pc,d=>{d.pids=(d.pids||[]).concat(pid)});else{const doc=JSON.parse(JSON.stringify(cur.data||{}));const d=doc.data||doc;d.pids=(d.pids||[]).concat(pid);await DBS.makerPut('trainers',pc,doc)}
     await save(id,y=>{y.made={pid,id:e.id,at:new Date().toISOString()}});await MK().load(true);N().closeModal();N().toast('제작기에 각성체 시트를 만들었어요')}
@@ -267,7 +267,32 @@ window.NT_AWK=(()=>{
  function slotHtml(x,G){const r=G?rec(x.sid):{};const pk=r.pick&&DB.base&&byId(r.pick);
   return `<div class="aweslot"><div class="awepor" style="${x.img?`background-image:url('${cssu(x.img)}')`:''}">${x.img?'':'그림 없음'}</div><div class="awes"><b>각성체 ${x.n}</b>${x.mname?`<small>제작기 「${esc(x.mname)}」${x.own?' · 올린 그림':''}</small>`:x.own?'<small>올린 그림</small>':''}
    <div class="pre small awenote">${x.note?esc(x.note):'<span class="dim">코멘트 없음</span>'}</div>
-   ${G?`<div class="small dim">${pk?'✓ 원전 · '+esc(pk.n):(r.cands||[]).length?'후보 '+r.cands.length+'명':r.read?'추천 받음':'아직'}</div><button class="btn xs" data-aw="godb" data-v="${esc(x.sid)}">추천 보기 →</button>`:''}</div></div>`}
+   ${G?`<div class="small dim">${pk?'✓ 원전 · '+esc(pk.n):(r.cands||[]).length?'후보 '+r.cands.length+'명':r.read?'추천 받음':'아직'}</div><button class="btn xs" data-aw="godb" data-v="${esc(x.sid)}">추천 보기 →</button>`:''}</div>${prefHtml(x)}</div>`}
+ /* 10-30 망령 「대가를 요구하는 메인 각성체 지정 · 프라이드 몇으로 할지」:
+    칸마다 「메인 (대가)」 하나 + 프라이드. 노트 사본 = pcp/<pc>.awk[n-1].main · .pride (PL 본인 · GM).
+    그 칸에 제작기 각성체 시트가 있으면 제작기 값(awaken 'free' = 대가 · 'c' = 보조, pride)을 보이고, 고치면 제작기에도 넣는다.
+    시트가 아직 없으면 「⇪ 제작기 각성체로」로 만들 때 이 값으로 만든다 */
+ const PRIDES=['C','C+','B','B+','A','EX'];
+ function pref(pc,n){const x=slot(sidOf(pc,n));const m=x.pid&&MK()&&MK().M.pokemon.find(q=>q.id===x.pid);const s=slotRaw(pc,n);
+  return m?{main:m.awaken==='free',pride:String(m.pride||''),mk:true}:{main:!!s.main,pride:String(s.pride||''),mk:false}}
+ function prefHtml(x){const P=pref(x.pc,x.n);const E=canSend(x.pc);
+  if(!E)return `<div class="awemp ro">${P.main?'<b class="awemb">메인 · 대가</b>':'<span class="dim">보조</span>'}<span>프라이드 <b>${esc(P.pride||(P.mk?'자동':'미정'))}</b></span></div>`;
+  const opts=PRIDES.includes(P.pride)||!P.pride?PRIDES:[P.pride].concat(PRIDES);
+  return `<div class="awemp"><label class="awemain ${P.main?'on':''}" title="대가를 요구하는 메인 각성체 — 제작기 「각성 (대가)」. 다른 칸은 「각성 (보조)」가 돼요"><input type="radio" name="awm-${esc(x.pc)}" data-awm="${esc(x.pc)}" value="${x.n}" ${P.main?'checked':''}> 메인 (대가)</label>
+   <label class="awepr">프라이드<select data-awp="${esc(x.pc)}" data-n="${x.n}"><option value="">${P.mk?'자동':'미정'}</option>${opts.map(v=>`<option ${v===P.pride?'selected':''}>${esc(v)}</option>`).join('')}</select></label>${P.mk?'<small title="제작기 각성체 시트와 같은 값이에요">⇄ 제작기</small>':''}</div>`}
+ async function setPref(pc,n,patch){if(!canSend(pc))return;
+  const cur=Object.assign({},pcp(pc));const L=[0,1].map(i=>Object.assign({},(Array.isArray(cur.awk)&&cur.awk[i])||{}));
+  if('main' in patch)L.forEach((s,i)=>{s.main=i===n-1});if('pride' in patch)L[n-1].pride=patch.pride;
+  cur.awk=L;delete cur.awk_img;delete cur.awk_note;
+  try{await N().put('pcp',pc,cur,'pl:'+pc)}catch(e){N().render();return N().toast('저장하지 못했어요: '+(e.message||e))}
+  const aw=mkAw(pc);const jobs=[];
+  if('main' in patch)aw.forEach((m,i)=>{const k=i===n-1?'free':'c';if(m.awaken!==k)jobs.push([m.id,d=>{d.awaken=k}])});
+  if('pride' in patch&&aw[n-1]&&String(aw[n-1].pride||'')!==patch.pride)jobs.push([aw[n-1].id,d=>{d.pride=patch.pride}]);
+  try{for(const [id,fn] of jobs)await MK().edit('pokemon',id,fn);N().toast(jobs.length?'저장했어요 · 제작기 각성체 시트에도 넣었어요':'저장했어요')}
+  catch(e){N().toast('노트엔 저장했어요 — 제작기엔 못 썼어요: '+(e.message||e))}
+  N().render()}
+ function onPref(ev){const t=ev.target;if(t.dataset.awm!=null&&t.checked)return setPref(t.dataset.awm,+t.value,{main:true});
+  if(t.dataset.awp!=null)return setPref(t.dataset.awp,+t.dataset.n||1,{pride:t.value})}
  function sendCard(pc,big){const G=N().gm();const S=[1,2].map(n=>slot(sidOf(pc,n)));
   return `<div class="awe card ${big?'big':''}"><div class="awebody"><h3>${esc(pcName(pc))}</h3><div class="aweslots">${S.map(x=>slotHtml(x,G)).join('')}</div>
    ${canSend(pc)?`<div class="row"><button class="btn sm pri" data-aw="sendedit" data-v="${esc(pc)}">✎ 각성체 그림 · 코멘트</button></div>`:''}</div></div>`}
@@ -276,7 +301,7 @@ window.NT_AWK=(()=>{
   let body;if(G)body=L.length?`<div class="awegrid">${L.map(p=>sendCard(p.id)).join('')}</div>`:'<div class="empty">PC 시트가 없어요.</div>';
   else if(M&&N().data('pc',M))body=`<div class="awegrid one">${sendCard(M,true)}</div>`;
   else body='<div class="empty">PL 좌석으로 들어오면 내 PC 의 각성체 그림 · 코멘트를 넣을 수 있어요.</div>';
-  el.innerHTML=head+body;el.addEventListener('click',onClick);if(G&&!DB.base)load();if(MK()&&!MK().M.at)MK().load().then(()=>N().render())}
+  el.innerHTML=head+body;el.addEventListener('click',onClick);el.addEventListener('change',onPref);if(G&&!DB.base)load();if(MK()&&!MK().M.at)MK().load().then(()=>N().render())}
  /* 학생증 옆 카드 (pc_ui idHero 가 부른다) */
  function idCard(pc){if(!canSend(pc))return '';const S=[1,2].map(n=>slot(sidOf(pc,n)));const any=S.some(x=>x.img||x.note);
   return `<div class="awid"><b>✦ 각성체</b><span class="awidt">${S.filter(x=>x.img).map(x=>`<i style="background-image:url('${cssu(x.img)}')" title="각성체 ${x.n}"></i>`).join('')}<small>${any?S.filter(x=>x.note).map(x=>esc(x.note.slice(0,40))).join(' · ')||'그림 있음':'각성체 그림과 바라는 점을 넣으면 어울리는 원전 인물을 골라 드려요'}</small></span><button type="button" class="btn xs" onclick="NT_AWK.sendBox('${esc(pc)}')">${any?'고치기':'넣기'}</button></div>`}
@@ -288,7 +313,7 @@ window.NT_AWK=(()=>{
    <div class="mfoot"><span class="sp"></span><button class="btn pri" id="awSOk">저장</button></div>`,'wide');
   $$('[data-si]',md).forEach(bx=>{const i=+bx.dataset.si;N().bindDrop(bx,async fs=>{try{own[i]=await N().upload(fs[0],'photo','awk');bx.style.backgroundImage=`url('${cssu(own[i])}')`;bx.classList.add('on');bx.innerHTML=''}catch(e){N().toast('올리기 실패: '+(e.message||e))}})});
   $$('[data-sx]',md).forEach(b=>b.onclick=()=>{const i=+b.dataset.sx;own[i]='';const bx=$(`[data-si="${i}"]`,md);const m=mkAw(pc)[i];const mi=m?MK().img(m):'';bx.style.backgroundImage=mi?`url('${cssu(mi)}')`:'';if(!mi){bx.classList.remove('on');bx.innerHTML='각성체 '+(i+1)+' 그림'}b.remove()});
-  $('#awSOk',md).onclick=async()=>{const cur=Object.assign({},pcp(pc));cur.awk=[0,1].map(i=>({img:own[i]||'',note:$(`[data-sn="${i}"]`,md).value.trim()}));delete cur.awk_img;delete cur.awk_note;await N().put('pcp',pc,cur,'pl:'+pc);N().closeModal();N().toast('저장했어요')}}
+  $('#awSOk',md).onclick=async()=>{const cur=Object.assign({},pcp(pc));cur.awk=[0,1].map(i=>Object.assign({},slotRaw(pc,i+1),{img:own[i]||'',note:$(`[data-sn="${i}"]`,md).value.trim()}));delete cur.awk_img;delete cur.awk_note;await N().put('pcp',pc,cur,'pl:'+pc);N().closeModal();N().toast('저장했어요')}}
 
  N().MOD.awk={render:entry};
  N().MOD.awdb={render};
