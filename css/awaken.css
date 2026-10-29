@@ -90,3 +90,14 @@
 .awidt small{color:var(--fg2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #awSImg{width:120px;height:150px}
 @media (max-width:760px){.awegrid{grid-template-columns:1fr}.awepor{width:84px;height:106px}}
+/* 10-29 각성체 칸 둘 (각성체 그림 기준) */
+.aweslots{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.aweslot{display:flex;gap:8px;align-items:flex-start;min-width:0}
+.aweslot .awepor{width:84px;height:106px}
+.awe.big .aweslot .awepor{width:120px;height:150px}
+.awes{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.awes small{color:var(--mute);font-size:11px}
+.awslot{border-top:1px dashed var(--line);padding-top:8px}
+.awidt i+i{margin-left:-4px}
+@media (max-width:760px){.aweslots{grid-template-columns:1fr}}
+.awslot .awsimg{width:110px;height:138px}
