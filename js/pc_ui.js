@@ -222,13 +222,16 @@
     사본이 없는 옛 문서는 노트에서 셀 수 있는 것만(분배 · 할인 · 【1/시】 · 메인) 세고, 통솔점은 「제작기에서 한 번 저장」으로 안내 */
  const PTC=['#c0392b','#2e7dbd','#3f9a5a','#c98a1b','#8e4fb3','#2a9d9b'];
  const RVQ={E:-2,D:-1,C:0,B:1,A:2,AA:3,AAA:4,S:5};
- function ptData(t,ms){const U=t.ptUse;if(U&&Array.isArray(U.items))return {items:U.items,mons:U.mons||{},sock:U.sock||null,snap:true};
+ /* 10-30 망령 「서머리에 여전히 메인 3/4」: 제작기에서 다시 저장하기 전 문서(mainV 없음)는 사본 · base 가 옛 기본 4 — 메인 보유 = (4 면 2) + 덤프 수로 고쳐 읽는다 */
+ const ptDump=t=>['지시','육성','통솔','능력'].filter(q=>(RVQ[String((t.ranks||{})[q]||'').replace(/[+-]+$/,'')]??0)<0).length;
+ function ptMainFix(t,items){if(t.mainV)return items;const d=ptDump(t);return items.map(it=>{if(it.auto!=='rank')return it;const b=+((t.base||{})[it.n]);const v=(isFinite(b)&&b!==4&&(t.base||{})[it.n]!=null&&(t.base||{})[it.n]!=='')?b:2;return Object.assign({},it,{max:v+d})})}
+ function ptData(t,ms){const U=t.ptUse;if(U&&Array.isArray(U.items))return {items:ptMainFix(t,U.items),mons:U.mons||{},sock:U.sock||null,snap:true};
   const base=t.base||{};const mons={};for(const m of ms){const pots=(m.effTxt||{}).pots||[];mons[m.id]={dist:Math.round(+m.dist)||0,disc:(m.moves||[]).filter(x=>x&&typeof x==='object'&&x.half).length,once:pots.filter(x=>/【1\s*\/\s*시】/.test(x||'')).length}}
   const sum=k=>Object.values(mons).reduce((a,x)=>a+(+x[k]||0),0);const rank=['지시','육성','통솔','능력'].reduce((a,q)=>a+Math.max(0,RVQ[String((t.ranks||{})[q]||'').replace(/[+-]+$/,'')]??0),0);
   const AU={'메인':['rank',rank],'통솔점':['pride',null],'「기술 할인점」':['disc',sum('disc')],'【1/시】':['once',sum('once')],'분배레벨':['dist',sum('dist')]};
   const dump=['지시','육성','통솔','능력'].filter(q=>(RVQ[String((t.ranks||{})[q]||'').replace(/[+-]+$/,'')]??0)<0).length;   /* 10-30 망령 「메인 2점 + 덤프 1점」: 덤프 하나마다 메인 보유 +1 */
   const items=Object.entries(base).filter(([k,v])=>v!==''&&v!=null&&typeof v!=='object').map(([n,v])=>{const a=AU[n]||['',null];return {n,max:(+v||0)+(a[0]==='rank'?dump:0),use:a[1],auto:a[0]}});
-  return {items,mons,sock:null,snap:false}}
+  return {items:ptMainFix(t,items),mons,sock:null,snap:false}}
  const ptLab=n=>{const s=String(n);const m=s.match(/^【(.+)】$/);if(m)return `<em class="ux-tag">${esc(m[1])}</em>`;const q=s.match(/^「(.+)」$/);return esc(q?q[1]:s)};
  const fmt=x=>String(Math.round((+x||0)*100)/100);
  /* 10-30 망령 「포켓몬 서머리를 저기 붙이니 길이가 감당 안 돼 — 휴대폰 · 덱 아래 파티 부근으로 따로」: part = 'gauge'(학생증 옆, 기본 요소 막대) | 'mons'(파티 위, 포켓몬 줄) | 없음(둘 다) */
