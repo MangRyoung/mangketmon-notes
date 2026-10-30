@@ -120,3 +120,6 @@ html[data-skin="univ"] .pin span{font-family:'Noto Serif KR',serif}
 /* 항목 목록 보기: 청구 번호는 오른쪽 위 대신 숨기고, 펀치 구멍만 */
 html[data-skin="univ"] .entgrid.dense .entcard::after{display:none}
 html[data-skin="univ"] .entgrid.dense .entcard{padding-top:6px;padding-bottom:6px;border-top-width:3px}
+
+/* 10-30 NPC 시트 화면의 카드는 교직원증 */
+html[data-skin="univ"] #ntMain[data-view="npc"] .pccard::before{content:"MISAG UNIVERSITY · 교직원증"}

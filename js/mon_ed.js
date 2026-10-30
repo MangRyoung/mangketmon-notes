@@ -4,6 +4,7 @@
    닫을 때 제작기에 {mkm:'flush'} 를 보내 공유 DB 에 다 올라간 것을 확인하고({mkm:'flushed'}) 노트가 제작기 문서를 다시 읽는다.
    10-30 망령 「미사그에서 아예 제작할 수 있도록 트레이너 추가, 포켓몬/각성체 추가」:
      NT_MONED.make('misag')           = 제작기 ?new=misag — 미사그 캠퍼스 폴더에 새 트레이너. 닫으면 노트에 PC 시트를 만들고 그 시트로 간다.
+     NT_MONED.make('misagnpc')        = 제작기 ?new=misagnpc — 캠퍼스 / NPC 폴더에 비공개 NPC. 닫으면 NPC 시트(GM만).
      NT_MONED.add(<트레이너>,'pl'|'aw') = 제작기 ?focus=&add= — PL 포켓몬 · 각성체 시트를 하나 더해 그 한 장을 연다.
      제작기는 만든 것을 {mkm:'made', kind:'trainer'|'poke', id, tid} 로 알려 준다. */
 "use strict";
@@ -40,11 +41,12 @@ window.NT_MONED=(()=>{
  function add(tid,kind){if(!canEd(tid))return N().toast('이 시트는 고칠 수 없어요');const t=MK().trainer(tid);
   return frame(url(tid,'','',{add:kind==='aw'?'aw':'pl'}),kind==='aw'?'새 각성체':'새 PL 포켓몬',(t&&t.name)||'')}
  /* 새 트레이너 (미사그 캠퍼스 폴더) → 닫으면 PC 시트로 넣는다 */
- function make(kind){if(!N().gm())return N().toast('새 트레이너는 GM 만 만들 수 있어요');
-  return frame(base()+'?'+qs({new:kind||'misag',embed:'1',t:Date.now().toString(36)}),'새 학생','미사그 캠퍼스 폴더에 만들어요 — 이름 · 자질 · 사진을 채우고 「저장하고 닫기」',
-   async d=>{if(d.kind!=='trainer'||!d.id)return;const t=MK().trainer(d.id)||{name:d.name||'새 학생'};
-    if(!N().data('pc',d.id))await N().put('pc',d.id,{name:t.name||'',image:t.image||'',player:'',sub:'',order:N().list('pc').length,log:[]},'pub');
-    if(window.NT_PC)NT_PC.select('pc',d.id);N().toast('새 학생을 PC 시트로 넣었어요')})}
+ /* 10-30 망령: make('misagnpc') = 제작기 「미사그 캠퍼스 / NPC」 폴더(🔒)에 새 NPC → 닫으면 NPC 시트로, GM 에게만 보이게 */
+ function make(kind){if(!N().gm())return N().toast('새 트레이너는 GM 만 만들 수 있어요');const NPC=kind==='misagnpc',K=NPC?'npc':'pc';
+  return frame(base()+'?'+qs({new:NPC?'misagnpc':'misag',embed:'1',t:Date.now().toString(36)}),NPC?'새 NPC':'새 학생',NPC?'미사그 캠퍼스 / NPC 폴더에 비공개로 만들어요 — 이름 · 자질 · 사진을 채우고 「저장하고 닫기」':'미사그 캠퍼스 폴더에 만들어요 — 이름 · 자질 · 사진을 채우고 「저장하고 닫기」',
+   async d=>{if(d.kind!=='trainer'||!d.id)return;const t=MK().trainer(d.id)||{name:d.name||(NPC?'새 NPC':'새 학생')};
+    if(!N().data(K,d.id))await N().put(K,d.id,{name:t.name||'',image:t.image||'',player:'',sub:'',order:N().list(K).length,log:[]},NPC?'gm':'pub');
+    if(window.NT_PC)NT_PC.select(K,d.id);N().toast(NPC?'새 NPC 를 NPC 시트로 넣었어요 (GM 에게만 보여요)':'새 학생을 PC 시트로 넣었어요')})}
  async function reload(){try{await MK().load(true);N().render()}catch(e){}}
  document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-moned],[data-monadd],[data-monnew]');if(!b)return;e.preventDefault();
   if(b.dataset.monnew!=null)return make(b.dataset.monnew||'misag');

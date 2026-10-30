@@ -58,6 +58,9 @@ window.NT_MAKER=(()=>{
  function under(ids){const S=new Set(),q=[...ids];while(q.length){const x=q.shift();if(S.has(x))continue;S.add(x);q.push(...kids(x))}return S}
  const fpath=id=>{const L=[];let c=M.folders.find(x=>x.id===id),n=0;while(c&&n++<6){L.unshift(c.name);c=c.parent?M.folders.find(x=>x.id===c.parent):null}return L.join(' / ')};
  const linkedTrainers=()=>{const L=linked();if(!L.length)return [];const S=under(L);return trainers().filter(t=>t.folder&&S.has(t.folder))};
+ /* 10-30 망령 「미사그 캠퍼스 폴더 안에 NPC 폴더」: 이어진 폴더 아래의 NPC 폴더(제작기 고정 id misag-npc, 또는 이름에 NPC)에 든 트레이너는 NPC 표시가 없어도 NPC 시트(GM만)로 */
+ const npcFolders=()=>{const S=under(linked());return under(M.folders.filter(f=>S.has(f.id)&&(f.id==='misag-npc'||/npc/i.test(f.name||''))).map(f=>f.id))};
+ const isNpc=t=>!!t&&(t.kind==='npc'||(!!t.folder&&npcFolders().has(t.folder)));
  const missing=()=>linkedTrainers().filter(t=>!N().data('pc',t.id)&&!N().data('npc',t.id));
  async function saveLinked(ids){const S=N().ST;const c=S.campInfo||{};const d=Object.assign({},c.data||{});d.mk=Object.assign({},d.mk||{},{folders:ids});await N().DBS().campUpdate(S.camp,S.secret,null,d);if(S.campInfo)S.campInfo.data=d;await N().refreshCamp()}
  /* 폴더 고르기 — 위 폴더를 고르면 아래 폴더도 같이 이어진다 */
@@ -65,11 +68,11 @@ window.NT_MAKER=(()=>{
   const cnt=id=>{const S=under([id]);return M.trainers.filter(t=>t.folder&&S.has(t.folder)).length};
   const row=(f,dep)=>`<label class="mkf" style="padding-left:${8+dep*20}px"><input type="checkbox" value="${N().esc(f.id)}" ${cur.has(f.id)?'checked':''}><span>${dep?'└ ':''}📁 ${N().esc(f.name||f.id)}${f.priv?' 🔒':''}</span><small class="dim">${cnt(f.id)}명</small></label>`+M.folders.filter(x=>x.parent===f.id).sort((a,b)=>(a.ord||0)-(b.ord||0)).map(x=>row(x,dep+1)).join('');
   return new Promise(res=>{const md=N().openModal(`<div class="mhead"><h2>📁 제작기 폴더 잇기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
-   <p class="small" style="margin-top:0">이 캠페인에 쓰는 제작기 폴더를 골라요. 그 폴더(아래 폴더 포함)에 트레이너를 새로 만들면 시트 탭에 「아직 안 넣은 트레이너」로 바로 떠요. NPC 로 표시된 트레이너는 NPC 시트로 들어가요.</p>
+   <p class="small" style="margin-top:0">이 캠페인에 쓰는 제작기 폴더를 골라요. 그 폴더(아래 폴더 포함)에 트레이너를 새로 만들면 시트 탭에 「아직 안 넣은 트레이너」로 바로 떠요. NPC 로 표시된 트레이너와 NPC 폴더(이름에 NPC)의 트레이너는 NPC 시트(GM만)로 들어가요.</p>
    <div class="mkflist">${roots.map(f=>row(f,0)).join('')||'<div class="small dim">제작기에 폴더가 없어요</div>'}</div>
    <div class="mfoot"><button class="btn ghost" id="mkfNone">잇지 않기</button><span class="sp"></span><button class="btn pri" id="mkfOk">저장</button></div>`);
    const done=async ids=>{try{await saveLinked(ids);N().closeModal();N().toast(ids.length?'제작기 폴더를 이었어요':'폴더 잇기를 풀었어요');N().render();res(ids)}catch(e){N().toast('저장 실패: '+e.message)}};
    N().$('#mkfOk',md).onclick=()=>{let ids=N().$$('.mkflist input:checked',md).map(x=>x.value);const S=new Set(ids);ids=ids.filter(id=>{let c=M.folders.find(x=>x.id===id),n=0;while(c&&c.parent&&n++<8){if(S.has(c.parent))return false;c=M.folders.find(x=>x.id===c.parent)}return true});done(ids)};
    N().$('#mkfNone',md).onclick=()=>done([])})}
- return {load,trainers,trainer,mons,img,folderName,M,db,dbReady,move,baseLv,item,card,itemList,cardList,abil,pot,abilList,potList,moveList,dbSet,edit,linked,linkedTrainers,missing,pickLinked,fpath,under};
+ return {load,trainers,trainer,mons,img,folderName,M,db,dbReady,move,baseLv,item,card,itemList,cardList,abil,pot,abilList,potList,moveList,dbSet,edit,linked,linkedTrainers,missing,isNpc,pickLinked,fpath,under};
 })();
