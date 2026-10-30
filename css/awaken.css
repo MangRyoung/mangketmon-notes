@@ -128,3 +128,21 @@
 .awemp small{color:var(--mute);font-size:10px}
 .awemp.ro{color:var(--fg2)}
 .awemb{color:var(--red,#e05a4a)}
+/* 10-30 트레이너 포트 줄 · 코멘트 눌러 고치기 · 고치기 창 프라이드 · 대가 · 묶음 창 결과 넣기 */
+.awtr{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line2);background:rgba(0,0,0,.18);padding:8px;margin-bottom:10px}
+.awtr.fixed{border-color:#c9a24a;box-shadow:inset 0 0 0 1px rgba(201,162,74,.35)}
+.awtr-por{flex:none;width:72px;height:72px;background:#000 center/cover no-repeat;border:1px solid var(--line2);display:grid;place-items:center;font-size:24px;color:var(--fg2)}
+.awtr-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.awenote.edit{cursor:pointer;border:1px dashed transparent;padding:2px 4px;margin:0 -4px}
+.awenote.edit:hover{border-color:var(--line2);background:rgba(255,255,255,.03)}
+.awsprefs{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:6px;font-size:12px}
+.awsprefs .awepr select{margin-left:6px}
+.awcostt{flex-basis:100%}
+.awbtr{margin-top:10px;border-top:1px dashed var(--line2);padding-top:8px}
+.awbtr>b{margin-right:8px}
+.awbcfg{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px;font-size:12px}
+.awbcfg input[type=number]{width:56px}
+.awbpaste{margin-top:10px;border-top:1px dashed var(--line2);padding-top:8px}
+.awbpaste summary{cursor:pointer;font-weight:600}
+.awbpaste textarea{margin-top:6px}
+.ux-ptm .awid{margin:8px 0 0}

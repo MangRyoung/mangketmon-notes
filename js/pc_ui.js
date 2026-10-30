@@ -108,7 +108,7 @@
     const L=npc?[['연구실',p.dorm],['담당 과목',p.club],['한마디',p.motto]]:[['기숙사',p.dorm],['동아리',p.club],['한마디',p.motto]];
     return `<div class="idc-ex"><h5>기재 사항<small>${npc?'REMARKS':'REMARKS'}</small></h5><dl class="idc-exf">${L.map(([k,v])=>`<dt>${k}</dt><dd>${esc(v||'')||'<span class="idc-blank">—</span>'}</dd>`).join('')}</dl><div class="idc-note"><span class="idc-nl">비고</span>${esc(p.idNote||'')}</div></div>`})()}
    <div class="idc-foot"><span class="idc-bar" aria-hidden="true"></span><span class="idc-yr">2026학년도</span><span class="idc-seal" aria-hidden="true">미사그<br>대학인</span></div>
-  </div><div class="idside">${!npc&&window.NT_AWK?NT_AWK.idCard(id):''}${heroIn}</div></div>`}
+  </div><div class="idside">${heroIn}</div></div>`}
  const T2C={'노말':'#9aa','불꽃':'#f08030','물':'#6890f0','풀':'#78c850','전기':'#f8d030','얼음':'#98d8d8','격투':'#c03028','독':'#a040a0','땅':'#e0c068','비행':'#a890f0','에스퍼':'#f85888','벌레':'#a8b820','바위':'#b8a038','고스트':'#705898','드래곤':'#7038f8','악':'#705848','강철':'#b8b8d0','페어리':'#ee99ac'};
  const tchip=t=>t&&t!=='-'?`<em class="tch" style="background:${T2C[t]||'#666'}">${esc(t)}</em>`:'';
  /* 10-26 망령: 파티 = 제작기 시트 그대로 (레벨 · 타입 · 종족치 · 특성 · 소지품 · 기술 · 전용 · 포텐셜) */
@@ -235,7 +235,7 @@
     <div class="ptm-a">${m.ability?`<span>${esc(m.ability)}</span>`:''}${m.item?`<span>${esc(m.item)}</span>`:''}</div></div>${E&&window.NT_MONED?`<button type="button" class="btn xs ghost" data-moned="${esc(m.id)}" data-id="${esc(id)}" title="제작기 화면으로 고치기">✎</button>`:''}</div>`};
   return `<section class="ux-sec ux-pt ${part==='mons'?'ux-ptm':''}"><h4 class="ux-h"><span>${part==='mons'?'파티 서머리':'PT 서머리'}</span><small>${ms.length}체</small><span class="sp"></span>${D.sock?`<small class="ptsk ${D.sock.u>D.sock.m?'warn':''}">PT 기술점 <b>${fmt(D.sock.u)}</b> / ${fmt(D.sock.m)}</small>`:''}</h4>
    ${G&&D.items.length?`<div class="ptgs">${D.items.map(gauge).join('')}</div>`:''}
-   ${Mo&&part==='mons'&&N().skin&&N().skin()==='univ'?`<div class="ptsub"><b>PL 포켓몬</b><small>${ms.filter(m=>!isAw(m)).length} / 4</small></div><div class="ptms">${ms.map((m,i)=>isAw(m)?'':mon(m,i)).join('')||'<span class="dim small">아직 없어요</span>'}</div><div class="ptsub aw"><b>각성체</b><small>${ms.filter(isAw).length} / 2</small></div>${awCards(id,t,ms,E)}`:Mo&&ms.length?`<div class="ptms">${ms.map(mon).join('')}</div>`:''}
+   ${Mo&&part==='mons'&&N().skin&&N().skin()==='univ'?`<div class="ptsub"><b>PL 포켓몬</b><small>${ms.filter(m=>!isAw(m)).length} / 4</small></div><div class="ptms">${ms.map((m,i)=>isAw(m)?'':mon(m,i)).join('')||'<span class="dim small">아직 없어요</span>'}</div><div class="ptsub aw"><b>각성체</b><small>${ms.filter(isAw).length} / 2</small></div>${awCards(id,t,ms,E)}${window.NT_AWK?NT_AWK.idCard(id):''}`:Mo&&ms.length?`<div class="ptms">${ms.map(mon).join('')}</div>`:''}
    ${D.snap||part==='mons'?'':'<div class="small dim" style="margin-top:6px">제작기에서 이 트레이너를 한 번 저장하면 통솔점 · 프라이드 · 소켓까지 보여요</div>'}</section>`}
  function sideInfo(id){const t=MK().trainer(id);if(!t)return '';const u=(t.unique||[]).filter(x=>x&&x.name);const base=t.base||{};const det=t.detail||{};
   if(N().skin&&N().skin()==='univ')return '';
