@@ -38,6 +38,9 @@ window.NT_RB=(()=>{
  function vx(kind,lines){lines=lines.filter(l=>l.trim());
   if(kind==='steps')return `<div class="vx steps">${lines.map((l,i)=>{const x=vsplit(l);return `<div class="vs"><small>STEP ${i+1}</small><b>${inl(x.a)}</b><span>${inl(x.b)}</span></div>`}).join('')}</div>`;
   if(kind==='cards'||kind==='scale')return `<div class="vx cards">${lines.map(l=>{const x=vsplit(l);return `<div class="vc ${x.t?'t-'+x.t:''}"><b>${inl(x.a)}</b><span>${inl(x.b)}</span></div>`}).join('')}</div>`;
+  /* 10-31 「스킬 체크」 장: ladder = 이름 | 값 계단 · heat = 표의 % 칸에 색 */
+  if(kind==='ladder')return `<div class="vx ladder">${lines.map((l,i)=>{const x=vsplit(l);return `<div class="vl" style="--i:${i}"><b>${inl(x.b)}</b><span>${inl(x.a)}</span></div>`}).join('')}</div>`;
+  if(kind==='heat')return `<div class="vx heat">${render(lines.join('\n')).replace(/<td>(\d{1,3})%<\/td>/g,(m,p)=>`<td class="ht" style="--p:${Math.min(100,+p)}">${p}%</td>`)}</div>`;
   if(kind==='flow'){const ns=lines.join(' > ').split(/\s*>\s*/).filter(Boolean);return `<div class="vx flow">${ns.map((n,i)=>{const m=n.match(/^(.*?)\s*\{(\w+)\}\s*$/);const t=m&&TONES[m[2]]?m[2]:'';return (i?'<i>→</i>':'')+`<span class="${t?'t-'+t:''}">${inl(m?m[1]:n)}</span>`}).join('')}</div>`}
   return render(lines.join('\n'))}
  const BLOCK=/^(#{2,4}\s|\||>|\s*[-*]\s|\d+\.\s|---\s*$|『[^』]+』|:::)/;
