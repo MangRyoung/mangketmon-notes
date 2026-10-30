@@ -41,10 +41,17 @@
    L.push('BEGIN:VEVENT',`UID:${N().ST.camp}-${s.id}@mangketmon-notes`,`DTSTAMP:${f(new Date())}`,`DTSTART:${f(st)}`,`DTEND:${f(en)}`,`SUMMARY:${e((c.name||'망켓몬')+' 세션 '+(s.label||'')+(s.what?' · '+s.what:''))}`,`DESCRIPTION:${e(s.memo||'')}`,s.where?`LOCATION:${e(s.where)}`:'','END:VEVENT')}
   L.push('END:VCALENDAR');const bl=new Blob([L.filter(Boolean).join('\r\n')],{type:'text/calendar'});const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download=`${c.name||'campaign'}_sessions.ics`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
  /* ---- 그리기 ---- */
+ /* 10-30 망령 「캘린더도 연동」: 이어 둔 웹툴 방의 게임 속 달력(오늘 · 날씨 · 일정) — 웹툴 GM 브라우저가 plan 문서 omcal_<방> 으로 써 준다(읽기 전용).
+    거꾸로 이 탭의 세션(날짜 있는 것)은 웹툴 캘린더에 「세션」 일정으로 뜬다 */
+ function omCalHtml(){const L=N().list('plan').filter(x=>x.t==='omcal');if(!L.length)return '';
+  return L.map(c=>{const ev=Object.entries(c.events||{}).filter(([d])=>!c.today||d>=c.today).sort((a,b)=>a[0].localeCompare(b[0])).flatMap(([d,xs])=>(xs||[]).map(e=>({d,...e}))).slice(0,6);
+   return `<div class="card omcal"><div class="row" style="gap:8px;align-items:baseline;flex-wrap:wrap"><b>🎲 웹툴 게임 달력</b><small class="dim">${esc(c.name||c.room||'')}</small><span class="sp"></span><span>게임 속 오늘 <b>${esc(c.today||'—')}</b> ${esc(c.weather||'')}</span></div>
+    ${ev.length?`<ul class="omcal-l">${ev.map(e=>`<li><span class="dim">${esc(e.d)}</span> ${esc(e.t||'')}${e.note?` <small class="dim">· ${esc(e.note)}</small>`:''}</li>`).join('')}</ul>`:'<div class="small dim">다가오는 게임 속 일정이 없어요</div>'}
+    <div class="small dim" style="margin-top:4px">웹툴 캘린더에서 고쳐요 · 여기 세션 일정은 웹툴 캘린더에 「세션」으로 떠요</div></div>`}).join('')}
  function render(el){const G=N().gm();const total=sessAll().length,done=sessAll().filter(x=>x.st==='done').length;
   el.innerHTML=`<div class="toolbar"><h2>일정</h2><div class="seg"><button data-pt="sess" class="${U.tab==='sess'?'on':''}">세션 ${done}/${total}</button><button data-pt="cal" class="${U.tab==='cal'?'on':''}">달력</button><button data-pt="poll" class="${U.tab==='poll'?'on':''}">조율 ${cands().length?cands().filter(c=>c.date>=today).length:''}</button><button data-pt="note" class="${U.tab==='note'?'on':''}">설계 메모 ${notes().length}</button></div><span class="sp"></span>
     ${U.tab==='sess'||U.tab==='cal'?`<button class="btn sm ghost" data-pl="ics" title="휴대폰 · 데스크톱 캘린더에 넣기">📅 .ics</button>`:''}${G?(U.tab==='sess'?'<button class="btn sm" data-pl="newpart">＋ 부</button><button class="btn sm pri" data-pl="newsess">＋ 세션</button><button class="btn xs ghost danger" data-pl="wipe" data-w="sess" title="부 · 세션 전부 지우기">비우기</button>':U.tab==='poll'?'<button class="btn sm pri" data-pl="newcand">＋ 후보 날짜</button>':U.tab==='note'?'<button class="btn sm pri" data-pl="newnote">＋ 메모</button><button class="btn xs ghost danger" data-pl="wipe" data-w="note" title="설계 메모 전부 지우기">비우기</button>':''):''}${N().bulkBtns('plan',null,U.tab==='note'?'설계 메모':'부 · 세션')}</div>
-   ${U.tab==='sess'?sessHtml():U.tab==='cal'?calHtml():U.tab==='poll'?pollHtml():notesHtml()}`;
+   ${U.tab==='sess'||U.tab==='cal'?omCalHtml():''}${U.tab==='sess'?sessHtml():U.tab==='cal'?calHtml():U.tab==='poll'?pollHtml():notesHtml()}`;
   el.addEventListener('click',e=>{const t=e.target;if(t.closest('a'))return;const pt=t.closest('[data-pt]');if(pt){U.tab=pt.dataset.pt;N().render();return}
    const lf=t.closest('[data-lf]');if(lf){U.listf=lf.dataset.lf;N().render();return}
    const v=t.closest('[data-vote]');if(v){const [date,seat]=v.dataset.vote.split('|');if(!N().canEdit('avail',`${date}_${seat}`))return N().toast(seat===N().me()?'':'자기 칸만 찍을 수 있어요');const cur=vote(date,seat);N().put('avail',`${date}_${seat}`,{v:cycle(cur.v||''),note:cur.note||''},'pub');return}

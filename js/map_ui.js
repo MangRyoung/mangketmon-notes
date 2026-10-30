@@ -17,6 +17,7 @@
  const entsAt=sid=>N().list('ents').filter(e=>(e.at||[]).includes(sid));
  /* 10-29 망령 「장소엔 인물 배치」: 인물 = 항목(인물 · 얼굴 있는 것) + PC · NPC 시트. 놓인 곳은 저마다의 at=[장소 id] (항목은 원래 있던 칸, 시트는 새 칸).
     GM: 장소 칸 「＋ 인물 놓기」 · 지도 위 얼굴을 다른 핀으로 끌어 옮기기 · ✕ 로 빼기 */
+ const omRoom=()=>(((N().ST.campInfo||{}).data||{}).om||{}).room||'';   /* 10-30 「🗺 웹툴로 · 연동」 — 이어 둔 웹툴 방 */
  const isPerson=e=>e.type==='인물'||!!e.face;
  function people(){const MK=window.NT_MAKER;const out=[];
   for(const e of N().list('ents'))if(isPerson(e))out.push({k:'ents',id:e.id,name:e.title||'',img:e.face||'',sub:[e.type,e.sub].filter(Boolean).join(' · '),at:e.at||[],pos:e.atPos||{},vis:e._vis});
@@ -73,7 +74,7 @@
   el.innerHTML=`<div class="toolbar"><h2>지도</h2>${maps().length>1||G?`<select id="mapSel">${maps().map(x=>`<option value="${esc(x.id)}" ${x.id===m.id?'selected':''}>${esc(x.name||'지도')}</option>`).join('')}</select>`:''}
    <div class="seg" id="mapKinds"><button data-k="" class="${!U.filter?'on':''}">전체</button>${KINDS.map(([k,,c])=>`<button data-k="${k}" class="${U.filter===k?'on':''}" style="--c:${c}"><i class="kdot"></i>${k}</button>`).join('')}</div>
    ${G?`<div class="seg"><button data-mode="sel" class="${U.mode==='sel'?'on':''}">고르기 · 끌기</button><button data-mode="add" class="${U.mode==='add'?'on':''}">＋ 장소 찍기</button>${U.mode==='add'?`<button data-multi class="${U.multi?'on':''}" title="켜 두면 편집 창 없이 계속 찍어요 (Shift+클릭과 같아요)">연속 찍기</button>`:''}</div>`:''}
-   <span class="sp"></span>${N().bulkBtns('spots',null,'이 지도의 장소')}${U.linkFrom&&N().data('spots',U.linkFrom)?`<span class="note linking">🔗 「${esc(spotNm(U.linkFrom))}」 에서 이을 장소를 누르세요 <button type="button" class="btn xs ghost" data-m="linkcancel">취소 (Esc)</button></span>`:`<span class="note">${sp.length}곳${G?' · Ctrl+휠 확대 · 빈 곳 끌어 이동':' · Ctrl+휠 확대'}</span>`}
+   <span class="sp"></span>${G&&omRoom()&&window.NT_LINK&&NT_LINK.omUrl?`<a class="btn sm" href="${esc(NT_LINK.omUrl(omRoom())+'&map='+encodeURIComponent(m.id))}" target="oremas" rel="noopener" title="이어 둔 웹툴 방으로 이 지도를 한 번에 보내고 연동을 켜요 — 그 뒤로 장소 핀 · 루트 · 인물 배치 · PC 위치가 서로 따라가요 (웹툴 GM 이 방을 열어 둔 동안)">🗺 웹툴로 · 연동</a>`:''}${N().bulkBtns('spots',null,'이 지도의 장소')}${U.linkFrom&&N().data('spots',U.linkFrom)?`<span class="note linking">🔗 「${esc(spotNm(U.linkFrom))}」 에서 이을 장소를 누르세요 <button type="button" class="btn xs ghost" data-m="linkcancel">취소 (Esc)</button></span>`:`<span class="note">${sp.length}곳${G?' · Ctrl+휠 확대 · 빈 곳 끌어 이동':' · Ctrl+휠 확대'}</span>`}
    ${G?`${maps().length>1?'<button class="btn xs ghost" data-m="maporder" title="지도 순서 바꾸기">지도 순서</button>':''}<button class="btn xs" data-m="mapedit">지도 설정</button><button class="btn xs ghost" data-m="newmap">＋ 지도</button>`:''}</div>
    <div class="split">
     <div class="mapwrap ${U.linkFrom?'linking':''}" id="mapWrap" data-mode="${U.mode}" style="--ar:${m.w&&m.h?(m.h/m.w).toFixed(4):0.66}"><div class="mapinner" id="mapInner" style="transform:translate(${U.px}px,${U.py}px) scale(${U.zoom});${m.w?`aspect-ratio:${m.w}/${m.h}`:''}">

@@ -390,3 +390,6 @@ table.poll td.ops{text-align:right}
 .pmpot .pml{margin:5px 0 0 4px}
 @media(max-width:760px){.pty .ptygrid{grid-template-columns:1fr}.pmmv{grid-template-columns:1fr}}
 .rpgrid .rpadd{border:1px dashed var(--line2);background:transparent;color:#bbb;cursor:pointer;min-height:64px;font:inherit;font-size:13px}.rpgrid .rpadd:hover{color:#fff;border-color:var(--yel,#f5d000)}
+/* 10-30 일정 탭: 웹툴 게임 달력 (omcal) */
+.card.omcal{margin-bottom:12px;border-left:4px solid var(--yel,#f5d000)}
+.omcal-l{margin:6px 0 0;padding-left:18px;font-size:13px;line-height:1.7}
