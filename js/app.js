@@ -16,7 +16,7 @@ window.NT=(()=>{
  const me=()=>ST.role&&ST.role!=='gm'?ST.role:'';
  const VIEWS=[['map','지도'],['graph','관계도'],['ents','항목'],['pc','PC 시트'],['awk','각성체'],['awdb','각성체 DB'],['scen','시나리오'],['plan','일정'],['logs','기록'],['set','설정']];
  /* 10-29 망령: 위 탭은 6개 — 자료(항목 · 관계도) · 지도 · 시트 · 일정(일정 · 기록) · 시나리오 · 설정. 화면(VIEWS)과 주소는 그대로라 예전 링크 · 알림도 그대로 간다 */
- const TABS=[['ents','자료',['ents','graph']],['map','지도',['map']],['pc','시트',['pc','awk','awdb']],['plan','일정',['plan','logs']],['scen','시나리오',['scen']],['set','설정',['set']]];
+ const TABS=[['ents','자료',['ents']],['map','지도',['map']],['pc','시트',['pc','awk','awdb']],['graph','관계도',['graph']],['plan','일정',['plan','logs']],['scen','시나리오',['scen']],['set','설정',['set']]];   /* 10-30 망령 「관계도도 시트 옆에」: 자료에서 꺼내 시트 바로 옆 탭으로 (웹툴처럼) */
  const tabOf=v=>TABS.find(t=>t[2].includes(v))||TABS[0];
  const subGet=t=>{try{const v=localStorage.getItem('nt_sub_'+t[0]);return t[2].includes(v)&&(v!=='awdb'||gm())?v:t[2][0]}catch(e){return t[2][0]}};
  /* 묶인 화면은 머리글(h2) 자리에 「항목 · 관계도」 같은 작은 탭을 둔다 */
