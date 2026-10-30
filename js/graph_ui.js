@@ -13,14 +13,19 @@
  /* 10-30 망령 「관계도도 시트 옆에 넣고 수정해서 웹툴과 서로 공유」: PC · NPC 시트도 관계도 노드 (자리 gx · gy 는 그 시트 문서에 둔다).
     관계(rels)의 a · b 는 항목 id 또는 시트 id. 웹툴 관계도와는 웹툴 쪽(notes_link 「관계도 연동」)이 주고받는다 */
  const SK=['pc','npc'];
- function sheetNodes(){const MK=window.NT_MAKER;return SK.flatMap(k=>N().list(k).map(p=>{const t=MK&&MK.trainer&&MK.trainer(p.id);return {id:p.id,_k:k,title:(t&&t.name)||p.name||'?',type:k==='pc'?'PC':'NPC',sub:[p.player,p.sub].filter(Boolean).join(' · '),face:(t&&t.image)||p.image||p.face||'',gx:p.gx,gy:p.gy,_vis:p._vis,tags:[],teams:[],color:k==='pc'?'#d22a2a':'#2f6fd0'}}))}
+ /* 10-30 망령 「PC · 객원 · NPC 로 거르기」: 시트 노드의 종류 = 시트 분류(js/cls.js). 항목 노드는 「항목」. 거르기 단추는 보드 · 선도 같이 쓴다 */
+ const CL=window.NT_CLS?null:{of:(k,p)=>k==='ents'?'ent':k==='npc'?'npc':'pc',name:c=>({pc:'PC',guest:'객원',npc:'NPC'})[c]||'항목',color:c=>({pc:'#d22a2a',guest:'#d9891c',npc:'#2f6fd0'})[c]||'#8e8e8e',shown:()=>true,chips:()=>'',bindChips:()=>{}};
+ const C=()=>window.NT_CLS||CL;
+ function sheetNodes(){const MK=window.NT_MAKER;return SK.flatMap(k=>N().list(k).map(p=>{const t=MK&&MK.trainer&&MK.trainer(p.id);const c=C().of(k,p);return {id:p.id,_k:k,_cls:c,title:(t&&t.name)||p.name||'?',type:C().name(c),sub:[p.player,p.sub].filter(Boolean).join(' · '),face:(t&&t.image)||p.image||p.face||'',gx:p.gx,gy:p.gy,_vis:p._vis,tags:[],teams:[],color:C().color(c)}}))}
+ const clsOfNode=e=>e._cls||'ent';
+ const clsCount=()=>{const o={pc:0,guest:0,npc:0,ent:0};for(const e of N().list('ents').concat(sheetNodes()))if(!plView()||e._vis==='pub')o[clsOfNode(e)]=(o[clsOfNode(e)]||0)+1;return o};
  const isSheet=id=>!N().doc('ents',id)&&SK.some(k=>N().doc(k,id));
  const kOf=id=>N().doc('ents',id)?'ents':SK.find(k=>N().doc(k,id))||'ents';
  const pn=id=>{const e=N().data('ents',id);if(e)return Object.assign({id,_k:'ents',_vis:(N().doc('ents',id)||{}).vis},e);return sheetNodes().find(x=>x.id===id)||null};
  const ttl=id=>(pn(id)||{}).title||'?';
  const patchPos=(id,gx,gy)=>N().patch(kOf(id),id,d=>{d.gx=Math.round(gx);d.gy=Math.round(gy)});
  const toSheet=id=>{const k=kOf(id);N().go('pc');setTimeout(()=>window.NT_PC&&NT_PC.select&&NT_PC.select(k,id),0)};
- const nodes=()=>N().list('ents').concat(sheetNodes()).filter(e=>(!plView()||e._vis==='pub')&&(!U.type||e.type===U.type)&&(!U.tag||(e.tags||[]).includes(U.tag))&&(!U.team||(e.teams||[]).includes(U.team)));
+ const nodes=()=>N().list('ents').concat(sheetNodes()).filter(e=>(!plView()||e._vis==='pub')&&C().shown('graph',clsOfNode(e))&&(!U.type||e.type===U.type)&&(!U.tag||(e.tags||[]).includes(U.tag))&&(!U.team||(e.teams||[]).includes(U.team)));
  const rels=()=>N().list('rels').filter(r=>!plView()||r._vis==='pub');
  const W=1600,H=1000;const BW=2200,BH=1400;const BK=k=>k==='rival'?'doubt':k==='secret'?'secret':'tie';
  let BOARD=null;
@@ -32,7 +37,7 @@
   const sel=U.sel?N().data('rels',U.sel):null;
   const nAll=N().list('ents').filter(e=>['인물','조직'].includes(e.type)||true).length,nPub=N().list('ents').filter(e=>e._vis==='pub').length,rPub=N().list('rels').filter(r=>r._vis==='pub').length,rAll=N().list('rels').length;
   el.innerHTML=`<div class="toolbar"><h2>관계도</h2><div class="seg"><button data-gview="board" class="${U.gview!=='svg'?'on':''}">보드</button><button data-gview="svg" class="${U.gview==='svg'?'on':''}">선도</button></div>${G?`<div class="seg"><button data-gv="gm" class="${U.view!=='pl'?'on':''}" title="GM 참고용 — 비공개 인물 · 관계까지 (점선)">🔒 GM 전체 ${nAll}·${rAll}</button><button data-gv="pl" class="${U.view==='pl'?'on':''}" title="PL 에게 보이는 그대로 — 오레마스가 가져가는 것도 이것">👥 PL 공개 ${nPub}·${rPub}</button></div>`:''}
-   <select id="grType"><option value="">모든 종류</option>${types.map(([t])=>`<option ${U.type===t?'selected':''}>${t}</option>`).join('')}</select>
+   ${C().chips('graph',clsCount())}<select id="grType"><option value="">모든 종류</option>${types.map(([t])=>`<option ${U.type===t?'selected':''}>${t}</option>`).join('')}</select>
    ${tags.length?`<select id="grTag"><option value="">모든 태그</option>${tags.map(t=>`<option ${U.tag===t?'selected':''}>${esc(t)}</option>`).join('')}</select>`:''}
    ${teams.length?`<select id="grTeam"><option value="">모든 편</option>${teams.map(t=>`<option ${U.team===t?'selected':''}>${esc(t)}</option>`).join('')}</select>`:''}
    ${G?`<div class="seg"><button data-gm="move" class="${U.mode==='move'?'on':''}">끌기</button><button data-gm="link" class="${U.mode==='link'?'on':''}">선 잇기${U.from?' · 두 번째 고르기':''}</button></div><button class="btn xs" data-g="newnode">＋ 인물</button><button class="btn xs ghost" data-g="auto">자동 배치</button>`:''}
@@ -52,7 +57,7 @@
   <div class="relline"><b>${esc(a?a.title:'?')}</b> <span style="color:${k[2]}">${r.two?'↔':'→'}</span> <b>${esc(b?b.title:'?')}</b></div><div><span class="chip static" style="border-color:${k[2]};color:${k[2]}">${k[1]}</span> ${esc(r.label||'')}</div>${r.note?`<p class="pre small" style="margin-top:6px">${esc(r.note)}</p>`:''}${N().visBadge(r._vis,'rels',r.id)}</div>`}
  function bind(el,byId){const svg=$('#grSvg',el),wrap=$('#grWrap',el);if(!svg)return;
   const apply=()=>svg.style.transform=`translate(${U.px}px,${U.py}px) scale(${U.zoom})`;
-  ['grType','grTag','grTeam'].forEach(id=>{const s=$('#'+id,el);if(s)s.onchange=()=>{U[id==='grType'?'type':id==='grTag'?'tag':'team']=s.value;N().render()}});
+  ['grType','grTag','grTeam'].forEach(id=>{const s=$('#'+id,el);if(s)s.onchange=()=>{U[id==='grType'?'type':id==='grTag'?'tag':'team']=s.value;N().render()}});C().bindChips(el,'graph',()=>N().render());
   $$('[data-gm]',el).forEach(b=>b.onclick=()=>{U.mode=b.dataset.gm;U.from='';N().render()});
   $$('[data-gv]',el).forEach(b=>b.onclick=()=>{U.view=b.dataset.gv;U.sel='';N().render()});
   $$('[data-gview]',el).forEach(b=>b.onclick=()=>{U.gview=b.dataset.gview;N().render()});
@@ -101,13 +106,13 @@
   $('#rlOk',md).onclick=async()=>{await N().put('rels',id,{a:A,b:B,label:$('#rlLabel',md).value.trim(),kind:$('#rlKind',md).value,two:$('#rlTwo',md).checked,note:$('#rlNote',md).value.trim()},$('#rlVis',md).value);U.sel=id;N().closeModal()};
   $('#rlDel',md).onclick=async()=>{if(!await N().confirmBox('이 관계선을 지울까요?','지우기'))return;await N().del('rels',id);U.sel='';N().closeModal()}}
  /* ---- 코르크보드 ---- */
- function renderBoard(el){const G=N().gm();const all=N().list('ents');const list=nodes().filter(e=>['인물','조직','기타','이벤트','PC','NPC'].includes(e.type)||e.face);const types=window.NT_ENTS?NT_ENTS.TYPES:[];
+ function renderBoard(el){const G=N().gm();const all=N().list('ents');const list=nodes().filter(e=>e._cls||['인물','조직','기타','이벤트','PC','NPC'].includes(e.type)||e.face);const types=window.NT_ENTS?NT_ENTS.TYPES:[];
   const tags=[...new Set(all.flatMap(e=>e.tags||[]))].sort((a,b)=>a.localeCompare(b,'ko')),teams=[...new Set(all.flatMap(e=>e.teams||[]))].sort((a,b)=>a.localeCompare(b,'ko'));
   const nAll=all.length,nPub=all.filter(e=>e._vis==='pub').length,rPub=N().list('rels').filter(r=>r._vis==='pub').length,rAll=N().list('rels').length;
   el.innerHTML=`<div class="toolbar"><h2>관계도</h2><div class="seg"><button data-gview="board" class="on">보드</button><button data-gview="svg">선도</button></div>${G?`<div class="seg"><button data-gv="gm" class="${U.view!=='pl'?'on':''}" title="GM 참고용 — 비공개 인물 · 관계까지">🔒 GM 전체 ${nAll}·${rAll}</button><button data-gv="pl" class="${U.view==='pl'?'on':''}" title="PL 에게 보이는 그대로">👥 PL 공개 ${nPub}·${rPub}</button></div>`:''}
-   <select id="grType"><option value="">모든 종류</option>${types.map(([t])=>`<option ${U.type===t?'selected':''}>${t}</option>`).join('')}</select>${tags.length?`<select id="grTag"><option value="">모든 태그</option>${tags.map(t=>`<option ${U.tag===t?'selected':''}>${esc(t)}</option>`).join('')}</select>`:''}${teams.length?`<select id="grTeam"><option value="">모든 편</option>${teams.map(t=>`<option ${U.team===t?'selected':''}>${esc(t)}</option>`).join('')}</select>`:''}
+   ${C().chips('graph',clsCount())}<select id="grType"><option value="">모든 종류</option>${types.map(([t])=>`<option ${U.type===t?'selected':''}>${t}</option>`).join('')}</select>${tags.length?`<select id="grTag"><option value="">모든 태그</option>${tags.map(t=>`<option ${U.tag===t?'selected':''}>${esc(t)}</option>`).join('')}</select>`:''}${teams.length?`<select id="grTeam"><option value="">모든 편</option>${teams.map(t=>`<option ${U.team===t?'selected':''}>${esc(t)}</option>`).join('')}</select>`:''}
    <span class="sp"></span>${N().bulkBtns('rels',null,'관계선')}${G&&U.view==='pl'?'<span class="note"><b style="color:var(--yel)">PL 이 보는 그대로</b></span>':''}</div><div class="cb" id="cbRoot"></div>`;
-  $$('#grType,#grTag,#grTeam',el).forEach(sl=>sl.onchange=()=>{U[sl.id==='grType'?'type':sl.id==='grTag'?'tag':'team']=sl.value;N().render()});
+  $$('#grType,#grTag,#grTeam',el).forEach(sl=>sl.onchange=()=>{U[sl.id==='grType'?'type':sl.id==='grTag'?'tag':'team']=sl.value;N().render()});C().bindChips(el,'graph',()=>N().render());
   $$('[data-gv]',el).forEach(b=>b.onclick=()=>{U.view=b.dataset.gv;U.sel='';N().render()});$$('[data-gview]',el).forEach(b=>b.onclick=()=>{U.gview=b.dataset.gview;N().render()});
   const groups={};const gOf=e=>(e.teams&&e.teams[0])||e.type||'';list.forEach(e=>{const g=gOf(e);if(!groups[g])groups[g]={name:g||'기타',color:e.color&&!(e.teams&&e.teams[0])?e.color:undefined}});
   const ids=new Set(list.map(e=>e.id));

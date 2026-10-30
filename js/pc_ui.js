@@ -7,6 +7,22 @@
  const N=()=>window.NT;const {$,$$,esc,cssu}=window.NT;
  const U={sel:'',mode:'pc'};const K=()=>U.mode==='npc'?'npc':'pc';
  const MK=()=>window.NT_MAKER;
+ /* 10-30 망령 「시트를 PC · 객원 · NPC 로 분류 — 폴더 접기 · 지도 · 관계도 거르기」: 시트 문서의 cls (js/cls.js). 탭(PC 시트 · NPC 시트)은 그대로 두고,
+    그 안의 카드를 분류 폴더로 묶는다. 폴더 이름을 누르면 접기 · 펴기 (이 브라우저에 캠페인 · 탭마다 기억). 분류 바꾸기 = GM: 카드 우클릭 · 시트 머리의 분류 칸 */
+ const CL=()=>window.NT_CLS;
+ const CLS0=[['pc','PC','#d22a2a'],['guest','객원','#d9891c'],['npc','NPC','#2f6fd0']];
+ const clsL=()=>CL()?CL().L:CLS0;
+ const clsOf=(p,k)=>CL()?CL().of(k||K(),p):((k||K())==='npc'?'npc':'pc');
+ const clsName=c=>(clsL().find(x=>x[0]===c)||clsL()[0])[1];
+ const foldKey=()=>'nt-pcfold:'+(N().ST.camp||'')+':'+K();
+ function foldGet(){try{const o=JSON.parse(localStorage.getItem(foldKey())||'{}');return o&&typeof o==='object'?o:{}}catch(e){return {}}}
+ function foldSet(o){try{localStorage.setItem(foldKey(),JSON.stringify(o))}catch(e){}}
+ const groups=L=>clsL().map(([c,n,col])=>({c,n,col,L:L.filter(p=>clsOf(p)===c)})).filter(g=>g.L.length);
+ function folds(L){const f=foldGet();
+  return `<div class="pcfolds">${groups(L).map(g=>{const off=!!f[g.c];return `<section class="pcfold ${off?'off':''}" data-cls="${g.c}" style="--c:${g.col}"><button type="button" class="pcfh" data-pfold="${g.c}" aria-expanded="${off?'false':'true'}"><span class="caret">▾</span><i class="kdot"></i><b>${esc(g.n)}</b><small>${g.L.length}명</small></button>${off?'':`<div class="pcgrid" data-cls="${g.c}">${g.L.map(p=>card(p)).join('')}</div>`}</section>`}).join('')}</div>`}
+ async function setCls(id,c){const KD=K();if(!N().gm()||!N().doc(KD,id))return;const p=N().data(KD,id)||{};if(clsOf(p)===c)return;const base=KD==='npc'?'npc':'pc';
+  await N().patch(KD,id,d=>{if(c===base)delete d.cls;else d.cls=c});N().toast('분류: '+clsName(c))}
+ const clsPick=(id,p)=>N().gm()?`<select class="pccls" data-pcls="${esc(id)}" title="시트 분류 — 폴더 묶기 · 지도 · 관계도 거르기에 써요">${clsL().map(([c,n])=>`<option value="${c}" ${clsOf(p)===c?'selected':''}>${esc(n)}</option>`).join('')}</select>`:`<span class="visb pccl" style="--c:${(clsL().find(x=>x[0]===clsOf(p))||clsL()[0])[2]}">${esc(clsName(clsOf(p)))}</span>`;
  const pcs=()=>N().list(K()).sort((a,b)=>(a.order||0)-(b.order||0));
  const PUB_PC=[['bg','배경 · 설정'],['goal','목표 · 동기'],['bond','인간관계'],['style','말투 · 겉모습'],['note','메모']];
  /* 10-26 망령: 공개 칸 = 제작기 트레이너 프로필 「상세」(t.bio=[{k,v}]) 와 같은 칸. 제작기 트레이너가 있으면 거기에 바로 읽고 쓴다.
@@ -32,15 +48,18 @@
  const entOf=(name,id)=>N().list('ents').find(e=>id&&e.mk===id)||N().list('ents').find(e=>e.type==='인물'&&e.title===name);   /* 10-29: 항목의 「제작기 트레이너」 잇기가 먼저 */
  function render(el){const G=N().gm();const L=pcs();const sel=U.sel&&N().data(K(),U.sel)?U.sel:(L[0]||{}).id||'';U.sel=sel;const NPC=U.mode==='npc';const nPc=N().list('pc').length,nNpc=N().list('npc').length;
   el.innerHTML=`<div class="toolbar"><h2>${NPC?'NPC 시트':'PC 시트'}</h2><span class="note">${NPC?`NPC ${nNpc}명 · 새로 넣는 NPC 는 GM 에게만 보여요`:`PC ${nPc}명`} · 트레이너 · 포켓몬은 제작기 값(읽기 전용) · RP 칸은 여기서</span><span class="sp"></span>${G&&L.some(p=>Object.keys(oldOf(p)).length&&MK().trainer(p.id))?`<button class="btn sm" data-p="bioall" title="예전 공개 칸(배경 · 목표 · 인간관계 · 말투 · 메모)을 제작기 트레이너 「상세」로 한 번에 옮겨요">↪ 예전 칸 → 제작기 상세</button>`:''}${G&&!NPC&&N().skin&&N().skin()==='univ'&&window.NT_MONED?'<button class="btn sm pri" data-monnew="misag" title="제작기 「미사그 캠퍼스」 폴더에 새 트레이너를 만들고, 닫으면 PC 시트로 넣어요 (10-30)">＋ 새 학생</button>':''}${G&&NPC&&N().skin&&N().skin()==='univ'&&window.NT_MONED?'<button class="btn sm pri" data-monnew="misagnpc" title="제작기 「미사그 캠퍼스 / NPC」 폴더(🔒)에 새 NPC 를 만들고, 닫으면 NPC 시트(GM만)로 넣어요 (10-30)">＋ 새 NPC</button>':''}${G?`<button class="btn sm pri" data-p="add">＋ ${NPC?'NPC':'PC'} (제작기에서)</button>`:''}${!NPC&&N().me()&&!N().data('pc',N().me())?'<button class="btn sm pri" data-p="mine">내 PC 시트 만들기</button>':''}<button class="btn xs ghost" data-p="reload" title="제작기 값 다시 읽기">↻ 제작기</button>${G?omAll(L):''}</div>
-   ${G?mkBar():''}${L.length?`<div class="split ${N().skin&&N().skin()==='univ'?'nside':''}"><div><div class="pcgrid">${L.map(p=>card(p)).join('')}</div>${sel?sheet(sel):''}</div>${N().skin&&N().skin()==='univ'?'':`<aside class="side">${sel?sideInfo(sel):''}</aside>`}</div>`:`<div class="empty">아직 ${NPC?'NPC':'PC'} 가 없어요.${G?` 「＋ ${NPC?'NPC':'PC'}」로 제작기 트레이너를 골라 넣어요.`:''}${!NPC&&N().me()?' 「내 PC 시트 만들기」를 눌러요.':''}</div>`}`;
+   ${G?mkBar():''}${L.length?`<div class="split ${N().skin&&N().skin()==='univ'?'nside':''}"><div>${folds(L)}${sel?sheet(sel):''}</div>${N().skin&&N().skin()==='univ'?'':`<aside class="side">${sel?sideInfo(sel):''}</aside>`}</div>`:`<div class="empty">아직 ${NPC?'NPC':'PC'} 가 없어요.${G?` 「＋ ${NPC?'NPC':'PC'}」로 제작기 트레이너를 골라 넣어요.`:''}${!NPC&&N().me()?' 「내 PC 시트 만들기」를 눌러요.':''}</div>`}`;
   el.addEventListener('click',e=>{const pm=e.target.closest('[data-pm]');if(pm){N().go(pm.dataset.pm==='npc'?'npc':'pc');return}
+   const pf=e.target.closest('[data-pfold]');if(pf){const f=foldGet();const c=pf.dataset.pfold;if(f[c])delete f[c];else f[c]=1;foldSet(f);N().render();return}
    const en=e.target.closest('[data-goent]');if(en){N().go('ents');setTimeout(()=>window.NT_ENTS&&NT_ENTS.select(en.dataset.goent),0);return}
    const pg=e.target.closest('[data-pmgo]');if(pg){e.preventDefault();const t=document.getElementById('pm-'+pg.dataset.pmgo);if(t){t.scrollIntoView({behavior:'smooth',block:'start'});t.classList.add('flash');setTimeout(()=>t.classList.remove('flash'),900)}return}
    const c=e.target.closest('[data-pc]');if(c){U.sel=c.dataset.pc;N().render();const sh=$('.pcsheet');if(sh)sh.scrollIntoView({behavior:'smooth',block:'start'});return}
    const b=e.target.closest('[data-p]');if(b)act(b.dataset.p,b)});
   /* 10-26 망령: 카드 끌어서 순서 바꾸기(GM) · 우클릭 · 길게 누르기 메뉴 */
-  const grid=$('.pcgrid',el);if(grid&&G)N().sortable(grid,'.pccard',ids=>N().reorder(K(),ids));
-  if(grid)N().bindCtx(grid,'.pccard',c=>ctxItems(c.dataset.id))}
+  /* 10-30: 폴더마다 끌어서 순서 바꾸기 — 다른 폴더 순서는 그대로 두고 전체 순서를 다시 매긴다 */
+  if(G)$$('.pcgrid',el).forEach(grid=>N().sortable(grid,'.pccard',ids=>{const all=[];for(const g of groups(pcs()))all.push(...(g.c===grid.dataset.cls?ids:g.L.map(p=>p.id)));N().reorder(K(),all)}));
+  const fw=$('.pcfolds',el);if(fw)N().bindCtx(fw,'.pccard',c=>ctxItems(c.dataset.id));
+  el.addEventListener('change',e=>{const s=e.target.closest('[data-pcls]');if(s)setCls(s.dataset.pcls,s.value)})}
  /* 10-29 망령: 시트 → 웹툴. 이어 둔 웹툴 방을 #r=<방>&add=<트레이너 id,…> 로 열면, 웹툴이 (GM 이면) 제작기에서 그 트레이너를 방 명단으로 가져온다 */
  const omRoom=()=>(((N().ST.campInfo||{}).data||{}).om||{}).room||'';
  const omHref=ids=>window.NT_LINK?NT_LINK.omUrl(omRoom())+'&add='+ids.map(encodeURIComponent).join(','):'#';
@@ -55,7 +74,8 @@
   await N().putMany(miss.map(t=>{const k=MK().isNpc(t)?'npc':'pc';return {kind:k,id:t.id,data:fromTrainer(t,{order:n[k]++}),vis:k==='npc'?'gm':'pub'}}));
   N().toast(`${miss.length}명을 넣었어요`);N().render()}
  function ctxItems(id){const KD=K();const d=N().doc(KD,id);if(!d)return null;const p=d.data;const G=N().gm();const cur=d.vis||'pub';const it=[];
-  if(G){[['pub','👥 모두에게'],['gm','🔒 GM만']].forEach(([v,l])=>it.push({t:l+(v===cur?' ✓':''),on:async()=>{if(v===cur)return;await N().put(KD,id,N().clone(p),v);N().toast('공개 범위: '+N().visLabel(v))}}));it.push('-')}
+  if(G){[['pub','👥 모두에게'],['gm','🔒 GM만']].forEach(([v,l])=>it.push({t:l+(v===cur?' ✓':''),on:async()=>{if(v===cur)return;await N().put(KD,id,N().clone(p),v);N().toast('공개 범위: '+N().visLabel(v))}}));it.push('-');
+   clsL().forEach(([c,n])=>it.push({t:'분류: '+n+(clsOf(p)===c?' ✓':''),on:()=>setCls(id,c)}));it.push('-')}
   if(canEditPc(id))it.push({t:'✎ 기본 칸 고치기',on:()=>act('edit',{dataset:{id}})});
   if(window.NT_FAV)it.push({t:(NT_FAV.has(KD,id)?'★ 즐겨찾기에서 빼기':'☆ 즐겨찾기'),on:()=>NT_FAV.toggle(KD,id,p.name||id)});
   if(G){it.push('-');it.push({t:'🗑 빼기',danger:true,on:()=>act('del',{dataset:{id}})})}
@@ -78,7 +98,7 @@
    return `<section class="rpbox rpg ${kind==='priv'?'priv':kind==='gm'?'gm':''}" data-g="${esc(g)}"><h4><b>${esc(g)}</b>${kind==='mk'?' <span class="visb" title="제작기 트레이너 프로필 「상세」와 같은 칸이에요">⇄ 제작기</span>':kind==='priv'?' <span class="visb pl">👤 본인 · GM</span>':kind==='gm'?' <span class="visb gm">🔒 GM</span>':''}<span class="sp"></span>${E?`<button class="btn xs ghost" data-p="editgrp" data-id="${esc(id)}" data-g="${esc(g)}" data-gk="${kind}" title="${esc(items.map(x=>x.k).filter(Boolean).join(' · ')||g)} 고치기">✎ 고치기</button>`:''}</h4>
     ${one?`<div class="pre rpgv">${esc(items[0].v||'')||'<span class="dim">—</span>'}</div>`:`${full.map(x=>`<div class="rpgi"><h5>${esc(x.k)}</h5><div class="pre">${esc(x.v)}</div></div>`).join('')}${emp.length?`<div class="rpge">${full.length?'':'<span class="dim">아직 비어 있어요 · </span>'}${emp.map(x=>`<span>${esc(x.k)}</span>`).join('')}</div>`:''}`}</section>`};
   const bioBox=(id,x,E,i)=>`<div class="rpbox" data-bk="${esc(x.k)}"><h4>${esc(x.k)}${t?' <span class="visb" title="제작기 트레이너 프로필 「상세」와 같은 칸이에요">⇄ 제작기</span>':''}<span class="sp"></span>${E?`<button class="btn xs ghost" data-p="editbio" data-id="${esc(id)}" data-bk="${esc(x.k)}">✎</button>`:''}</h4><div class="pre">${esc(x.v||'')||'<span class="dim">—</span>'}</div></div>`;
-  const heroIn=`<span class="por" style="${img?`background-image:url('${cssu(img)}')`:''}"></span><div style="flex:1;min-width:200px"><div class="row"><h2>${esc(nmOf(p,t)||id)}</h2>${window.NT_FAV?NT_FAV.btn(KD,id,nmOf(p,t)||id):''}${N().visBadge((N().doc(KD,id)||{}).vis,KD,id)}${ent?`<button class="btn xs ghost" data-goent="${esc(ent.id)}" title="항목(인물)으로">📇 항목</button>`:''}<span class="sp"></span>${E?`<button class="btn xs" data-p="edit" data-id="${esc(id)}">기본 칸 고치기</button>`:''}${window.NT_PHONE&&!(N().skin&&N().skin()==='univ')?NT_PHONE.btn(id):''}${G&&t?omOne(id):''}${E?`<button class="btn xs ghost" data-p="tomk" data-id="${esc(id)}" title="이 시트의 이름 · 초상 · 종류를 제작기 트레이너로 보내요${t?'':' (제작기에 새로 만들어요)'}">⇪ 제작기로</button>`:''}${E&&t&&window.NT_MONED?`<button class="btn xs" data-moned="" data-id="${esc(id)}" title="이 트레이너를 제작기 화면 그대로 노트 안에서 고쳐요 (자질 · 포인트 · 포켓몬 전부)">✎ 제작기로 고치기</button>`:''}${E&&t?`<button class="btn xs ghost" data-p="frommk" data-id="${esc(id)}" title="제작기의 이름 · 초상을 이 시트로 다시 가져와요 (상세 칸은 늘 제작기와 같아요)">⇩ 제작기에서</button>`:''}${G?`<button class="btn xs ghost danger" data-p="del" data-id="${esc(id)}">빼기</button>`:''}</div>
+  const heroIn=`<span class="por" style="${img?`background-image:url('${cssu(img)}')`:''}"></span><div style="flex:1;min-width:200px"><div class="row"><h2>${esc(nmOf(p,t)||id)}</h2>${window.NT_FAV?NT_FAV.btn(KD,id,nmOf(p,t)||id):''}${N().visBadge((N().doc(KD,id)||{}).vis,KD,id)}${clsPick(id,p)}${ent?`<button class="btn xs ghost" data-goent="${esc(ent.id)}" title="항목(인물)으로">📇 항목</button>`:''}<span class="sp"></span>${E?`<button class="btn xs" data-p="edit" data-id="${esc(id)}">기본 칸 고치기</button>`:''}${window.NT_PHONE&&!(N().skin&&N().skin()==='univ')?NT_PHONE.btn(id):''}${G&&t?omOne(id):''}${E?`<button class="btn xs ghost" data-p="tomk" data-id="${esc(id)}" title="이 시트의 이름 · 초상 · 종류를 제작기 트레이너로 보내요${t?'':' (제작기에 새로 만들어요)'}">⇪ 제작기로</button>`:''}${E&&t&&window.NT_MONED?`<button class="btn xs" data-moned="" data-id="${esc(id)}" title="이 트레이너를 제작기 화면 그대로 노트 안에서 고쳐요 (자질 · 포인트 · 포켓몬 전부)">✎ 제작기로 고치기</button>`:''}${E&&t?`<button class="btn xs ghost" data-p="frommk" data-id="${esc(id)}" title="제작기의 이름 · 초상을 이 시트로 다시 가져와요 (상세 칸은 늘 제작기와 같아요)">⇩ 제작기에서</button>`:''}${G?`<button class="btn xs ghost danger" data-p="del" data-id="${esc(id)}">빼기</button>`:''}</div>
     <div class="dim">${esc(p.player?'플레이어 · '+p.player:'')}${p.sub?(p.player?' · ':'')+esc(p.sub):''}</div>
     ${(()=>{const at=(p.at||[]).map(x=>N().data('spots',x)?{id:x,n:N().data('spots',x).name}:null).filter(Boolean);return at.length?`<div class="small pcat">📍 지금 ${at.map(x=>`<b>${esc(x.n||'')}</b>`).join(' · ')}</div>`:''})()}
     ${t?`<div class="rk">${['지시','육성','통솔','능력'].map(k=>`<span>${k}<b>${esc(rk[k]||'-')}</b></span>`).join('')}</div><div class="small dim">제작기 시트 · ${esc(t.kind==='npc'?'NPC':'PC')}${t.folder?' · '+esc(MK().folderName(t.folder)):''} <a href="${esc((window.NT_CONFIG||{}).makerUrl||'#')}" target="_blank" rel="noopener">제작기에서 열기</a></div>`:`<div class="small dim">제작기에 이 id 의 트레이너가 없어요 — 노트에서만 쓰는 시트${E?' · 「⇪ 제작기로」로 제작기에 만들 수 있어요':''}</div>`}
