@@ -20,8 +20,8 @@
  const omRoom=()=>(((N().ST.campInfo||{}).data||{}).om||{}).room||'';   /* 10-30 「🗺 웹툴로 · 연동」 — 이어 둔 웹툴 방 */
  const isPerson=e=>e.type==='인물'||!!e.face;
  function people(){const MK=window.NT_MAKER;const out=[];
-  for(const e of N().list('ents'))if(isPerson(e))out.push({k:'ents',id:e.id,name:e.title||'',img:e.face||'',sub:[e.type,e.sub].filter(Boolean).join(' · '),at:e.at||[],pos:e.atPos||{},vis:e._vis});
-  for(const k of ['pc','npc'])for(const p of N().list(k).sort((a,b)=>(a.order||0)-(b.order||0))){const t=MK&&MK.trainer(p.id);out.push({k,id:p.id,name:(t&&t.name)||p.name||'',img:(t&&t.image)||p.image||'',sub:(k==='pc'?'PC':'NPC')+(p.player?' · '+p.player:'')+(p.sub?' · '+p.sub:''),at:p.at||[],pos:p.atPos||{},vis:p._vis})}
+  for(const e of N().list('ents'))if(isPerson(e))out.push({k:'ents',id:e.id,name:e.title||'',img:e.face||'',sub:[e.type,e.sub].filter(Boolean).join(' · '),at:e.at||[],pos:e.atPos||{},vis:e._vis,st:e.st||null});
+  for(const k of ['pc','npc'])for(const p of N().list(k).sort((a,b)=>(a.order||0)-(b.order||0))){const t=MK&&MK.trainer(p.id);out.push({k,id:p.id,name:(t&&t.name)||p.name||'',img:(t&&t.image)||p.image||'',sub:(k==='pc'?'PC':'NPC')+(p.player?' · '+p.player:'')+(p.sub?' · '+p.sub:''),at:p.at||[],pos:p.atPos||{},vis:p._vis,st:p.st||null})}
   return out}
  const pKey=x=>x.k+':'+x.id;
  const personOf=key=>{const i=String(key||'').indexOf(':');if(i<0)return null;const k=key.slice(0,i),id=key.slice(i+1);return people().find(x=>x.k===k&&x.id===id)||null};
@@ -34,6 +34,12 @@
     없으면 예전처럼 핀 오른쪽 줄. 얼굴을 빈 곳에 놓으면 그 자리, 다른 핀에 놓으면 그 장소로 옮기기, 제 핀에 놓으면 줄로 되돌리기 */
  function posKeep(d,at){if(!d.atPos)return;for(const k of Object.keys(d.atPos))if(!at.includes(k))delete d.atPos[k];if(!Object.keys(d.atPos).length)delete d.atPos}
  async function placePos(key,sid,xy){const x=personOf(key);if(!x)return;await N().patch(x.k,x.id,d=>{const p=Object.assign({},d.atPos||{});if(xy)p[sid]={x:+Math.max(0,Math.min(100,xy.x)).toFixed(2),y:+Math.max(0,Math.min(100,xy.y)).toFixed(2)};else delete p[sid];if(Object.keys(p).length)d.atPos=p;else delete d.atPos})}
+ /* 10-30 망령 「지도 아래 창이 허전 — 웹툴 감정 이모지와 간단한 상태 메시지를 넣으면 아이콘 위 말풍선으로」
+    인물 문서(pc · npc · ents)의 st={e:감정 키(웹툴 OM_EMO 와 같은 키), m:상태 메시지, at}. GM 과 그 PC 의 주인이 고친다 */
+ const EMO=[['surprise','❗','놀람'],['question','❓','의문'],['angry','💢','화남'],['happy','🎵','기쁨'],['heart','💗','하트'],['sweat','💦','당황'],['sad','💧','슬픔'],['shy','☺️','부끄'],['think','💭','생각'],['idea','💡','번뜩'],['sigh','😮‍💨','한숨'],['sleepy','💤','졸림'],['sparkle','✨','반짝'],['fear','😱','오싹'],['nod','👍','끄덕'],['no','🙅','도리도리']];
+ const emoOf=k=>EMO.find(x=>x[0]===k);
+ const stBub=x=>{const st=x&&x.st;if(!st||!(st.e||st.m))return '';const e=emoOf(st.e);return `<b class="mnst${st.m?'':' only'}">${e?`<em>${e[1]}</em>`:''}${st.m?`<span>${esc(st.m)}</span>`:''}</b>`};
+ const canSt=x=>!!x&&(N().gm()||(x.k==='pc'&&N().me&&N().me()===x.id));
  const faceBtn=(x,cls,tag)=>{tag=tag||'button';return `<${tag} ${tag==='button'?'type="button" ':''}class="${cls} ${x.img?'':'noimg'} ${x.k!=='ents'?'pcf':''}" data-pkey="${esc(pKey(x))}" title="${esc(x.name)}" style="${x.img?`background-image:url('${cssu(x.img)}')`:''}">${x.img?'':esc([...(x.name||'?')][0]||'?')}</${tag}>`};
  const routeOf=id=>N().data('routes',id);
  /* 지도 위 선: 루트의 이웃 단계(장소가 있는 것끼리) + 자유 연결(links). 지도에 선 숨김(visible=false)인 루트는 GM 에게만 점선으로 */
@@ -59,8 +65,8 @@
  /* 10-30 망령 「배치된 인물 아이콘 좀 더 커도 될듯」: 30 → 42px (휴대폰 22 → 30). 간격은 CSS --mnS */
  function npcLayer(m,sp){const P=people().filter(x=>x.at.length&&(x.img||x.k!=='ents'));const out=[];
   for(const s of sp){const all=P.filter(x=>x.at.includes(s.id));const fr=all.filter(x=>x.pos[s.id]),es=all.filter(x=>!x.pos[s.id]);const MAX=4;
-   fr.forEach(e=>{const q=e.pos[s.id];out.push(`<button type="button" class="mnpc free ${e.vis&&e.vis!=='pub'?'hid':''} ${e.img?'':'noimg'} ${e.k!=='ents'?'pcf':''}" ${e.k==='ents'?`data-ent="${esc(e.id)}"`:''} data-pkey="${esc(pKey(e))}" data-at="${esc(s.id)}" style="left:${+q.x}%;top:${+q.y}%;${e.img?`background-image:url('${cssu(e.img)}')`:''}" title="${esc(e.name)} · ${esc(s.name||'')}">${e.img?'':esc([...(e.name||'?')][0]||'?')}<i>${esc(e.name)}</i></button>`)});
-   es.slice(0,MAX).forEach((e,i)=>out.push(`<button type="button" class="mnpc ${e.vis&&e.vis!=='pub'?'hid':''} ${e.img?'':'noimg'} ${e.k!=='ents'?'pcf':''}" ${e.k==='ents'?`data-ent="${esc(e.id)}"`:''} data-pkey="${esc(pKey(e))}" data-at="${esc(s.id)}" style="left:calc(${s.x}% + 16px + ${i} * var(--mnS,46px));top:${s.y}%;${e.img?`background-image:url('${cssu(e.img)}')`:''}" title="${esc(e.name)}">${e.img?'':esc([...(e.name||'?')][0]||'?')}<i>${esc(e.name)}</i></button>`));
+   fr.forEach(e=>{const q=e.pos[s.id];out.push(`<button type="button" class="mnpc free ${e.vis&&e.vis!=='pub'?'hid':''} ${e.img?'':'noimg'} ${e.k!=='ents'?'pcf':''}" ${e.k==='ents'?`data-ent="${esc(e.id)}"`:''} data-pkey="${esc(pKey(e))}" data-at="${esc(s.id)}" style="left:${+q.x}%;top:${+q.y}%;${e.img?`background-image:url('${cssu(e.img)}')`:''}" title="${esc(e.name)} · ${esc(s.name||'')}">${e.img?'':esc([...(e.name||'?')][0]||'?')}<i>${esc(e.name)}</i>${stBub(e)}</button>`)});
+   es.slice(0,MAX).forEach((e,i)=>out.push(`<button type="button" class="mnpc ${e.vis&&e.vis!=='pub'?'hid':''} ${e.img?'':'noimg'} ${e.k!=='ents'?'pcf':''}" ${e.k==='ents'?`data-ent="${esc(e.id)}"`:''} data-pkey="${esc(pKey(e))}" data-at="${esc(s.id)}" style="left:calc(${s.x}% + 16px + ${i} * var(--mnS,46px));top:${s.y}%;${e.img?`background-image:url('${cssu(e.img)}')`:''}" title="${esc(e.name)}">${e.img?'':esc([...(e.name||'?')][0]||'?')}<i>${esc(e.name)}</i>${stBub(e)}</button>`));
    if(es.length>MAX)out.push(`<button type="button" class="mnpc more" data-pmore="${esc(s.id)}" style="left:calc(${s.x}% + 16px + ${MAX} * var(--mnS,46px));top:${s.y}%" title="${es.slice(MAX).map(x=>esc(x.name)).join(' · ')}">+${es.length-MAX}</button>`)}
   return out.join('')}
 
@@ -168,11 +174,23 @@
    if(N().gm()&&U.mode==='add'){const r=$('#mapInner',el).getBoundingClientRect();const x=+((e.clientX-r.left)/r.width*100).toFixed(2),y=+((e.clientY-r.top)/r.height*100).toFixed(2);if(x<0||x>100||y<0||y>100)return;addSpot(x,y,!!(e.shiftKey||U.multi))}};
   w.addEventListener('pointerup',up);w.addEventListener('pointercancel',e=>{pts.delete(e.pointerId);pd=null;if(pts.size<2)pinch=null})}
 
+ /* 인물 카드의 감정 · 상태 칸: 고칠 수 있으면 이모지 줄 + 한 줄 입력, 아니면 지금 상태만 */
+ function stPane(x,key){const st=x.st||{};if(U.stFor!==key){U.stFor=key;U.stE=st.e||''}const cur=emoOf(st.e);
+  if(!canSt(x))return st.e||st.m?`<div class="mpst ro">${cur?`<em>${cur[1]}</em>`:''}<span>${esc(st.m||cur&&cur[2]||'')}</span></div>`:'';
+  return `<div class="mpst"><div class="mpemo">${EMO.map(([k,ic,n])=>`<button type="button" class="${U.stE===k?'on':''}" data-pop="stemo" data-id="${k}" title="${n}">${ic}</button>`).join('')}</div>
+   <div class="mpstin"><input type="text" id="mpStIn" maxlength="40" placeholder="상태 메시지 (아이콘 위 말풍선)" value="${esc(U.stM!=null&&U.stFor===key?U.stM:(st.m||''))}"><button type="button" class="btn xs pri" data-pop="stsave" data-id="${esc(key)}">올리기</button>${st.e||st.m?`<button type="button" class="btn xs ghost" data-pop="stclear" data-id="${esc(key)}" title="말풍선 내리기">지우기</button>`:''}</div></div>`}
+ /* 지도가 다시 그려져도 쓰던 글이 남게 */
+ document.addEventListener('input',e=>{if(e.target&&e.target.id==='mpStIn')U.stM=e.target.value});
+ document.addEventListener('keydown',e=>{if(e.target&&e.target.id==='mpStIn'&&e.key==='Enter'&&!e.isComposing){e.preventDefault();const b=document.querySelector('#mapPop [data-pop="stsave"]');if(b)b.click()}});
+ async function stSave(key,clear){const x=personOf(key);if(!canSt(x))return;const inp=document.getElementById('mpStIn');const m=clear?'':String(inp?inp.value:(U.stM||'')).trim().slice(0,40);const e=clear?'':(U.stE||'');U.stM=null;
+  await N().patch(x.k,x.id,d=>{if(!e&&!m)delete d.st;else d.st={e,m,at:Date.now()}});N().toast(clear||(!e&&!m)?'말풍선을 내렸어요':'지도에 올렸어요')}
+
  /* ---------- 지도 위 말풍선: 핀 = 장소 요약, 얼굴 = 인물 카드 ---------- */
  function popHtml(){const P=U.pop;if(!P)return '';const G=N().gm();const m0=curMap()||{};
   if(P.k==='pcx'){const x=personOf(P.id);if(!x)return '';const t=window.NT_MAKER&&NT_MAKER.trainer(x.id);const rk=(t&&t.ranks)||{};
    return `<div class="mph ent" style="--c:${x.k==='npc'?'#8e8e8e':'#e4002b'}"><span class="mpbig" style="${x.img?`background-image:url('${cssu(x.img)}')`:''}">${x.img?'':esc([...(x.name||'?')][0]||'?')}</span><div style="min-width:0;flex:1"><h4>${esc(x.name||'')}</h4><div class="mpm">${esc(x.sub||'')}</div></div><button type="button" class="mpx" data-pop="close" title="닫기">✕</button></div>
     ${t?`<div class="mpm">${['지시','육성','통솔','능력'].map(k=>`${k} <b>${esc(rk[k]||'-')}</b>`).join(' · ')}</div>`:''}
+    ${stPane(x,P.id)}
     <div class="mpa"><span class="sp"></span><button type="button" class="btn xs" data-pop="sheet" data-id="${esc(P.id)}">시트에서 보기</button>${N().gm()&&P.at?`<button type="button" class="btn xs ghost" data-pop="unplace" data-id="${esc(P.id)}">이 장소에서 빼기</button>`:''}${P.at&&N().data('spots',P.at)?`<button type="button" class="btn xs ghost" data-pop="spot" data-id="${esc(P.at)}">📍 ${esc(N().data('spots',P.at).name||'')}</button>`:''}</div>`}
   if(P.k==='spot'){const s=N().data('spots',P.id);if(!s)return '';const k=kc(s.kind);const faces=peopleAt(P.id);
    return `<div class="mph" style="--c:${k[2]}"><i class="kdot" style="background:${k[2]}"></i>${s.num?`<b class="num">${esc(s.num)}</b>`:''}<h4>${esc(s.name||'장소')}</h4><button type="button" class="mpx" data-pop="close" title="닫기">✕</button></div>
@@ -254,6 +272,8 @@
   if(k==='ent'){U.pop={k:'ent',id,at:U.pop&&U.pop.k==='spot'?U.pop.id:''};showPop(el);return}
   if(k==='pcx'){U.pop={k:'pcx',id,at:U.pop&&U.pop.k==='spot'?U.pop.id:''};showPop(el);return}
   if(k==='sheet'){U.pop=null;killPop();return openPerson(id)}
+  if(k==='stemo'){const i=document.getElementById('mpStIn');U.stM=i?i.value:null;U.stE=U.stE===id?'':id;showPop(el);const j=document.getElementById('mpStIn');if(j){j.focus();j.setSelectionRange(j.value.length,j.value.length)}return}
+  if(k==='stsave'||k==='stclear'){await stSave(id,k==='stclear');if(k==='stclear')U.stE='';showPop(el);return}
   if(k==='unplace'){const at=U.pop&&U.pop.at;U.pop=at?{k:'spot',id:at}:null;if(at)await placeOff(id,at);showPop(el);return}
   if(k==='spot'||k==='detail'){U.sel=id;U.pop=k==='spot'?{k:'spot',id}:U.pop;N().render();if(k==='detail'){const sd=document.getElementById('mapSide');if(sd){const r=sd.getBoundingClientRect();if(r.top>innerHeight-80||r.bottom<0)sd.scrollIntoView({behavior:'smooth',block:'start'});sd.classList.add('flash');setTimeout(()=>sd.classList.remove('flash'),900)}}return}
   if(k==='party'){const m=curMap();if(!m)return;await N().patch('maps',m.id,x=>{x.party=x.party===id?'':id});return}

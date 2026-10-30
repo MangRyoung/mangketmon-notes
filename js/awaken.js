@@ -30,7 +30,7 @@
 window.NT_AWK=(()=>{
  const N=()=>window.NT;const {$,$$,esc,cssu}=window.NT;
  const MK=()=>window.NT_MAKER;
- const U={mode:'pc',sel:'',q:'',fame:0,fate:false,taken:true,reg:new Set(),cat:'',type:'',cost:'',more:0,busy:false,dbq:'',dbreg:'',open:''};
+ const U={mode:'pc',sel:'',q:'',fame:0,fate:false,taken:true,recOnly:(()=>{try{return localStorage.getItem('nt_aw_reconly')==='1'}catch(e){return false}})(),reg:new Set(),cat:'',type:'',cost:'',more:0,busy:false,dbq:'',dbreg:'',open:''};
  const DB={base:null,groups:null,p:null,err:''};
  const T2C={'노말':'#9aa','불꽃':'#f08030','물':'#6890f0','풀':'#78c850','전기':'#f8d030','얼음':'#98d8d8','격투':'#c03028','독':'#a040a0','땅':'#e0c068','비행':'#a890f0','에스퍼':'#f85888','벌레':'#a8b820','바위':'#b8a038','고스트':'#705898','드래곤':'#7038f8','악':'#705848','강철':'#b8b8d0','페어리':'#ee99ac'};
  const TYPES=Object.keys(T2C),COSTS=['지시','육성','통솔','능력'];
@@ -90,7 +90,7 @@ window.NT_AWK=(()=>{
   else s+=(3-Math.min(3,Math.abs(f-2)))*.15;   /* 격을 모르면 지명도 2 근처 (마이너 · 열화판이 기본) */
   return {s,hit,why:pk?pk.why:'',cost:pk?pk.cost||'':''}}
  function filtered(id){const r=rec(id);const tags=r.tags||[];const picks=(r.read&&r.read.picks)||[];const tk=takenMap(id);const G=GRADE[slotGrade(id)];const fame=U.fame||(G?G.max:3);
-  return all().filter(e=>{if(fame<5&&(e.f||2)>fame&&!picks.some(x=>x.id===e.id))return false;if(!U.fate&&e.x)return false;if(U.taken&&tk[e.id])return false;
+  return all().filter(e=>{if(U.recOnly&&!picks.some(x=>x.id===e.id))return false;if(fame<5&&(e.f||2)>fame&&!picks.some(x=>x.id===e.id))return false;if(!U.fate&&e.x)return false;if(U.taken&&tk[e.id])return false;
    if(U.reg.size&&!U.reg.has(e.r))return false;if(U.cat&&e.c!==U.cat)return false;if(U.type&&!(e.t||[]).includes(U.type))return false;if(U.cost&&e.w!==U.cost)return false;
    if(U.q){const q=U.q.toLowerCase();if(![e.n,e.o,e.l,e.d,e.k,e.r,e.e].join(' ').toLowerCase().includes(q))return false}return true})
    .map(e=>Object.assign({e},scoreOf(e,tags,picks,G&&G.f))).sort((a,b)=>b.s-a.s||String(a.e.n).localeCompare(String(b.e.n),'ko'))}
@@ -119,7 +119,7 @@ window.NT_AWK=(()=>{
    ${tagPicker(tags)}
    ${filterBar()}
    ${(r.cands||[]).length||r.pick?pickedBox(id,r):''}
-   <div class="awres">${extraCards(id,rd)}${res.slice(0,N0).map(x=>card(id,x,r)).join('')||'<div class="empty">조건에 맞는 후보가 없어요. 지명도 · 지역 조건을 넓혀 보세요.</div>'}</div>
+   <div class="awres">${extraCards(id,rd)}${res.slice(0,N0).map(x=>card(id,x,r)).join('')||(U.recOnly?(extraCards(id,rd)?'':'<div class="empty">아직 감우 추천이 없어요. 「📦 원전 추천 묶음」으로 받아 오거나 「감우 추천만 보기」를 꺼 주세요.</div>'):'<div class="empty">조건에 맞는 후보가 없어요. 지명도 · 지역 조건을 넓혀 보세요.</div>')}</div>
    ${res.length>N0?`<div class="row" style="justify-content:center;margin-top:10px"><button class="btn sm ghost" data-aw="more">더 보기 (${res.length-N0}명 더)</button></div>`:''}
   </div>`}
  function tagPicker(sel){const G=DB.groups||{};return `<div class="awtags card"><div class="row"><b>태그</b><small class="dim">외형 · 분위기 · 소품 — 고른 태그가 많이 겹칠수록 위로</small><span class="sp"></span>${sel.length?`<button class="linkbtn small" data-aw="tagclr">비우기</button>`:''}</div>
@@ -131,6 +131,7 @@ window.NT_AWK=(()=>{
    <select data-aw="cat"><option value="">분류 전부</option>${cats.map(c=>`<option ${U.cat===c?'selected':''}>${esc(c)}</option>`).join('')}</select>
    <select data-aw="type"><option value="">타입 전부</option>${TYPES.map(c=>`<option ${U.type===c?'selected':''}>${esc(c)}</option>`).join('')}</select>
    <select data-aw="cost"><option value="">대가 성향 전부</option>${COSTS.map(c=>`<option ${U.cost===c?'selected':''}>${esc(c)}</option>`).join('')}</select>
+   <label class="small" title="감우 결과 · 포트 읽기가 고른 후보(새 후보 · DB 추천)만 보이고, 나머지 DB 목록은 숨겨요"><input type="checkbox" data-aw="recOnly" ${U.recOnly?'checked':''}> 감우 추천만 보기 (DB 목록 숨기기)</label>
    <label class="small"><input type="checkbox" data-aw="fate" ${U.fate?'checked':''}> Fate 서번트로 나온 인물도</label>
    <label class="small"><input type="checkbox" data-aw="taken" ${U.taken?'checked':''}> 다른 PC 가 고른 후보 숨기기</label>
    <input type="search" data-aw="q" id="awQ" data-live placeholder="이름 · 은열쇠 · 설명 찾기" value="${esc(U.q)}" style="flex:1;min-width:140px">
@@ -196,6 +197,7 @@ window.NT_AWK=(()=>{
   if(ev.type!=='change')return;
   if(k==='fame'){U.fame=+t.value;return N().render()}
   if(k==='fate'||k==='taken'){U[k]=t.checked;return N().render()}
+  if(k==='recOnly'){U.recOnly=t.checked;try{localStorage.setItem('nt_aw_reconly',t.checked?'1':'0')}catch(e){}return N().render()}   /* 10-30 망령 「각성체 별 추천 설정에 감우가 추천해 준 것 외에 DB 는 숨기기」 */
   if(k==='cat'||k==='type'||k==='cost'){U[k]=t.value;return N().render()}}
 
  /* ----- 포트 읽기 (Edge Function) ----- */

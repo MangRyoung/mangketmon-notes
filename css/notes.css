@@ -393,3 +393,19 @@ table.poll td.ops{text-align:right}
 /* 10-30 일정 탭: 웹툴 게임 달력 (omcal) */
 .card.omcal{margin-bottom:12px;border-left:4px solid var(--yel,#f5d000)}
 .omcal-l{margin:6px 0 0;padding-left:18px;font-size:13px;line-height:1.7}
+/* 10-30 지도 인물 감정 · 상태 말풍선 (js/map_ui.js stBub · stPane) */
+.mnst{position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);display:flex;align-items:center;gap:4px;max-width:190px;padding:3px 9px;border-radius:12px;background:#fff;color:#1a1a1a;font-size:12px;font-weight:600;line-height:1.35;box-shadow:0 2px 6px rgba(0,0,0,.45);white-space:nowrap;pointer-events:none;z-index:4;font-family:inherit}
+.mnst::after{content:'';position:absolute;left:50%;top:100%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#fff}
+.mnst span{overflow:hidden;text-overflow:ellipsis}
+.mnst em{font-style:normal;font-size:15px;line-height:1}
+.mnst.only{padding:3px 6px}
+.mnpc.noimg .mnst{font-size:12px}
+.mpst{margin:8px 0 4px;display:flex;flex-direction:column;gap:6px}
+.mpst.ro{flex-direction:row;align-items:center;gap:6px}
+.mpst.ro em{font-style:normal;font-size:18px}
+.mpemo{display:flex;flex-wrap:wrap;gap:3px}
+.mpemo button{width:30px;height:30px;padding:0;font-size:16px;line-height:1;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.04);border-radius:6px;cursor:pointer}
+.mpemo button:hover{background:rgba(255,255,255,.12)}
+.mpemo button.on{background:#ffd12e;border-color:#ffd12e}
+.mpstin{display:flex;gap:6px;align-items:center}
+.mpstin input{flex:1;min-width:0}

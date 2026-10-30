@@ -533,3 +533,13 @@ html[data-skin="univ"] .idrkc input{font-family:'Cinzel','Noto Serif KR',serif;c
 .idscf select{min-width:0;width:100%;font-size:12px;padding-left:4px;padding-right:2px}
 .idscf input{width:100%;font-size:12px;padding-left:4px;padding-right:2px}
 @media(max-width:620px){.idtop{flex-direction:column;align-items:center}.idmain{width:100%}.idg{grid-template-columns:minmax(0,1fr)}.idrk{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* 10-30 휴대폰 연락처 카드 · 파티 초대 (js/phone.js) */
+.ntph-cardb{display:flex;align-items:center;gap:8px;min-width:180px}
+.ntph-cardb>span{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}
+.ntph-cardb small{font-size:10.5px;opacity:.75}
+.ntph-cardb b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ntph-cardb em{font-style:normal;font-size:11px;opacity:.7;white-space:nowrap}
+.ntph-cardin{outline:1px solid #c9a227}
+.ntph-head .btn.xs{flex:none}
+/* 10-30 포켓몬 별명: 별명 옆 작은 종 이름 */
+.mkr-sp{font-size:11px;font-weight:400;color:var(--ink3);margin-left:2px;white-space:nowrap}

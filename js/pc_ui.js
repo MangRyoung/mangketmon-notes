@@ -169,7 +169,7 @@
   return `<article class="mkr ${aw?'aw '+(m.awaken==='free'?'free':'sub'):''}" id="pm-${esc(m.id)}" style="--c1:${c1};--c2:${c2}">
    <div class="mkr-h"><span class="mkr-no"><small>No.</small>${String(i+1).padStart(3,'0')}</span>
     <span class="mkr-av">${monPic(m)}</span>
-    <div class="mkr-id"><div class="mkr-n"><b>${esc(m.name||'(이름 없음)')}</b>${gGlyph(m.gender)}${m.partner?'<span class="mkr-star" title="파트너">★</span>':''}</div>
+    <div class="mkr-id"><div class="mkr-n"><b>${esc(m.nick||m.name||'(이름 없음)')}</b>${m.nick?`<small class="mkr-sp" title="종 이름">${esc(m.name||'')}</small>`:''}${gGlyph(m.gender)}${m.partner?'<span class="mkr-star" title="파트너">★</span>':''}</div>
      <div class="mkr-c">${X.types.map(tchip).join('')}<span class="mkr-lv">Lv.${X.lv}</span></div>
      <div class="mkr-c">${aw?`<span class="mkr-aw">${AWL[m.awaken]}</span>`:''}${X.pride?`<span class="mkr-pr">프라이드 <b>${esc(X.pride)}</b></span>`:''}${m.tera&&m.tera!=='-'?`<span class="mkr-tg">테라 ${esc(m.tera)}</span>`:''}</div></div>
     <div class="mkr-ab"><div class="mkr-abn"><span class="mkr-k">특성</span><b>${esc(m.ability||'특성 없음')}</b></div>${abE?`<p title="${esc(abE)}">${esc(abE)}</p>`:''}${X.items.length?`<div class="mkr-it">${X.items.map(x=>`<span title="${esc(oneLn(x.e||''))}">${esc(x.n)}</span>`).join('')}</div>`:''}</div>
@@ -200,10 +200,10 @@
   const card=m=>{const X=monInfo(t,m);const free=m.awaken==='free';const u=MK().img(m);const nt=noteOf(m);
    return `<a class="awx ${free?'free':'sub'}" href="#pm-${esc(m.id)}" data-pmgo="${esc(m.id)}" style="--c1:${T2C[X.types[0]]||'#8f7b52'}">
     <span class="awx-por ${u?'':'noimg'}" style="${u?`background-image:url('${cssu(u)}')`:''}">${u?'':esc([...(m.name||'?')][0]||'?')}</span>
-    <span class="awx-b"><span class="awx-k">${free?'각성 · 대가':'각성 · 보조'}</span><b class="awx-n">${esc(m.name||'(이름 없음)')}</b>${X.origin?`<span class="awx-o">원전 ${esc(X.origin)}</span>`:''}
+    <span class="awx-b"><span class="awx-k">${free?'각성 · 대가':'각성 · 보조'}</span><b class="awx-n">${esc(m.nick||m.name||'(이름 없음)')}</b>${X.origin?`<span class="awx-o">원전 ${esc(X.origin)}</span>`:''}
      <span class="mkr-c">${X.types.map(tchip).join('')}<span class="mkr-lv">Lv.${X.lv}</span></span>
      <span class="awx-pr"><span>프라이드</span><b>${esc(X.pride||'자동')}</b>${free&&o&&o.grade&&o.grade!=='-'?`<span>대가</span><b class="awx-g">${esc(o.grade)}</b>`:''}</span>
-     ${free&&pen?`<span class="awx-pen">${pen}</span>`:''}
+     ${free&&pen&&!costL.length?`<span class="awx-pen">${pen}</span>`:''}
      ${free?(costL.length?`<span class="awx-cost">${costL.map(x=>`<span>${x}</span>`).join('')}</span>`:o?'':'<span class="awx-cost none">제작기에서 이 트레이너를 한 번 저장하면 대가가 보여요</span>'):''}
      ${nt?`<span class="awx-note" title="${esc(nt)}">${esc(nt)}</span>`:''}</span>
     <span class="awx-seal" aria-hidden="true">${free?'代價':'補助'}</span></a>`};
@@ -226,7 +226,8 @@
   const base=t.base||{};const mons={};for(const m of ms){const pots=(m.effTxt||{}).pots||[];mons[m.id]={dist:Math.round(+m.dist)||0,disc:(m.moves||[]).filter(x=>x&&typeof x==='object'&&x.half).length,once:pots.filter(x=>/【1\s*\/\s*시】/.test(x||'')).length}}
   const sum=k=>Object.values(mons).reduce((a,x)=>a+(+x[k]||0),0);const rank=['지시','육성','통솔','능력'].reduce((a,q)=>a+Math.max(0,RVQ[String((t.ranks||{})[q]||'').replace(/[+-]+$/,'')]??0),0);
   const AU={'메인':['rank',rank],'통솔점':['pride',null],'「기술 할인점」':['disc',sum('disc')],'【1/시】':['once',sum('once')],'분배레벨':['dist',sum('dist')]};
-  const items=Object.entries(base).filter(([k,v])=>v!==''&&v!=null&&typeof v!=='object').map(([n,v])=>{const a=AU[n]||['',null];return {n,max:+v||0,use:a[1],auto:a[0]}});
+  const dump=['지시','육성','통솔','능력'].filter(q=>(RVQ[String((t.ranks||{})[q]||'').replace(/[+-]+$/,'')]??0)<0).length;   /* 10-30 망령 「메인 2점 + 덤프 1점」: 덤프 하나마다 메인 보유 +1 */
+  const items=Object.entries(base).filter(([k,v])=>v!==''&&v!=null&&typeof v!=='object').map(([n,v])=>{const a=AU[n]||['',null];return {n,max:(+v||0)+(a[0]==='rank'?dump:0),use:a[1],auto:a[0]}});
   return {items,mons,sock:null,snap:false}}
  const ptLab=n=>{const s=String(n);const m=s.match(/^【(.+)】$/);if(m)return `<em class="ux-tag">${esc(m[1])}</em>`;const q=s.match(/^「(.+)」$/);return esc(q?q[1]:s)};
  const fmt=x=>String(Math.round((+x||0)*100)/100);
