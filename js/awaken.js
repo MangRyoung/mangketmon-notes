@@ -30,7 +30,7 @@
 window.NT_AWK=(()=>{
  const N=()=>window.NT;const {$,$$,esc,cssu}=window.NT;
  const MK=()=>window.NT_MAKER;
- const U={mode:'pc',sel:'',q:'',fame:0,fate:false,taken:true,recOnly:(()=>{try{return localStorage.getItem('nt_aw_reconly')==='1'}catch(e){return false}})(),reg:new Set(),cat:'',type:'',cost:'',more:0,busy:false,dbq:'',dbreg:'',open:''};
+ const U={mode:'pc',sel:'',q:'',fame:0,fate:false,taken:true,recOnly:(()=>{try{return localStorage.getItem('nt_aw_reconly')==='1'}catch(e){return false}})(),hideDone:(()=>{try{return localStorage.getItem('nt_aw_hidedone')==='1'}catch(e){return false}})(),reg:new Set(),cat:'',type:'',cost:'',more:0,busy:false,dbq:'',dbreg:'',open:''};
  const DB={base:null,groups:null,p:null,err:''};
  const T2C={'노말':'#9aa','불꽃':'#f08030','물':'#6890f0','풀':'#78c850','전기':'#f8d030','얼음':'#98d8d8','격투':'#c03028','독':'#a040a0','땅':'#e0c068','비행':'#a890f0','에스퍼':'#f85888','벌레':'#a8b820','바위':'#b8a038','고스트':'#705898','드래곤':'#7038f8','악':'#705848','강철':'#b8b8d0','페어리':'#ee99ac'};
  const TYPES=Object.keys(T2C),COSTS=['지시','육성','통솔','능력'];
@@ -383,7 +383,7 @@ window.NT_AWK=(()=>{
   for(const n of prideNs){const m=aw[n-1];const v=String((L[n-1]||{}).pride||'');if(m&&v&&String(m.pride||'')!==v)jobs.push([m.id,d=>{d.pride=v}])}
   try{for(const [id,fn] of jobs)await MK().edit('pokemon',id,fn);N().toast(jobs.length?'저장했어요 · 제작기 각성체 시트에도 넣었어요':'저장했어요')}
   catch(e){N().toast('노트엔 저장했어요 — 제작기엔 못 썼어요: '+(e.message||e))}}
- function onPref(ev){const t=ev.target;if(t.dataset.awm!=null&&t.checked)return setPref(t.dataset.awm,+t.value,{main:true});
+ function onPref(ev){const t=ev.target;if(t.dataset.awhide!=null){U.hideDone=t.checked;try{localStorage.setItem('nt_aw_hidedone',t.checked?'1':'0')}catch(e){}return N().render()}if(t.dataset.awm!=null&&t.checked)return setPref(t.dataset.awm,+t.value,{main:true});
   if(t.dataset.awp!=null)return setPref(t.dataset.awp,+t.dataset.n||1,{pride:t.value})}
  function sendCard(pc,big){const G=N().gm();const S=[1,2].map(n=>slot(sidOf(pc,n)));const all=S.every(x=>x.fixed);const tp=tport(pc);const img=portrait(pc);
   return `<div class="awe card ${big?'big':''} ${all?'fixed':''}"><div class="awebody"><div class="row"><h3>${esc(pcName(pc))}</h3><span class="sp"></span>${canSend(pc)?`<button class="btn xs" data-aw="sendedit" data-v="${esc(pc)}">✎ 각성체 고치기</button>`:''}</div>
@@ -410,9 +410,11 @@ window.NT_AWK=(()=>{
   if(x.fixed)delete L[x.n-1].fixed;else L[x.n-1].fixed={id:e.id,n:e.n,at:new Date().toISOString()};cur.awk=L;await N().put('pcp',x.pc,cur,'pl:'+x.pc);N().toast(x.fixed?'확정을 풀었어요':`「${e.n}」로 확정했어요`)}
  /* 각성체 칸 그림 눌러 바꾸기 */
  function bindSlotImgs(el){$$('[data-aimg]',el).forEach(bx=>N().bindDrop(bx,async fs=>{const sid=bx.dataset.aimg;const x=slot(sid);try{const u=await N().upload(fs[0],'photo','awk');const cur=Object.assign({},pcp(x.pc));const L=Array.isArray(cur.awk)?cur.awk.map(o=>Object.assign({},o)):[];while(L.length<x.n)L.push({});L[x.n-1].img=u;cur.awk=L;await N().put('pcp',x.pc,cur,'pl:'+x.pc)}catch(e){N().toast('올리기 실패: '+(e.message||e))}}))}
- function entry(el){const G=N().gm(),M=N().me();const L=pcs();
-  const head=`<div class="toolbar"><h2>각성체</h2><span class="note">${G?'각성체 그림(제작기 각성체 포켓몬 그림 · 또는 올린 그림)과 코멘트를 모아 감우에게 보내요 — 그림에 어울리는 원전 인물을 찾아 드려요':'내 각성체 그림과 바라는 점을 넣어 두세요 — 그 모습에 어울리는 역사 · 설화 속 원전 인물을 골라 드려요'}</span><span class="sp"></span>${G?`<button class="btn sm pri" data-aw="bundle">📦 원전 추천 묶음 · 결과 넣기</button><button class="btn sm" data-aw="imgb">🎨 그림 뽑기 묶음</button>`:''}</div>`;
-  let body;if(G)body=L.length?`<div class="awegrid">${L.map(p=>sendCard(p.id)).join('')}</div>`:'<div class="empty">PC 시트가 없어요.</div>';
+ /* 10-30 망령 「각성체 쪽에 숨김 설정도 — 다 확정 난 애들은 목록에 띄우기엔 좀 크니까」: 트레이너 포트 · 각성체 1 · 2 모두 확정이면 「다 확정」 */
+ const allDone=pc=>{const tp=tport(pc);return !!(tp&&tp.fixed)&&[1,2].every(n=>slot(sidOf(pc,n)).fixed)};
+ function entry(el){const G=N().gm(),M=N().me();const L0=pcs();const nDone=G?L0.filter(p=>allDone(p.id)).length:0;const L=G&&U.hideDone?L0.filter(p=>!allDone(p.id)):L0;
+  const head=`<div class="toolbar"><h2>각성체</h2><span class="note">${G?'각성체 그림(제작기 각성체 포켓몬 그림 · 또는 올린 그림)과 코멘트를 모아 감우에게 보내요 — 그림에 어울리는 원전 인물을 찾아 드려요':'내 각성체 그림과 바라는 점을 넣어 두세요 — 그 모습에 어울리는 역사 · 설화 속 원전 인물을 골라 드려요'}</span><span class="sp"></span>${G?`<label class="small awhide" title="트레이너 포트 · 각성체 1 · 2 를 모두 확정한 학생을 목록에서 숨겨요"><input type="checkbox" data-awhide ${U.hideDone?'checked':''}> 다 확정한 학생 숨기기${nDone?` (${nDone}명)`:''}</label><button class="btn sm pri" data-aw="bundle">📦 원전 추천 묶음 · 결과 넣기</button><button class="btn sm" data-aw="imgb">🎨 그림 뽑기 묶음</button>`:''}</div>`;
+  let body;if(G)body=L.length?`<div class="awegrid">${L.map(p=>sendCard(p.id)).join('')}</div>`:L0.length?'<div class="empty">모두 확정했어요. 「다 확정한 학생 숨기기」를 끄면 다시 보여요.</div>':'<div class="empty">PC 시트가 없어요.</div>';
   else if(M&&N().data('pc',M))body=`<div class="awegrid one">${sendCard(M,true)}</div>`;
   else body='<div class="empty">PL 좌석으로 들어오면 내 PC 의 각성체 그림 · 코멘트를 넣을 수 있어요.</div>';
   el.innerHTML=head+body;el.addEventListener('click',onClick);el.addEventListener('change',onPref);bindSlotImgs(el);if(G&&!DB.base)load();if(MK()&&!MK().M.at)MK().load().then(()=>N().render())}
