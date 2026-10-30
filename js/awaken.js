@@ -14,6 +14,7 @@
    10-29 망령 「프라이드 C · B · A 는 파워 차이만큼 격 차이」「대가도 목록 안에서 추천」「후보 3~5개」「확정 버튼으로 보내기 목록에서 빼고 테두리」:
      격 = 각성체 프라이드(제작기 포켓몬 pride, 없으면 칸에서 고름) → GRADE. 추천 picks[].cost = 룰북 「각성체와 대가」 표의 분류 · 항목.
      확정 = pcp.awk[n-1].fixed {id,n,at} (PL 도 보인다) — 묶음에서 빠지고 칸 테두리가 바뀐다. 추천 기록 = awk/<sid> (GM). 「⇪ 제작기 각성체로」 = 그 칸의 제작기 각성체 시트 메모에 원전을 넣는다(없으면 새로 만든다).
+   10-30 망령 「DB 후보 말고 새 후보로 찾게. DB는 한계가 있으니까」: 묶음 글이 DB 밖 새 후보(extra) 3~5명을 중심으로, DB 후보(picks)는 0~2명만 달라고 한다. extra 는 6명까지 받는다.
    10-30 망령 「묶음과 결과 넣기를 따로 할 필요가?」「코멘트도 눌러서 고치게」「고치기 창에서 프라이드 · 대가(종류까지) 지정 → 배역 뽑는 데 참고」「학생증의 각성체 줄은 파티 서머리 각성체 아랫줄로」:
      묶음 창 아래에 「📋 감우 결과 넣기」. 각성체 탭 코멘트를 누르면 그 칸 코멘트 창. 고치기 창(sendBox) = 칸마다 메인 (대가) · 프라이드 · 대가 분류(pcp.awk[n-1].cost).
      대가 분류는 묶음 글 · 그림 읽기(gradeLine)에 「GM 이 정한 대가」로 들어간다. idCard 는 pc_ui 파티 서머리 각성체 카드 아래에서 부른다.
@@ -210,7 +211,7 @@ window.NT_AWK=(()=>{
  /* 읽은 결과(함수 · 붙여 넣기 같은 꼴): {sum, tags[], picks[{id|n, why}], extra[{n,o,r,e,c,f,l,d,k,t,w,g,why}]} */
  async function applyRead(id,j,by){if(!id)return;const V=new Set(vocab());const tags=(j.tags||[]).filter(t=>V.has(t));const A=all();
   const picks=(j.picks||[]).map(p=>{const e=p.id&&byId(p.id)||A.find(x=>x.n===p.n);return e?{id:e.id,why:String(p.why||''),cost:String(p.cost||'')}:null}).filter(Boolean).slice(0,8);
-  const extra=(j.extra||[]).filter(e=>e&&e.n).slice(0,5).map(e=>({n:String(e.n),o:String(e.o||''),r:String(e.r||''),e:String(e.e||''),c:String(e.c||''),f:Math.max(1,Math.min(5,+e.f||2)),l:String(e.l||''),d:String(e.d||''),k:String(e.k||''),t:(e.t||[]).filter(t=>T2C[t]).slice(0,2),w:COSTS.includes(e.w)?e.w:'',g:(e.g||[]).filter(t=>V.has(t)),why:String(e.why||''),cost:String(e.cost||'')}));
+  const extra=(j.extra||[]).filter(e=>e&&e.n).slice(0,6).map(e=>({n:String(e.n),o:String(e.o||''),r:String(e.r||''),e:String(e.e||''),c:String(e.c||''),f:Math.max(1,Math.min(5,+e.f||2)),l:String(e.l||''),d:String(e.d||''),k:String(e.k||''),t:(e.t||[]).filter(t=>T2C[t]).slice(0,2),w:COSTS.includes(e.w)?e.w:'',g:(e.g||[]).filter(t=>V.has(t)),why:String(e.why||''),cost:String(e.cost||'')}));
   await save(id,r=>{r.read={by,at:new Date().toISOString(),sum:String(j.sum||''),tags,picks,extra};r.tags=[...new Set((r.tags||[]).concat(tags))]})}
  function pasteBox(id){const md=N().openModal(`<div class="mhead"><h2>📋 ${id?'감우 결과 넣기 · '+esc(subName(id)):'묶음 결과 넣기 (여러 각성체)'}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
    <p class="small" style="margin-top:0">대화에서 각성체 그림을 보여 주면 감우가 이 꼴의 JSON 을 드려요. 그대로 붙여 넣으면 태그 · 후보가 채워져요.</p>
@@ -233,10 +234,11 @@ window.NT_AWK=(()=>{
    c.fillStyle='#f4f0e6';c.fillRect(x,y+H,W,LB);c.fillStyle='#111';c.font='bold 26px "IBM Plex Sans KR",sans-serif';c.textBaseline='middle';c.fillText((p.lab||(p.t?`T${p.k}. ${pcName(p.id)} (트레이너)`:`${p.k||i+1}. ${subName(p.id)}`)).slice(0,26),x+14,y+H+LB/2)}
   let url='';try{url=cv.toDataURL('image/png')}catch(e){url=''}return {cv,url,bad}}
  function bundleText(L,T){T=T||[];const cfg=naiCfg();const out=['[각성체 원전 추천 부탁 — 미사그]','그림 한 장에 번호 · 이름을 붙인 각성체 그림이 있어요. 그림마다 그 모습에 어울리는 역사 · 설화 속 원전 인물(마이너하거나 열화된 모습)을 3~5명씩 골라 주세요.',
+  '후보는 각성체 DB 에 갇히지 말고 DB 밖에서 새로 찾아 주세요(extra 3~5명이 중심). DB 후보(picks)는 그림에 정말 잘 맞을 때만 0~2명.',
   '규칙: 각성체 프라이드가 원전의 격을 정해요 — 파워 차이만큼 격 차이. C · C+ = 격 낮음(이름만 남은 사람 · 민담 조연, 지명도 1~2) · B · B+ = 격 중간(한 고장 전설의 주인공, 지명도 2~3) · A = 격 높음(한 나라에 알려진 인물 · 신화 조연급, 유명 인물은 열화된 한 시절, 지명도 3~4). 각성 (보조)는 C 권장 · 대가 없음.',
   '후보마다 그 인물에 어울리는 대가를 아래 목록 안에서 하나 추천해 주세요 (대가 없음인 칸은 "없음").',COSTLIST,''];
   L.forEach((p,i)=>{const r=rec(p.id);const x=slot(p.id);out.push(`${i+1}. ${subName(p.id)} (pc: ${x.pc}, slot: ${x.n})`);out.push('   '+gradeLine(p.id));if(x.note)out.push('   코멘트: '+x.note.replace(/\n/g,' / '));if((r.tags||[]).length)out.push('   고른 태그: '+r.tags.join(', '));const pk=r.pick&&byId(r.pick);if(pk)out.push('   이미 정함: '+pk.n);out.push('')});
-  out.push('돌려받을 꼴: JSON 배열 하나. [{"pc":"<pc id>","slot":<1|2>,"name":"<이름>","sum":"…","tags":[…],"picks":[{"id":"<DB id>","n":"<이름>","why":"…","cost":"<분류 · 항목>"} 3~5개],"extra":[DB 밖 인물, 같은 꼴 + cost]}]');
+  out.push('돌려받을 꼴: JSON 배열 하나. [{"pc":"<pc id>","slot":<1|2>,"name":"<이름>","sum":"…","tags":[…],"extra":[{"n":"<이름>","o":"<원어 · 한자>","r":"<지역>","e":"<시대>","c":"<분류>","f":<지명도 1~5>,"l":"<누구인지 한 문장>","d":"<각성체로 올 때의 열화된 모습>","k":"<은열쇠 물건>","t":["<포켓몬 타입>"],"why":"…","cost":"<분류 · 항목>"} DB 밖 새 후보 3~5명],"picks":[{"id":"<DB id>","n":"<이름>","why":"…","cost":"<분류 · 항목>"} DB 후보 0~2명]}]');
   out.push('(받은 것은 세션 노트 시트 > 각성체 > 「📦 원전 추천 묶음」 창 아래 「📋 감우 결과 넣기」에 그대로 붙여 넣어요)');return out.join('\n')}
  async function bundle(){await MK().load();const P0=subs();if(!pcs().length)return N().toast('PC 가 없어요');const P=P0.filter(p=>!slot(p.id).fixed);const nFix=P0.length-P.length;const TP=[],tsel=new Set();const sel=new Set(P.filter(p=>subImg(p.id)&&!rec(p.id).pick).map(p=>p.id));if(!sel.size)P.forEach(p=>subImg(p.id)&&sel.add(p.id));
   const md=N().openModal(`<div class="mhead"><h2>📦 원전 추천 묶음</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
