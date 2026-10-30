@@ -51,6 +51,8 @@ window.NT_STORE=(()=>{
   async makerSince(kind,since){const out=[];let from=0;for(;;){let q=sb().from(cfg().makerTable||'docs').select('id,data,updated_at').eq('kind',kind);if(since)q=q.gt('updated_at',since);const r=await q.order('updated_at').order('id').range(from,from+999);if(r.error)throw err(r.error);const rows=r.data||[];out.push(...rows);if(rows.length<1000)break;from+=rows.length}return out},
   async makerIds(kind){const out=[];let from=0;for(;;){const r=await sb().from(cfg().makerTable||'docs').select('id').eq('kind',kind).order('id').range(from,from+999);if(r.error)throw err(r.error);const rows=r.data||[];out.push(...rows.map(x=>x.id));if(rows.length<1000)break;from+=rows.length}return out},
   async makerGet(kind,id){const r=await sb().from(cfg().makerTable||'docs').select('id,data').eq('kind',kind).eq('id',id).maybeSingle();if(r.error)throw err(r.error);return r.data||null},
+  /* 10-30 용량: 문서 한 장의 수정 시각만 (사본이 최신인지 가볍게 확인) */
+  async makerStamp(kind,id){const r=await sb().from(cfg().makerTable||'docs').select('updated_at').eq('kind',kind).eq('id',id).maybeSingle();if(r.error)throw err(r.error);return (r.data&&r.data.updated_at)||''},
   async makerPut(kind,id,data){const r=await sb().from(cfg().makerTable||'docs').upsert({kind,id,data},{onConflict:'kind,id'});if(r.error)throw err(r.error);return true},
   /* 10-29 망령: PC 시트 휴대폰 — 이어 둔 웹툴 방(om_*)의 방 코드(파티) · 문자를 웹툴과 같은 표 · 같은 함수로 읽고 쓴다.
      신분은 같은 주소의 웹툴이 이 브라우저에 남긴 계정 · GM 비밀값 · 좌석 비밀값으로 om_whoami 에 묻는다 */

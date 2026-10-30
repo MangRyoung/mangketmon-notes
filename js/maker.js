@@ -28,9 +28,15 @@ window.NT_MAKER=(()=>{
     특성 · 소지품 · 포텐셜 효과 글은 포켓몬 문서의 effTxt(제작기가 저장할 때 같이 적는 사본)를 쓴다 */
  const DBX={p:null,moves:null,lvl:[],items:new Map(),cards:new Map(),abil:new Map(),pots:new Map()};
  /* 10-29 망령: 소지품(items, 이름 = 1번 칸) · 카드(cards, 제작기 「카드 DB」 — 공유 DB 수정 행에만 있다)도 같이 읽는다. 대학 시트의 소지품 고치기 · 덱에서 쓴다 */
+ /* 10-30 망령 「용량 줄이기」: 제작기 DB 수정분(dbedit)도 이 브라우저에 두고 바뀐 것만 (트레이너 · 포켓몬과 같은 방식, 7일마다 전부) */
+ async function dbedit(){const DB=N().DBS();if(!DB.makerSince||!DB.makerIds)return DB.makerDocs('dbedit');const K='nt_mk_dbedit';let c=null;try{c=JSON.parse(localStorage.getItem(K)||'null')}catch(e){}if(!c||c.v!==1||Date.now()-c.t>7*864e5)c={v:1,t:Date.now(),since:'',docs:{}};
+  const had=Object.keys(c.docs).length;const [ids,rows]=await Promise.all([had?DB.makerIds('dbedit'):null,DB.makerSince('dbedit',had?c.since:null)]);
+  for(const r of rows){c.docs[r.id]={id:r.id,data:r.data};if(!c.since||r.updated_at>c.since)c.since=r.updated_at}
+  if(ids){const have=new Set(ids.concat(rows.map(r=>r.id)));for(const id of Object.keys(c.docs))if(!have.has(id))delete c.docs[id]}
+  try{const s=JSON.stringify(c);if(s.length<2e6)localStorage.setItem(K,s)}catch(e){}return Object.values(c.docs)}
  function db(){if(DBX.p)return DBX.p;DBX.p=new Promise(res=>{const fin=()=>{const D=window.MKM_DB||{};const mv=new Map(),it=new Map(),cd=new Map(),ab=new Map(),pt=new Map();for(const r of D.abil||[])if(r&&r[1])ab.set(r[1],r);for(const r of D.pots||[])if(r&&r[1])pt.set(r[1],r);for(const r of D.moves||[])if(r&&r[2])mv.set(r[2],r);for(const r of D.items||[])if(r&&r[1])it.set(r[1],r);for(const r of D.cards||[])if(r&&r[1])cd.set(r[1],r);DBX.lvl=D.lvl||[];
     const MP={moves:mv,items:it,cards:cd,abil:ab,pots:pt};
-    N().DBS().makerDocs('dbedit').then(L=>{for(const x of L||[]){const d=x.data||{};const m=MP[d.kind];if(!m)continue;if(d.deleted)m.delete(d.key);else if(Array.isArray(d.row))m.set(d.key,d.row)}}).catch(()=>{}).finally(()=>{DBX.moves=mv;DBX.items=it;DBX.cards=cd;DBX.abil=ab;DBX.pots=pt;res(DBX)})};
+    dbedit().then(L=>{for(const x of L||[]){const d=x.data||{};const m=MP[d.kind];if(!m)continue;if(d.deleted)m.delete(d.key);else if(Array.isArray(d.row))m.set(d.key,d.row)}}).catch(()=>{}).finally(()=>{DBX.moves=mv;DBX.items=it;DBX.cards=cd;DBX.abil=ab;DBX.pots=pt;res(DBX)})};
    if(window.MKM_DB)return fin();const sc=document.createElement('script');sc.src=String((window.NT_CONFIG||{}).makerUrl||'').replace(/\/?$/,'/')+'data/db.js';sc.onload=fin;sc.onerror=()=>{DBX.moves=new Map();res(DBX)};document.head.appendChild(sc)});return DBX.p}
  const item=n=>(n&&DBX.items.get(n))||null;const card=n=>(n&&DBX.cards.get(n))||null;
  /* 10-29 망령: 노트에서 포켓몬 고치기 — 특성(abil, 이름 = 1번 칸) · 포텐셜(pots, 이름 = 1번 칸) · 기술 목록 */

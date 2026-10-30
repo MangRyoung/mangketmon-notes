@@ -5,12 +5,16 @@
 "use strict";
 window.NT_RB=(()=>{
  const N=()=>window.NT;
- const R={book:null,at:0,p:null,src:''};
+ const R={book:null,at:0,p:null,src:''};const RBC='nt_rb_cache';
  const url=()=>String((window.NT_CONFIG||{}).makerUrl||'').replace(/\/?$/,'/')+'rulebook.html';
  const link=(ch)=>url()+(ch?'#ch-'+encodeURIComponent(ch):'');
  async function load(force){if(R.p)return R.p;if(!force&&R.book&&Date.now()-R.at<600000)return R.book;
   R.p=(async()=>{let b=null;
-   try{const d=N().DBS().makerGet&&await N().DBS().makerGet('rulebook','main');const v=d&&(d.data&&d.data.data||d.data);if(v&&Array.isArray(v.chapters)&&v.chapters.length){b=v;R.src='db'}}catch(e){}
+   /* 10-30 망령 「용량 줄이기」: 룰북(약 100KB)을 이 브라우저에 두고, 공유 DB 의 수정 시각이 같으면 다시 받지 않는다 */
+   try{const DB=N().DBS();let c=null;try{c=JSON.parse(localStorage.getItem(RBC)||'null')}catch(e){}
+    const st=DB.makerStamp?await DB.makerStamp('rulebook','main'):'';
+    if(st&&c&&c.at===st&&c.book&&Array.isArray(c.book.chapters)){b=c.book;R.src='db'}
+    else{const d=DB.makerGet&&await DB.makerGet('rulebook','main');const v=d&&(d.data&&d.data.data||d.data);if(v&&Array.isArray(v.chapters)&&v.chapters.length){b=v;R.src='db';if(st)try{localStorage.setItem(RBC,JSON.stringify({at:st,book:v}))}catch(e){}}}}catch(e){}
    if(!b){try{const t=await (await fetch(url(),{cache:'no-cache'})).text();const m=t.match(/<script type="application\/json" id="rb-data">([\s\S]*?)<\/script>/);if(m){b=JSON.parse(m[1]);R.src='html'}}catch(e){console.warn('rulebook',e)}}
    if(b){R.book=b;R.at=Date.now();R.fail=false}else R.fail=true;return R.book})().finally(()=>{R.p=null});return R.p}
  const chapters=()=>(R.book&&R.book.chapters)||[];
