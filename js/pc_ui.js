@@ -17,12 +17,22 @@
  const foldKey=()=>'nt-pcfold:'+(N().ST.camp||'')+':'+K();
  function foldGet(){try{const o=JSON.parse(localStorage.getItem(foldKey())||'{}');return o&&typeof o==='object'?o:{}}catch(e){return {}}}
  function foldSet(o){try{localStorage.setItem(foldKey(),JSON.stringify(o))}catch(e){}}
- const groups=L=>clsL().map(([c,n,col])=>({c,n,col,L:L.filter(p=>clsOf(p)===c)})).filter(g=>g.L.length);
- function folds(L){const f=foldGet();
-  return `<div class="pcfolds">${groups(L).map(g=>{const off=!!f[g.c];return `<section class="pcfold ${off?'off':''}" data-cls="${g.c}" style="--c:${g.col}"><button type="button" class="pcfh" data-pfold="${g.c}" aria-expanded="${off?'false':'true'}"><span class="caret">▾</span><i class="kdot"></i><b>${esc(g.n)}</b><small>${g.L.length}명</small></button>${off?'':`<div class="pcgrid" data-cls="${g.c}">${g.L.map(p=>card(p)).join('')}</div>`}</section>`}).join('')}</div>`}
+ /* 10-30 망령 「객원 폴더는 지시 · 육성 · 통솔 · 능력으로 세분화」: 객원 = 자질 칸 넷으로 한 번 더 나눈다.
+    칸 = 시트 문서의 gsub (GM 이 고른 것), 비어 있으면 제작기 자질 중 가장 높은 것 (같으면 지시 → 육성 → 통솔 → 능력 순). 자질이 없으면 「미정」 */
+ const QS=['지시','육성','통솔','능력'];
+ const rkScore=v=>{const m=/^\s*(AA|A|B|C|D)\s*([+-]?)/i.exec(String(v||''));if(!m)return -1;return ({D:0,C:1,B:2,A:3,AA:4})[m[1].toUpperCase()]+(m[2]==='+'?.3:m[2]==='-'?-.3:0)};
+ function gsubAuto(p){const t=MK()&&MK().trainer(p.id);const rk=(t&&t.ranks)||{};let best='',bv=-1;for(const q of QS){const v=rkScore(rk[q]);if(v>bv){bv=v;best=q}}return best}
+ const gsubOf=p=>QS.includes(p&&p.gsub)?p.gsub:gsubAuto(p);
+ const groups=L=>clsL().map(([c,n,col])=>{const g={c,n,col,L:L.filter(p=>clsOf(p)===c)};if(c==='guest')g.subs=QS.concat(['']).map(q=>({q,L:g.L.filter(p=>gsubOf(p)===q)})).filter(x=>x.L.length);return g}).filter(g=>g.L.length);
+ /* 화면에 보이는 순서 그대로의 id 줄 (끌어서 순서 바꿀 때 다른 칸은 그대로 두려고) */
+ const binsOf=L=>groups(L).flatMap(g=>g.subs?g.subs.map(x=>({key:'guest:'+x.q,L:x.L})):[{key:g.c,L:g.L}]);
+ function folds(L){const f=foldGet();const grid=(key,L)=>`<div class="pcgrid" data-bin="${esc(key)}">${L.map(p=>card(p)).join('')}</div>`;
+  return `<div class="pcfolds">${groups(L).map(g=>{const off=!!f[g.c];return `<section class="pcfold ${off?'off':''}" data-cls="${g.c}" style="--c:${g.col}"><button type="button" class="pcfh" data-pfold="${g.c}" aria-expanded="${off?'false':'true'}"><span class="caret">▾</span><i class="kdot"></i><b>${esc(g.n)}</b><small>${g.L.length}명</small></button>${off?'':g.subs?`<div class="pcsubs">${g.subs.map(x=>{const k='guest:'+x.q;const so=!!f[k];return `<section class="pcfold pcsub ${so?'off':''}" data-q="${esc(x.q)}"><button type="button" class="pcfh" data-pfold="${esc(k)}" aria-expanded="${so?'false':'true'}"><span class="caret">▾</span><b>${esc(x.q||'미정')}</b><small>${x.L.length}명</small></button>${so?'':grid(k,x.L)}</section>`}).join('')}</div>`:grid(g.c,g.L)}</section>`}).join('')}</div>`}
+ async function setGsub(id,q){const KD=K();if(!N().gm()||!N().doc(KD,id))return;const p=N().data(KD,id)||{};if((p.gsub||'')===q)return;
+  await N().patch(KD,id,d=>{if(q)d.gsub=q;else delete d.gsub});N().toast('객원 칸: '+(q||'자동 ('+(gsubAuto(p)||'미정')+')'))}
  async function setCls(id,c){const KD=K();if(!N().gm()||!N().doc(KD,id))return;const p=N().data(KD,id)||{};if(clsOf(p)===c)return;const base=KD==='npc'?'npc':'pc';
   await N().patch(KD,id,d=>{if(c===base)delete d.cls;else d.cls=c});N().toast('분류: '+clsName(c))}
- const clsPick=(id,p)=>N().gm()?`<select class="pccls" data-pcls="${esc(id)}" title="시트 분류 — 폴더 묶기 · 지도 · 관계도 거르기에 써요">${clsL().map(([c,n])=>`<option value="${c}" ${clsOf(p)===c?'selected':''}>${esc(n)}</option>`).join('')}</select>`:`<span class="visb pccl" style="--c:${(clsL().find(x=>x[0]===clsOf(p))||clsL()[0])[2]}">${esc(clsName(clsOf(p)))}</span>`;
+ const clsPick=(id,p0)=>{const p=Object.assign({id},p0);return N().gm()?`<select class="pccls" data-pcls="${esc(id)}" title="시트 분류 — 폴더 묶기 · 지도 · 관계도 거르기에 써요">${clsL().map(([c,n])=>`<option value="${c}" ${clsOf(p)===c?'selected':''}>${esc(n)}</option>`).join('')}</select>${clsOf(p)==='guest'?`<select class="pccls" data-pgsub="${esc(id)}" title="객원 칸 — 자동은 제작기 자질 중 가장 높은 것">${['',...QS].map(q=>`<option value="${q}" ${(QS.includes(p.gsub)?p.gsub:'')===q?'selected':''}>${q?esc(q):'자동 ('+esc(gsubAuto(p)||'미정')+')'}</option>`).join('')}</select>`:''}`:`<span class="visb pccl" style="--c:${(clsL().find(x=>x[0]===clsOf(p))||clsL()[0])[2]}">${esc(clsName(clsOf(p)))}${clsOf(p)==='guest'&&gsubOf(p)?' · '+esc(gsubOf(p)):''}</span>`};
  const pcs=()=>N().list(K()).sort((a,b)=>(a.order||0)-(b.order||0));
  const PUB_PC=[['bg','배경 · 설정'],['goal','목표 · 동기'],['bond','인간관계'],['style','말투 · 겉모습'],['note','메모']];
  /* 10-26 망령: 공개 칸 = 제작기 트레이너 프로필 「상세」(t.bio=[{k,v}]) 와 같은 칸. 제작기 트레이너가 있으면 거기에 바로 읽고 쓴다.
@@ -57,9 +67,9 @@
    const b=e.target.closest('[data-p]');if(b)act(b.dataset.p,b)});
   /* 10-26 망령: 카드 끌어서 순서 바꾸기(GM) · 우클릭 · 길게 누르기 메뉴 */
   /* 10-30: 폴더마다 끌어서 순서 바꾸기 — 다른 폴더 순서는 그대로 두고 전체 순서를 다시 매긴다 */
-  if(G)$$('.pcgrid',el).forEach(grid=>N().sortable(grid,'.pccard',ids=>{const all=[];for(const g of groups(pcs()))all.push(...(g.c===grid.dataset.cls?ids:g.L.map(p=>p.id)));N().reorder(K(),all)}));
+  if(G)$$('.pcgrid',el).forEach(grid=>N().sortable(grid,'.pccard',ids=>{const all=[];for(const b of binsOf(pcs()))all.push(...(b.key===grid.dataset.bin?ids:b.L.map(p=>p.id)));N().reorder(K(),all)}));
   const fw=$('.pcfolds',el);if(fw)N().bindCtx(fw,'.pccard',c=>ctxItems(c.dataset.id));
-  el.addEventListener('change',e=>{const s=e.target.closest('[data-pcls]');if(s)setCls(s.dataset.pcls,s.value)})}
+  el.addEventListener('change',e=>{const s=e.target.closest('[data-pcls]');if(s)return setCls(s.dataset.pcls,s.value);const q=e.target.closest('[data-pgsub]');if(q)setGsub(q.dataset.pgsub,q.value)})}
  /* 10-29 망령: 시트 → 웹툴. 이어 둔 웹툴 방을 #r=<방>&add=<트레이너 id,…> 로 열면, 웹툴이 (GM 이면) 제작기에서 그 트레이너를 방 명단으로 가져온다 */
  const omRoom=()=>(((N().ST.campInfo||{}).data||{}).om||{}).room||'';
  const omHref=ids=>window.NT_LINK?NT_LINK.omUrl(omRoom())+'&add='+ids.map(encodeURIComponent).join(','):'#';
@@ -75,7 +85,8 @@
   N().toast(`${miss.length}명을 넣었어요`);N().render()}
  function ctxItems(id){const KD=K();const d=N().doc(KD,id);if(!d)return null;const p=d.data;const G=N().gm();const cur=d.vis||'pub';const it=[];
   if(G){[['pub','👥 모두에게'],['gm','🔒 GM만']].forEach(([v,l])=>it.push({t:l+(v===cur?' ✓':''),on:async()=>{if(v===cur)return;await N().put(KD,id,N().clone(p),v);N().toast('공개 범위: '+N().visLabel(v))}}));it.push('-');
-   clsL().forEach(([c,n])=>it.push({t:'분류: '+n+(clsOf(p)===c?' ✓':''),on:()=>setCls(id,c)}));it.push('-')}
+   clsL().forEach(([c,n])=>it.push({t:'분류: '+n+(clsOf(p)===c?' ✓':''),on:()=>setCls(id,c)}));it.push('-');
+   if(clsOf(p)==='guest'){const cur=QS.includes(p.gsub)?p.gsub:'';['',...QS].forEach(q=>it.push({t:'객원 칸: '+(q||'자동 ('+(gsubAuto(Object.assign({id},p))||'미정')+')')+(cur===q?' ✓':''),on:()=>setGsub(id,q)}));it.push('-')}}
   if(canEditPc(id))it.push({t:'✎ 기본 칸 고치기',on:()=>act('edit',{dataset:{id}})});
   if(window.NT_FAV)it.push({t:(NT_FAV.has(KD,id)?'★ 즐겨찾기에서 빼기':'☆ 즐겨찾기'),on:()=>NT_FAV.toggle(KD,id,p.name||id)});
   if(G){it.push('-');it.push({t:'🗑 빼기',danger:true,on:()=>act('del',{dataset:{id}})})}
@@ -156,7 +167,7 @@
    ${mv.length?`<div class="pmmv">${mv.map(x=>{const r=MK().move(x.name);return `<div class="pmm" title="${esc(r?brN(r[13]||''):'')}">${r?tchip(r[5]):''}<b>${esc(x.name)}</b>${x.half?'<small class="pmb">할인</small>':''}<span class="sp"></span><small class="dim">${r?`${esc(r[6]||'')}${+r[7]?` · ${esc(r[7])}`:''}${r[8]&&r[8]!=='0'&&r[8]!=='-'?` · ${esc(r[8])}%`:''}`:''}</small></div>`}).join('')}</div>`:''}
    ${ex.map(x=>line('전용',x.name,x.eff)).join('')}
    ${pots.length?`<details class="pmpot"><summary>포텐셜 ${pots.length} <span class="dim small">${pots.map(x=>esc(x.n)).join(' · ')}</span></summary>${pots.map(x=>`<div class="pml"><span class="pmk">${esc(kindOf(x.i)||'포텐셜')}</span><b>『${esc(x.n)}』</b>${effOf(x.i)?`<div class="pme pre">${esc(effOf(x.i))}</div>`:''}</div>`).join('')}</details>`:''}
-   ${m.memo?`<details class="pmpot"><summary>메모</summary><div class="pme pre">${esc(m.memo)}</div></details>`:''}
+   ${m.memo?`<details class="pmpot"><summary>메모</summary>${memoHtml(m.memo)}</details>`:''}
   </div>`}
  /* ---------- 10-30 망령: 미사그 — 「파티 4체 외에 강조될 각성체 2체, 서머리 분리해서 멋있게」 「파티 UI 도 제작기 쪽 따라가자」 ----------
     파티 = 제작기 포켓몬 줄과 같은 모양(No. · 볼 · 타입 · Lv · 특성 · 육각형 · 종족치 등급). 「PL 포켓몬 n/4」 · 「각성체 n/2」 두 묶음, 각성체 줄은 붉은 띠.
@@ -197,7 +208,7 @@
     ${ED&&t.id?`<div class="mkr-act">${window.NT_MONED?`<button type="button" class="btn xs" data-moned="${esc(m.id)}" data-id="${esc(t.id)}" title="제작기 화면 그대로 이 포켓몬 한 장을 고쳐요">✎ 고치기</button>`:''}<button type="button" class="btn xs ghost" data-ux="item" data-id="${esc(t.id)}" data-pid="${esc(m.id)}">소지품</button></div>`:''}</div>
    ${X.mv.length||X.pots.length||X.ex.length||m.memo?`<details class="mkr-more"><summary>${[X.mv.length?'기술 '+X.mv.length:'',X.pots.length?'포텐셜 '+X.pots.length:'',X.ex.length?'전용 '+X.ex.length:'',m.memo?'메모':''].filter(Boolean).join(' · ')}</summary><div class="mkr-mb">
     ${X.mv.length?`<div class="pmmv">${X.mv.map(x=>{const r=MK().move(x.name);return `<div class="pmm" title="${esc(r?brN(r[13]||''):'')}">${r?tchip(r[5]):''}<b>${esc(x.name)}</b>${x.half?'<small class="pmb">할인</small>':''}<span class="sp"></span><small class="dim">${r?`${esc(r[6]||'')}${+r[7]?` · ${esc(r[7])}`:''}${r[8]&&r[8]!=='0'&&r[8]!=='-'?` · ${esc(r[8])}%`:''}`:''}</small></div>`}).join('')}</div>`:''}
-    ${X.ex.map(x=>line('전용',x.name,x.eff)).join('')}${X.pots.map(x=>line(esc(kindOf(x.i)||'포텐셜'),'『'+x.n+'』',effOf(x.i))).join('')}${m.memo?`<div class="pme pre mkr-memo">${esc(m.memo)}</div>`:''}</div></details>`:''}
+    ${X.ex.map(x=>line('전용',x.name,x.eff)).join('')}${X.pots.map(x=>line(esc(kindOf(x.i)||'포텐셜'),'『'+x.n+'』',effOf(x.i))).join('')}${m.memo?memoHtml(m.memo,'mkr-memo'):''}</div></details>`:''}
   </article>`}
  function univParty(id,t,ms,E){if(!t)return '';if(!MK().dbReady())MK().db().then(()=>N().render());const pl=ms.filter(m=>!isAw(m)),aw=ms.filter(isAw).sort((a,b)=>(a.awaken==='free'?0:1)-(b.awaken==='free'?0:1));const G=N().gm();
   const add=(k,n)=>E&&(k!=='aw'||G)&&n?`<button type="button" class="btn xs" data-monadd="${k}" data-id="${esc(id)}" title="제작기에 새 시트를 만들어 바로 열어요">＋ ${k==='aw'?'각성체':'PL 포켓몬'}</button>`:'';
@@ -234,6 +245,20 @@
  window.NT_PC={select(k,id){U.mode=k==='npc'?'npc':'pc';U.sel=id;N().go(U.mode);setTimeout(()=>{const sh=$('.pcsheet');if(sh)sh.scrollIntoView({behavior:'smooth',block:'start'})},60)}};   /* 미리보기 · 점검용 */
  function monRow(m){const mv=(m.moves||[]).map(x=>typeof x==='string'?x:(x&&(x.name||x.n))||'').filter(Boolean);const pots=(m.pots||[]).filter(Boolean);
   return `<div class="monrow"><i style="${MK().img(m)?`background-image:url('${cssu(MK().img(m))}')`:''}"></i><div class="mb"><div class="row" style="gap:6px"><b>${esc(m.name||'')}</b>${tchip(m.t1)}${tchip(m.t2)}${m.tera&&m.tera!=='-'?`<small class="dim">테라 ${esc(m.tera)}</small>`:''}</div><div class="small">${m.ability?'특성 '+esc(m.ability):''}${m.item?' · 소지품 '+esc(m.item):''}${m.dist?' · 분배 '+esc(m.dist):''}</div>${mv.length?`<div class="small dim">기술 · ${mv.map(esc).join(' · ')}</div>`:''}${pots.length?`<div class="small dim">포텐셜 · ${pots.map(esc).join(' · ')}</div>`:''}${m.memo?`<div class="small pre" style="margin-top:3px">${esc(m.memo)}</div>`:''}</div></div>`}
+ /* 10-30 망령 「여기 뜨는 각성체 원전 좀 꾸며봐 — 투박하게」: 포켓몬 메모의 【각성체 원전】 덩어리(awaken.js memoOf 가 쓰는 꼴)를 카드로.
+    첫 줄 = 이름 (원어) · 지역 · 분류…, 다음 줄들 = 「항목: 내용」(누구 · 열화 · 은열쇠 · 대가 성향 · ○○와의 연 …). 빈 줄에서 끝나고, 나머지 메모는 예전처럼 글 그대로 */
+ function memoHtml(memo,cls){const s=String(memo||'');const m=/【각성체 원전】[ \t]*([^\n]*)((?:\n(?!\s*\n)[^\n]*)*)/.exec(s);const plain=t=>t.trim()?`<div class="pme pre ${cls||''}">${esc(t.trim())}</div>`:'';
+  if(!m)return plain(s);const rest=(s.slice(0,m.index)+'\n'+s.slice(m.index+m[0].length)).replace(/\n{3,}/g,'\n\n');
+  const head=m[1].split(/\s+·\s+/).map(x=>x.trim()).filter(Boolean);const nm=head.shift()||'';const nx=/^(.*?)\s*[(（]([^)）]*)[)）]\s*$/.exec(nm);const name=nx?nx[1]:nm,orig=nx?nx[2]:'';
+  const rows=m[2].split('\n').map(x=>x.trim()).filter(Boolean).map(x=>{const k=/^([^:：]{1,14})[:：]\s*(.*)$/.exec(x);return k?{k:k[1].trim(),v:k[2].trim()}:{k:'',v:x}});
+  const bond=rows.filter(r=>/(와|과)의 연$|^연$|인연$/.test(r.k)),kv=rows.filter(r=>!bond.includes(r));
+  const ICO={'누구':'📜','열화':'🕯','은열쇠':'🗝','대가 성향':'⚖','대가':'⚖'};
+  const val=r=>/^대가/.test(r.k)?r.v.split(/\s*[·,，]\s*/).filter(Boolean).map(x=>`<span class="awo-chip">${esc(x)}</span>`).join(''):esc(r.v);
+  return `<div class="awo">
+   <div class="awo-h"><span class="awo-k">✦ 각성체 원전</span><span class="sp"></span>${head.map(x=>`<span class="awo-tag">${esc(x)}</span>`).join('')}</div>
+   <div class="awo-n"><b>${esc(name)}</b>${orig?`<span class="awo-o">${esc(orig)}</span>`:''}</div>
+   ${kv.length?`<dl class="awo-kv">${kv.map(r=>r.k?`<dt><i aria-hidden="true">${ICO[r.k]||'◇'}</i>${esc(r.k)}</dt><dd>${val(r)}</dd>`:`<dd class="awo-x">${esc(r.v)}</dd>`).join('')}</dl>`:''}
+   ${bond.map(r=>`<blockquote class="awo-bond"><small>${esc(r.k)}</small>${esc(r.v)}</blockquote>`).join('')}</div>${plain(rest)}`}
  function memoSec(t){if(!t)return '';const QO=['지시','육성','통솔','능력'];const qo=k=>{const i=QO.indexOf(k);return i<0?9:i};   /* 10-30 망령 「자질 메모 순서는 지시 · 육성 · 통솔 · 능력」 (제작기 문서의 키 순서가 섞여 있다) */
   const det=Object.entries(t.detail||{}).filter(([k,v])=>v&&typeof v!=='object').sort((a,b)=>qo(a[0])-qo(b[0]));if(!det.length)return '';
   return `<section class="ux-sec ux-memo"><h4 class="ux-h"><span>자질 메모</span><span class="sp"></span><small title="제작기 트레이너에서 고쳐요">제작기</small></h4><dl class="ux-kv">${det.slice(0,14).map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(String(v))}</dd>`).join('')}</dl></section>`}
