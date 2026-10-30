@@ -452,3 +452,13 @@ select.pccls{font-size:11px;padding:1px 4px;height:auto;margin-left:4px;vertical
 .awo+.pme{margin-top:6px}
 .mkr .awo{background:rgba(255,255,255,.4);--awo:var(--gold2,#8f7b52)}
 @media(max-width:560px){.awo{padding:10px 12px 10px 14px}.awo-kv{grid-template-columns:1fr;gap:0 0}.awo-kv dd{margin-bottom:6px}}
+/* 10-30 시트 카드 끌어서 폴더 옮기기: 빈 칸은 끄는 동안만 보인다 */
+.pcfold.pcempty{display:none}
+.pcfolds.dragging .pcfold.pcempty{display:block}
+.pcfolds.dragging .pcgrid{min-height:64px;outline:1px dashed var(--line2);outline-offset:2px}
+.pcfolds.dragging .pcgrid:empty::before{content:"여기로 끌어 놓기";display:flex;align-items:center;justify-content:center;min-height:64px;grid-column:1/-1;font-size:12px;color:var(--mute)}
+.pcfolds .pcgrid.drop{outline:1px solid var(--yel,#ffd12e)}
+.pcfolds .pcfh.drop{background:rgba(255,209,46,.16);outline:1px dashed var(--yel,#ffd12e)}
+.pcfolds.dragging .pcfh{cursor:copy}
+.pcfolds .pccard.insb{box-shadow:-4px 0 0 0 var(--yel,#ffd12e)}
+.pcfolds .pccard.insa{box-shadow:4px 0 0 0 var(--yel,#ffd12e)}
