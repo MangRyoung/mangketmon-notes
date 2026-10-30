@@ -468,3 +468,60 @@ html[data-skin="univ"] .idc-foot{margin-top:auto}
 .awx.empty{flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:120px;background:rgba(255,255,255,.3);border:1.5px dashed #a8936a;box-shadow:none;color:var(--ink3,#7a6a50)}
 .awx.empty small{color:var(--ink3,#7a6a50)}
 .awx.empty span{font-family:'Noto Serif KR',serif;font-weight:900;color:var(--ink2)}
+
+/* ===== 10-30 망령 「칸이 너무 잡다하게 나눠져 있다 — 통합해서 큼직하게. 세분류는 클릭했을 때 입력 창 안에서」 (pc_ui grpBox · editgrp) ===== */
+.rpgrid.rpgrp{grid-template-columns:repeat(auto-fill,minmax(min(100%,400px),1fr));gap:12px}
+.rpbox.rpg{padding:14px 16px 12px;display:flex;flex-direction:column;gap:8px;min-height:132px}
+.rpbox.rpg>h4{font-size:14px;margin:0;padding-bottom:7px;border-bottom:1px solid var(--line)}
+.rpbox.rpg>h4 b{font-weight:700;color:var(--fg);letter-spacing:.14em}
+.rpgi h5{margin:0 0 3px;font-size:11.5px;font-weight:700;color:var(--mute);letter-spacing:.08em}
+.rpgi .pre,.rpgv{font-size:13.5px;line-height:1.65}
+.rpgi+.rpgi{padding-top:8px;border-top:1px dashed var(--line)}
+.rpge{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;margin-top:auto;font-size:11.5px;color:var(--mute)}
+.rpge span:not(.dim){border:1px dashed var(--line2);border-radius:10px;padding:1px 8px}
+html[data-skin="univ"] .rpbox.rpg>h4 b{font-family:'Noto Serif KR',serif;color:var(--crim2,var(--fg))}
+.modal.rpgm{width:min(760px,96vw);max-width:none}
+.rpged{display:flex;flex-direction:column;gap:14px}
+.rpgf{display:flex;flex-direction:column;gap:5px}
+.rpgf>span{display:flex;align-items:baseline;gap:8px;font-size:12.5px;font-weight:700;color:var(--fg2);letter-spacing:.06em}
+.rpgf textarea{min-height:72px;resize:vertical;font-size:14px;line-height:1.65}
+.rpgf[hidden]{display:none}
+
+/* ===== 10-30 망령 「학생증 고치기 입력 칸 UI 개선 + 스탠딩 · 표정」 (pc_ui idedit) ===== */
+.modal.idedm{width:min(860px,96vw);max-width:none}
+.idtabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:-2px 0 14px}
+.idtabs button{background:none;border:0;border-bottom:2px solid transparent;color:var(--mute);font:inherit;font-size:13.5px;padding:7px 14px;cursor:pointer;margin-bottom:-1px}
+.idtabs button.on{color:var(--fg);border-bottom-color:var(--gold,var(--red,#e4002b));font-weight:700}
+.idtabs small{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--line);font-size:11px;margin-left:4px}
+.idtabs small:empty{display:none}
+.idtop{display:flex;gap:16px;align-items:stretch}
+.idph{display:flex;flex-direction:column;gap:6px;align-items:center;flex:none}
+.idph .updz{width:150px;height:196px}
+.idmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px}
+.idfs{border:1px solid var(--line);border-radius:8px;padding:10px 14px 12px;margin:0}
+.idpane>.idfs{margin-top:12px}
+.idfs legend{padding:0 6px;font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--fg2)}
+.idfs legend small{font-weight:400;letter-spacing:0;color:var(--mute);margin-left:6px}
+.idg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px}
+.idfl{display:flex;flex-direction:column;gap:4px;min-width:0}
+.idfl.w2{grid-column:1/-1}
+.idfl>span{font-size:11.5px;color:var(--mute);letter-spacing:.1em}
+.idfl input,.idfl textarea{width:100%;font-size:14px}
+.idfl input.big{font-size:18px;font-weight:700;padding-top:6px;padding-bottom:6px}
+.idrk{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.idrkc{display:flex;flex-direction:column;align-items:center;gap:3px;border:1px solid var(--line);border-radius:6px;padding:6px 6px 8px}
+.idrkc span{font-size:11.5px;color:var(--mute);letter-spacing:.2em}
+.idrkc input{width:100%;text-align:center;font-size:20px;font-weight:800;text-transform:uppercase;padding:2px 4px;background:transparent;border:0;border-bottom:1px dashed var(--line2)}
+html[data-skin="univ"] .idrkc input{font-family:'Cinzel','Noto Serif KR',serif;color:var(--crim2,var(--fg))}
+.idstdz{min-height:70px}
+.idst{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:10px;max-height:min(52vh,560px);overflow:auto;padding:2px}
+.idsc{display:flex;flex-direction:column;gap:5px;border:1px solid var(--line);border-radius:8px;padding:6px}
+.idsc.on{border-color:var(--gold,#c9a45a);box-shadow:0 0 0 1px var(--gold,#c9a45a) inset}
+.idscp{position:relative;display:block;width:100%;aspect-ratio:3/4;border:0;padding:0;cursor:pointer;border-radius:6px;background:repeating-conic-gradient(rgba(127,127,127,.18) 0 25%,transparent 0 50%) 0 0/16px 16px}
+.idscp img{width:100%;height:100%;object-fit:contain;object-position:bottom;display:block}
+.idscb{position:absolute;left:4px;top:4px;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:9px;background:var(--gold,#c9a45a);color:#1a1205}
+.idsc>input{font-size:13px;font-weight:700;text-align:center}
+.idscf{display:grid;grid-template-columns:minmax(0,1fr) 54px auto;gap:4px;align-items:center}
+.idscf select{min-width:0;width:100%;font-size:12px;padding-left:4px;padding-right:2px}
+.idscf input{width:100%;font-size:12px;padding-left:4px;padding-right:2px}
+@media(max-width:620px){.idtop{flex-direction:column;align-items:center}.idmain{width:100%}.idg{grid-template-columns:minmax(0,1fr)}.idrk{grid-template-columns:repeat(2,minmax(0,1fr))}}
