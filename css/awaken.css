@@ -169,3 +169,7 @@
 .awx-cost b{font-weight:700;margin-right:3px}.awx-cost em{font-style:normal;opacity:.8}
 .awx-cost.none{opacity:.6}
 .awx-note{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;font-size:11.5px;line-height:1.45;margin-top:3px;opacity:.75}
+/* 10-30 망령 「여전히 칸이 은근 안 맞는데? 확정 버튼 때문인가 봐」: 트레이너 포트 줄 안내 글을 늘 두 줄 자리로, 칸 정보 줄은 한 줄로 */
+.awtr-b>small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;height:2.9em;line-height:1.45}
+.awtr-b>.row:first-child{min-height:20px}
+.aweslot .awes>small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
