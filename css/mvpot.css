@@ -1,0 +1,43 @@
+/* ---------- 기술 · 포텐셜 카드 (10-31 망령 「포텐셜이랑 기술 UI 개선 좀 하자」) — js/pc_ui.js moveGrid · potGrid ----------
+   기본은 어두운 테마, .mkr(미사그 양피지 파티 줄) 안은 먹 글씨 판. 양피지 쪽은 html:not(#_) 로 테마 규칙보다 세게. */
+.mvp{margin:8px 0 4px}
+.mvp-h{display:flex;align-items:baseline;gap:6px;margin:0 0 6px;font-size:13px;font-weight:800;letter-spacing:.08em}
+.mvp-h small{font-size:11px;font-weight:600;opacity:.65}
+.mvp-h::after{content:"";flex:1;height:1px;background:currentColor;opacity:.2;align-self:center}
+
+/* 기술 카드 */
+.mvg{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:6px}
+.mvc{margin:0;position:relative;display:flex;flex-direction:column;gap:4px;min-width:0;padding:7px 10px 8px 13px;background:rgba(255,255,255,.04);border:1px solid rgba(128,128,128,.3);border-radius:6px;overflow:hidden}
+.mvc::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--tc)}
+.mvc-h{display:flex;align-items:center;gap:6px;min-width:0}
+.mvc-h .tch{flex:none}
+.mvc-h b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.mvc-half{flex:none;font-size:10px;padding:0 5px;border:1px solid currentColor;border-radius:3px;opacity:.7}
+.mvc-cl{flex:none;margin-left:auto;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:999px;color:#fff}
+.mvc-cl.c-ph{background:#c4492a}.mvc-cl.c-sp{background:#3a6fc4}.mvc-cl.c-st{background:#7b7f8a}
+.mvc-n{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
+.mvc-n span{display:inline-flex;align-items:baseline;gap:4px}
+.mvc-n small{font-size:10px;opacity:.65}
+.mvc-n b{font-size:13px;font-variant-numeric:tabular-nums}
+.mvc-ct{font-size:10px;padding:0 5px;border:1px dashed currentColor;border-radius:3px;opacity:.7}
+.mvc-e{margin:0;font-size:12px;line-height:1.5;opacity:.85;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.mvc:hover .mvc-e{-webkit-line-clamp:unset}
+
+/* 포텐셜 카드 */
+.ptg{align-items:stretch;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:6px}
+.ptc{margin:0;min-width:0;padding:8px 11px 9px;background:rgba(255,255,255,.04);border:1px solid rgba(128,128,128,.3);border-left:4px solid var(--kc);border-radius:0 6px 6px 0}
+.ptc-h{display:flex;align-items:center;gap:7px;min-width:0;margin-bottom:3px}
+.ptc-k{flex:none;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:3px;background:var(--kc);color:#fff;letter-spacing:.04em}
+.ptc-h b{font-size:14px;min-width:0;overflow-wrap:anywhere}
+.ptc-e{font-size:12.5px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;max-width:72ch}
+
+/* 미사그 양피지 줄 (.mkr) · 다른 캠페인 카드(.pmc)는 위 기본 */
+html:not(#_) .mkr .mvp-h{color:var(--crim,#6e1019);font-family:'Noto Serif KR',serif}
+html:not(#_) .mkr .mvc,html:not(#_) .mkr .ptc{background:rgba(255,255,255,.55);border-color:#c9b994;color:#1a140d;box-shadow:0 1px 0 rgba(255,255,255,.6) inset}
+html:not(#_) .mkr .ptc{border-left-color:var(--kc)}
+html:not(#_) .mkr .mvc-h b,html:not(#_) .mkr .ptc-h b,html:not(#_) .mkr .mvc-n b{color:#1a140d}
+html:not(#_) .mkr .mvc-n small,html:not(#_) .mkr .mvc-half,html:not(#_) .mkr .mvc-ct{color:#7a6a50;opacity:1}
+html:not(#_) .mkr .mvc-e,html:not(#_) .mkr .ptc-e{color:#3a3024;opacity:1}
+html:not(#_) .mkr .ptc-e.dim,html:not(#_) .mkr .mvc-e.dim{color:#7a6a50}
+html:not(#_) .mkr .mkr-mb{gap:2px}
+html:not(#_) .mkr .mkr-more summary{font-size:12.5px;font-weight:700;color:#4a3f30;padding:2px 0}

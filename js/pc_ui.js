@@ -174,6 +174,19 @@
   </div><div class="idside">${heroIn}</div></div>`}
  const T2C={'노말':'#9aa','불꽃':'#f08030','물':'#6890f0','풀':'#78c850','전기':'#f8d030','얼음':'#98d8d8','격투':'#c03028','독':'#a040a0','땅':'#e0c068','비행':'#a890f0','에스퍼':'#f85888','벌레':'#a8b820','바위':'#b8a038','고스트':'#705898','드래곤':'#7038f8','악':'#705848','강철':'#b8b8d0','페어리':'#ee99ac'};
  const tchip=t=>t&&t!=='-'?`<em class="tch" style="background:${T2C[t]||'#666'}">${esc(t)}</em>`:'';
+ /* ---------- 10-31 망령 「포텐셜이랑 기술 UI 개선 좀 하자」: 기술 = 카드(타입 띠 · 분류 · 위력 · 명중 · 효과 두 줄), 포텐셜 = 분류 색 띠 카드(효과 글 꾸밈) ----------
+    제작기 기술 표 줄: [5] 타입 · [6] 분류 · [7] 위력 · [8] 명중(0 = 필중) · [9] 범위 · [10] 접촉 · [11] 우선도 · [13] 효과 */
+ const fxT=s=>window.NT_UNIV&&window.NT_UNIV.fx?window.NT_UNIV.fx(s):esc(brN(s));
+ const CLS={'물리':'ph','특수':'sp','변화':'st'};
+ function moveGrid(mv){if(!mv.length)return '';
+  return `<section class="mvp"><h5 class="mvp-h"><span>기술</span><small>${mv.length}</small></h5><div class="mvg">${mv.map(x=>{const r=MK().move(x.name);const ty=r&&r[5]&&r[5]!=='-'?r[5]:'';const cl=r?String(r[6]||''):'';
+   const pw=r&&+r[7]?r[7]:'—',ac=r?(+r[8]?r[8]:(cl==='변화'?'—':'필중')):'—';const pr=r&&+r[11]?(+r[11]>0?'+':'')+r[11]:'';const eff=r?brN(r[13]||''):'';
+   return `<article class="mvc" style="--tc:${T2C[ty]||'#8f7b52'}"><div class="mvc-h">${ty?tchip(ty):''}<b title="${esc(x.name)}">${esc(x.name)}</b>${x.half?'<small class="mvc-half" title="자속 기술 할인">할인</small>':''}${cl?`<span class="mvc-cl c-${CLS[cl]||'st'}">${esc(cl)}</span>`:''}</div>
+    ${r?`<div class="mvc-n"><span><small>위력</small><b>${esc(pw)}</b></span><span><small>명중</small><b>${esc(ac)}</b></span>${r[9]&&r[9]!=='-'?`<span><small>범위</small><b>${esc(r[9])}</b></span>`:''}${pr?`<span><small>우선</small><b>${esc(pr)}</b></span>`:''}${r[10]==='O'?'<span class="mvc-ct" title="접촉 기술">접촉</span>':''}</div>${eff?`<p class="mvc-e" title="${esc(eff)}">${fxT(eff)}</p>`:''}`:'<p class="mvc-e dim">기술 표에 없는 이름이에요</p>'}</article>`}).join('')}</div></section>`}
+ const PKC={'역할':'#8f1a26','분류':'#3c5878','종족':'#2e6b45','속별':'#1f6f72','특권':'#a07a1e','전용':'#5b2a6e','특성':'#3f9a5a','소지품':'#6b5d44','계제':'#7a4a1c'};
+ const pkc=k=>{for(const [n,c] of Object.entries(PKC))if(String(k).includes(n))return c;return '#6a6f7a'};
+ function potGrid(list){if(!list.length)return '';
+  return `<section class="mvp"><h5 class="mvp-h"><span>포텐셜</span><small>${list.length}</small></h5><div class="ptg">${list.map(x=>`<article class="ptc" style="--kc:${pkc(x.k)}"><div class="ptc-h"><span class="ptc-k">${esc(x.k||'포텐셜')}</span><b>${esc(x.n)}</b></div>${x.e?`<div class="ptc-e">${fxT(x.e)}</div>`:'<div class="ptc-e dim">효과 글이 없어요</div>'}</article>`).join('')}</div></section>`}
  /* 10-26 망령: 파티 = 제작기 시트 그대로 (레벨 · 타입 · 종족치 · 특성 · 소지품 · 기술 · 전용 · 포텐셜) */
  const monPic=m=>{const u=MK().img(m);return `<i class="${u?'':'noimg'}" style="${u?`background-image:url('${cssu(u)}')`:''}">${u?'':esc([...(m.name||'?')][0]||'?')}</i>`};
  const brN=v=>String(v==null?'':v).replace(/<br\s*\/?>/gi,'\n').replace(/\\n/g,'\n');
@@ -196,9 +209,8 @@
     <div class="small dim" style="margin-top:2px">${[m.egg1,m.egg2].filter(x=>x&&x!=='-').map(esc).join(' · ')}${(m.forms||[]).filter(f=>f&&f.name).length?` · 폼 ${(m.forms||[]).filter(f=>f&&f.name).map(f=>esc(f.name)).join(' · ')}`:''}</div></div></div>
    <div class="pmst">${STL.map((l,i)=>`<span class="${bu&&bu[i]!==b0[i]?'up':''}" title="${bu&&bu[i]!==b0[i]?`포텐셜로 ${b0[i]} → ${bu[i]}`:''}"><small>${l}</small><b>${bs[i]||'-'}</b></span>`).join('')}<span class="tot"><small>합</small><b>${tot}</b></span></div>
    ${m.ability?line('특성',m.ability,E.ab):''}${items.map(x=>line('소지품',x.n,x.e)).join('')}${ED&&t.id?`<div class="ux-itbs"><button type="button" class="linkbtn small ux-itb" data-ux="item" data-id="${esc(t.id)}" data-pid="${esc(m.id)}">✎ 소지품${items.length?' 고치기':' 넣기'}</button>${window.NT_MONED?`<button type="button" class="linkbtn small ux-itb" data-moned="${esc(m.id)}" data-id="${esc(t.id)}">✎ 포켓몬 고치기</button>`:''}</div>`:''}
-   ${mv.length?`<div class="pmmv">${mv.map(x=>{const r=MK().move(x.name);return `<div class="pmm" title="${esc(r?brN(r[13]||''):'')}">${r?tchip(r[5]):''}<b>${esc(x.name)}</b>${x.half?'<small class="pmb">할인</small>':''}<span class="sp"></span><small class="dim">${r?`${esc(r[6]||'')}${+r[7]?` · ${esc(r[7])}`:''}${r[8]&&r[8]!=='0'&&r[8]!=='-'?` · ${esc(r[8])}%`:''}`:''}</small></div>`}).join('')}</div>`:''}
-   ${ex.map(x=>line('전용',x.name,x.eff)).join('')}
-   ${pots.length?`<details class="pmpot"><summary>포텐셜 ${pots.length} <span class="dim small">${pots.map(x=>esc(x.n)).join(' · ')}</span></summary>${pots.map(x=>`<div class="pml"><span class="pmk">${esc(kindOf(x.i)||'포텐셜')}</span><b>『${esc(x.n)}』</b>${effOf(x.i)?`<div class="pme pre">${esc(effOf(x.i))}</div>`:''}</div>`).join('')}</details>`:''}
+   ${moveGrid(mv)}
+   ${ex.length||pots.length?`<details class="pmpot"><summary>포텐셜 ${ex.length+pots.length} <span class="dim small">${[...ex.map(x=>x.name),...pots.map(x=>x.n)].map(esc).join(' · ')}</span></summary>${potGrid([...ex.map(x=>({k:'전용',n:'『'+String(x.name).replace(/[『』]/g,'')+'』',e:x.eff})),...pots.map(x=>({k:kindOf(x.i),n:'『'+x.n+'』',e:effOf(x.i)}))])}</details>`:''}
    ${m.memo?`<details class="pmpot"><summary>메모</summary>${memoHtml(m.memo)}</details>`:''}
   </div>`}
  /* ---------- 10-30 망령: 미사그 — 「파티 4체 외에 강조될 각성체 2체, 서머리 분리해서 멋있게」 「파티 UI 도 제작기 쪽 따라가자」 ----------
@@ -239,8 +251,7 @@
     <div class="mkr-st">${radar(X.bs)}<div><div class="mkr-gs">${STL.map((l,k)=>{const g=grd(X.bs[k]);return `<span title="${l} ${X.bs[k]||'-'}${X.bu&&X.bu[k]!==X.b0[k]?` (포텐셜로 ${X.b0[k]} → ${X.bu[k]})`:''}"><small>${l}</small><b class="${gcls(g)}">${esc(g)}</b></span>`}).join('')}</div><div class="mkr-sum">종족치 합 <b>${X.tot||'-'}</b> · 기술 ${X.mv.length} · 포텐셜 ${X.pots.length+X.ex.length}</div></div></div>
     ${ED&&t.id?`<div class="mkr-act">${window.NT_MONED?`<button type="button" class="btn xs" data-moned="${esc(m.id)}" data-id="${esc(t.id)}" title="제작기 화면 그대로 이 포켓몬 한 장을 고쳐요">✎ 고치기</button>`:''}<button type="button" class="btn xs ghost" data-ux="item" data-id="${esc(t.id)}" data-pid="${esc(m.id)}">소지품</button></div>`:''}</div>
    ${X.mv.length||X.pots.length||X.ex.length||m.memo?`<details class="mkr-more"><summary>${[X.mv.length?'기술 '+X.mv.length:'',X.pots.length?'포텐셜 '+X.pots.length:'',X.ex.length?'전용 '+X.ex.length:'',m.memo?'메모':''].filter(Boolean).join(' · ')}</summary><div class="mkr-mb">
-    ${X.mv.length?`<div class="pmmv">${X.mv.map(x=>{const r=MK().move(x.name);return `<div class="pmm" title="${esc(r?brN(r[13]||''):'')}">${r?tchip(r[5]):''}<b>${esc(x.name)}</b>${x.half?'<small class="pmb">할인</small>':''}<span class="sp"></span><small class="dim">${r?`${esc(r[6]||'')}${+r[7]?` · ${esc(r[7])}`:''}${r[8]&&r[8]!=='0'&&r[8]!=='-'?` · ${esc(r[8])}%`:''}`:''}</small></div>`}).join('')}</div>`:''}
-    ${X.ex.map(x=>line('전용',x.name,x.eff)).join('')}${X.pots.map(x=>line(esc(kindOf(x.i)||'포텐셜'),'『'+x.n+'』',effOf(x.i))).join('')}${m.memo?memoHtml(m.memo,'mkr-memo'):''}</div></details>`:''}
+    ${moveGrid(X.mv)}${potGrid([...X.ex.map(x=>({k:'전용',n:'『'+String(x.name).replace(/[『』]/g,'')+'』',e:x.eff})),...X.pots.map(x=>({k:kindOf(x.i),n:'『'+x.n+'』',e:effOf(x.i)}))])}${m.memo?memoHtml(m.memo,'mkr-memo'):''}</div></details>`:''}
   </article>`}
  function univParty(id,t,ms,E){if(!t)return '';if(!MK().dbReady())MK().db().then(()=>N().render());const pl=ms.filter(m=>!isAw(m)),aw=ms.filter(isAw).sort((a,b)=>(a.awaken==='free'?0:1)-(b.awaken==='free'?0:1));const G=N().gm();
   const add=(k,n)=>E&&(k!=='aw'||G)&&n?`<button type="button" class="btn xs" data-monadd="${k}" data-id="${esc(id)}" title="제작기에 새 시트를 만들어 바로 열어요">＋ ${k==='aw'?'각성체':'PL 포켓몬'}</button>`:'';
