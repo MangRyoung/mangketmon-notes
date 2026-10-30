@@ -43,6 +43,7 @@
    const b=t.closest('[data-e]');if(b)act(b.dataset.e,b)});
   /* 10-26 망령: 끌어서 순서 바꾸기(GM) · 우클릭 · 길게 누르기 메뉴 */
   if(G)$$('.entgrid',el).forEach(g=>N().sortable(g,'.entcard',ids=>N().reorder('ents',ids)));
+  if(window.NT_SHELF)NT_SHELF.bind(el);   /* 10-31 룰북 서가: ＋ 책 · 끌어서 순서 */
   N().bindCtx(el,'.entcard',c=>ctxItems(c.dataset.id))}
  const emptyBox=G=>`<div class="empty">항목이 없어요.${G?' <button type="button" class="btn sm pri" data-e="new" style="margin-left:8px">＋ 항목</button>':''}</div>`;
  function ctxItems(id){const d=N().doc('ents',id);if(!d)return null;const e=d.data;const G=N().gm();const it=[];const cur=d.vis||'pub';

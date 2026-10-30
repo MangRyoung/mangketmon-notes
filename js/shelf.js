@@ -186,8 +186,9 @@ window.NT_SHELF=(()=>{
 | A | +3 | A | 110 ~ 139 |
 | AA | +4 | AA | 140 이상 |`;
 
- /* 책 — c: 표지 색, no: 청구기호 */
- const BOOKS=[
+ /* 처음 책 네 권 (10-31). GM 이 처음 고치면(고치기 · 새 책 · 지우기 · 순서) 이 네 권을 캠페인 문서(kind 'shelf')로 옮겨 적고,
+    그 뒤로는 문서만 쓴다. 표시 문서 shelf/_init 이 있으면 「옮겨 적음」. 없으면 모두 이 기본을 본다. */
+ const SEED=[
   {id:'two',no:'MR-201',c:'crim',t:'2체 룰',en:'RULE OF TWO',sub:'각성체 2체로 나설 때',src:'제작기 룰북 「미사그 대학 (4+2)」 · 「1인 기준 (2체)」 장에서 바로 읽어요',
    parts:[{md:TWO_HEAD},{rb:{ch:'misag',h:['2체로 합칠 때']}},{md:TWO_MID},{rb:{ch:'solo2',h:['자질별 자원 환산','『전용 포텐셜』 (능력)','파티 제약의 환산','배틀 진행']}}]},
   {id:'check',no:'MR-110',c:'navy',t:'스킬 체크',en:'SKILL CHECK',sub:'2d6 + 자질 + 종족값 + 적합',src:'제작기 룰북 「스킬 체크」 장에서 바로 읽어요',
@@ -196,40 +197,107 @@ window.NT_SHELF=(()=>{
    parts:[{md:DUNGEON}]},
   {id:'stat',no:'MR-001',c:'ochre',t:'자질 보너스표',en:'ATTRIBUTES',sub:'미사그용 · 랭크별 자원 한 장',src:'룰북 「지시 · 육성 · 통솔 · 능력 · 미사그 대학 · 1인 기준 (2체) · 스킬 체크」 장을 모았어요',
    parts:[{md:STAT}]}];
- const book=id=>BOOKS.find(b=>b.id===id)||BOOKS[0];
+ const COLORS=[['crim','진홍'],['navy','남색'],['moss','녹색'],['ochre','황토'],['plum','자주'],['teal','청록'],['ink','먹색']];
+ const K='shelf',INIT='_init';
+ const seeded=()=>!!N().doc(K,INIT);
+ function books(){if(!seeded())return SEED.map((b,i)=>Object.assign({order:i,_vis:'pub'},b));
+  return N().list(K).filter(b=>b.id!==INIT).sort((a,b)=>(a.order||0)-(b.order||0)||String(a.t||'').localeCompare(String(b.t||''),'ko'))}
+ const book=id=>{const L=books();return L.find(b=>b.id===id)||L[0]||null};
+ /* 기본 네 권을 문서로 옮겨 적기 (한 번만) */
+ async function seed(){if(seeded())return true;const rows=SEED.map((b,i)=>({kind:K,id:b.id,data:Object.assign({},b,{order:i}),vis:'pub'}));rows.push({kind:K,id:INIT,data:{at:new Date().toISOString()},vis:'pub'});
+  return (await N().putMany(rows))>0||seeded()}
 
  /* 교표 (학생증과 같은 모양) */
  const CREST=`<svg viewBox="0 0 40 46" aria-hidden="true"><path d="M20 2 37 8v14c0 11-7.5 18.5-17 22C10.5 40.5 3 33 3 22V8Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M11 16h18v14H11zM20 16v14" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="20" cy="9.5" r="2.2" fill="currentColor"/></svg>`;
+ const cover=b=>`<span class="shb-spine" aria-hidden="true"></span><span class="shb-frame"><span class="shb-no">${esc(b.no||'')}</span><span class="shb-crest">${CREST}</span><b class="shb-t">${esc(b.t||'(제목 없음)')}</b><span class="shb-en">${esc(b.en||'')}</span><small class="shb-sub">${esc(b.sub||'')}</small></span>`;
 
  /* ----- 서가 (자료 탭 맨 위) ----- */
- function bar(){if(!on())return '';
-  return `<section class="shelf" aria-label="룰북 서가"><div class="shelf-h"><span class="shelf-crest">${CREST}</span><b>열람실 · 룰북 서가</b><small>MISAG UNIVERSITY LIBRARY</small><span class="sp"></span><a class="shelf-all" href="${esc(window.NT_RB?NT_RB.link(''):'#')}" target="_blank" rel="noopener">룰북 전체 ↗</a></div>
-   <div class="shelf-row">${BOOKS.map(b=>`<button type="button" class="shb c-${b.c}" data-shelf="${b.id}" title="${esc(b.t)} 펴기"><span class="shb-spine" aria-hidden="true"></span><span class="shb-frame"><span class="shb-no">${esc(b.no)}</span><span class="shb-crest">${CREST}</span><b class="shb-t">${esc(b.t)}</b><span class="shb-en">${esc(b.en)}</span><small class="shb-sub">${esc(b.sub)}</small></span></button>`).join('')}</div><div class="shelf-plank" aria-hidden="true"></div></section>`}
+ function bar(){if(!on())return '';const G=N().gm();const L=books();if(!L.length&&!G)return '';
+  return `<section class="shelf" aria-label="룰북 서가"><div class="shelf-h"><span class="shelf-crest">${CREST}</span><b>열람실 · 룰북 서가</b><small>MISAG UNIVERSITY LIBRARY</small><span class="sp"></span>${G?`<button type="button" class="shelf-btn" data-shnew title="새 책을 꽂아요">＋ 책</button>`:''}<a class="shelf-all" href="${esc(window.NT_RB?NT_RB.link(''):'#')}" target="_blank" rel="noopener">룰북 전체 ↗</a></div>
+   <div class="shelf-row">${L.map(b=>`<button type="button" class="shb c-${esc(b.c||'crim')}" data-shelf="${esc(b.id)}" data-id="${esc(b.id)}" ${G?'data-drag':''} title="${esc(b.t)} 펴기${G?' · 끌어서 순서 바꾸기':''}">${cover(b)}${G&&b._vis&&b._vis!=='pub'?`<span class="shb-vis">${esc(N().visLabel(b._vis))}</span>`:''}</button>`).join('')||'<div class="shelf-empty">꽂힌 책이 없어요. 「＋ 책」으로 꽂아요.</div>'}</div><div class="shelf-plank" aria-hidden="true"></div></section>`}
+ /* 자료 탭이 그린 뒤: 「＋ 책」 · GM 끌어서 순서 바꾸기 */
+ function bind(el){const sec=el&&el.querySelector('.shelf');if(!sec)return;
+  const nb=sec.querySelector('[data-shnew]');if(nb)nb.onclick=e=>{e.stopPropagation();edit('')};
+  if(N().gm())N().sortable(sec.querySelector('.shelf-row'),'.shb',async ids=>{if(!await seed())return;await N().reorder(K,ids)})}
 
  /* ----- 책 읽기 창 ----- */
  /* 절 고르기: 제목이 같거나 그 제목으로 시작하면 (「2체로 합칠 때 (2026-10-30)」처럼 뒤에 날짜가 붙어도) */
  const pick=rb=>{const RB=window.NT_RB;const c=RB.chapter(rb.ch);if(!c)return null;const H=(rb.h||[]).filter(Boolean);if(!H.length)return {md:c.body||'',missing:[]};const S=RB.sections(c);const hit=h=>s=>s.h===h||s.h.startsWith(h+' ');
   return {md:H.map(h=>{const x=S.find(hit(h));return x?x.md:''}).filter(Boolean).join('\n\n'),missing:H.filter(h=>!S.some(hit(h)))}};
- function bodyOf(b){const RB=window.NT_RB;let wait=false,miss=[];
-  const html=b.parts.map(p=>{if(p.md)return RB.render(p.md);
-   if(!RB.R.book){wait=true;return ''}const k=pick(p.rb);if(!k){miss.push(p.rb.ch);return ''}if(k.missing.length)miss.push(...k.missing);return `<div class="shr-live">${RB.render(k.md)}</div>`}).join('');
+ function bodyOf(parts){const RB=window.NT_RB;let wait=false,miss=[];
+  const html=(parts||[]).map(p=>{if(p.rb&&p.rb.ch){if(!RB.R.book){wait=true;return ''}const k=pick(p.rb);if(!k){miss.push(p.rb.ch);return ''}if(k.missing.length)miss.push(...k.missing);return `<div class="shr-live">${RB.render(k.md)}</div>`}
+   return p.md?RB.render(p.md):''}).join('');
   return {html,wait,miss}}
- function paint(m,id){const b=book(id);try{localStorage.setItem(LK,b.id)}catch(e){}
-  const r=bodyOf(b);const rbLinks=[...new Set(b.parts.filter(p=>p.rb).map(p=>p.rb.ch))];
-  m.className='modal wide shelfm c-'+b.c;
-  m.innerHTML=`<div class="shr-top"><div class="shr-tabs" role="tablist">${BOOKS.map(x=>`<button type="button" role="tab" class="shr-tab c-${x.c} ${x.id===b.id?'on':''}" data-shbk="${x.id}" aria-selected="${x.id===b.id}">${esc(x.t)}</button>`).join('')}</div><button type="button" class="shr-x" data-x aria-label="닫기">닫기 ✕</button></div>
-   <header class="shr-cover"><span class="shr-crest">${CREST}</span><div class="shr-ct"><span class="shr-no">MISAG LIB · ${esc(b.no)}</span><h2>${esc(b.t)}</h2><p>${esc(b.sub)}</p></div><span class="shr-ribbon" aria-hidden="true"></span></header>
-   <div class="shr-body"><nav class="shr-toc" aria-label="차례"></nav><article class="shr-page rbbody">${r.wait?'<p class="shr-wait">룰북을 펴는 중이에요…</p>':''}${r.html}
+ function toc(m){const H=[...m.querySelectorAll('.shr-page h4')];H.forEach((h,i)=>h.id='shr-h'+i);const t=m.querySelector('.shr-toc');if(!t)return;
+  t.innerHTML=H.length?`<b>차례</b>${H.map((h,i)=>`<a href="#shr-h${i}" data-shto="${i}"><i>${String(i+1).padStart(2,'0')}</i>${esc(h.textContent.replace(/\s*\(\d{4}-\d\d-\d\d\)\s*$/,''))}</a>`).join('')}`:''}
+ function paint(m,id){const L=books();const b=book(id);const G=N().gm();
+  if(!b){m.className='modal shelfm c-ink';m.innerHTML=`<div class="shr-top"><div class="shr-tabs"></div><button type="button" class="shr-x" data-x>닫기 ✕</button></div><article class="shr-page"><p>꽂힌 책이 없어요.</p></article>`;return}
+  m.dataset.bk=b.id;try{localStorage.setItem(LK,b.id)}catch(e){}
+  const r=bodyOf(b.parts);const rbLinks=[...new Set((b.parts||[]).filter(p=>p.rb&&p.rb.ch).map(p=>p.rb.ch))];
+  m.className='modal wide shelfm c-'+(b.c||'crim');
+  m.innerHTML=`<div class="shr-top"><div class="shr-tabs" role="tablist">${L.map(x=>`<button type="button" role="tab" class="shr-tab c-${esc(x.c||'crim')} ${x.id===b.id?'on':''}" data-shbk="${esc(x.id)}" aria-selected="${x.id===b.id}">${esc(x.t||'(제목 없음)')}</button>`).join('')}</div>${G?`<button type="button" class="shr-x" data-shed title="이 책 고치기">✎ 고치기</button>`:''}<button type="button" class="shr-x" data-x aria-label="닫기">닫기 ✕</button></div>
+   <header class="shr-cover"><span class="shr-crest">${CREST}</span><div class="shr-ct"><span class="shr-no">MISAG LIB · ${esc(b.no||'')}</span><h2>${esc(b.t||'(제목 없음)')}</h2><p>${esc(b.sub||'')}</p></div>${G&&b._vis&&b._vis!=='pub'?`<span class="shr-vis">${esc(N().visLabel(b._vis))}</span>`:''}<span class="shr-ribbon" aria-hidden="true"></span></header>
+   <div class="shr-body"><nav class="shr-toc" aria-label="차례"></nav><article class="shr-page rbbody">${r.wait?'<p class="shr-wait">룰북을 펴는 중이에요…</p>':''}${r.html||(!r.wait?'<p class="shr-wait">아직 빈 책이에요.</p>':'')}
     ${r.miss.length?`<p class="shr-miss">룰북에서 찾지 못한 곳: ${r.miss.map(esc).join(' · ')}</p>`:''}
-    <footer class="shr-src"><span>${esc(b.src)}</span>${rbLinks.map(ch=>`<a href="${esc(window.NT_RB.link(ch))}" target="_blank" rel="noopener">${esc((window.NT_RB.chapter(ch)||{}).title||ch)} ↗</a>`).join('')}${window.NT_RB.R.book&&window.NT_RB.R.book.updated?`<span class="shr-upd">룰북 ${esc(window.NT_RB.R.book.updated)}</span>`:''}</footer></article></div>`;
-  /* 차례: 본문의 ## 제목(h4) */
-  const H=[...m.querySelectorAll('.shr-page h4')];H.forEach((h,i)=>h.id='shr-h'+i);
-  m.querySelector('.shr-toc').innerHTML=H.length?`<b>차례</b>${H.map((h,i)=>`<a href="#shr-h${i}" data-shto="${i}"><i>${String(i+1).padStart(2,'0')}</i>${esc(h.textContent.replace(/\s*\(\d{4}-\d\d-\d\d\)\s*$/,''))}</a>`).join('')}`:'';
-  m.scrollTop=0;
+    <footer class="shr-src">${b.src?`<span>${esc(b.src)}</span>`:''}${rbLinks.map(ch=>`<a href="${esc(window.NT_RB.link(ch))}" target="_blank" rel="noopener">${esc((window.NT_RB.chapter(ch)||{}).title||ch)} ↗</a>`).join('')}${rbLinks.length&&window.NT_RB.R.book&&window.NT_RB.R.book.updated?`<span class="shr-upd">룰북 ${esc(window.NT_RB.R.book.updated)}</span>`:''}</footer></article></div>`;
+  toc(m);m.scrollTop=0;
   if(r.wait)window.NT_RB.load().then(()=>{if(m.isConnected&&m.querySelector('.shr-wait'))paint(m,b.id)})}
+ let RD=null;   /* 열린 읽기 창 (저장 뒤 다시 그리기) */
  function open(id){if(!window.NT_RB)return;if(!id){try{id=localStorage.getItem(LK)||''}catch(e){}}
-  const m=N().openModal('','wide shelfm');paint(m,id);
+  const m=N().openModal('','wide shelfm');RD=m;paint(m,id);
   m.addEventListener('click',e=>{const t=e.target.closest('[data-shbk]');if(t){paint(m,t.dataset.shbk);return}
+   if(e.target.closest('[data-shed]')){edit(m.dataset.bk);return}
    const a=e.target.closest('[data-shto]');if(a){e.preventDefault();const h=m.querySelector('#shr-h'+a.dataset.shto);if(h)h.scrollIntoView({behavior:'smooth',block:'start'})}})}
- return {bar,open,BOOKS,on};
+
+ /* ----- 책 고치기 (GM) -----
+    표지(제목 · 영문 띠 · 한 줄 · 청구기호 · 색 · 출처 줄 · 공개 범위) + 조각 목록(글 / 룰북 장 · 절). 오른쪽은 미리 보기. */
+ const HELP=`<details class="she-help"><summary>표기법</summary><div class="small">
+  <code>## 제목</code> 큰 제목(차례에 들어가요) · <code>### 작은 제목</code> · <code>**굵게**</code> · <code>&gt; 메모 상자</code> · <code>- 목록</code> · <code>| 표 | 칸 |</code> (둘째 줄 <code>|---|---|</code>, 첫 칸이 D · C · B · A · AA 면 랭크 도장)<br>
+  <code>『포텐셜』</code> <code>「용어」</code> <code>【태그】</code> 는 색이 입혀져요.<br>
+  <code>::: cards</code> 다음 줄부터 <code>이름 | 설명 | good</code> (good · best · warn · bad · x · info), 끝은 <code>:::</code> — 카드 묶음<br>
+  <code>::: steps</code> 단계 · <code>::: scale</code> 결과 띠 · <code>::: flow</code> 에 <code>가 &gt; 나 {bad}</code> 흐름 · <code>::: ladder</code> 에 <code>쉬움 | 8</code> 계단 · <code>::: heat</code> 안의 표는 % 칸에 색</div></details>`;
+ function edit(id){if(!N().gm())return;const cur=id?book(id):null;const isNew=!cur;
+  const b=cur?JSON.parse(JSON.stringify(cur)):{id:'b'+Math.random().toString(36).slice(2,8),t:'',en:'',sub:'',no:'MR-'+String(Math.floor(100+Math.random()*800)),c:'plum',src:'',parts:[{md:'## 첫 장\n'}],_vis:'pub'};
+  let parts=(b.parts||[]).map(p=>p.rb?{rb:{ch:p.rb.ch||'',h:[...(p.rb.h||[])]}}:{md:p.md||''});
+  const m=N().openModal(`<div class="mhead"><h2>${isNew?'새 책 꽂기':'책 고치기'}</h2><span class="sp"></span><button type="button" class="btn sm ghost" data-x>닫기</button></div>
+   <div class="she">
+    <div class="she-l">
+     <div class="she-f"><label>제목<input id="sheT" value="${esc(b.t)}" placeholder="던전 탐사"></label><label>영문 띠<input id="sheEn" value="${esc(b.en)}" placeholder="DUNGEON"></label>
+      <label class="w2">한 줄<input id="sheSub" value="${esc(b.sub)}" placeholder="방 · 경계도 · 휴식 · 난이도"></label><label>청구기호<input id="sheNo" value="${esc(b.no)}" placeholder="MR-330"></label><label>공개${N().visSelect(b._vis||'pub','sheVis')}</label>
+      <label class="w2">표지 색<span class="she-col">${COLORS.map(([c,l])=>`<button type="button" class="c-${c} ${b.c===c?'on':''}" data-shc="${c}" title="${l}" aria-label="${l}"></button>`).join('')}</span></label>
+      <label class="w2">맨 아래 출처 줄<input id="sheSrc" value="${esc(b.src||'')}" placeholder="어디서 모은 글인지"></label></div>
+     <div class="she-ph"><b>조각</b><small class="dim">위에서부터 이어 붙여요</small><span class="sp"></span><button type="button" class="btn xs" data-sha="md">＋ 글</button><button type="button" class="btn xs" data-sha="rb">＋ 룰북 장</button></div>
+     <div class="she-parts" id="shePs"></div>${HELP}
+    </div>
+    <div class="she-r"><div class="she-rh small dim">미리 보기</div><div class="she-prev shelfm c-${esc(b.c||'crim')}" id="shePv"><div class="shr-cover"><span class="shr-crest">${CREST}</span><div class="shr-ct"><span class="shr-no" id="pvNo"></span><h2 id="pvT"></h2><p id="pvS"></p></div></div><article class="shr-page rbbody" id="pvB"></article></div></div>
+   </div>
+   <div class="row she-foot">${isNew?'':`<button type="button" class="btn sm ghost danger" id="sheDel">책 빼기</button>`}<span class="sp"></span><button type="button" class="btn ghost" data-x>취소</button><button type="button" class="btn pri" id="sheOk">${isNew?'꽂기':'저장'}</button></div>`,'wide sheditm',{stack:true});
+  const $=s=>m.querySelector(s);let col=b.c||'crim';
+  const chOpts=sel=>{const C=window.NT_RB?NT_RB.chapters():[];return '<option value="">— 장 고르기 —</option>'+C.map(c=>`<option value="${esc(c.id)}" ${sel===c.id?'selected':''}>${esc(c.title||c.id)}</option>`).join('')+(sel&&!C.some(c=>c.id===sel)?`<option value="${esc(sel)}" selected>${esc(sel)} (룰북에 없음)</option>`:'')};
+  const secs=p=>{if(!p.rb.ch||!window.NT_RB)return '';const S=NT_RB.sections(p.rb.ch).filter(x=>x.h);if(!S.length)return '<small class="dim">이 장은 절이 없어요 — 장 전체를 넣어요</small>';
+   const has=h=>p.rb.h.some(x=>h===x||h.startsWith(x+' '));return `<div class="she-secs"><small class="dim">절 (안 고르면 장 전체)</small>${S.map(x=>`<label class="${has(x.h)?'on':''}"><input type="checkbox" value="${esc(x.h)}" ${has(x.h)?'checked':''}>${esc(x.h)}</label>`).join('')}</div>`};
+  function drawParts(){$('#shePs').innerHTML=parts.map((p,i)=>`<div class="she-p" data-i="${i}"><div class="she-pb"><b>${i+1}</b><span>${p.rb?'📖 룰북 장':'✎ 글'}</span><span class="sp"></span><button type="button" class="btn xs ghost" data-shm="-1" ${i?'':'disabled'} title="위로">▲</button><button type="button" class="btn xs ghost" data-shm="1" ${i<parts.length-1?'':'disabled'} title="아래로">▼</button><button type="button" class="btn xs ghost danger" data-shx title="이 조각 빼기">✕</button></div>
+    ${p.rb?`<select data-shch>${chOpts(p.rb.ch)}</select>${secs(p)}`:`<textarea data-shmd rows="${Math.min(18,Math.max(5,String(p.md).split('\n').length+1))}" spellcheck="false">${esc(p.md)}</textarea>`}</div>`).join('')||'<div class="small dim">조각이 없어요. 「＋ 글」이나 「＋ 룰북 장」을 눌러요.</div>'}
+  let tm=0;function prev(){clearTimeout(tm);tm=setTimeout(()=>{const pv=$('#shePv');if(!pv)return;pv.className='she-prev shelfm c-'+col;$('#pvNo').textContent='MISAG LIB · '+$('#sheNo').value;$('#pvT').textContent=$('#sheT').value||'(제목 없음)';$('#pvS').textContent=$('#sheSub').value;
+   const r=bodyOf(parts);$('#pvB').innerHTML=(r.wait?'<p class="shr-wait">룰북을 펴는 중이에요…</p>':'')+r.html+(r.miss.length?`<p class="shr-miss">룰북에서 찾지 못한 곳: ${r.miss.map(esc).join(' · ')}</p>`:'');if(r.wait)NT_RB.load().then(prev)},120)}
+  drawParts();prev();if(window.NT_RB&&!NT_RB.R.book)NT_RB.load().then(()=>{if(m.isConnected){drawParts();prev()}});   /* 룰북을 아직 안 읽었으면 장 목록을 채운 뒤 다시 */
+  m.addEventListener('input',e=>{const t=e.target;const pe=t.closest('.she-p');if(pe&&t.matches('[data-shmd]'))parts[+pe.dataset.i].md=t.value;prev()});
+  m.addEventListener('change',e=>{const t=e.target;const pe=t.closest('.she-p');if(!pe)return;const p=parts[+pe.dataset.i];
+   if(t.matches('[data-shch]')){p.rb={ch:t.value,h:[]};drawParts();prev();return}
+   if(t.type==='checkbox'){t.closest('label').classList.toggle('on',t.checked);p.rb.h=[...pe.querySelectorAll('.she-secs input:checked')].map(x=>x.value);prev()}});
+  m.addEventListener('click',async e=>{const t=e.target;
+   const c=t.closest('[data-shc]');if(c){col=c.dataset.shc;m.querySelectorAll('[data-shc]').forEach(x=>x.classList.toggle('on',x===c));prev();return}
+   const a=t.closest('[data-sha]');if(a){parts.push(a.dataset.sha==='rb'?{rb:{ch:'',h:[]}}:{md:''});drawParts();prev();const L=m.querySelectorAll('.she-p');const last=L[L.length-1];if(last){last.scrollIntoView({block:'nearest'});const f=last.querySelector('textarea,select');if(f)f.focus()}return}
+   const pe=t.closest('.she-p');if(pe){const i=+pe.dataset.i;
+    const mv=t.closest('[data-shm]');if(mv){const j=i+(+mv.dataset.shm);if(j<0||j>=parts.length)return;[parts[i],parts[j]]=[parts[j],parts[i]];drawParts();prev();return}
+    if(t.closest('[data-shx]')){const p=parts[i];if((p.md&&p.md.trim().length>40)&&!await N().confirmBox('이 글 조각을 뺄까요? 저장하기 전에는 「취소」로 되돌릴 수 있어요.','빼기'))return;parts.splice(i,1);drawParts();prev();return}}
+   if(t.closest('#sheDel')){if(!await N().confirmBox(`「${b.t||'이 책'}」을 서가에서 뺄까요? 되돌릴 수 없어요.`,'빼기'))return;if(!await seed())return;if(await N().del(K,b.id)){N().closeModal(true);N().toast('책을 뺐어요')}return}
+   if(t.closest('#sheOk')){const t1=$('#sheT').value.trim();if(!t1){N().toast('제목을 적어 주세요');$('#sheT').focus();return}
+    const out={id:b.id,t:t1,en:$('#sheEn').value.trim(),sub:$('#sheSub').value.trim(),no:$('#sheNo').value.trim(),c:col,src:$('#sheSrc').value.trim(),
+     parts:parts.filter(p=>p.rb?p.rb.ch:String(p.md||'').trim()).map(p=>p.rb?{rb:{ch:p.rb.ch,h:p.rb.h}}:{md:p.md}),order:isNew?books().length:(b.order||0)};
+    const vis=($('#sheVis')||{}).value||'pub';
+    if(!await seed())return;if(isNew)out.order=books().length;
+    if(await N().put(K,out.id,out,vis)){N().closeModal(true);N().toast(isNew?'새 책을 꽂았어요':'책을 고쳤어요');open(out.id)}}});
+ }
+ return {bar,bind,open,edit,SEED,books,on};
 })();
