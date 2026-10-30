@@ -26,7 +26,7 @@
  const canEditPc=id=>N().gm()||(U.mode==='pc'&&N().me()===id);
  const entOf=(name,id)=>N().list('ents').find(e=>id&&e.mk===id)||N().list('ents').find(e=>e.type==='인물'&&e.title===name);   /* 10-29: 항목의 「제작기 트레이너」 잇기가 먼저 */
  function render(el){const G=N().gm();const L=pcs();const sel=U.sel&&N().data(K(),U.sel)?U.sel:(L[0]||{}).id||'';U.sel=sel;const NPC=U.mode==='npc';const nPc=N().list('pc').length,nNpc=N().list('npc').length;
-  el.innerHTML=`<div class="toolbar"><h2>${NPC?'NPC 시트':'PC 시트'}</h2><div class="seg"><button data-pm="pc" class="${!NPC?'on':''}">PC ${nPc}</button><button data-pm="npc" class="${NPC?'on':''}">NPC ${nNpc}</button></div><span class="note">트레이너 · 포켓몬은 제작기 값(읽기 전용) · RP 칸은 여기서</span><span class="sp"></span>${G&&L.some(p=>Object.keys(oldOf(p)).length&&MK().trainer(p.id))?`<button class="btn sm" data-p="bioall" title="예전 공개 칸(배경 · 목표 · 인간관계 · 말투 · 메모)을 제작기 트레이너 「상세」로 한 번에 옮겨요">↪ 예전 칸 → 제작기 상세</button>`:''}${G?`<button class="btn sm pri" data-p="add">＋ ${NPC?'NPC':'PC'} (제작기에서)</button>`:''}${!NPC&&N().me()&&!N().data('pc',N().me())?'<button class="btn sm pri" data-p="mine">내 PC 시트 만들기</button>':''}<button class="btn xs ghost" data-p="reload" title="제작기 값 다시 읽기">↻ 제작기</button>${G?omAll(L):''}</div>
+  el.innerHTML=`<div class="toolbar"><h2>${NPC?'NPC 시트':'PC 시트'}</h2><div class="seg"><button data-pm="pc" class="${!NPC?'on':''}">PC ${nPc}</button><button data-pm="npc" class="${NPC?'on':''}">NPC ${nNpc}</button></div><span class="note">트레이너 · 포켓몬은 제작기 값(읽기 전용) · RP 칸은 여기서</span><span class="sp"></span>${G&&L.some(p=>Object.keys(oldOf(p)).length&&MK().trainer(p.id))?`<button class="btn sm" data-p="bioall" title="예전 공개 칸(배경 · 목표 · 인간관계 · 말투 · 메모)을 제작기 트레이너 「상세」로 한 번에 옮겨요">↪ 예전 칸 → 제작기 상세</button>`:''}${G&&!NPC&&N().skin&&N().skin()==='univ'&&window.NT_MONED?'<button class="btn sm pri" data-monnew="misag" title="제작기 「미사그 캠퍼스」 폴더에 새 트레이너를 만들고, 닫으면 PC 시트로 넣어요 (10-30)">＋ 새 학생</button>':''}${G?`<button class="btn sm pri" data-p="add">＋ ${NPC?'NPC':'PC'} (제작기에서)</button>`:''}${!NPC&&N().me()&&!N().data('pc',N().me())?'<button class="btn sm pri" data-p="mine">내 PC 시트 만들기</button>':''}<button class="btn xs ghost" data-p="reload" title="제작기 값 다시 읽기">↻ 제작기</button>${G?omAll(L):''}</div>
    ${G?mkBar():''}${L.length?`<div class="split ${N().skin&&N().skin()==='univ'?'nside':''}"><div><div class="pcgrid">${L.map(p=>card(p)).join('')}</div>${sel?sheet(sel):''}</div>${N().skin&&N().skin()==='univ'?'':`<aside class="side">${sel?sideInfo(sel):''}</aside>`}</div>`:`<div class="empty">아직 ${NPC?'NPC':'PC'} 가 없어요.${G?` 「＋ ${NPC?'NPC':'PC'}」로 제작기 트레이너를 골라 넣어요.`:''}${!NPC&&N().me()?' 「내 PC 시트 만들기」를 눌러요.':''}</div>`}`;
   el.addEventListener('click',e=>{const pm=e.target.closest('[data-pm]');if(pm){U.mode=pm.dataset.pm;U.sel='';N().render();return}
    const en=e.target.closest('[data-goent]');if(en){N().go('ents');setTimeout(()=>window.NT_ENTS&&NT_ENTS.select(en.dataset.goent),0);return}
@@ -75,7 +75,7 @@
   return `<div class="pcsheet" style="margin-top:14px">${UNIV?idHero(id,p,t,rk,img,NPC,side):`<div class="hero">${heroIn}</div>`}
    ${low?`<div class="uxrow ${UNIV?'ulow':''}">${low}</div>`:''}
    ${UNIV?ptSec(id,t,ms,E,'mons'):''}
-   ${partySec(t,ms,E&&!!t)}
+   ${UNIV&&t?univParty(id,t,ms,E):partySec(t,ms,E&&!!t)}
    <div class="rpgrid">${sheetBio(id,NPC).map((x,i)=>bioBox(id,x,E,i)).join('')}${E?`<button type="button" class="rpbox rpadd" data-p="bioadd" data-id="${esc(id)}" title="제작기 「상세」의 「+ 항목」과 같아요">＋ 항목</button>`:''}${(!NPC&&(E||G))?PRIV.map(([k,l])=>box(k,l,priv[k],'priv',E,'pcp')).join(''):''}${G?box('t',NPC?'GM 메모 · 숨기는 것':'GM 메모',sec.t,'gm',true,'sec'):''}</div>
    <div class="rpbox" style="margin-top:10px"><h4>세션 기록<span class="sp"></span>${E?`<button class="btn xs ghost" data-p="logadd" data-id="${esc(id)}">＋ 기록</button>`:''}</h4><div class="sesslog">${(p.log||[]).slice().reverse().map((x,i)=>`<div class="ent"><b>${esc(x.s||'')}</b>${esc(x.t||'')}${E?` <button class="linkbtn small" data-p="logdel" data-id="${esc(id)}" data-i="${(p.log||[]).length-1-i}">지우기</button>`:''}</div>`).join('')||'<span class="dim small">세션마다 한 줄씩 남겨요</span>'}</div></div></div>`}
  /* 10-29 망령: 꾸밈 「대학」 — PC 시트 머리를 학생증(NPC 는 교직원증)으로. 버튼 · 파티 · 제작기 안내는 오른쪽(heroIn 그대로) */
@@ -122,12 +122,74 @@
    ${pots.length?`<details class="pmpot"><summary>포텐셜 ${pots.length} <span class="dim small">${pots.map(x=>esc(x.n)).join(' · ')}</span></summary>${pots.map(x=>`<div class="pml"><span class="pmk">${esc(kindOf(x.i)||'포텐셜')}</span><b>『${esc(x.n)}』</b>${effOf(x.i)?`<div class="pme pre">${esc(effOf(x.i))}</div>`:''}</div>`).join('')}</details>`:''}
    ${m.memo?`<details class="pmpot"><summary>메모</summary><div class="pme pre">${esc(m.memo)}</div></details>`:''}
   </div>`}
+ /* ---------- 10-30 망령: 미사그 — 「파티 4체 외에 강조될 각성체 2체, 서머리 분리해서 멋있게」 「파티 UI 도 제작기 쪽 따라가자」 ----------
+    파티 = 제작기 포켓몬 줄과 같은 모양(No. · 볼 · 타입 · Lv · 특성 · 육각형 · 종족치 등급). 「PL 포켓몬 n/4」 · 「각성체 n/2」 두 묶음, 각성체 줄은 붉은 띠.
+    파티 서머리 = PL 줄 + 각성체 카드 2장(대가 · 보조, 프라이드, 대가 등급 · 걸린 대가, 원전). 비면 「＋ 각성체」 자리.
+    등급 구간 = 제작기 기본 표(data/db.js grade) */
+ const GRD=[[0,'-'],[1,'E-'],[11,'E'],[31,'E+'],[40,'D-'],[46,'D'],[55,'D+'],[60,'C-'],[70,'C'],[81,'C+'],[90,'B-'],[96,'B'],[105,'B+'],[110,'A-'],[120,'A'],[131,'A+'],[140,'AA-'],[150,'AA'],[161,'AA+'],[170,'AAA-'],[180,'AAA'],[191,'AAA+'],[200,'S-'],[220,'S'],[241,'S+'],[256,'EX'],[999,'-']];
+ const grd=v=>{if(v===''||v==null||isNaN(+v)||!+v)return '-';let g='-';for(const [b,c] of GRD){if(b<=+v)g=c;else break}return g};
+ const gcls=g=>'g-'+({S:'s',AAA:'aaa',AA:'aa',A:'a',B:'b',C:'c',D:'d',E:'e',EX:'s'}[String(g).replace(/[+-]$/,'')]||'e');
+ const isAw=m=>m&&(m.awaken==='free'||m.awaken==='c');
+ const AWL={free:'각성 (대가)',c:'각성 (보조)'};
+ const oneLn=s=>brN(s).replace(/\s*\n+\s*/g,' ').trim();
+ const RORD=[0,1,2,5,4,3];   /* 육각형: 위부터 시계 방향 HP · 공격 · 방어 · 스피드 · 특방 · 특공 (제작기와 같은 순서) */
+ function radar(bs){const R=22,cx=26,cy=26;const pt=(i,r)=>{const a=-Math.PI/2+i*Math.PI/3;return (cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1)};
+  const ring=f=>[0,1,2,3,4,5].map(i=>pt(i,R*f)).join(' ');const v=RORD.map(i=>Math.min(1,(+bs[i]||0)/180));const any=v.some(x=>x>0);
+  return `<svg class="mkr-rd" viewBox="0 0 52 52" aria-hidden="true"><polygon points="${ring(1)}" class="rg"/><polygon points="${ring(.5)}" class="rg"/>${[0,1,2,3,4,5].map(i=>`<line x1="${cx}" y1="${cy}" x2="${pt(i,R).split(',')[0]}" y2="${pt(i,R).split(',')[1]}" class="rg"/>`).join('')}${any?`<polygon points="${v.map((x,i)=>pt(i,Math.max(1.5,x*R))).join(' ')}" class="rv"/>`:''}</svg>`}
+ function monInfo(t,m){const E=m.effTxt||{};const rk=(t.ranks||{})['육성'];const lv=MK().baseLv(rk)+(Math.round(+m.dist)||0);
+  const b0=(m.base||[]).map(v=>+v||0),bu=m.baseUp&&Array.isArray(m.baseUp.base)?m.baseUp.base.map(v=>+v||0):null,bs=bu||b0;
+  const types=[m.t1,m.t2,m.t3].filter(x=>x&&x!=='-');const mv=(m.moves||[]).map(x=>typeof x==='string'?{name:x}:x).filter(x=>x&&x.name);
+  const pots=(m.pots||[]).map((n,i)=>({n:String(n||'').replace(/[『』]/g,''),i})).filter(x=>x.n&&x.n!=='-');
+  const ex=[m.excl,...(m.exclX||[])].filter(x=>x&&x.name&&x.name!=='전용 포텐셜');
+  const items=[m.item?{n:m.item,e:E.it}:null,...(m.items2||[]).filter(x=>x&&x.item).map((x,k)=>({n:x.item,e:((E.its2||[])[k]||{}).it}))].filter(Boolean);
+  const pu=(t.ptUse&&t.ptUse.mons&&t.ptUse.mons[m.id])||{};const pride=pu.pride||(m.pride&&m.pride!=='-'?m.pride:'');
+  const om=String(m.memo||'').match(/【각성체 원전】\s*([^\n]+)/);const origin=om?om[1].split(' · ')[0].trim():'';
+  return {E,lv,b0,bu,bs,tot:bs.reduce((a,v)=>a+v,0),types,mv,pots,ex,items,pride,origin}}
+ const gGlyph=g=>g==='♂'?'<span class="mkr-gen m">♂</span>':g==='♀'?'<span class="mkr-gen f">♀</span>':'';
+ function mkRow(t,m,i,ED,aw){const X=monInfo(t,m);const E=X.E;const c1=T2C[X.types[0]]||'#8f7b52',c2=T2C[X.types[1]]||c1;
+  const kindOf=k=>String((E.kinds||[])[k]||(m.potKind||[])[k]||'').replace(/^\d+(\.\d+)*\.\s*/,'');const effOf=k=>brN((E.pots||[])[k]||(m.potEff||[])[k]||'');
+  const line=(lab,name,eff)=>`<div class="pml"><span class="pmk">${lab}</span><b>${esc(name)}</b>${eff?`<div class="pme pre">${esc(brN(eff))}</div>`:''}</div>`;
+  const abE=oneLn(E.ab);
+  return `<article class="mkr ${aw?'aw '+(m.awaken==='free'?'free':'sub'):''}" id="pm-${esc(m.id)}" style="--c1:${c1};--c2:${c2}">
+   <div class="mkr-h"><span class="mkr-no"><small>No.</small>${String(i+1).padStart(3,'0')}</span>
+    <span class="mkr-av">${monPic(m)}</span>
+    <div class="mkr-id"><div class="mkr-n"><b>${esc(m.name||'(이름 없음)')}</b>${gGlyph(m.gender)}${m.partner?'<span class="mkr-star" title="파트너">★</span>':''}</div>
+     <div class="mkr-c">${X.types.map(tchip).join('')}<span class="mkr-lv">Lv.${X.lv}</span></div>
+     <div class="mkr-c">${aw?`<span class="mkr-aw">${AWL[m.awaken]}</span>`:''}${X.pride?`<span class="mkr-pr">프라이드 <b>${esc(X.pride)}</b></span>`:''}${m.tera&&m.tera!=='-'?`<span class="mkr-tg">테라 ${esc(m.tera)}</span>`:''}</div></div>
+    <div class="mkr-ab"><div class="mkr-abn"><span class="mkr-k">특성</span><b>${esc(m.ability||'특성 없음')}</b></div>${abE?`<p title="${esc(abE)}">${esc(abE)}</p>`:''}${X.items.length?`<div class="mkr-it">${X.items.map(x=>`<span title="${esc(oneLn(x.e||''))}">${esc(x.n)}</span>`).join('')}</div>`:''}</div>
+    <div class="mkr-st">${radar(X.bs)}<div><div class="mkr-gs">${STL.map((l,k)=>{const g=grd(X.bs[k]);return `<span title="${l} ${X.bs[k]||'-'}${X.bu&&X.bu[k]!==X.b0[k]?` (포텐셜로 ${X.b0[k]} → ${X.bu[k]})`:''}"><small>${l}</small><b class="${gcls(g)}">${esc(g)}</b></span>`}).join('')}</div><div class="mkr-sum">종족치 합 <b>${X.tot||'-'}</b> · 기술 ${X.mv.length} · 포텐셜 ${X.pots.length+X.ex.length}</div></div></div>
+    ${ED&&t.id?`<div class="mkr-act">${window.NT_MONED?`<button type="button" class="btn xs" data-moned="${esc(m.id)}" data-id="${esc(t.id)}" title="제작기 화면 그대로 이 포켓몬 한 장을 고쳐요">✎ 고치기</button>`:''}<button type="button" class="btn xs ghost" data-ux="item" data-id="${esc(t.id)}" data-pid="${esc(m.id)}">소지품</button></div>`:''}</div>
+   ${X.mv.length||X.pots.length||X.ex.length||m.memo?`<details class="mkr-more"><summary>${[X.mv.length?'기술 '+X.mv.length:'',X.pots.length?'포텐셜 '+X.pots.length:'',X.ex.length?'전용 '+X.ex.length:'',m.memo?'메모':''].filter(Boolean).join(' · ')}</summary><div class="mkr-mb">
+    ${X.mv.length?`<div class="pmmv">${X.mv.map(x=>{const r=MK().move(x.name);return `<div class="pmm" title="${esc(r?brN(r[13]||''):'')}">${r?tchip(r[5]):''}<b>${esc(x.name)}</b>${x.half?'<small class="pmb">할인</small>':''}<span class="sp"></span><small class="dim">${r?`${esc(r[6]||'')}${+r[7]?` · ${esc(r[7])}`:''}${r[8]&&r[8]!=='0'&&r[8]!=='-'?` · ${esc(r[8])}%`:''}`:''}</small></div>`}).join('')}</div>`:''}
+    ${X.ex.map(x=>line('전용',x.name,x.eff)).join('')}${X.pots.map(x=>line(esc(kindOf(x.i)||'포텐셜'),'『'+x.n+'』',effOf(x.i))).join('')}${m.memo?`<div class="pme pre mkr-memo">${esc(m.memo)}</div>`:''}</div></details>`:''}
+  </article>`}
+ function univParty(id,t,ms,E){if(!t)return '';if(!MK().dbReady())MK().db().then(()=>N().render());const pl=ms.filter(m=>!isAw(m)),aw=ms.filter(isAw).sort((a,b)=>(a.awaken==='free'?0:1)-(b.awaken==='free'?0:1));const G=N().gm();
+  const add=(k,n)=>E&&(k!=='aw'||G)&&n?`<button type="button" class="btn xs" data-monadd="${k}" data-id="${esc(id)}" title="제작기에 새 시트를 만들어 바로 열어요">＋ ${k==='aw'?'각성체':'PL 포켓몬'}</button>`:'';
+  return `<section class="mkparty" style="margin-top:10px">
+   <div class="mkpg"><b>PL 포켓몬</b><span>${pl.length} / 4 · PL이 짠다</span><span class="sp"></span>${add('pl',pl.length<4)}</div>
+   ${pl.map((m,i)=>mkRow(t,m,i,E,false)).join('')||'<p class="mkpe">아직 없어요</p>'}
+   <div class="mkpg aw"><b>각성체</b><span>${aw.length} / 2 · GM이 짠다 · 통솔점을 쓰지 않는다</span><span class="sp"></span>${add('aw',aw.length<2)}</div>
+   ${aw.map((m,i)=>mkRow(t,m,i,E,true)).join('')||'<p class="mkpe">포켓몬 시트의 「각성체」 칸에서 각성 (대가) · (보조)를 고르면 이쪽으로 와요</p>'}</section>`}
+ /* 파티 서머리의 각성체 카드 */
+ function awCards(id,t,ms,E){const aw=ms.filter(isAw).sort((a,b)=>(a.awaken==='free'?0:1)-(b.awaken==='free'?0:1));const o=t.misagOut||null;const G=N().gm();
+  const pen=o&&o.pen?Object.entries(o.pen).map(([k,v])=>`<span>${esc(k)} <b>${esc(v)}</b></span>`).join(''):'';
+  const card=m=>{const X=monInfo(t,m);const free=m.awaken==='free';const u=MK().img(m);
+   return `<a class="awx ${free?'free':'sub'}" href="#pm-${esc(m.id)}" data-pmgo="${esc(m.id)}" style="--c1:${T2C[X.types[0]]||'#8f7b52'}">
+    <span class="awx-por ${u?'':'noimg'}" style="${u?`background-image:url('${cssu(u)}')`:''}">${u?'':esc([...(m.name||'?')][0]||'?')}</span>
+    <span class="awx-b"><span class="awx-k">${free?'각성 · 대가':'각성 · 보조'}</span><b class="awx-n">${esc(m.name||'(이름 없음)')}</b>${X.origin?`<span class="awx-o">원전 ${esc(X.origin)}</span>`:''}
+     <span class="mkr-c">${X.types.map(tchip).join('')}<span class="mkr-lv">Lv.${X.lv}</span></span>
+     <span class="awx-pr"><span>프라이드</span><b>${esc(X.pride||'자동')}</b>${free&&o&&o.grade&&o.grade!=='-'?`<span>대가</span><b class="awx-g">${esc(o.grade)}</b>`:''}</span>
+     ${free&&pen?`<span class="awx-pen">${pen}</span>`:''}</span>
+    <span class="awx-seal" aria-hidden="true">${free?'代價':'補助'}</span></a>`};
+  const empty=n=>`<div class="awx empty"><span>각성체 ${n}</span><small>아직 없어요</small>${E&&G?`<button type="button" class="btn xs" data-monadd="aw" data-id="${esc(id)}">＋ 각성체</button>`:''}</div>`;
+  return `<div class="awxs">${aw.slice(0,2).map(card).join('')}${aw.length<2?[...Array(2-Math.min(2,aw.length))].map((_,k)=>empty(aw.length+k+1)).join(''):''}</div>`}
  window.NT_PCX={partySec,monCard};
  /* 10-29: 지도의 인물 얼굴 → 이 시트 */
  window.NT_PC={select(k,id){U.mode=k==='npc'?'npc':'pc';U.sel=id;N().go('pc');setTimeout(()=>{const sh=$('.pcsheet');if(sh)sh.scrollIntoView({behavior:'smooth',block:'start'})},60)}};   /* 미리보기 · 점검용 */
  function monRow(m){const mv=(m.moves||[]).map(x=>typeof x==='string'?x:(x&&(x.name||x.n))||'').filter(Boolean);const pots=(m.pots||[]).filter(Boolean);
   return `<div class="monrow"><i style="${MK().img(m)?`background-image:url('${cssu(MK().img(m))}')`:''}"></i><div class="mb"><div class="row" style="gap:6px"><b>${esc(m.name||'')}</b>${tchip(m.t1)}${tchip(m.t2)}${m.tera&&m.tera!=='-'?`<small class="dim">테라 ${esc(m.tera)}</small>`:''}</div><div class="small">${m.ability?'특성 '+esc(m.ability):''}${m.item?' · 소지품 '+esc(m.item):''}${m.dist?' · 분배 '+esc(m.dist):''}</div>${mv.length?`<div class="small dim">기술 · ${mv.map(esc).join(' · ')}</div>`:''}${pots.length?`<div class="small dim">포텐셜 · ${pots.map(esc).join(' · ')}</div>`:''}${m.memo?`<div class="small pre" style="margin-top:3px">${esc(m.memo)}</div>`:''}</div></div>`}
- function memoSec(t){if(!t)return '';const det=Object.entries(t.detail||{}).filter(([k,v])=>v&&typeof v!=='object');if(!det.length)return '';
+ function memoSec(t){if(!t)return '';const QO=['지시','육성','통솔','능력'];const qo=k=>{const i=QO.indexOf(k);return i<0?9:i};   /* 10-30 망령 「자질 메모 순서는 지시 · 육성 · 통솔 · 능력」 (제작기 문서의 키 순서가 섞여 있다) */
+  const det=Object.entries(t.detail||{}).filter(([k,v])=>v&&typeof v!=='object').sort((a,b)=>qo(a[0])-qo(b[0]));if(!det.length)return '';
   return `<section class="ux-sec ux-memo"><h4 class="ux-h"><span>자질 메모</span><span class="sp"></span><small title="제작기 트레이너에서 고쳐요">제작기</small></h4><dl class="ux-kv">${det.slice(0,14).map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(String(v))}</dd>`).join('')}</dl></section>`}
  /* 10-29 망령: 「기본 요소(메인 · 통솔점 · 【1/시】 · 분배레벨 · 「기술 할인점」)를 꾸미고 얼마나 찼는지 + 포켓몬도 넣어 PT 서머리로」.
     제작기가 저장할 때 남기는 t.ptUse = {items:[{n,max,use,auto}], mons:{pid:{pride,cost,lv,dist,disc,once,sock,sockCap,aw}}, sock:{u,m}} 를 읽는다.
@@ -143,7 +205,7 @@
  const ptLab=n=>{const s=String(n);const m=s.match(/^【(.+)】$/);if(m)return `<em class="ux-tag">${esc(m[1])}</em>`;const q=s.match(/^「(.+)」$/);return esc(q?q[1]:s)};
  const fmt=x=>String(Math.round((+x||0)*100)/100);
  /* 10-30 망령 「포켓몬 서머리를 저기 붙이니 길이가 감당 안 돼 — 휴대폰 · 덱 아래 파티 부근으로 따로」: part = 'gauge'(학생증 옆, 기본 요소 막대) | 'mons'(파티 위, 포켓몬 줄) | 없음(둘 다) */
- function ptSec(id,t,ms,E,part){if(!t)return '';const D=ptData(t,ms);const G=part!=='mons',Mo=part!=='gauge';if(!(G&&D.items.length)&&!(Mo&&ms.length))return '';
+ function ptSec(id,t,ms,E,part){if(!t)return '';const D=ptData(t,ms);const G=part!=='mons',Mo=part!=='gauge';const UV=part==='mons'&&N().skin&&N().skin()==='univ';if(!(G&&D.items.length)&&!(Mo&&ms.length)&&!UV)return '';
   const col=i=>PTC[i%PTC.length];const per={pride:'cost',dist:'dist',disc:'disc',once:'once'};
   const gauge=it=>{if(it.use==null)return `<div class="ptg" title="제작기에서 이 트레이너를 한 번 저장하면 보여요"><span class="ptl">${ptLab(it.n)}</span><div class="ptb none"><span>제작기에서 한 번 저장하면 보여요</span></div><span class="ptn"><b>—</b> / ${fmt(it.max)}</span></div>`;
    const k=per[it.auto];const tot=Math.max(it.max,it.use)||1;const over=it.use>it.max+1e-9;let segs='',acc=0;
@@ -157,7 +219,7 @@
     <div class="ptm-a">${m.ability?`<span>${esc(m.ability)}</span>`:''}${m.item?`<span>${esc(m.item)}</span>`:''}</div></div>${E&&window.NT_MONED?`<button type="button" class="btn xs ghost" data-moned="${esc(m.id)}" data-id="${esc(id)}" title="제작기 화면으로 고치기">✎</button>`:''}</div>`};
   return `<section class="ux-sec ux-pt ${part==='mons'?'ux-ptm':''}"><h4 class="ux-h"><span>${part==='mons'?'파티 서머리':'PT 서머리'}</span><small>${ms.length}체</small><span class="sp"></span>${D.sock?`<small class="ptsk ${D.sock.u>D.sock.m?'warn':''}">PT 기술점 <b>${fmt(D.sock.u)}</b> / ${fmt(D.sock.m)}</small>`:''}</h4>
    ${G&&D.items.length?`<div class="ptgs">${D.items.map(gauge).join('')}</div>`:''}
-   ${Mo&&ms.length?`<div class="ptms">${ms.map(mon).join('')}</div>`:''}
+   ${Mo&&part==='mons'&&N().skin&&N().skin()==='univ'?`<div class="ptsub"><b>PL 포켓몬</b><small>${ms.filter(m=>!isAw(m)).length} / 4</small></div><div class="ptms">${ms.map((m,i)=>isAw(m)?'':mon(m,i)).join('')||'<span class="dim small">아직 없어요</span>'}</div><div class="ptsub aw"><b>각성체</b><small>${ms.filter(isAw).length} / 2</small></div>${awCards(id,t,ms,E)}`:Mo&&ms.length?`<div class="ptms">${ms.map(mon).join('')}</div>`:''}
    ${D.snap||part==='mons'?'':'<div class="small dim" style="margin-top:6px">제작기에서 이 트레이너를 한 번 저장하면 통솔점 · 프라이드 · 소켓까지 보여요</div>'}</section>`}
  function sideInfo(id){const t=MK().trainer(id);if(!t)return '';const u=(t.unique||[]).filter(x=>x&&x.name);const base=t.base||{};const det=t.detail||{};
   if(N().skin&&N().skin()==='univ')return '';

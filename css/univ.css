@@ -394,3 +394,77 @@ html[data-skin="univ"] .idc-foot{margin-top:auto}
 .mpbg span b{color:var(--red,#e4002b)}
 .mpbg em{position:absolute;top:5px;right:5px;font-style:normal;font-size:11px;line-height:1;padding:3px 5px;border-radius:3px;background:rgba(0,0,0,.65);color:#fff;opacity:0}
 .mpbg:hover em{opacity:1}
+/* 10-30 망령: 미사그 파티 = 제작기 포켓몬 줄 모양 · PL 4 / 각성체 2 묶음 */
+.mkparty{display:flex;flex-direction:column;gap:6px}
+.mkpg{display:flex;align-items:center;gap:10px;padding:8px 12px;border-left:4px solid var(--crim2,#8f1a26);background:rgba(0,0,0,.35);color:#f3eadb;margin-top:6px}
+.mkpg b{font-family:'Noto Serif KR',serif;font-weight:900;font-size:15px}
+.mkpg>span{font-size:12px;color:#c9b994}
+.mkpg.aw{border-left-color:var(--gold,#cfae6e)}
+.mkpe{margin:0;padding:8px 14px;font-size:12px;color:var(--mute)}
+.mkr{--ink:#1a140d;--ink2:#4a3f30;--ink3:#7a6a50;--fg:var(--ink);--fg2:var(--ink2);--mute:var(--ink3);--line:#c9b994;--line2:#a8936a;
+  background:linear-gradient(160deg,#efe6d2,#e4d8bd);color:var(--ink);border:1px solid #b9a77f;box-shadow:0 4px 10px rgba(0,0,0,.35)}
+.mkr.aw{border-left:6px solid var(--crim2,#8f1a26)}
+.mkr.aw.sub{border-left-color:var(--gold2,#8f7b52)}
+.mkr-h{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:8px 12px}
+.mkr-no{display:flex;flex-direction:column;min-width:56px;font-family:'Cinzel','Noto Serif KR',serif;font-weight:900;font-size:30px;line-height:.9;color:var(--crim,#6e1019)}
+.mkr-no small{font-size:14px;color:var(--gold2,#8f7b52);letter-spacing:.05em}
+.mkr-av i{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;background:#1a140d center/cover no-repeat;border:3px solid var(--c1);box-shadow:0 0 0 2px #efe6d2,0 0 0 3px var(--c2);font-style:normal;color:#fff;font-weight:900;font-size:20px}
+.mkr-id{flex:1 1 170px;min-width:0;display:flex;flex-direction:column;gap:3px}
+.mkr-n{display:flex;align-items:center;gap:6px;min-width:0}
+.mkr-n b{font-family:'Noto Serif KR',serif;font-weight:900;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mkr-gen{font-weight:700}.mkr-gen.f{color:#d0457a}.mkr-gen.m{color:#3a6fc4}.mkr-star{color:#b08800}
+.mkr-c{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.mkr-lv{font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;background:#1a140d;color:#e9c46a}
+.mkr-aw{font-size:11px;font-weight:700;padding:1px 7px;border-radius:3px;background:var(--crim2,#8f1a26);color:#f3eadb}
+.mkr.sub .mkr-aw{background:var(--gold2,#8f7b52)}
+.mkr-pr,.mkr-tg{font-size:11px;padding:1px 7px;border-radius:3px;border:1px solid #a8936a;color:var(--ink2)}
+.mkr-pr b{color:var(--crim,#6e1019)}
+.mkr-ab{flex:1 1 230px;min-width:0;background:#1a140d;color:#efe6d2;border-left:3px solid var(--crim2,#8f1a26);padding:6px 10px}
+.mkr-abn{display:flex;align-items:center;gap:6px;min-width:0}
+.mkr-abn b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mkr-k{flex:none;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:999px;background:#3f9a5a;color:#fff}
+.mkr-ab p{margin:3px 0 0;font-size:11.5px;line-height:1.45;color:#cdbf9f;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.mkr-it{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.mkr-it span{font-size:10.5px;padding:0 6px;border:1px solid #6b5d44;color:#e9dcc0;border-radius:3px}
+.mkr-st{flex:0 1 auto;display:flex;align-items:center;gap:8px;min-width:0}
+.mkr-rd{width:50px;height:50px;flex:none}
+.mkr-rd .rg{fill:none;stroke:#8f7b52;stroke-width:.6}.mkr-rd .rv{fill:rgba(46,125,189,.35);stroke:#2e7dbd;stroke-width:1}
+.mkr-gs{display:grid;grid-template-columns:repeat(6,minmax(30px,1fr));gap:3px}
+.mkr-gs span{display:flex;flex-direction:column;align-items:center;gap:1px}
+.mkr-gs small{font-size:9.5px;color:var(--ink2);font-weight:700}
+.mkr-gs b{min-width:30px;text-align:center;font-size:11px;padding:1px 4px;border-radius:4px;color:#fff;background:var(--gc,#8d97a6)}
+.g-s{--gc:#C8362B}.g-aaa{--gc:#B4471E}.g-aa{--gc:#C46A12}.g-a{--gc:#B08800}.g-b{--gc:#2E8A4F}.g-c{--gc:#2B6CB4}.g-d{--gc:#6A6FA8}.g-e{--gc:#8D97A6}
+.mkr-sum{font-size:11px;color:var(--ink2);margin-top:3px;white-space:nowrap}
+.mkr-act{display:flex;flex-direction:column;gap:4px;flex:none}
+.mkr-act .btn{background:#1a140d;color:#f3eadb;border-color:#1a140d}
+.mkr-act .btn.ghost{background:transparent;color:var(--ink2);border-color:#a8936a}
+.mkr-more{border-top:1px dashed #b9a77f;padding:4px 12px 8px}
+.mkr-more summary{cursor:pointer;font-size:12px;color:var(--ink2)}
+.mkr-mb{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.mkr-memo{font-size:12px;color:var(--ink2)}
+@media(max-width:560px){.mkr-no{font-size:22px;min-width:40px}.mkr-no small{font-size:11px}.mkr-av i{width:44px;height:44px}.mkr-act{flex-direction:row;flex:1 1 100%}.mkr-st{flex:1 1 100%}.mkr-gs{flex:1}}
+/* 파티 서머리: PL 줄 / 각성체 카드 */
+.ptsub{display:flex;align-items:baseline;gap:8px;margin:10px 0 6px;font-family:'Noto Serif KR',serif;color:var(--crim2,#8f1a26)}
+.ptsub b{font-weight:900;font-size:13px;letter-spacing:.1em}.ptsub small{color:var(--mute)}
+.ptsub:first-of-type{margin-top:0}
+.awxs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:10px}
+.awx{position:relative;display:flex;gap:12px;padding:12px;border-radius:6px;text-decoration:none;color:#f3eadb;overflow:hidden;
+  background:radial-gradient(circle at 85% 20%,rgba(207,174,110,.18),transparent 45%),linear-gradient(135deg,#5a0d17,#1a0c0f 72%);border:1px solid #8f7b52;box-shadow:inset 0 0 0 3px rgba(207,174,110,.16),0 6px 14px rgba(0,0,0,.4)}
+.awx.sub{background:radial-gradient(circle at 85% 20%,rgba(207,174,110,.14),transparent 45%),linear-gradient(135deg,#22324a,#0f1622 72%)}
+.awx:hover{border-color:#cfae6e}
+.awx-por{width:92px;height:120px;flex:none;background:#000 center top/cover no-repeat;border:1px solid #cfae6e;outline:1px solid rgba(0,0,0,.7);outline-offset:-4px;display:grid;place-items:center;font-family:'Noto Serif KR',serif;font-size:36px;font-weight:900;color:#cfae6e}
+.awx-b{position:relative;z-index:1;display:flex;flex-direction:column;gap:5px;min-width:0;padding-right:44px}
+.awx-k{font-family:'Cinzel','Noto Serif KR',serif;font-size:11px;letter-spacing:.25em;color:#cfae6e}
+.awx-n{font-family:'Noto Serif KR',serif;font-weight:900;font-size:20px;line-height:1.15;color:#fff;overflow-wrap:anywhere}
+.awx-o{font-size:12px;color:#d9c9a3;font-style:italic}
+.awx .mkr-lv{background:rgba(255,255,255,.12);color:#e9c46a}
+.awx-pr{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:11px;color:#c9b994}
+.awx-pr b{font-family:'Cinzel','Noto Serif KR',serif;font-size:15px;color:#fff;padding:0 7px;border:1px solid #cfae6e;border-radius:2px}
+.awx-pr b.awx-g{background:#b0202e;border-color:#b0202e}
+.awx-pen{display:flex;flex-wrap:wrap;gap:4px}
+.awx-pen span{font-size:10.5px;padding:0 6px;border:1px solid rgba(207,174,110,.5);border-radius:3px;color:#e9dcc0}
+.awx-seal{position:absolute;right:10px;bottom:10px;width:50px;height:50px;border:2px solid #d0303e;border-radius:50%;display:grid;place-items:center;font-family:'Noto Serif KR',serif;font-weight:900;font-size:14px;color:#e2404d;transform:rotate(-12deg);opacity:.8;box-shadow:inset 0 0 0 3px rgba(0,0,0,.35),inset 0 0 0 4px #d0303e}
+.awx.sub .awx-seal{border-color:#cfae6e;color:#cfae6e;box-shadow:inset 0 0 0 3px rgba(0,0,0,.35),inset 0 0 0 4px #cfae6e}
+.awx.empty{flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:120px;background:rgba(255,255,255,.3);border:1.5px dashed #a8936a;box-shadow:none;color:var(--ink3,#7a6a50)}
+.awx.empty small{color:var(--ink3,#7a6a50)}
+.awx.empty span{font-family:'Noto Serif KR',serif;font-weight:900;color:var(--ink2)}
