@@ -441,6 +441,14 @@ html[data-skin="univ"] .idc-foot{margin-top:auto}
 .mkr-more{border-top:1px dashed #b9a77f;padding:4px 12px 8px}
 .mkr-more summary{cursor:pointer;font-size:12px;color:var(--ink2)}
 .mkr-mb{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+/* 10-30 망령 「노트에서 기술 · 포텐셜 · 각성체 칸 글자가 안 보임」: notes.css 의 어두운 테마용 색(.pmm 검은 줄 · .pme 밝은 회색)이 양피지 카드 위에 그대로 남아 있었다 */
+.mkr .pmm{background:rgba(255,255,255,.45);border:1px solid #c9b994;color:var(--ink)}
+.mkr .pmm b{color:var(--ink)}
+.mkr .pmm .dim{color:var(--ink3)}
+.mkr .pml{color:var(--ink)}
+.mkr .pme{color:var(--ink2)}
+html[data-skin="univ"] .awid{background:rgba(255,255,255,.35);border-color:#a8936a;color:#1a140d}
+html[data-skin="univ"] .awidt small{color:#4a3f30}
 .mkr-memo{font-size:12px;color:var(--ink2)}
 @media(max-width:560px){.mkr-no{font-size:22px;min-width:40px}.mkr-no small{font-size:11px}.mkr-av i{width:44px;height:44px}.mkr-act{flex-direction:row;flex:1 1 100%}.mkr-st{flex:1 1 100%}.mkr-gs{flex:1}}
 /* 파티 서머리: PL 줄 / 각성체 카드 */

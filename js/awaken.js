@@ -15,6 +15,8 @@
      격 = 각성체 프라이드(제작기 포켓몬 pride, 없으면 칸에서 고름) → GRADE. 추천 picks[].cost = 룰북 「각성체와 대가」 표의 분류 · 항목.
      확정 = pcp.awk[n-1].fixed {id,n,at} (PL 도 보인다) — 묶음에서 빠지고 칸 테두리가 바뀐다. 추천 기록 = awk/<sid> (GM). 「⇪ 제작기 각성체로」 = 그 칸의 제작기 각성체 시트 메모에 원전을 넣는다(없으면 새로 만든다).
    10-30 망령 「DB 후보 말고 새 후보로 찾게. DB는 한계가 있으니까」: 묶음 글이 DB 밖 새 후보(extra) 3~5명을 중심으로, DB 후보(picks)는 0~2명만 달라고 한다. extra 는 6명까지 받는다.
+   10-30 망령 「겉모습은 저 창에서 안 내도」「코멘트는 따로 말고 1 · 2 칸 아무 데나 누르면 각성체 고치기 창」: 트레이너 포트 줄에서 겉모습 글을 뺐다. 각성체 칸(.aweslot data-sedit)을 누르면 sendBox — 그림 · 버튼 · 메인/프라이드 줄은 제 일을 한다. 코멘트는 있을 때만 보인다.
+   10-30 망령 「설명이 길어져도 칸 차이가 안 나게」: 각성체 칸 코멘트는 두 줄까지만(넘치면 … , 전문은 마우스를 올리거나 칸을 눌러 고치기 창에서). 코멘트가 없어도 두 줄 자리를 잡는다.
    10-30 망령 「묶음과 결과 넣기를 따로 할 필요가?」「코멘트도 눌러서 고치게」「고치기 창에서 프라이드 · 대가(종류까지) 지정 → 배역 뽑는 데 참고」「학생증의 각성체 줄은 파티 서머리 각성체 아랫줄로」:
      묶음 창 아래에 「📋 감우 결과 넣기」. 각성체 탭 코멘트를 누르면 그 칸 코멘트 창. 고치기 창(sendBox) = 칸마다 메인 (대가) · 프라이드 · 대가 분류(pcp.awk[n-1].cost).
      대가 분류는 묶음 글 · 그림 읽기(gradeLine)에 「GM 이 정한 대가」로 들어간다. idCard 는 pc_ui 파티 서머리 각성체 카드 아래에서 부른다.
@@ -69,12 +71,12 @@ window.NT_AWK=(()=>{
   B:{f:[2,3],max:3,t:'격 중간 — 한 고장 전설 · 야사의 주인공, 이름난 장인 · 무인 (지명도 2~3)',cost:'대가 B — 분류 하나 (지시 『6령』 2개 빼기 · 육성 분배레벨 −10 · 통솔 B-1 또는 B-2 · 능력 『전용 포텐셜』 −1)'},
   A:{f:[3,4],max:4,t:'격 높음 — 한 나라에 알려진 인물 · 신화의 조연급, 유명 인물이라면 열화된 한 시절 (지명도 3~4)',cost:'대가 A — B 에 더해 (지시 『4식』 1개 더 · 육성 −10 더 · 통솔 B 1택 + A-1 또는 A-2 · 능력 고유 포텐셜 점수 −0.5)'},
   EX:{f:[1,5],max:5,t:'EX — 격은 GM 이 정함',cost:'대가는 GM 이 원하는 대로 조합'}};
- const COSTLIST='대가 목록 (룰북 「각성체와 대가」): 지시 B 『6령』 2개 빼기 / A 『4식』 1개 더 · 육성 B 분배레벨 −10 / A −10 더 · 통솔 B-1 PT 에 특정 타입 2체 이상 · B-2 『역할』 1개 무효 / A-1 필드 위 다른 아군에 지정 타입이 없으면 자기 포텐셜 무효 · A-2 필드 위 아군 한 체의 『역할』 무효 · 능력 B 『전용 포텐셜』 −1 / A 고유 포텐셜 점수 −0.5';
+ const COSTLIST='대가 목록 (룰북 「각성체와 대가」): 지시 B 『6령』 2개 빼기 / A 『4식』 1개 더 · 육성 B 분배레벨 −10 / A −10 더 · 통솔 B-1 PT 에 특정 타입 2체 이상 (미사그 1인 2체: 각성체 2체 모두 지정 타입) · B-2 『역할』 1개 무효 / A-1 필드 위 다른 아군에 지정 타입이 없으면 자기 포텐셜 무효 · A-2 필드 위 아군 한 체의 『역할』 무효 · 능력 B 『전용 포텐셜』 −1 / A 고유 포텐셜 점수 −0.5. 미사그는 1인 2체 — 각성체는 처음부터 「1인 기준 (2체)」 값 안에서 짠다 (파트너 없음 · 통솔점 검사 없음).';
  const slotGrade=sid=>{const x=slot(sid);return x.kind==='c'?'C':gradeOf(x.pride)};
  const gradeLine=sid=>{const x=slot(sid);const g=slotGrade(sid);const G=GRADE[g];return `${x.kind==='c'?'각성 (보조) · ':x.kind==='free'?'각성 (대가) · ':''}프라이드 ${x.pride||'모름'}${G?' → '+G.t+' · '+(x.kind==='c'?'대가 없음 (보조)':G.cost):''}${x.kind!=='c'&&x.cost?` · GM 이 정한 대가 분류: ${x.cost} (이 대가가 어울리는 인물로)`:''}`};
  /* 10-30: 고치기 창에서 고르는 대가 분류 (룰북 「각성체와 대가」 표) */
  const CPICK=['지시','육성','통솔 · B-1','통솔 · B-2','통솔 · A-1','통솔 · A-2','능력'];
- const COSTT={'지시':'『6령』 2개 빼기 (A 면 『4식』 1개 더)','육성':'분배레벨 −10 (A 면 −10 더)','통솔 · B-1':'PT 에 특정 타입 2체 이상','통솔 · B-2':'『역할』 1개 무효','통솔 · A-1':'필드 위 다른 아군에 지정 타입이 없으면 자기 포텐셜 무효 (B 1택 더)','통솔 · A-2':'필드 위 아군 한 체의 『역할』 무효 (B 1택 더)','능력':'『전용 포텐셜』 −1 (A 면 고유 포텐셜 점수 −0.5)'};
+ const COSTT={'지시':'『6령』 2개 빼기 (A 면 『4식』 1개 더)','육성':'분배레벨 −10 (A 면 −10 더)','통솔 · B-1':'PT 에 특정 타입 2체 이상 — 미사그 1인 2체에선 각성체 2체 모두 지정 타입','통솔 · B-2':'『역할』 1개 무효','통솔 · A-1':'필드 위 다른 아군에 지정 타입이 없으면 자기 포텐셜 무효 (B 1택 더)','통솔 · A-2':'필드 위 아군 한 체의 『역할』 무효 (B 1택 더)','능력':'『전용 포텐셜』 −1 (A 면 고유 포텐셜 점수 −0.5)'};
  /* 트레이너 포트 · NAI 설정 */
  const tport=pc=>pcp(pc).tport||null;
  const naiCfg=()=>Object.assign({key:'main',port:5,stand:5},N().data('awkcfg','nai')||{},{bg:false});   /* 10-30 망령: NAI 「배경 지우기」(Anlas)는 쓰지 않는다 — 스탠딩은 뽑을 때 V5 투명 배경 설정으로 */
@@ -162,7 +164,7 @@ window.NT_AWK=(()=>{
    <div class="tblwrap"><table class="awtbl"><thead><tr><th>이름</th><th>지역 · 시대</th><th>분류</th><th>지명도</th><th>타입</th><th>대가</th><th>은열쇠</th><th></th></tr></thead><tbody>${L.map(e=>`<tr><td><b>${esc(e.n)}</b>${e.x?' <span class="awx">Fate</span>':''}${e.own?' <span class="awx own">직접</span>':''}<div class="small dim">${esc(e.l||'')}</div></td><td>${esc(e.r||'')}<div class="small dim">${esc(e.e||'')}</div></td><td>${esc(e.c||'')}</td><td class="awfm">${stars(e.f)}</td><td>${(e.t||[]).map(tchip).join(' ')}</td><td>${esc(e.w||'')}</td><td class="small">${esc(e.k||'')}</td><td>${e.own?`<button class="linkbtn small" data-aw="dbedit" data-v="${esc(e.id)}">고치기</button>`:`<button class="linkbtn small" data-aw="dbedit" data-v="${esc(e.id)}" title="고친 것은 직접 추가 목록에 사본으로 저장돼요">고치기</button>`}</td></tr>`).join('')}</tbody></table></div></div>`}
 
  /* ----- 손 ----- */
- async function onClick(ev){const b=ev.target.closest('[data-aw]');if(!b||b.tagName==='SELECT'||b.tagName==='INPUT')return;const k=b.dataset.aw,v=b.dataset.v;const id=U.sel;
+ async function onClick(ev){const b=ev.target.closest('[data-aw]');if(!b){const se=ev.target.closest('[data-sedit]');if(se&&!ev.target.closest('[data-aimg],.awemp,a,button,input,select,label,textarea'))return sendBox(se.dataset.sedit);return}if(b.tagName==='SELECT'||b.tagName==='INPUT')return;const k=b.dataset.aw,v=b.dataset.v;const id=U.sel;
   if(k==='mode'){U.mode=v;return N().render()}
   if(k==='sel'){U.sel=v;U.more=0;U.open='';return N().render()}
   if(k==='tag'){return save(id,r=>{const L=r.tags||[];const i=L.indexOf(v);if(i>=0)L.splice(i,1);else L.push(v);r.tags=L})}
@@ -350,10 +352,10 @@ window.NT_AWK=(()=>{
 
  /* ----- 「각성체」 화면 (모두): PL = 제 PC 의 각성체 그림 · 코멘트, GM = 전원 + 묶음 ----- */
  function slotHtml(x,G){const r=G?rec(x.sid):{};const pk=r.pick&&DB.base&&byId(r.pick);const E=canSend(x.pc);const fx=x.fixed;
-  return `<div class="aweslot ${fx?'fixed':''}"><div class="awepor ${E?'edit':''}" ${E?`data-aimg="${esc(x.sid)}" title="눌러서 (또는 끌어다 놓아) 각성체 ${x.n} 그림 바꾸기"`:''} style="${x.img?`background-image:url('${cssu(x.img)}')`:''}">${x.img?'':E?'그림 넣기':'그림 없음'}</div>
+  return `<div class="aweslot ${fx?'fixed':''}" ${E?`data-sedit="${esc(x.pc)}" title="눌러서 각성체 고치기"`:''}><div class="awepor ${E?'edit':''}" ${E?`data-aimg="${esc(x.sid)}" title="눌러서 (또는 끌어다 놓아) 각성체 ${x.n} 그림 바꾸기"`:''} style="${x.img?`background-image:url('${cssu(x.img)}')`:''}">${x.img?'':E?'그림 넣기':'그림 없음'}</div>
    <div class="awes"><div class="row" style="gap:6px"><b>각성체 ${x.n}</b>${fx?`<span class="awfix">✦ 확정 · ${esc(fx.n)}</span>`:''}</div>
     <small>${x.mname?`제작기 「${esc(x.mname)}」${x.own?' · 올린 그림':''} · `:x.own?'올린 그림 · ':''}${x.kind==='c'?'보조':x.kind==='free'?'대가':''}${x.pride?' · 프라이드 '+esc(x.pride):''}${x.kind!=='c'&&x.cost?' · 대가 '+esc(x.cost):''}</small>
-    <div class="pre small awenote ${E?'edit':''}" ${E?`data-aw="note" data-v="${esc(x.sid)}" title="눌러서 코멘트 고치기"`:''}>${x.note?esc(x.note):`<span class="dim">${E?'코멘트 넣기 ✎':'코멘트 없음'}</span>`}</div>
+    <div class="pre small awenote clamp" ${x.note?`title="${esc(x.note)}"`:''}>${x.note?esc(x.note):''}</div>
     ${G?`<div class="row" style="gap:6px;flex-wrap:wrap"><span class="small dim">${fx?'':pk?'✓ 원전 · '+esc(pk.n):(r.cands||[]).length?'후보 '+r.cands.length+'명':r.read?'추천 받음':'아직'}</span><span class="sp"></span><button class="btn xs ${fx||!pk?'':'pri'}" data-aw="fix" data-v="${esc(x.sid)}" title="${fx?'확정을 풀고 다시 보내기 목록에 넣어요':'원전을 직접 정해 확정해요 (고른 후보가 있으면 그 이름이 먼저 들어가요)'}">${fx?'확정 풀기':'✦ 확정'}</button><button class="btn xs" data-aw="godb" data-v="${esc(x.sid)}">추천 보기 →</button></div>`:''}</div>${prefHtml(x)}</div>`}
  /* 10-30 망령 「대가를 요구하는 메인 각성체 지정 · 프라이드 몇으로 할지」:
     칸마다 「메인 (대가)」 하나 + 프라이드. 노트 사본 = pcp/<pc>.awk[n-1].main · .pride (PL 본인 · GM).
@@ -386,7 +388,6 @@ window.NT_AWK=(()=>{
    <div class="awtr ${tp&&tp.fixed?'fixed':''}"><span class="awtr-por ${img?'':'noimg'}" style="${img?`background-image:url('${cssu(img)}')`:''}">${img?'':esc([...(pcName(pc)||'?')][0]||'?')}</span>
     <div class="awtr-b"><div class="row" style="gap:6px"><b>트레이너 포트</b>${tp&&tp.fixed?'<span class="awfix">✦ 확정</span>':''}</div>
      <small>${tp&&tp.fixed?'이 그림으로 정했어요 — 그림 뽑기에서 빠져요':G?'확정 전이면 「🎨 그림 뽑기 묶음」에 들어가 감우가 무진 그림체 포트 · 스탠딩을 뽑아요':'GM 이 정해요'}</small>
-     ${tBio(pc,'겉모습')?`<div class="pre small awenote">${esc(tBio(pc,'겉모습'))}</div>`:''}
      ${G?`<div class="row" style="gap:6px"><span class="sp"></span><button class="btn xs ${tp&&tp.fixed?'':'pri'}" data-aw="tfix" data-v="${esc(pc)}">${tp&&tp.fixed?'확정 풀기':'✦ 확정'}</button></div>`:''}</div></div>
    <div class="aweslots">${S.map(x=>slotHtml(x,G)).join('')}</div></div></div>`}
  async function toggleTFix(pc){if(!N().gm())return;const cur=Object.assign({},pcp(pc));if(cur.tport&&cur.tport.fixed)delete cur.tport;else cur.tport={fixed:true,at:new Date().toISOString()};await N().put('pcp',pc,cur,'pl:'+pc);N().toast(cur.tport?'트레이너 포트를 확정했어요':'트레이너 포트 확정을 풀었어요')}
@@ -414,8 +415,12 @@ window.NT_AWK=(()=>{
   else body='<div class="empty">PL 좌석으로 들어오면 내 PC 의 각성체 그림 · 코멘트를 넣을 수 있어요.</div>';
   el.innerHTML=head+body;el.addEventListener('click',onClick);el.addEventListener('change',onPref);bindSlotImgs(el);if(G&&!DB.base)load();if(MK()&&!MK().M.at)MK().load().then(()=>N().render())}
  /* 학생증 옆 카드 (pc_ui idHero 가 부른다) */
+ /* 10-30 미사그 1인 2체 (제작기 misagOut.two: checks · pick · names · g3 · b1) */
+ function twoLine(pc){const t=MK()&&MK().trainer(pc);if(!t||!t.misagOut)return '';const w=t.misagOut.two;if(!w)return `<div class="awtwo"><b>2체 기준</b><small>제작기에서 이 트레이너를 한 번 저장하면 보여요</small></div>`;const nd=w.need||{};const cnt=(L,k)=>nd[k]!=null?` (${L.length}/${nd[k]})`:'';const nm=k=>((w.names||{})[k]||[]).filter(Boolean);const o=nm('o'),c=nm('c');const g=w.g3||{};const ck=(w.checks||[]).filter(Boolean);
+  const chip=(l,v)=>`<span><small>${esc(l)}</small> <b>${esc(v)}</b></span>`;
+  return `<div class="awtwo"><b>2체 기준</b>${chip('4식'+cnt(o,'o'),o.length?o.join(' · '):'안 고름')}${chip('6령'+cnt(c,'c'),c.length?c.join(' · '):'안 고름')}${g.aw||g.pl?chip('3계제권',`각성체 ${g.aw||'-'} · PL ${g.pl||'-'}`):''}${w.b1?chip('통솔 B-1','각성체 2체 모두 지정 타입'):''}${w.role?chip('역할','중복 불가'):''}${ck.length?`<span class="awtwock">${ck.map(x=>`⚠ ${esc(x)}`).join('<br>')}</span>`:''}</div>`}
  function idCard(pc){if(!canSend(pc))return '';const S=[1,2].map(n=>slot(sidOf(pc,n)));const any=S.some(x=>x.img||x.note);
-  return `<div class="awid"><b>✦ 각성체</b><span class="awidt">${S.filter(x=>x.img).map(x=>`<i style="background-image:url('${cssu(x.img)}')" title="각성체 ${x.n}"></i>`).join('')}<small>${any?S.filter(x=>x.note).map(x=>esc(x.note.slice(0,40))).join(' · ')||'그림 있음':'각성체 그림과 바라는 점을 넣으면 어울리는 원전 인물을 골라 드려요'}</small></span><button type="button" class="btn xs" onclick="NT_AWK.sendBox('${esc(pc)}')">${any?'고치기':'넣기'}</button></div>`}
+  return twoLine(pc)+`<div class="awid"><b>✦ 각성체</b><span class="awidt">${S.filter(x=>x.img).map(x=>`<i style="background-image:url('${cssu(x.img)}')" title="각성체 ${x.n}"></i>`).join('')}<small>${any?S.filter(x=>x.note).map(x=>esc(x.note.slice(0,40))).join(' · ')||'그림 있음':'각성체 그림과 바라는 점을 넣으면 어울리는 원전 인물을 골라 드려요'}</small></span><button type="button" class="btn xs" onclick="NT_AWK.sendBox('${esc(pc)}')">${any?'고치기':'넣기'}</button></div>`}
  function sendBox(id){const pc=sidPc(id);if(!canSend(pc))return;const S=[1,2].map(n=>slot(sidOf(pc,n)));const own=S.map(x=>x.own?slotRaw(pc,x.n).img:'');
   const md=N().openModal(`<div class="mhead"><h2>✦ 각성체 · ${esc(pcName(pc))}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
    <p class="small" style="margin-top:0">각성체는 은열쇠로 부르는 간이 영령 — 역사 · 설화 속 인물이 마이너하거나 열화된 모습으로 와요. 각성체 그림을 넣으면 그 모습에 어울리는 원전 인물을 골라 드려요. 제작기에서 각성체로 표시한 포켓몬 그림이 있으면 그걸 써요(여기 올린 그림이 먼저).</p>

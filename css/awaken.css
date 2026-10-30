@@ -153,3 +153,19 @@
 .awbch.tr .awbth{width:30px;height:30px;border-radius:50%}
 .awbbg{display:inline-flex;align-items:center;gap:4px;margin-left:8px}
 .awbbg b{color:var(--yel)}
+
+/* 10-30 미사그 2체 기준 줄 */
+.awtwo{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin:6px 0;padding:6px 10px;border:1px solid var(--line,#ddd);border-radius:8px;font-size:12.5px}
+.awtwo>b{margin-right:4px}
+.awtwo small{opacity:.7}
+.awtwock{flex-basis:100%;color:var(--warn,#b45309);font-size:12px}
+/* 10-30 각성체 칸을 누르면 각성체 고치기 창 */
+.aweslot[data-sedit]{cursor:pointer}
+.aweslot[data-sedit]:hover{background:rgba(255,255,255,.03)}
+/* 10-30 코멘트 길이와 상관없이 칸 높이를 같게: 두 줄로 자르고 자리는 늘 두 줄 */
+.aweslot .awenote.clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;white-space:normal;height:3em;max-height:3em;line-height:1.5;word-break:keep-all;overflow-wrap:anywhere}
+/* 10-30 파티 서머리 각성체 카드: 걸린 대가 · 코멘트 (pc_ui awCards) */
+.awx-cost{display:flex;flex-direction:column;gap:1px;font-size:11.5px;line-height:1.45;margin-top:3px;color:inherit;opacity:.9}
+.awx-cost b{font-weight:700;margin-right:3px}.awx-cost em{font-style:normal;opacity:.8}
+.awx-cost.none{opacity:.6}
+.awx-note{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;font-size:11.5px;line-height:1.45;margin-top:3px;opacity:.75}

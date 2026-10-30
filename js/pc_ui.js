@@ -187,15 +187,25 @@
    <div class="mkpg aw"><b>각성체</b><span>${aw.length} / 2 · GM이 짠다 · 통솔점을 쓰지 않는다</span><span class="sp"></span>${add('aw',aw.length<2)}</div>
    ${aw.map((m,i)=>mkRow(t,m,i,E,true)).join('')||'<p class="mkpe">포켓몬 시트의 「각성체」 칸에서 각성 (대가) · (보조)를 고르면 이쪽으로 와요</p>'}</section>`}
  /* 파티 서머리의 각성체 카드 */
+ function costLines(o){if(!o||!o.pen)return [];const L=[],e=o.pen;
+  if(e.지시){const c=(o.ordOff&&o.ordOff.c||[]).length,d=(o.ordOff&&o.ordOff.o||[]).length;L.push(`<b>지시 ${esc(e.지시)}</b> 지령 −${c}${d?` · 명령 −${d}`:''}`)}
+  if(e.육성)L.push(`<b>육성 ${esc(e.육성)}</b> 분배레벨 −${esc(o.dist||0)}`);
+  if(e.통솔){(o.items||[]).forEach(x=>L.push(`<b>통솔 ${esc(x.grade||e.통솔)}</b> ${esc(x.key||'')} ${esc(x.desc||'')}${x.need==='type'&&o.type?` [${esc(o.type)}]`:''}${x.need==='role'&&o.role?` [${esc(o.role)}]`:''}`));if(!(o.items||[]).length)L.push(`<b>통솔 ${esc(e.통솔)}</b> 항목을 아직 안 골랐어요`)}
+  if(e.능력)L.push(`<b>능력 ${esc(e.능력)}</b> 전용 −${esc(o.excl||0)}${o.uq?` · 고유 점수 −${esc(o.uq)}`:''}`);
+  if(o.note)L.push(`<em>${esc(o.note)}</em>`);return L}
  function awCards(id,t,ms,E){const aw=ms.filter(isAw).sort((a,b)=>(a.awaken==='free'?0:1)-(b.awaken==='free'?0:1));const o=t.misagOut||null;const G=N().gm();
   const pen=o&&o.pen?Object.entries(o.pen).map(([k,v])=>`<span>${esc(k)} <b>${esc(v)}</b></span>`).join(''):'';
-  const card=m=>{const X=monInfo(t,m);const free=m.awaken==='free';const u=MK().img(m);
+  /* 10-30 망령 「서머리에서 적용 중인 대가랑 코멘트가 안 보여」: 대가 카드에 걸린 대가를 한 줄씩(제작기 misagOut) + 각성체 칸 코멘트(pcp.awk[n].note) */
+  const costL=costLines(o);const awAll=ms.filter(isAw);const P=N().data('pcp',id)||{};const noteOf=m=>{const i=awAll.indexOf(m);const s=Array.isArray(P.awk)&&P.awk[i];return String((s&&s.note)||'').trim()};
+  const card=m=>{const X=monInfo(t,m);const free=m.awaken==='free';const u=MK().img(m);const nt=noteOf(m);
    return `<a class="awx ${free?'free':'sub'}" href="#pm-${esc(m.id)}" data-pmgo="${esc(m.id)}" style="--c1:${T2C[X.types[0]]||'#8f7b52'}">
     <span class="awx-por ${u?'':'noimg'}" style="${u?`background-image:url('${cssu(u)}')`:''}">${u?'':esc([...(m.name||'?')][0]||'?')}</span>
     <span class="awx-b"><span class="awx-k">${free?'각성 · 대가':'각성 · 보조'}</span><b class="awx-n">${esc(m.name||'(이름 없음)')}</b>${X.origin?`<span class="awx-o">원전 ${esc(X.origin)}</span>`:''}
      <span class="mkr-c">${X.types.map(tchip).join('')}<span class="mkr-lv">Lv.${X.lv}</span></span>
      <span class="awx-pr"><span>프라이드</span><b>${esc(X.pride||'자동')}</b>${free&&o&&o.grade&&o.grade!=='-'?`<span>대가</span><b class="awx-g">${esc(o.grade)}</b>`:''}</span>
-     ${free&&pen?`<span class="awx-pen">${pen}</span>`:''}</span>
+     ${free&&pen?`<span class="awx-pen">${pen}</span>`:''}
+     ${free?(costL.length?`<span class="awx-cost">${costL.map(x=>`<span>${x}</span>`).join('')}</span>`:o?'':'<span class="awx-cost none">제작기에서 이 트레이너를 한 번 저장하면 대가가 보여요</span>'):''}
+     ${nt?`<span class="awx-note" title="${esc(nt)}">${esc(nt)}</span>`:''}</span>
     <span class="awx-seal" aria-hidden="true">${free?'代價':'補助'}</span></a>`};
   const empty=n=>`<div class="awx empty"><span>각성체 ${n}</span><small>아직 없어요</small>${E&&G?`<button type="button" class="btn xs" data-monadd="aw" data-id="${esc(id)}">＋ 각성체</button>`:''}</div>`;
   return `<div class="awxs">${aw.slice(0,2).map(card).join('')}${aw.length<2?[...Array(2-Math.min(2,aw.length))].map((_,k)=>empty(aw.length+k+1)).join(''):''}</div>`}
