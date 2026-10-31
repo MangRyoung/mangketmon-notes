@@ -32,14 +32,17 @@
  const pKey=x=>x.k+':'+x.id;
  const personOf=key=>{const i=String(key||'').indexOf(':');if(i<0)return null;const k=key.slice(0,i),id=key.slice(i+1);return people().find(x=>x.k===k&&x.id===id)||null};
  const peopleAt=sid=>people().filter(x=>x.at.includes(sid));
+ /* 10-31 망령 「PL 도 자기 권한 있는 캐릭터를 배치 · 이동 · 빼기」: GM 은 모두, PL 은 자기 PC 시트(고칠 수 있는 시트)만. 저장은 그 시트 문서의 at · atPos 라 PL 쓰기 권한 안이다 */
+ const canPlace=x=>!!x&&(N().gm()||(x.k==='pc'&&N().canEdit('pc',x.id)));
+ const myPlaceable=()=>people().filter(canPlace);
  /* 옮기기: 이 지도의 다른 장소에서는 빼고 to 에 둔다 (다른 지도에 놓인 곳은 그대로). keepOthers 면 여러 곳에 함께 */
- async function placeMove(key,to,keepOthers){const x=personOf(key);if(!x)return;const m=curMap();const here=new Set(m?spots(m.id).map(s=>s.id):[]);
+ async function placeMove(key,to,keepOthers){const x=personOf(key);if(!canPlace(x))return;const m=curMap();const here=new Set(m?spots(m.id).map(s=>s.id):[]);
   await N().patch(x.k,x.id,d=>{let a=Array.isArray(d.at)?d.at.slice():[];if(!keepOthers)a=a.filter(s=>!here.has(s));if(to&&!a.includes(to))a.push(to);d.at=a;posKeep(d,a)})}
- async function placeOff(key,sid){const x=personOf(key);if(!x)return;await N().patch(x.k,x.id,d=>{d.at=(Array.isArray(d.at)?d.at:[]).filter(s=>s!==sid);posKeep(d,d.at)})}
+ async function placeOff(key,sid){const x=personOf(key);if(!canPlace(x))return;await N().patch(x.k,x.id,d=>{d.at=(Array.isArray(d.at)?d.at:[]).filter(s=>s!==sid);posKeep(d,d.at)})}
  /* 10-29 망령 「인물들 일렬로만 서는 거 아쉬운데 배치한 뒤에 드래그해서 위치 조정」: 장소마다 자유 자리 atPos={[장소 id]:{x,y}} (지도 %).
     없으면 예전처럼 핀 오른쪽 줄. 얼굴을 빈 곳에 놓으면 그 자리, 다른 핀에 놓으면 그 장소로 옮기기, 제 핀에 놓으면 줄로 되돌리기 */
  function posKeep(d,at){if(!d.atPos)return;for(const k of Object.keys(d.atPos))if(!at.includes(k))delete d.atPos[k];if(!Object.keys(d.atPos).length)delete d.atPos}
- async function placePos(key,sid,xy){const x=personOf(key);if(!x)return;await N().patch(x.k,x.id,d=>{const p=Object.assign({},d.atPos||{});if(xy)p[sid]={x:+Math.max(0,Math.min(100,xy.x)).toFixed(2),y:+Math.max(0,Math.min(100,xy.y)).toFixed(2)};else delete p[sid];if(Object.keys(p).length)d.atPos=p;else delete d.atPos})}
+ async function placePos(key,sid,xy){const x=personOf(key);if(!canPlace(x))return;await N().patch(x.k,x.id,d=>{const p=Object.assign({},d.atPos||{});if(xy)p[sid]={x:+Math.max(0,Math.min(100,xy.x)).toFixed(2),y:+Math.max(0,Math.min(100,xy.y)).toFixed(2)};else delete p[sid];if(Object.keys(p).length)d.atPos=p;else delete d.atPos})}
  /* 10-30 망령 「지도 아래 창이 허전 — 웹툴 감정 이모지와 간단한 상태 메시지를 넣으면 아이콘 위 말풍선으로」
     인물 문서(pc · npc · ents)의 st={e:감정 키(웹툴 OM_EMO 와 같은 키), m:상태 메시지, at}. GM 과 그 PC 의 주인이 고친다 */
  const EMO=[['surprise','❗','놀람'],['question','❓','의문'],['angry','💢','화남'],['happy','🎵','기쁨'],['heart','💗','하트'],['sweat','💦','당황'],['sad','💧','슬픔'],['shy','☺️','부끄'],['think','💭','생각'],['idea','💡','번뜩'],['sigh','😮‍💨','한숨'],['sleepy','💤','졸림'],['sparkle','✨','반짝'],['fear','😱','오싹'],['nod','👍','끄덕'],['no','🙅','도리도리']];
@@ -121,7 +124,7 @@
   const body=`${s.bg?`<figure class="spbg"><img src="${esc(s.bg)}" alt="${esc(s.name||'')} 배경" loading="lazy" data-big="${esc(s.bg)}"><figcaption>🖼 배경${s.bgName&&s.bgName!==s.name?' · '+esc(s.bgName):''}</figcaption></figure>`:''}${imgs.length?`<div class="spimgs">${imgs.map(x=>`<figure><img src="${esc(x.p)}" alt="${esc(x.t||s.name)}" loading="lazy" data-big="${esc(x.p)}">${x.t?`<figcaption>${esc(x.t)}</figcaption>`:''}</figure>`).join('')}</div>`:''}
    ${s.summary?`<p class="pre">${esc(s.summary)}</p>`:''}${s.items?`<div class="kv"><b>얻을 것</b><span>${esc(s.items)}</span></div>`:''}
    ${window.NT_DG?NT_DG.spotSec(s.id):''}
-   ${(()=>{const ps=peopleAt(s.id);if(!ps.length&&!G)return '';return `<div class="sec">인물 배치 <small class="dim">${ps.length}명</small>${G?` <button type="button" class="btn xs ghost" data-m="place" title="이 장소에 인물(항목 · PC · NPC)을 놓아요">＋ 인물 놓기</button>`:''}</div>${ps.length?`<div class="spppl">${ps.map(x=>`<div class="sppp">${faceBtn(x,'sppf')}<button type="button" class="linkbtn" data-pkey="${esc(pKey(x))}"><b>${esc(x.name||'(이름 없음)')}</b><small>${esc(x.sub||'')}</small></button>${G?`<button type="button" class="lnkx" data-unplace="${esc(pKey(x))}" title="이 장소에서 빼기">✕</button>`:''}</div>`).join('')}</div>${G?'<div class="small dim">지도 위 얼굴을 다른 핀으로 끌면 옮겨져요.</div>':''}`:'<div class="small dim">아직 아무도 없어요.</div>'}`})()}
+   ${(()=>{const ps=peopleAt(s.id);const CP=G||myPlaceable().length>0;if(!ps.length&&!CP)return '';return `<div class="sec">인물 배치 <small class="dim">${ps.length}명</small>${CP?` <button type="button" class="btn xs ghost" data-m="place" title="${G?'이 장소에 인물(항목 · PC · NPC)을 놓아요':'내 캐릭터를 이 장소에 놓아요'}">＋ ${G?'인물':'내 캐릭터'} 놓기</button>`:''}</div>${ps.length?`<div class="spppl">${ps.map(x=>`<div class="sppp">${faceBtn(x,'sppf')}<button type="button" class="linkbtn" data-pkey="${esc(pKey(x))}"><b>${esc(x.name||'(이름 없음)')}</b><small>${esc(x.sub||'')}</small></button>${canPlace(x)?`<button type="button" class="lnkx" data-unplace="${esc(pKey(x))}" title="이 장소에서 빼기">✕</button>`:''}</div>`).join('')}</div>${CP?`<div class="small dim">지도 위 ${G?'':'내 캐릭터 '}얼굴을 다른 핀으로 끌면 옮겨져요.</div>`:''}`:'<div class="small dim">아직 아무도 없어요.</div>'}`})()}
    ${(()=>{const L=ents.filter(e=>!isPerson(e));return L.length?`<div class="sec">이 곳의 항목</div><div class="entchips">${L.map(e=>`<button type="button" class="chip" data-ent="${esc(e.id)}">${esc(e.title)}</button>`).join('')}</div>`:''})()}
    ${(()=>{const rs=N().list('routes').filter(r=>(r.steps||[]).some(x=>x.spot===s.id));return rs.length?`<div class="sec">시나리오</div><ul class="lnk">${rs.map(r=>{const i=r.steps.findIndex(x=>x.spot===s.id);const prev=r.steps[i-1],next=r.steps[i+1];const nm=x=>x?(x.title||spotNm(x.spot)):'';return `<li><span style="color:${esc(r.color||'#fff')}">${esc(r.name)}</span> <span class="small dim">${i+1}단계${prev?' · 앞: '+esc(nm(prev)):''}${next?' · 다음: '+esc(nm(next)):''}${r.steps[i].note?' · '+esc(r.steps[i].note):''}</span></li>`}).join('')}</ul>`:''})()}
    ${ls.length||G?`<div class="sec">이어진 곳${G?` <button type="button" class="btn xs ghost" data-m="link" title="다른 장소와 선으로 잇기">🔗 잇기</button>`:''}</div>${ls.length?`<ul class="lnk">${ls.map(l=>{const o=N().data('spots',l.a===s.id?l.b:l.a);const r=routeOf(l.route);return `<li><button class="linkbtn" data-go="${esc(l.a===s.id?l.b:l.a)}">${esc(o?o.name:'?')}</button>${r?` <span class="small" style="color:${esc(r.color||'#fff')}">${esc(r.name||'')}</span>`:''}${l.note?` <span class="small dim">${esc(l.note)}</span>`:''}${G?` <button type="button" class="lnkx" data-dellink="${esc(l.id)}" title="이 연결 지우기">✕</button>`:''}</li>`}).join('')}</ul>`:'<div class="small dim">아직 이어진 곳이 없어요.</div>'}`:''}
@@ -139,7 +142,7 @@
    const pa=t.closest('[data-pop]');if(pa){return popAct(pa.dataset.pop,pa.dataset.id)}
    const dl=t.closest('[data-dellink]');if(dl){return delLink(dl.dataset.dellink)}
    const fo=t.closest('[data-fold]');if(fo){U.fold=U.fold||{};U.fold[fo.dataset.fold]=!U.fold[fo.dataset.fold];N().render();return}
-   const un=t.closest('[data-unplace]');if(un){return placeOff(un.dataset.unplace,U.sel)}
+   const un=t.closest('[data-unplace]');if(un){if(!canPlace(personOf(un.dataset.unplace)))return;return placeOff(un.dataset.unplace,U.sel)}
    const pk=t.closest('[data-pkey]');if(pk&&!pk.closest('#mapWrap')){return openPerson(pk.dataset.pkey)}
    const g=t.closest('[data-go]');if(g){U.sel=g.dataset.go;U.pop=g.dataset.go?{k:'spot',id:g.dataset.go}:null;N().render();return}
    const rt=t.closest('[data-rt]');if(rt){U.hideR=U.hideR||{};U.hideR[rt.dataset.rt]=!U.hideR[rt.dataset.rt];N().render();return}
@@ -154,7 +157,7 @@
    e.preventDefault();const r=w.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;const z0=U.zoom;const z=Math.max(.4,Math.min(6,z0*(e.deltaY<0?1.15:1/1.15)));U.px=mx-(mx-U.px)*z/z0;U.py=my-(my-U.py)*z/z0;U.zoom=z;apply(el)},{passive:false});
   N().bindCtx(w,'.pin,.mnpc',ctxItems);
   let pd=null;const pts=new Map();let pinch=null;
-  w.addEventListener('pointerdown',e=>{pts.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pts.size===2){const [a,b]=[...pts.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y),z:U.zoom,cx:(a.x+b.x)/2,cy:(a.y+b.y)/2,px:U.px,py:U.py};pd=null;return}if(e.button!==0)return;if(e.target.closest('.mpop,.mapwheelhint'))return;const pin=e.target.closest('.pin'),face=e.target.closest('.mnpc');pd={x:e.clientX,y:e.clientY,px:U.px,py:U.py,pin:pin&&N().gm()&&U.mode==='sel'?pin:null,downPin:pin,downFace:face,face:face&&face.dataset.pkey&&N().gm()&&U.mode==='sel'?face:null,moved:false,id:e.pointerId}});
+  w.addEventListener('pointerdown',e=>{pts.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pts.size===2){const [a,b]=[...pts.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y),z:U.zoom,cx:(a.x+b.x)/2,cy:(a.y+b.y)/2,px:U.px,py:U.py};pd=null;return}if(e.button!==0)return;if(e.target.closest('.mpop,.mapwheelhint'))return;const pin=e.target.closest('.pin'),face=e.target.closest('.mnpc');pd={x:e.clientX,y:e.clientY,px:U.px,py:U.py,pin:pin&&N().gm()&&U.mode==='sel'?pin:null,downPin:pin,downFace:face,face:face&&face.dataset.pkey&&U.mode==='sel'&&canPlace(personOf(face.dataset.pkey))?face:null,moved:false,id:e.pointerId}});
   w.addEventListener('pointermove',e=>{if(pts.has(e.pointerId))pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
    if(pinch&&pts.size>=2){const [a,b]=[...pts.values()];const d=Math.hypot(a.x-b.x,a.y-b.y)||1;const z=Math.max(.4,Math.min(6,pinch.z*d/pinch.d));const r=w.getBoundingClientRect();const mx=pinch.cx-r.left,my=pinch.cy-r.top;U.px=mx-(mx-pinch.px)*z/pinch.z;U.py=my-(my-pinch.py)*z/pinch.z;U.zoom=z;apply(el);return}
    if(!pd)return;const dx=e.clientX-pd.x,dy=e.clientY-pd.y;if(!pd.moved&&Math.hypot(dx,dy)<5)return;if(!pd.moved){try{w.setPointerCapture(pd.id)}catch(x){}const pp=$('#mapPop',w);if(pp&&!pd.pin)pp.classList.add('fade')}pd.moved=true;
@@ -198,7 +201,7 @@
    return `<div class="mph ent" style="--c:${x.cls==='npc'?'#8e8e8e':x.cls==='guest'?'#d9891c':'#e4002b'}"><span class="mpbig" style="${x.img?`background-image:url('${cssu(x.img)}')`:''}">${x.img?'':esc([...(x.name||'?')][0]||'?')}</span><div style="min-width:0;flex:1"><h4>${esc(x.name||'')}</h4><div class="mpm">${esc(x.sub||'')}</div></div><button type="button" class="mpx" data-pop="close" title="닫기">✕</button></div>
     ${t?`<div class="mpm">${['지시','육성','통솔','능력'].map(k=>`${k} <b>${esc(rk[k]||'-')}</b>`).join(' · ')}</div>`:''}
     ${stPane(x,P.id)}
-    <div class="mpa"><span class="sp"></span><button type="button" class="btn xs" data-pop="sheet" data-id="${esc(P.id)}">시트에서 보기</button>${N().gm()&&P.at?`<button type="button" class="btn xs ghost" data-pop="unplace" data-id="${esc(P.id)}">이 장소에서 빼기</button>`:''}${P.at&&N().data('spots',P.at)?`<button type="button" class="btn xs ghost" data-pop="spot" data-id="${esc(P.at)}">📍 ${esc(N().data('spots',P.at).name||'')}</button>`:''}</div>`}
+    <div class="mpa"><span class="sp"></span><button type="button" class="btn xs" data-pop="sheet" data-id="${esc(P.id)}">시트에서 보기</button>${canPlace(x)&&P.at?`<button type="button" class="btn xs ghost" data-pop="unplace" data-id="${esc(P.id)}">이 장소에서 빼기</button>`:''}${P.at&&N().data('spots',P.at)?`<button type="button" class="btn xs ghost" data-pop="spot" data-id="${esc(P.at)}">📍 ${esc(N().data('spots',P.at).name||'')}</button>`:''}</div>`}
   if(P.k==='spot'){const s=N().data('spots',P.id);if(!s)return '';const k=kc(s.kind);const faces=peopleAt(P.id);
    return `<div class="mph" style="--c:${k[2]}"><i class="kdot" style="background:${k[2]}"></i>${s.num?`<b class="num">${esc(s.num)}</b>`:''}<h4>${esc(s.name||'장소')}</h4><button type="button" class="mpx" data-pop="close" title="닫기">✕</button></div>
     <div class="mpm">${esc(s.kind||'')}${s.area?' · '+esc(s.area):''}${N().doc('spots',P.id).vis!=='pub'?' · '+esc(N().visLabel(N().doc('spots',P.id).vis)):''}</div>
@@ -255,23 +258,23 @@
    if(!G)return items;
    items.push({t:m.party===id?'📍 PC 위치 풀기':'📍 PC 위치로',on:()=>popAct('party',id)},{t:'고치기',on:()=>editSpot(id)},{t:'🔗 잇기',on:()=>startLink(id)},'-');
    items.push(...visItems('spots',id),'-',{t:'🗑 지우기',danger:true,on:()=>delSpot(id,false)});return items}
-  if(!t.dataset.ent&&t.dataset.pkey){const key=t.dataset.pkey,at=t.dataset.at;const items=[{t:'시트에서 보기',on:()=>openPerson(key)}];if(G&&at){const x=personOf(key);if(x&&x.pos[at])items.push({t:'자리 되돌리기 (핀 옆 줄로)',on:()=>placePos(key,at,null)});items.push('-',{t:'이 장소에서 빼기',danger:true,on:()=>placeOff(key,at)})}return items}
+  if(!t.dataset.ent&&t.dataset.pkey){const key=t.dataset.pkey,at=t.dataset.at;const items=[{t:'시트에서 보기',on:()=>openPerson(key)}];if(at&&canPlace(personOf(key))){const x=personOf(key);if(x&&x.pos[at])items.push({t:'자리 되돌리기 (핀 옆 줄로)',on:()=>placePos(key,at,null)});items.push('-',{t:'이 장소에서 빼기',danger:true,on:()=>placeOff(key,at)})}return items}
   const id=t.dataset.ent;const e=N().data('ents',id);if(!e)return [];const items=[{t:'항목에서 보기',on:()=>popAct('openent',id)}];
   if(window.NT_FAV)items.push({t:(NT_FAV.has('ents',id)?'★ 즐겨찾기 빼기':'☆ 즐겨찾기'),on:()=>NT_FAV.toggle('ents',id,e.title)});
   if(!G)return items;items.push({t:'고치기',on:()=>{if(window.NT_ENTS&&NT_ENTS.edit)NT_ENTS.edit(id)}});if(t.dataset.at){const x=personOf('ents:'+id);if(x&&x.pos[t.dataset.at])items.push({t:'자리 되돌리기 (핀 옆 줄로)',on:()=>placePos('ents:'+id,t.dataset.at,null)})}if(t.dataset.at)items.push({t:'이 장소에서 빼기',on:()=>placeOff('ents:'+id,t.dataset.at)});items.push('-',...visItems('ents',id));return items}
  /* 인물 열기: 항목은 항목 탭, PC · NPC 는 시트 탭 */
  function openPerson(key){const x=personOf(key);if(!x)return;if(x.k==='ents'){N().go('ents');setTimeout(()=>window.NT_ENTS&&NT_ENTS.select(x.id),0);return}if(window.NT_PC&&NT_PC.select)return NT_PC.select(x.k,x.id);N().go('pc')}
  /* 인물 놓기 창 (GM): 항목 · PC · NPC 를 찾아 이 장소에 놓는다. 「옮기기」면 이 지도의 다른 장소에서는 뺀다 */
- function placePick(sid){const s=N().data('spots',sid);if(!s||!N().gm())return;let q='',kf='',move=true;
-  const md=N().openModal(`<div class="mhead"><h2>인물 놓기 · ${esc(s.name||'장소')}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
-   <div class="row" style="gap:6px;flex-wrap:wrap"><input id="ppQ" type="search" data-nodirty placeholder="이름으로 찾기" style="flex:1;min-width:160px"><div class="seg" id="ppK"><button data-k="" class="on">전체</button><button data-k="c:pc">PC</button><button data-k="c:guest">객원</button><button data-k="c:npc">NPC</button><button data-k="ents">인물 항목</button></div></div>
+ function placePick(sid){const s=N().data('spots',sid);const G=N().gm();if(!s||!(G||myPlaceable().length))return;let q='',kf='',move=true;
+  const md=N().openModal(`<div class="mhead"><h2>${G?'인물':'내 캐릭터'} 놓기 · ${esc(s.name||'장소')}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
+   <div class="row" style="gap:6px;flex-wrap:wrap"><input id="ppQ" type="search" data-nodirty placeholder="이름으로 찾기" style="flex:1;min-width:160px"><div class="seg" id="ppK" ${G?'':'hidden'}><button data-k="" class="on">전체</button><button data-k="c:pc">PC</button><button data-k="c:guest">객원</button><button data-k="c:npc">NPC</button><button data-k="ents">인물 항목</button></div></div>
    <label class="small" style="display:flex;gap:6px;align-items:center;margin:8px 0 4px"><input type="checkbox" id="ppMv" data-nodirty checked> 옮기기 — 이 지도의 다른 장소에서는 빼요 (끄면 여러 곳에 함께 둬요)</label>
    <div class="pplist" id="ppL"></div>`,'');
-  const draw=()=>{const s2=q.trim().toLowerCase();const L=people().filter(x=>(!kf||(kf.startsWith('c:')?x.k!=='ents'&&x.cls===kf.slice(2):x.k===kf))&&(!s2||(x.name||'').toLowerCase().includes(s2)));
+  const draw=()=>{const s2=q.trim().toLowerCase();const L=people().filter(canPlace).filter(x=>(!kf||(kf.startsWith('c:')?x.k!=='ents'&&x.cls===kf.slice(2):x.k===kf))&&(!s2||(x.name||'').toLowerCase().includes(s2)));
    $('#ppL',md).innerHTML=L.length?L.map(x=>{const here=x.at.includes(sid);const other=x.at.filter(a=>a!==sid&&N().data('spots',a)).map(spotNm);return `<button type="button" class="pprow ${here?'on':''}" data-pp="${esc(pKey(x))}">${faceBtn(x,'ppf','span')}<span class="ppb"><b>${esc(x.name||'(이름 없음)')}</b><small>${esc(x.sub||'')}${other.length?' · 📍 '+esc(other.slice(0,2).join(', ')):''}</small></span><u>${here?'✓ 여기 있음':'놓기'}</u></button>`}).join(''):'<div class="small dim" style="padding:8px 2px">찾는 인물이 없어요. 인물 항목(자료 탭) · PC · NPC 시트가 여기 떠요.</div>'};
   draw();$('#ppQ',md).addEventListener('input',e=>{q=e.target.value;draw()});$('#ppMv',md).onchange=e=>{move=e.target.checked};
   $('#ppK',md).addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b)return;kf=b.dataset.k;$$('#ppK button',md).forEach(x=>x.classList.toggle('on',x===b));draw()});
-  $('#ppL',md).addEventListener('click',async e=>{const b=e.target.closest('[data-pp]');if(!b)return;const key=b.dataset.pp;const x=personOf(key);if(!x)return;
+  $('#ppL',md).addEventListener('click',async e=>{const b=e.target.closest('[data-pp]');if(!b)return;const key=b.dataset.pp;const x=personOf(key);if(!canPlace(x))return;
    if(x.at.includes(sid))await placeOff(key,sid);else await placeMove(key,sid,!move);setTimeout(draw,60)})}
  async function popAct(k,id){const el=document.getElementById('ntMain')||document;
   if(k==='close'){U.pop=null;killPop();return}
