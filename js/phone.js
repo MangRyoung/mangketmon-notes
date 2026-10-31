@@ -34,6 +34,7 @@ window.NT_PHONE=(()=>{
  const shared=tid=>phoneData(tid).share!==false&&!((T()[tid]||{}).priv);
  const smsRows=()=>PH.log.filter(r=>r.kind==='chat'&&r.data&&r.data.sms&&r.data.sms!=='sns');
  const logsOf=room=>smsRows().filter(r=>!r.data.room&&r.data.sms===room);
+ const ro=w=>{const c=String(w||'').trim().slice(-1).charCodeAt(0)-0xAC00;if(!(c>=0&&c<11172))return '(으)로';const j=c%28;return j===0||j===8?'로':'으로'};   /* 10-30 감우로 · 반디로 · 시온으로 */
  const dmId=(a,b)=>'dm:'+[a,b].sort().join('|');const dmMembers=id=>String(id).startsWith('dm:')?id.slice(3).split('|'):null;
  function cidName(cid){if(!cid)return '';if(cid==='gm')return 'GM';if(cid.startsWith('n:')){const n=nodes()[cid.slice(2)];return n?n.name:'(사라진 사람)'}const t=T()[cid];if(t)return t.name||'';const s=((PH.st&&PH.st.seats)||{})[cid];return s&&s.name?s.name:'(사라진 사람)'}
  function cidImg(cid){if(!cid||cid==='gm')return '';if(cid.startsWith('n:')){const n=nodes()[cid.slice(2)];if(!n)return '';if(n.img)return n.img;const t=Object.values(T()).find(x=>x.name===n.name);return t?t.image||'':''}const t=T()[cid];return t?t.image||'':''}
@@ -45,8 +46,11 @@ window.NT_PHONE=(()=>{
  const cidSub=cid=>{if(cid.startsWith('n:')){const n=nodes()[cid.slice(2)];return n?({pc:'PC',npc:'NPC',org:'조직'}[n.kind]||'NPC'):''}const t=T()[cid];return t?(t.kind==='npc'?'NPC':'PC'):''};
  const preview=d=>d.card?'📇 '+(d.card.name||'')+' 연락처':d.inv?'👥 파티 초대 · '+(d.inv.code||''):d.t?String(d.t):d.img?'(그림)':'';
  function people(me){const out=new Map();const put=cid=>{if(cid&&cid!==me&&!out.has(cid))out.set(cid,{cid,name:cidName(cid),sub:cidSub(cid)})};
-  for(const x of Object.values(T()))if(x&&(N().gm()||shared(x.id)))put(x.id);
-  for(const n of Object.values(nodes())){const t=Object.values(T()).find(x=>x.name===n.name);put(t?t.id:'n:'+n.id)}
+  /* 10-30 망령 「NPC 나 숨김이어도 문자는 되게, 다만 연락처 건네기를 받기 전엔 추가 목록에 안 떠야」 (웹툴 phone_ui.js people 과 같은 규칙):
+     숨김(share=false · 비공개 시트) · NPC 트레이너 · 관계도의 NPC/조직 노드는 GM 이 아니면 이미 내 연락처에 있을 때만 */
+  const okT=x=>N().gm()||inBook(me,x.id)||(shared(x.id)&&x.kind!=='npc');
+  for(const x of Object.values(T()))if(x&&okT(x))put(x.id);
+  for(const n of Object.values(nodes())){const t=Object.values(T()).find(x=>x.name===n.name);if(t?okT(t):(N().gm()||n.kind==='pc'||inBook(me,'n:'+n.id)))put(t?t.id:'n:'+n.id)}
   return [...out.values()].sort((a,b)=>String(a.name).localeCompare(String(b.name),'ko'))}
  const memberOf=(r,me)=>!!r&&(r.kind==='party'?r.id==='party:'+codeOf(me):r.kind==='gm'?true:(r.members||[]).includes(me));
  function cardsIn(me){const no=new Set(phoneData(me).cardx||[]);const rs=rooms(me);const out=new Map();
@@ -122,7 +126,7 @@ window.NT_PHONE=(()=>{
   const tools=W&&memberOf(r,me)?`${r.kind!=='party'?'<button type="button" class="btn xs ghost" data-ph="csend" title="이 방에 내 연락처 카드">📇</button>':''}${r.kind==='group'?'<button type="button" class="btn xs ghost" data-ph="pinv" title="이 단톡방 사람들과 파티">👥 파티</button>':''}`:'';
   return `<div class="ntph-head green"><button type="button" class="ntph-back" data-ph="sms">‹</button><div><b>${esc(r.name||'')}</b><small>${esc(mem)} · ${L.length}개</small></div>${tools}</div>
    <div class="ntph-msgs">${rows||'<div class="ntph-empty sm">첫 메시지를 보내 봐요</div>'}</div>
-   ${W?`<div class="ntph-in"><label class="ntph-clip" title="그림 보내기">📎<input type="file" accept="image/*" id="ntphFile" hidden></label><input type="text" id="ntphIn" data-nodirty placeholder="${esc(t.name||'')} 으로 보내기" value="${esc(PH.draft[r.id]||'')}"><button type="button" class="btn pri sm" data-ph="send">➤</button></div>`:'<div class="ntph-note">보기 전용이에요</div>'}`}
+   ${W?`<div class="ntph-in"><label class="ntph-clip" title="그림 보내기">📎<input type="file" accept="image/*" id="ntphFile" hidden></label><input type="text" id="ntphIn" data-nodirty placeholder="${esc(t.name||'')}${ro(t.name)} 보내기" value="${esc(PH.draft[r.id]||'')}"><button type="button" class="btn pri sm" data-ph="send">➤</button></div>`:'<div class="ntph-note">보기 전용이에요</div>'}`}
  function onClick(e){const b=e.target.closest('[data-ph]');if(!b)return;const a=b.dataset.ph;const t=trOf(PH.sid);
   if(a==='home'||a==='party'||a==='sms'||a==='book'){PH.scr=a;draw();if(a!=='home')load().then(draw);return}
   if(a==='chat'){PH.scr='chat';PH.chat=b.dataset.room;draw();return}

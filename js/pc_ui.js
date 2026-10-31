@@ -88,14 +88,15 @@
  const PRIV=[['secret','비밀 · 속마음'],['plan','꿍꿍이 · 계획']];
  const canEditPc=id=>N().gm()||(U.mode==='pc'&&N().me()===id);
  const entOf=(name,id)=>N().list('ents').find(e=>id&&e.mk===id)||N().list('ents').find(e=>e.type==='인물'&&e.title===name);   /* 10-29: 항목의 「제작기 트레이너」 잇기가 먼저 */
- function render(el){const G=N().gm();const L=pcs();const sel=U.sel&&N().data(K(),U.sel)?U.sel:(L[0]||{}).id||'';U.sel=sel;const NPC=U.mode==='npc';const nPc=N().list('pc').length,nNpc=N().list('npc').length;
+ function render(el){const G=N().gm();const L=pcs();const shut=U.sel==='~';const sel=shut?'':U.sel&&N().data(K(),U.sel)?U.sel:(L[0]||{}).id||'';U.sel=shut?'~':sel;   /* 10-31 망령 「펼쳐 둔 학생 카드 접을 방법」: '~' = 접힘 */const NPC=U.mode==='npc';const nPc=N().list('pc').length,nNpc=N().list('npc').length;
   el.innerHTML=`<div class="toolbar"><h2>${NPC?'NPC 시트':'PC 시트'}</h2><span class="note">${NPC?`NPC ${nNpc}명 · 새로 넣는 NPC 는 GM 에게만 보여요`:`PC ${nPc}명`} · 트레이너 · 포켓몬은 제작기 값(읽기 전용) · RP 칸은 여기서</span><span class="sp"></span>${G&&L.some(p=>Object.keys(oldOf(p)).length&&MK().trainer(p.id))?`<button class="btn sm" data-p="bioall" title="예전 공개 칸(배경 · 목표 · 인간관계 · 말투 · 메모)을 제작기 트레이너 「상세」로 한 번에 옮겨요">↪ 예전 칸 → 제작기 상세</button>`:''}${G&&!NPC&&N().skin&&N().skin()==='univ'&&window.NT_MONED?'<button class="btn sm pri" data-monnew="misag" title="제작기 「미사그 캠퍼스」 폴더에 새 트레이너를 만들고, 닫으면 PC 시트로 넣어요 (10-30)">＋ 새 학생</button>':''}${G&&NPC&&N().skin&&N().skin()==='univ'&&window.NT_MONED?'<button class="btn sm pri" data-monnew="misagnpc" title="제작기 「미사그 캠퍼스 / NPC」 폴더(🔒)에 새 NPC 를 만들고, 닫으면 NPC 시트(GM만)로 넣어요 (10-30)">＋ 새 NPC</button>':''}${G?`<button class="btn sm pri" data-p="add">＋ ${NPC?'NPC':'PC'} (제작기에서)</button>`:''}${!NPC&&N().me()&&!N().data('pc',N().me())?'<button class="btn sm pri" data-p="mine">내 PC 시트 만들기</button>':''}<button class="btn xs ghost" data-p="reload" title="제작기 값 다시 읽기">↻ 제작기</button>${G?omAll(L):''}</div>
-   ${G?mkBar():''}${L.length?`<div class="split ${N().skin&&N().skin()==='univ'?'nside':''}"><div>${folds(L)}${sel?sheet(sel):''}</div>${N().skin&&N().skin()==='univ'?'':`<aside class="side">${sel?sideInfo(sel):''}</aside>`}</div>`:`<div class="empty">아직 ${NPC?'NPC':'PC'} 가 없어요.${G?` 「＋ ${NPC?'NPC':'PC'}」로 제작기 트레이너를 골라 넣어요.`:''}${!NPC&&N().me()?' 「내 PC 시트 만들기」를 눌러요.':''}</div>`}`;
+   ${G?mkBar():''}${L.length?`<div class="split ${N().skin&&N().skin()==='univ'?'nside':''}"><div>${folds(L)}${sel?`<div class="pcshut"><button type="button" class="btn xs ghost" data-pshut title="시트를 접어요. 카드를 다시 누르면 펼쳐져요">▴ 시트 접기</button></div>`+sheet(sel):''}</div>${N().skin&&N().skin()==='univ'?'':`<aside class="side">${sel?sideInfo(sel):''}</aside>`}</div>`:`<div class="empty">아직 ${NPC?'NPC':'PC'} 가 없어요.${G?` 「＋ ${NPC?'NPC':'PC'}」로 제작기 트레이너를 골라 넣어요.`:''}${!NPC&&N().me()?' 「내 PC 시트 만들기」를 눌러요.':''}</div>`}`;
   el.addEventListener('click',e=>{const pm=e.target.closest('[data-pm]');if(pm){N().go(pm.dataset.pm==='npc'?'npc':'pc');return}
    const pf=e.target.closest('[data-pfold]');if(pf){const f=foldGet();const c=pf.dataset.pfold;if(f[c])delete f[c];else f[c]=1;foldSet(f);N().render();return}
    const en=e.target.closest('[data-goent]');if(en){N().go('ents');setTimeout(()=>window.NT_ENTS&&NT_ENTS.select(en.dataset.goent),0);return}
    const pg=e.target.closest('[data-pmgo]');if(pg){e.preventDefault();const t=document.getElementById('pm-'+pg.dataset.pmgo);if(t){t.scrollIntoView({behavior:'smooth',block:'start'});t.classList.add('flash');setTimeout(()=>t.classList.remove('flash'),900)}return}
-   const c=e.target.closest('[data-pc]');if(c){U.sel=c.dataset.pc;N().render();const sh=$('.pcsheet');if(sh)sh.scrollIntoView({behavior:'smooth',block:'start'});return}
+   if(e.target.closest('[data-pshut]')){U.sel='~';N().render();const fw=$('.pcfolds');if(fw)fw.scrollIntoView({behavior:'smooth',block:'start'});return}
+   const c=e.target.closest('[data-pc]');if(c){if(c.dataset.pc===U.sel){U.sel='~';N().render();return}U.sel=c.dataset.pc;N().render();const sh=$('.pcsheet');if(sh)sh.scrollIntoView({behavior:'smooth',block:'start'});return}
    const b=e.target.closest('[data-p]');if(b)act(b.dataset.p,b)});
   /* 10-26 망령: 카드 끌어서 순서 바꾸기(GM) · 우클릭 · 길게 누르기 메뉴 */
   /* 10-30: 폴더마다 끌어서 순서 바꾸기 — 다른 폴더 순서는 그대로 두고 전체 순서를 다시 매긴다 */
@@ -369,7 +370,7 @@
      await DB.makerPut('trainers',id,{ord,data:d})}
     N().closeModal();await MK().load(true);N().render();N().toast(t?'제작기 트레이너를 고쳤어요':'제작기에 새 트레이너를 만들었어요')}
    catch(e){b.disabled=false;b.textContent='다시 시도';N().toast('보내지 못했어요: '+(e.message||e))}}}
- async function act(k,b){const id=b.dataset.id||U.sel;
+ async function act(k,b){const id=b.dataset.id||(U.sel==='~'?'':U.sel);
   if(k==='reload'){await MK().load(true);N().render();return}
   if(k==='mklink'){await MK().pickLinked();return}
   if(k==='mksync'){await mkSync();return}

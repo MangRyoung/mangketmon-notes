@@ -41,3 +41,6 @@ html:not(#_) .mkr .mvc-e,html:not(#_) .mkr .ptc-e{color:#3a3024;opacity:1}
 html:not(#_) .mkr .ptc-e.dim,html:not(#_) .mkr .mvc-e.dim{color:#7a6a50}
 html:not(#_) .mkr .mkr-mb{gap:2px}
 html:not(#_) .mkr .mkr-more summary{font-size:12.5px;font-weight:700;color:#4a3f30;padding:2px 0}
+/* 10-31 시트 접기 단추 (pc_ui · data-pshut) */
+.pcshut{display:flex;justify-content:flex-end;margin:10px 0 -2px}
+.pcshut .btn{font-size:12px}

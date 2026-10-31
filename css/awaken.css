@@ -173,3 +173,10 @@
 .awtr-b>small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;height:2.9em;line-height:1.45}
 .awtr-b>.row:first-child{min-height:20px}
 .aweslot .awes>small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 10-31 확정된 각성체 숨기기 */
+.awhfbar{display:flex;justify-content:flex-end;margin:-4px 0 8px}
+.awhf{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.awhf b{font-size:11px;padding:0 6px;border:1px solid var(--line2);border-radius:999px}
+.awpc.fixed{border-color:#cfae6e}
+.awpc.fixed small{color:#cfae6e}
+.awx.fix{border-color:#cfae6e;color:#cfae6e}

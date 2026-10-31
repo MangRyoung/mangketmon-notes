@@ -30,7 +30,7 @@
 window.NT_AWK=(()=>{
  const N=()=>window.NT;const {$,$$,esc,cssu}=window.NT;
  const MK=()=>window.NT_MAKER;
- const U={mode:'pc',sel:'',q:'',fame:0,fate:false,taken:true,recOnly:(()=>{try{return localStorage.getItem('nt_aw_reconly')==='1'}catch(e){return false}})(),hideDone:(()=>{try{return localStorage.getItem('nt_aw_hidedone')==='1'}catch(e){return false}})(),reg:new Set(),cat:'',type:'',cost:'',more:0,busy:false,dbq:'',dbreg:'',open:''};
+ const U={mode:'pc',sel:'',q:'',fame:0,fate:false,taken:true,recOnly:(()=>{try{return localStorage.getItem('nt_aw_reconly')==='1'}catch(e){return false}})(),hideDone:(()=>{try{return localStorage.getItem('nt_aw_hidedone')==='1'}catch(e){return false}})(),hideFix:(()=>{try{return localStorage.getItem('nt_aw_hidefix')==='1'}catch(e){return false}})(),reg:new Set(),cat:'',type:'',cost:'',more:0,busy:false,dbq:'',dbreg:'',open:''};
  const DB={base:null,groups:null,p:null,err:''};
  const T2C={'노말':'#9aa','불꽃':'#f08030','물':'#6890f0','풀':'#78c850','전기':'#f8d030','얼음':'#98d8d8','격투':'#c03028','독':'#a040a0','땅':'#e0c068','비행':'#a890f0','에스퍼':'#f85888','벌레':'#a8b820','바위':'#b8a038','고스트':'#705898','드래곤':'#7038f8','악':'#705848','강철':'#b8b8d0','페어리':'#ee99ac'};
  const TYPES=Object.keys(T2C),COSTS=['지시','육성','통솔','능력'];
@@ -98,13 +98,16 @@ window.NT_AWK=(()=>{
  /* ----- 화면 ----- */
  function render(el){if(!N().gm()){el.innerHTML='<div class="toolbar"><h2>각성체 DB</h2></div><div class="empty">각성체 DB 는 GM 화면이에요.</div>';return}
   if(!DB.base){load();el.innerHTML='<div class="toolbar"><h2>각성체 DB</h2></div><div class="empty">후보 목록을 불러오는 중…</div>';return}
-  const L=subs();if(!U.sel||!L.some(x=>x.id===U.sel))U.sel=(L[0]||{}).id||'';
+  /* 10-31 망령 「각성체 DB 에서 확정난 친구들은 안 보이게」: 확정(pcp.awk[n].fixed)한 각성체 칸 · 그 원전 인물을 숨기는 단추 (이 브라우저에 기억) */
+  const L0=subs();const nFix=L0.filter(x=>slot(x.id).fixed).length;const L=U.hideFix?L0.filter(x=>!slot(x.id).fixed):L0;if(!U.sel||!L.some(x=>x.id===U.sel))U.sel=(L[0]||{}).id||'';
+  const hf=`<label class="small awhf" title="원전을 확정한 각성체 칸과, 후보 DB 에서 이미 확정에 쓴 인물을 숨겨요"><input type="checkbox" data-aw="hidefix" ${U.hideFix?'checked':''}> 확정된 각성체 숨기기 <b>${nFix}</b></label>`;
   el.innerHTML=`<div class="toolbar"><h2>각성체 DB</h2><div class="seg"><button data-aw="mode" data-v="pc" class="${U.mode==='pc'?'on':''}">각성체 별 추천</button><button data-aw="mode" data-v="db" class="${U.mode==='db'?'on':''}">후보 DB ${all().length}명</button></div><span class="note">은열쇠로 부르는 간이 영령 · 마이너하거나 열화된 모습이 기본</span><span class="sp"></span><button class="btn sm pri" data-aw="bundle" title="각성체 칸마다 넣어 둔 그림 · 코멘트를 그림 한 장 + 글 하나로 묶어요 — 대화에 그대로 붙여 넣으면 감우가 한 번에 읽어요">📦 감우에게 보낼 묶음</button><button class="btn sm" data-aw="pasteall" title="감우가 여러 PC 결과를 한 번에 준 것을 붙여 넣어요">📋 묶음 결과 넣기</button>${DB.err?`<span class="small" style="color:var(--red)">기본 목록을 못 읽었어요: ${esc(DB.err)}</span>`:''}</div>
-   ${U.mode==='db'?dbView():L.length?`<div class="awk"><div class="awpcs">${L.map(pcChip).join('')}</div>${U.sel?pcView(U.sel):''}</div>`:'<div class="empty">PC 시트가 없어요. 시트 탭에서 PC 를 먼저 넣어 주세요.</div>'}`;
+   <div class="awhfbar">${hf}</div>
+   ${U.mode==='db'?dbView():L.length?`<div class="awk"><div class="awpcs">${L.map(pcChip).join('')}</div>${U.sel?pcView(U.sel):''}</div>`:L0.length?'<div class="empty">모든 각성체가 확정됐어요. 「확정된 각성체 숨기기」를 끄면 다시 보여요.</div>':'<div class="empty">PC 시트가 없어요. 시트 탭에서 PC 를 먼저 넣어 주세요.</div>'}`;
   el.addEventListener('click',onClick);el.addEventListener('input',onInput);el.addEventListener('change',onInput);
 }
- function pcChip(p){const r=rec(p.id);const img=subImg(p.id);const pk=r.pick&&byId(r.pick);
-  return `<button type="button" class="awpc ${p.id===U.sel?'on':''}" data-aw="sel" data-v="${esc(p.id)}"><i style="${img?`background-image:url('${cssu(img)}')`:''}"></i><span><b>${esc(subName(p.id))}</b><small>${pk?'✓ '+esc(pk.n):(r.cands||[]).length?'후보 '+(r.cands||[]).length:r.read?'읽음':subNote(p.id)||slot(p.id).own?'보낼 준비':'—'}</small></span></button>`}
+ function pcChip(p){const r=rec(p.id);const img=subImg(p.id);const pk=r.pick&&byId(r.pick);const fx=slot(p.id).fixed;
+  return `<button type="button" class="awpc ${p.id===U.sel?'on':''} ${fx?'fixed':''}" data-aw="sel" data-v="${esc(p.id)}"><i style="${img?`background-image:url('${cssu(img)}')`:''}"></i><span><b>${esc(subName(p.id))}</b><small>${fx?'✦ 확정 · '+esc(fx.n||''):pk?'✓ '+esc(pk.n):(r.cands||[]).length?'후보 '+(r.cands||[]).length:r.read?'읽음':subNote(p.id)||slot(p.id).own?'보낼 준비':'—'}</small></span></button>`}
  const stars=f=>'●'.repeat(f||0)+'○'.repeat(5-(f||0));
  function pcView(id){const r=rec(id);const img=subImg(id);const tags=r.tags||[];const rd=r.read;const res=filtered(id);const N0=12+U.more*12;const fn=!!fnUrl();
   return `<div class="awmain">
@@ -158,11 +161,11 @@ window.NT_AWK=(()=>{
    <div class="row awbtn"><small class="dim">사실 확인이 필요할 수 있어요</small><span class="sp"></span>${inDb?'<small class="dim">DB 에 있음</small>':`<button type="button" class="btn xs" data-aw="xadd" data-v="${i}">＋ DB 에 넣기</button>`}</div></div>`}).join('')}
 
  /* ----- 후보 DB 보기 ----- */
- function dbView(){const q=U.dbq.toLowerCase();const L=all().filter(e=>(!U.dbreg||e.r===U.dbreg)&&(!q||[e.n,e.o,e.l,e.d,e.k,(e.g||[]).join(' ')].join(' ').toLowerCase().includes(q)));
+ function dbView(){const q=U.dbq.toLowerCase();const FX={};for(const x of subs()){const f=slot(x.id).fixed;if(f&&f.id)FX[f.id]=subName(x.id)}const L=all().filter(e=>(!U.hideFix||!FX[e.id])&&(!U.dbreg||e.r===U.dbreg)&&(!q||[e.n,e.o,e.l,e.d,e.k,(e.g||[]).join(' ')].join(' ').toLowerCase().includes(q)));
   const R=regions();const cnt=r=>all().filter(e=>e.r===r).length;
   return `<div class="awdb"><div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:8px"><input type="search" data-aw="dbq" id="awDbQ" data-live placeholder="이름 · 태그 · 설명 찾기" value="${esc(U.dbq)}" style="flex:1;min-width:160px"><button class="btn sm pri" data-aw="dbadd">＋ 직접 추가</button></div>
    <div class="awreg" style="margin-bottom:8px"><button type="button" class="chip xs ${!U.dbreg?'on':''}" data-aw="dbreg" data-v="">전부 ${all().length}</button>${R.map(r=>`<button type="button" class="chip xs ${U.dbreg===r?'on':''}" data-aw="dbreg" data-v="${esc(r)}">${esc(r)} ${cnt(r)}</button>`).join('')}</div>
-   <div class="tblwrap"><table class="awtbl"><thead><tr><th>이름</th><th>지역 · 시대</th><th>분류</th><th>지명도</th><th>타입</th><th>대가</th><th>은열쇠</th><th></th></tr></thead><tbody>${L.map(e=>`<tr><td><b>${esc(e.n)}</b>${e.x?' <span class="awx">Fate</span>':''}${e.own?' <span class="awx own">직접</span>':''}<div class="small dim">${esc(e.l||'')}</div></td><td>${esc(e.r||'')}<div class="small dim">${esc(e.e||'')}</div></td><td>${esc(e.c||'')}</td><td class="awfm">${stars(e.f)}</td><td>${(e.t||[]).map(tchip).join(' ')}</td><td>${esc(e.w||'')}</td><td class="small">${esc(e.k||'')}</td><td>${e.own?`<button class="linkbtn small" data-aw="dbedit" data-v="${esc(e.id)}">고치기</button>`:`<button class="linkbtn small" data-aw="dbedit" data-v="${esc(e.id)}" title="고친 것은 직접 추가 목록에 사본으로 저장돼요">고치기</button>`}</td></tr>`).join('')}</tbody></table></div></div>`}
+   <div class="tblwrap"><table class="awtbl"><thead><tr><th>이름</th><th>지역 · 시대</th><th>분류</th><th>지명도</th><th>타입</th><th>대가</th><th>은열쇠</th><th></th></tr></thead><tbody>${L.map(e=>`<tr><td><b>${esc(e.n)}</b>${FX[e.id]?` <span class="awx fix" title="이미 확정한 원전">✦ ${esc(FX[e.id])}</span>`:''}${e.x?' <span class="awx">Fate</span>':''}${e.own?' <span class="awx own">직접</span>':''}<div class="small dim">${esc(e.l||'')}</div></td><td>${esc(e.r||'')}<div class="small dim">${esc(e.e||'')}</div></td><td>${esc(e.c||'')}</td><td class="awfm">${stars(e.f)}</td><td>${(e.t||[]).map(tchip).join(' ')}</td><td>${esc(e.w||'')}</td><td class="small">${esc(e.k||'')}</td><td>${e.own?`<button class="linkbtn small" data-aw="dbedit" data-v="${esc(e.id)}">고치기</button>`:`<button class="linkbtn small" data-aw="dbedit" data-v="${esc(e.id)}" title="고친 것은 직접 추가 목록에 사본으로 저장돼요">고치기</button>`}</td></tr>`).join('')}</tbody></table></div></div>`}
 
  /* ----- 손 ----- */
  async function onClick(ev){const b=ev.target.closest('[data-aw]');if(!b){const se=ev.target.closest('[data-sedit]');if(se&&!ev.target.closest('[data-aimg],.awemp,a,button,input,select,label,textarea'))return sendBox(se.dataset.sedit);return}if(b.tagName==='SELECT'||b.tagName==='INPUT')return;const k=b.dataset.aw,v=b.dataset.v;const id=U.sel;
@@ -197,6 +200,7 @@ window.NT_AWK=(()=>{
   if(ev.type!=='change')return;
   if(k==='fame'){U.fame=+t.value;return N().render()}
   if(k==='fate'||k==='taken'){U[k]=t.checked;return N().render()}
+  if(k==='hidefix'){U.hideFix=t.checked;try{localStorage.setItem('nt_aw_hidefix',t.checked?'1':'0')}catch(e){}return N().render()}
   if(k==='recOnly'){U.recOnly=t.checked;try{localStorage.setItem('nt_aw_reconly',t.checked?'1':'0')}catch(e){}return N().render()}   /* 10-30 망령 「각성체 별 추천 설정에 감우가 추천해 준 것 외에 DB 는 숨기기」 */
   if(k==='cat'||k==='type'||k==='cost'){U[k]=t.value;return N().render()}}
 
