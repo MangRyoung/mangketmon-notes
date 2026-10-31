@@ -180,17 +180,70 @@
 .awpc.fixed{border-color:#cfae6e}
 .awpc.fixed small{color:#cfae6e}
 .awx.fix{border-color:#cfae6e;color:#cfae6e}
-/* 10-31 망령: 고치기 창 제작 줄(타입 · 종족치 · 특성 · ⇪ 시트에 각성체로) · 감우 결과 넣은 뒤 정리 창 */
-.awspec{margin-top:8px;padding:8px;border:1px dashed var(--line2);background:rgba(0,0,0,.14);font-size:12px}
-.awspec select{font-size:12px;padding:1px 4px;width:auto;min-width:0}
-.awspec input{font-size:12px}
-.awsbase{gap:6px;flex-wrap:wrap;align-items:flex-end;margin-top:6px}
-.awsb{display:inline-flex;flex-direction:column;align-items:center;gap:1px}
-.awsb small{font-size:10px;color:var(--mute)}
-.awsb input{width:54px;text-align:center;padding:2px 4px}
-.awsbt{align-self:center;font-size:11px}
-.awsbt.over{color:var(--red,#e05a4a);font-weight:700}
-.awsbt.low{color:var(--yel)}
+/* 10-31 망령: 고치기 창 제작 설정 카드(타입 · 특성 · 종족치 · ⇪ 시트에 각성체로) · 감우 결과 넣은 뒤 정리 창 — 테마가 입력 칸을 덮지 않게 html:not(#_) 로 올림 */
+html:not(#_) .awspec{margin-top:10px;border:1px solid var(--line2);background:rgba(0,0,0,.22);font-size:12px}
+html:not(#_) .awsp-h{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.03)}
+html:not(#_) .awsp-h b{font-size:12.5px;letter-spacing:.04em;color:var(--fg)}
+html:not(#_) .awsp-h small{color:var(--mute);font-size:11px}
+html:not(#_) .awsp-sum{display:inline-flex;align-items:baseline;gap:4px;padding:2px 9px;border:1px solid var(--line2);border-radius:999px;font-variant-numeric:tabular-nums;white-space:nowrap}
+html:not(#_) .awsp-sum em{font-style:normal;font-size:10.5px;font-weight:700;padding:0 5px;border-radius:3px;background:var(--line2);color:var(--fg)}
+html:not(#_) .awsp-sum b{font-size:14px;color:var(--fg)}
+html:not(#_) .awsp-sum small{font-size:11px;color:var(--fg2)}
+html:not(#_) .awsp-sum.ok{border-color:#5aa469}
+html:not(#_) .awsp-sum.ok b{color:#7fd08f}
+html:not(#_) .awsp-sum.over{border-color:var(--red,#e05a4a);background:rgba(224,90,74,.12)}
+html:not(#_) .awsp-sum.over b{color:#ff8a7a}
+html:not(#_) .awsp-row{display:flex;flex-wrap:wrap;gap:10px 14px;padding:10px 10px 4px}
+html:not(#_) .awsp-f{display:flex;flex-direction:column;gap:4px;min-width:0}
+html:not(#_) .awsp-f.grow{flex:1 1 200px}
+html:not(#_) .awsp-l{font-size:10.5px;letter-spacing:.06em;color:var(--mute)}
+html:not(#_) .awsp-tys{display:flex;gap:6px}
+html:not(#_) .awspec select.awsp-type{width:122px;height:30px;padding:0 8px;font-size:12.5px;font-weight:700;border:1px solid var(--line2);padding-left:16px;box-shadow:inset 7px 0 0 var(--tc,transparent);background:rgba(0,0,0,.35);color:var(--fg);border-radius:3px}
+html:not(#_) .awspec input.awsp-ab{width:100%;height:30px;padding:0 10px;font-size:12.5px;border:1px solid var(--line2);background:rgba(0,0,0,.35);color:var(--fg);border-radius:3px;box-sizing:border-box}
+html:not(#_) .awsp-st{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;padding:8px 10px 10px}
+html:not(#_) .awsp-s{display:flex;flex-direction:column;align-items:stretch;gap:3px;min-width:0}
+html:not(#_) .awsp-sl{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:0 2px}
+html:not(#_) .awsp-rk{font-size:11px;font-weight:800;min-width:30px;text-align:center;padding:0 4px;border-radius:3px;color:#fff;background:var(--gc,#555);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+html:not(#_) .awsp-s.g-e .awsp-rk{background:transparent;color:var(--mute);border:1px solid var(--line2)}
+html:not(#_) .awsp-s{--gc:#8D97A6}
+html:not(#_) .awsp-s.g-s{--gc:#C8362B}html:not(#_) .awsp-s.g-aaa{--gc:#B4471E}html:not(#_) .awsp-s.g-aa{--gc:#C46A12}html:not(#_) .awsp-s.g-a{--gc:#B08800}
+html:not(#_) .awsp-s.g-b{--gc:#2E8A4F}html:not(#_) .awsp-s.g-c{--gc:#2B6CB4}html:not(#_) .awsp-s.g-d{--gc:#6A6FA8}html:not(#_) .awsp-s.g-e{--gc:#8D97A6}
+html:not(#_) .awspec .awsp-s:not(.g-e) input{border-color:var(--gc)}
+html:not(#_) .awspec .awsp-s input{width:100%;height:34px;padding:0 4px;text-align:center;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;border:1px solid var(--line2);background:rgba(0,0,0,.35);color:var(--fg);border-radius:3px;box-sizing:border-box;-moz-appearance:textfield}
+html:not(#_) .awspec .awsp-s input::-webkit-outer-spin-button,html:not(#_) .awspec .awsp-s input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+html:not(#_) .awspec .awsp-s input::placeholder{color:var(--mute);font-weight:400}
+html:not(#_) .awsp-bar{display:block;height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden}
+html:not(#_) .awsp-bar b{display:block;height:100%;width:0;background:var(--gc,var(--fg2));transition:width .15s}
+html:not(#_) .awsp-bar b.bad{background:var(--red,#e05a4a)}
+html:not(#_) .awsp-ft{display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px dashed var(--line)}
+html:not(#_) .awsp-ft small{font-size:11px}
+html:not(#_) .awsp-go{white-space:nowrap}
+@media (max-width:640px){html:not(#_) .awsp-st{grid-template-columns:repeat(3,minmax(0,1fr))}}
+html:not(#_) .awspec select.awsp-type.on{background:var(--tc) !important;background-image:none !important;border-color:var(--tc) !important;color:#fff !important;text-shadow:0 1px 2px rgba(0,0,0,.7);box-shadow:inset 0 -2px 0 rgba(0,0,0,.25) !important}
+html:not(#_) .awspec select.awsp-so-sel{width:96px;height:30px;padding:0 6px;font-size:12px;font-weight:700;border:1px solid var(--line2);background:rgba(0,0,0,.35);color:var(--fg);border-radius:3px}
+html:not(#_) .awspec select.awsp-type option{background:#1b1b1f;color:#eee;text-shadow:none}
+html:not(#_) .awsp-abw{display:flex;gap:6px}
+html:not(#_) .awsp-abw .awsp-ab{flex:1;min-width:0}
+html:not(#_) .awsp-abp{white-space:nowrap;height:30px}
+html:not(#_) .awsp-abi{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;margin-top:4px;font-size:11.5px;color:var(--fg2)}
+html:not(#_) .awsp-abi:empty{display:none}
+html:not(#_) .awsp-so{font-size:10.5px;font-weight:700;padding:0 6px;border:1px solid var(--line2);border-radius:3px;color:var(--fg);white-space:nowrap}
+html:not(#_) .awsp-so.over{border-color:var(--red,#e05a4a);color:#ff8a7a}
+html:not(#_) .awsp-kb{font-size:10.5px;padding:0 5px;border:1px solid var(--line2);border-radius:3px;color:var(--mute);white-space:nowrap}
+html:not(#_) .awsp-warn{color:#ff8a7a;font-size:11px}
+html:not(#_) .awsp-abe{flex-basis:100%;line-height:1.5;color:var(--fg2)}
+html:not(#_) .awab-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px}
+html:not(#_) .awab-bar input{flex:1 1 220px;height:32px;padding:0 10px;box-sizing:border-box}
+html:not(#_) .awab-so{display:flex;flex-wrap:wrap;gap:4px}
+html:not(#_) .awab-so .chip{font-size:11.5px;padding:2px 8px;cursor:pointer}
+html:not(#_) .awab-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;max-height:62vh;overflow:auto;padding-right:4px}
+@media (max-width:760px){html:not(#_) .awab-list{grid-template-columns:1fr}}
+html:not(#_) .awab-r{display:block;width:100%;text-align:left;padding:7px 9px;border:1px solid var(--line);background:rgba(0,0,0,.18);color:var(--fg);cursor:pointer;font:inherit;border-radius:3px}
+html:not(#_) .awab-r:hover{border-color:var(--yel)}
+html:not(#_) .awab-r.sel{border-color:var(--yel);box-shadow:inset 3px 0 0 var(--yel)}
+html:not(#_) .awab-t{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+html:not(#_) .awab-t b{font-size:13px}
+html:not(#_) .awab-e{margin-top:3px;font-size:11.5px;line-height:1.5;color:var(--fg2)}
 .awres{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-height:66vh;overflow:auto;padding-right:4px}
 @media (max-width:860px){.awres{grid-template-columns:1fr}}
 .awres-s{border:1px solid var(--line2);background:rgba(128,128,128,.05);padding:8px}
