@@ -38,8 +38,8 @@
 .awsc{font-family:var(--mono);font-size:11px;color:var(--mute);border:1px solid var(--line2);padding:0 5px}
 .awmeta{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11px;color:var(--fg2)}
 .awfm{letter-spacing:-1px;color:var(--yel);font-size:10px}
-.awx{font-size:10px;padding:0 5px;border:1px solid var(--red);color:var(--red)}
-.awx.own{border-color:var(--line2);color:var(--mute)}
+.awbdg{font-size:10px;padding:0 5px;border:1px solid var(--red);color:var(--red)}
+.awbdg.own{border-color:var(--line2);color:var(--mute)}
 .awl{margin:0;font-size:13px;line-height:1.5}
 .awwhy{margin:0;font-size:12px;color:var(--yel);line-height:1.45}
 .awkv{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;font-size:12px;line-height:1.45}
@@ -179,7 +179,7 @@
 .awhf b{font-size:11px;padding:0 6px;border:1px solid var(--line2);border-radius:999px}
 .awpc.fixed{border-color:#cfae6e}
 .awpc.fixed small{color:#cfae6e}
-.awx.fix{border-color:#cfae6e;color:#cfae6e}
+.awbdg.fix{border-color:#cfae6e;color:#cfae6e}
 /* 10-31 망령: 고치기 창 제작 설정 카드(타입 · 특성 · 종족치 · ⇪ 시트에 각성체로) · 감우 결과 넣은 뒤 정리 창 — 테마가 입력 칸을 덮지 않게 html:not(#_) 로 올림 */
 html:not(#_) .awspec{margin-top:10px;border:1px solid var(--line2);background:rgba(0,0,0,.22);font-size:12px}
 html:not(#_) .awsp-h{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.03)}
@@ -267,7 +267,7 @@ html:not(#_) .awc-click:hover{border-color:var(--yel)}
 html:not(#_) .awc.pk{border-color:var(--yel);box-shadow:inset 0 0 0 1px var(--yel),0 0 0 2px rgba(230,195,92,.15)}
 html:not(#_) .awc-add{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:120px;border:1px dashed var(--line2);background:transparent;color:var(--fg2);cursor:pointer;font:inherit;text-align:center}
 html:not(#_) .awc-add:hover{border-color:var(--yel);color:var(--fg)}
-html:not(#_) .awx.rec{border-color:var(--yel);color:var(--yel)}
+html:not(#_) .awbdg.rec{border-color:var(--yel);color:var(--yel)}
 html:not(#_) .awpk-s{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px}
 html:not(#_) .awms{display:inline-flex;align-items:center;gap:2px;font-variant-numeric:tabular-nums}
 html:not(#_) .awms i{font-style:normal;font-size:11px;min-width:26px;text-align:center;padding:0 3px;border:1px solid var(--line2);border-radius:3px;color:var(--fg)}
@@ -285,9 +285,9 @@ html:not(#_) details.awtags>summary{list-style:none;cursor:pointer;margin-bottom
 html:not(#_) details.awtags>summary::-webkit-details-marker{display:none}
 html:not(#_) details.awtags[open]>summary{margin-bottom:6px}
 /* 10-31 망령 「종족치 랭크 · 특성 효과 · UI 더」: 제작 블록 · 카드 아래 단추 · 작은 표지 */
-html:not(#_) .awx{display:inline-flex;align-items:center;height:18px;min-height:0;font-size:10.5px;line-height:1;font-weight:700;padding:0 6px;border:1px solid var(--red,#c0392b);border-radius:3px;color:var(--red,#e05a4a);background:transparent;box-shadow:none;white-space:nowrap;width:auto}
-html:not(#_) .awx.own{border-color:var(--line2);color:var(--mute)}
-html:not(#_) .awx.rec{border-color:var(--yel);color:var(--yel)}
+html:not(#_) .awbdg{display:inline-flex;align-items:center;height:18px;min-height:0;font-size:10.5px;line-height:1;font-weight:700;padding:0 6px;border:1px solid var(--red,#c0392b);border-radius:3px;color:var(--red,#e05a4a);background:transparent;box-shadow:none;white-space:nowrap;width:auto}
+html:not(#_) .awbdg.own{border-color:var(--line2);color:var(--mute)}
+html:not(#_) .awbdg.rec{border-color:var(--yel);color:var(--yel)}
 html:not(#_) .awch{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 html:not(#_) .awc{display:flex;flex-direction:column;gap:6px}
 html:not(#_) .awspk{display:flex;flex-direction:column;gap:6px;padding:7px 8px;border:1px solid var(--line);background:rgba(0,0,0,.2);border-radius:4px}
@@ -332,3 +332,9 @@ html:not(#_) .awssrc{display:flex;align-items:center;gap:8px;flex-wrap:wrap;marg
 html:not(#_) .awssrc-l{font-size:12px;color:var(--mute)}
 html:not(#_) .awssrc input[data-sw]{flex:1;min-width:160px}
 html:not(#_) .awnpc{font-style:normal;font-size:9.5px;font-weight:800;color:#6fa3ff;border:1px solid #2f6fd0;border-radius:3px;padding:0 4px;margin-right:4px;vertical-align:1px}
+/* 10-31: 추천 카드 작은 표지는 .awbdg (서머리 각성체 카드 .awx 와 겹쳐 카드가 납작해지던 것) · 서머리 대가 줄 */
+html:not(#_) .awcostbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;padding:7px 10px;border:1px solid rgba(176,32,46,.45);border-left:3px solid #b0202e;border-radius:4px;background:rgba(176,32,46,.06);font-size:12.5px}
+html:not(#_) .awcostbar>b{font-family:'Noto Serif KR',serif;font-weight:900}
+html:not(#_) .awcb-g{display:inline-block;min-width:20px;text-align:center;padding:0 6px;border-radius:2px;background:#b0202e;color:#fff;font-weight:800;font-family:'Cinzel','Noto Serif KR',serif}
+html:not(#_) .awcb-n{opacity:.6}
+html:not(#_) .awcb-w{color:#c0392b;font-weight:700}

@@ -292,7 +292,10 @@
      ${nt?`<span class="awx-note" title="${esc(nt)}">${esc(nt)}</span>`:''}</span>
     <span class="awx-seal" aria-hidden="true">${free?'代價':'補助'}</span></a>`};
   const empty=n=>`<div class="awx empty"><span>각성체 ${n}</span><small>아직 없어요</small>${E&&G?`<button type="button" class="btn xs" data-monadd="aw" data-id="${esc(id)}">＋ 각성체</button>`:''}</div>`;
-  return `<div class="awxs">${aw.slice(0,2).map(card).join('')}${aw.length<2?[...Array(2-Math.min(2,aw.length))].map((_,k)=>empty(aw.length+k+1)).join(''):''}</div>`}
+  /* 10-31 망령 「이쪽(서머리)에서도 대가 지정 버튼」: 지금 걸린 대가 등급 · 분류 한 줄 + 제작기 「각성체 대가」 칸을 바로 여는 단추 (등급 · 지시/육성/통솔/능력 자동 계산은 제작기가 한다) */
+  const g=o&&o.grade&&o.grade!=='-'&&o.grade!=='?'?o.grade:'';const cats=o&&o.pen?Object.keys(o.pen):[];
+  const bar=t&&(aw.length||E&&G)?`<div class="awcostbar"><b>각성체 대가</b>${g?`<span class="awcb-g">${esc(g)}</span>`:'<span class="awcb-n">없음</span>'}<small>${!o?'제작기에서 이 트레이너를 한 번 저장하면 보여요':!aw.some(m=>m.awaken==='free')?'각성 (대가) 각성체가 아직 없어요':!g?'대가 쪽 프라이드가 C 이거나 아직 정하지 않았어요':cats.length?'분류 '+cats.map(esc).join(' · '):'<span class="awcb-w">분류를 아직 안 골랐어요</span>'}</small><span class="sp"></span>${E&&G?`<button type="button" class="btn xs" data-moned="" data-id="${esc(id)}" data-sec="misagp" title="제작기 「각성체 대가」 칸을 열어 분류 · 통솔 항목 · 뺄 지령 등을 골라요 (등급은 대가 각성체 프라이드로 자동)">⚖ 대가 지정</button>`:''}</div>`:'';
+  return `<div class="awxs">${aw.slice(0,2).map(card).join('')}${aw.length<2?[...Array(2-Math.min(2,aw.length))].map((_,k)=>empty(aw.length+k+1)).join(''):''}</div>${bar}`}
  window.NT_PCX={partySec,monCard};
  /* 10-29: 지도의 인물 얼굴 → 이 시트 */
  window.NT_PC={select(k,id){U.mode=k==='npc'?'npc':'pc';U.sel=id;N().go(U.mode);setTimeout(()=>{const sh=$('.pcsheet');if(sh)sh.scrollIntoView({behavior:'smooth',block:'start'})},60)}};   /* 미리보기 · 점검용 */
