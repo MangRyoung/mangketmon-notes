@@ -284,3 +284,34 @@ html:not(#_) .aespec select,html:not(#_) .aespec input#aeAb{height:30px}
 html:not(#_) details.awtags>summary{list-style:none;cursor:pointer;margin-bottom:0}
 html:not(#_) details.awtags>summary::-webkit-details-marker{display:none}
 html:not(#_) details.awtags[open]>summary{margin-bottom:6px}
+/* 10-31 망령 「종족치 랭크 · 특성 효과 · UI 더」: 제작 블록 · 카드 아래 단추 · 작은 표지 */
+html:not(#_) .awx{display:inline-flex;align-items:center;height:18px;min-height:0;font-size:10.5px;line-height:1;font-weight:700;padding:0 6px;border:1px solid var(--red,#c0392b);border-radius:3px;color:var(--red,#e05a4a);background:transparent;box-shadow:none;white-space:nowrap;width:auto}
+html:not(#_) .awx.own{border-color:var(--line2);color:var(--mute)}
+html:not(#_) .awx.rec{border-color:var(--yel);color:var(--yel)}
+html:not(#_) .awch{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+html:not(#_) .awc{display:flex;flex-direction:column;gap:6px}
+html:not(#_) .awspk{display:flex;flex-direction:column;gap:6px;padding:7px 8px;border:1px solid var(--line);background:rgba(0,0,0,.2);border-radius:4px}
+html:not(#_) .awspk-t{display:flex;gap:4px;flex-wrap:wrap}
+html:not(#_) .awspk-st{display:grid;grid-template-columns:repeat(6,minmax(0,1fr)) auto;gap:3px;align-items:stretch}
+html:not(#_) .awspk-c{--gc:#8D97A6;display:flex;flex-direction:column;align-items:center;gap:0;padding:2px 0 3px;border:1px solid var(--line2);border-top:3px solid var(--gc);border-radius:3px;background:rgba(255,255,255,.02);min-width:0}
+html:not(#_) .awspk-c small{font-size:9.5px;color:var(--mute);line-height:1.3}
+html:not(#_) .awspk-c b{font-size:13px;font-variant-numeric:tabular-nums;line-height:1.2;color:var(--fg)}
+html:not(#_) .awspk-c em{font-style:normal;font-size:10px;font-weight:800;line-height:1.3;color:var(--gc)}
+html:not(#_) .awspk-c.g-s{--gc:#E0503F}html:not(#_) .awspk-c.g-aaa{--gc:#D9693A}html:not(#_) .awspk-c.g-aa{--gc:#E08A2E}html:not(#_) .awspk-c.g-a{--gc:#D4AA1E}
+html:not(#_) .awspk-c.g-b{--gc:#4FB373}html:not(#_) .awspk-c.g-c{--gc:#4C8FDB}html:not(#_) .awspk-c.g-d{--gc:#8A8FCC}html:not(#_) .awspk-c.g-e{--gc:#8D97A6}
+html:not(#_) .awspk-sum{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 6px;border-left:1px dashed var(--line2)}
+html:not(#_) .awspk-sum small{font-size:9.5px;color:var(--mute)}
+html:not(#_) .awspk-sum b{font-size:13px;color:var(--fg);font-variant-numeric:tabular-nums}
+html:not(#_) .awspk-ab{display:flex;flex-direction:column;gap:2px}
+html:not(#_) .awspk-abh{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+html:not(#_) .awspk-abh small{font-size:10.5px;color:var(--mute)}
+html:not(#_) .awspk-abh b{font-size:12.5px;color:var(--fg)}
+html:not(#_) .awspk-ab p{margin:0;font-size:11.5px;line-height:1.5;color:var(--fg2)}
+html:not(#_) .awspk.big .awspk-c b{font-size:15px}
+html:not(#_) .awspk.big{margin-top:6px}
+html:not(#_) .awspk.tbl{padding:4px;gap:4px;min-width:250px}
+html:not(#_) .awspk.tbl .awspk-ab p{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+html:not(#_) .awbtn2{display:flex;flex-direction:column;gap:6px;margin-top:auto;padding-top:6px;border-top:1px dashed var(--line)}
+html:not(#_) .awlinks{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+html:not(#_) .awgo{width:100%;justify-content:center}
+html:not(#_) .awc .awkv{margin:0}
