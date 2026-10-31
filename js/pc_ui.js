@@ -82,7 +82,7 @@
     저장 자리는 그대로(제작기 「상세」 t.bio 의 항목 하나하나 · 비밀 = pcp 문서 · GM 메모 = sec 문서) */
  const BIO_GRP=[['인물',['백스토리','성격','겉모습']],['말과 싸움',['말투','선호하는 전법']],['목표 · 관계',['목표 · 동기','인간관계']],['메모',['메모','PL 이 아는 것']]];
  const grpOf=k=>{for(const [g,L] of BIO_GRP)if(L.includes(k))return g;return '메모'};
- const sheetBio=(id,npc)=>{const t=MK().trainer(id);const p=N().data(npc?'npc':'pc',id)||{};return t?bioMerge(t.kind==='npc'||npc,t.bio,t.rp,oldOf(p)):bioMerge(npc,p.bio,oldOf(p))};
+ const sheetBio=(id,npc)=>{const t=MK().trainer(id);const p=N().data(npc?'npc':'pc',id)||{};return t?bioMerge(t.kind==='npc'||npc,pend(p,t,'bio')?bioOver(t.bio,p.bio):t.bio,t.rp,oldOf(p)):bioMerge(npc,p.bio,oldOf(p))};
  const PUB_NPC=[['bg','정체 · 설정'],['goal','원하는 것 · 동기'],['bond','인간관계'],['style','말투 · 겉모습'],['note','PL 이 아는 것']];
  const PUB=()=>U.mode==='npc'?PUB_NPC:PUB_PC;
  const PRIV=[['secret','비밀 · 속마음'],['plan','꿍꿍이 · 계획']];
@@ -125,17 +125,26 @@
   if(G){it.push('-');it.push({t:'🗑 빼기',danger:true,on:()=>act('del',{dataset:{id}})})}
   return it}
  /* 10-29 망령 「제작기에서 이름을 바꿔도 노트엔 처음 이름」: 제작기에 있는 트레이너는 이름 · 초상을 제작기 것으로 보인다 (노트 칸은 제작기가 없을 때 쓰는 사본) */
- const nmOf=(p,t)=>(t&&t.name)||p.name||'';const imOf=(p,t)=>(t&&t.image)||p.image||'';
+ /* 10-31 망령 「대학에서 바꾼 트레이너 포트가 어느 순간 제작기 원본으로 되돌아간다」「이름 · 메모 같은 트레이너 변경 사항도 다 비슷하니 전체 점검」:
+    원인 = 고칠 때 이 브라우저에 제작기 사본이 아직 없거나(읽는 중 · 실패) 제작기에 못 쓰면 노트 칸에만 저장되고, 화면은 제작기 값을 먼저 보여서 나중에 제작기 값으로 돌아간다.
+    → ① 고치기 전에 제작기를 읽고(act 첫머리), 상세는 제작기 문서를 직접 확인해 쓴다. ② 노트에서 바꾼 이름 · 초상 · 상세에는 바꾼 시각(nameAt · imageAt · bioAt)을 남기고 제작기에도 같은 시각을 쓴다.
+    제작기 쪽 시각이 다르면 = 제작기에 아직 안 들어간 것 → 노트 값이 맞다(화면도 노트 값, maker.heal 이 제작기를 고친다). 같으면 그 뒤 제작기에서 바꾼 것 → 제작기 값 */
+ /* 10-31: 노트 문서는 통째로 덮어쓴다 — 저장할 땐 이 브라우저 사본 말고 지금 DB 의 최신 문서를 바탕으로 (다른 사람이 막 고친 칸을 옛 값으로 되돌리지 않게) */
+ const fresh=async(KD,id)=>{try{const r=await N().DBS().get(N().ST.camp,N().ST.secret,KD,id);return (r&&r.data)||N().data(KD,id)||{}}catch(e){return N().data(KD,id)||{}}};
+ const pend=(p,t,f)=>!!(p&&p[f+'At'])&&(!t||t[f+'At']!==p[f+'At']);
+ const nmOf=(p,t)=>pend(p,t,'name')?(p.name||''):((t&&t.name)||(p&&p.name)||'');
+ const imOf=(p,t)=>pend(p,t,'image')?(p.image||''):((t&&t.image)||(p&&p.image)||'');
+ const bioOver=(A,B)=>{const L=(Array.isArray(A)?A:[]).map(x=>({k:x.k,v:x.v}));for(const b of B||[]){if(!b||!b.k)continue;const e=L.find(x=>x.k===b.k);if(e)e.v=b.v;else L.push({k:b.k,v:b.v})}return L};
  function card(p){const t=MK().trainer(p.id)||{};const ms=MK().mons(p.id);const img=imOf(p,t);const rk=t.ranks||{};
   return `<button type="button" class="pccard ${p.id===U.sel?'on':''}" data-pc="${esc(p.id)}" data-id="${esc(p.id)}" data-drag><span class="por" style="${img?`background-image:url('${cssu(img)}')`:''}"></span><span style="min-width:0;flex:1"><b>${esc(nmOf(p,t)||p.id)}</b><small class="dim">${esc(p.player||'')}${p.player&&p.sub?' · ':''}${esc(p.sub||'')}</small><span class="rk">${['지시','육성','통솔','능력'].map(k=>`<span>${k} ${esc(rk[k]||'-')}</span>`).join('')}</span><span class="mons">${ms.slice(0,6).map(m=>`<i title="${esc(m.name||'')}" style="${MK().img(m)?`background-image:url('${cssu(MK().img(m))}')`:''}"></i>`).join('')}</span>${N().visBadge(p._vis,K(),p.id)}</span></button>`}
  /* 상세 여러 항목 한꺼번에 저장: ch = {항목 이름: 값 | null(지우기)} — 제작기 트레이너면 그 「상세」, 아니면 이 시트 문서 */
- async function bioSave(id,ch){const KD=K();const NPC=U.mode==='npc';const t=MK().trainer(id);
+ async function bioSave(id,ch){const KD=K();const NPC=U.mode==='npc';const DB0=N().DBS();const curD=DB0.makerGet?await DB0.makerGet('trainers',id).catch(()=>null):null;const t=curD;
   const set=L=>{for(const [lab,v] of Object.entries(ch)){const e=L.find(x=>x.k===lab);if(v==null){const i=L.indexOf(e);if(i>=0)L.splice(i,1)}else if(e)e.v=v;else L.push({k:lab,v})}return L.filter(x=>String(x.v||'').trim()).map(x=>({k:x.k,v:x.v}))};
-  if(t){const DB=N().DBS();if(!DB.makerPut)throw new Error('이 화면에서는 제작기에 쓸 수 없어요');const curD=await DB.makerGet('trainers',id);if(!curD)throw new Error('제작기 문서를 찾지 못했어요');const doc=JSON.parse(JSON.stringify(curD.data||{}));const d=doc.data||doc;const p=N().data(KD,id)||{};
-   d.bio=set(bioMerge(d.kind==='npc'||NPC,d.bio,d.rp,oldOf(p)));delete d.rp;delete d.rpAt;await DB.makerPut('trainers',id,doc);
+  if(t){const DB=N().DBS();if(!DB.makerPut)throw new Error('이 화면에서는 제작기에 쓸 수 없어요');const doc=JSON.parse(JSON.stringify(curD.data||{}));const d=doc.data||doc;const p=N().data(KD,id)||{};const pb=pend(p,d,'bio');
+   d.bio=set(bioMerge(d.kind==='npc'||NPC,pb?bioOver(d.bio,p.bio):d.bio,d.rp,oldOf(p)));if(pb)d.bioAt=p.bioAt;delete d.rp;delete d.rpAt;await DB.makerPut('trainers',id,doc);
    if(Object.keys(oldOf(p)).length&&N().doc(KD,id)){const np=Object.assign({},p);for(const kk of ['bg','goal','bond','style','note'])delete np[kk];await N().put(KD,id,np)}
    await MK().load(true);N().render()}
-  else{if(!N().doc(KD,id))throw new Error('시트를 찾지 못했어요 — 새로고침해 주세요');await N().patch(KD,id,p=>{p.bio=set(bioMerge(NPC,p.bio,oldOf(p)));for(const kk of ['bg','goal','bond','style','note'])delete p[kk]})}}
+  else{if(!N().doc(KD,id))throw new Error('시트를 찾지 못했어요 — 새로고침해 주세요');await N().patch(KD,id,p=>{p.bio=set(bioMerge(NPC,p.bio,oldOf(p)));p.bioAt=new Date().toISOString();for(const kk of ['bg','goal','bond','style','note'])delete p[kk]})}}
  function sheet(id){const KD=K();const NPC=U.mode==='npc';const p=N().data(KD,id)||{};const ent=entOf(nmOf(p,MK().trainer(id)),id);const t=MK().trainer(id);const ms=MK().mons(id);const G=N().gm(),E=canEditPc(id);const priv=N().data('pcp',id)||{};const sec=N().data('sec',KD+':'+id)||{};const img=imOf(p,t);const rk=(t&&t.ranks)||{};
   const box=(k,lab,v,cls,editable,kind)=>`<div class="rpbox ${cls||''}" data-k="${k}" data-kind="${kind}"><h4>${lab}${cls==='priv'?' <span class="visb pl">👤 본인 · GM</span>':cls==='gm'?' <span class="visb gm">🔒 GM</span>':''}<span class="sp"></span>${editable?`<button class="btn xs ghost" data-p="editbox" data-k="${k}" data-kind="${kind}">✎</button>`:''}</h4><div class="pre">${esc(v||'')||'<span class="dim">—</span>'}</div></div>`;
   const grpBox=(id,g,items,E,kind)=>{const full=items.filter(x=>String(x.v||'').trim()),emp=items.filter(x=>!String(x.v||'').trim());const one=items.length===1&&!items[0].k;
@@ -370,7 +379,7 @@
      await DB.makerPut('trainers',id,{ord,data:d})}
     N().closeModal();await MK().load(true);N().render();N().toast(t?'제작기 트레이너를 고쳤어요':'제작기에 새 트레이너를 만들었어요')}
    catch(e){b.disabled=false;b.textContent='다시 시도';N().toast('보내지 못했어요: '+(e.message||e))}}}
- async function act(k,b){const id=b.dataset.id||(U.sel==='~'?'':U.sel);
+ async function act(k,b){const id=b.dataset.id||(U.sel==='~'?'':U.sel);try{await MK().load()}catch(e){}   /* 10-31: 제작기 사본 없이 고치면 노트에만 저장돼 나중에 되돌아간다 */
   if(k==='reload'){await MK().load(true);N().render();return}
   if(k==='mklink'){await MK().pickLinked();return}
   if(k==='mksync'){await mkSync();return}
@@ -382,15 +391,16 @@
    $('#pkQ',md).oninput=e=>{const q=e.target.value.toLowerCase();$$('[data-pick]',md).forEach(x=>x.hidden=!!q&&!x.dataset.q.includes(q))};
    md.addEventListener('click',async e=>{const pf=e.target.closest('[data-pickfold]');if(pf){const list=ts.filter(t=>t.folder===pf.dataset.pickfold);N().closeModal();let n=pcs().length;await N().putMany(list.map(t=>({kind:KD,id:t.id,data:fromTrainer(t,{order:n++}),vis:NPC?'gm':'pub'})));U.sel=(list[0]||{}).id||'';N().render();return}
     const p=e.target.closest('[data-pick]');if(!p)return;const t=MK().trainer(p.dataset.pick);N().closeModal();await N().put(KD,t.id,fromTrainer(t,{order:pcs().length}),NPC?'gm':'pub');U.sel=t.id;N().render()});return}
-  if(k==='edit'){const p=N().data(KD,id);if(!p)return;const tk=MK().trainer(id);const md=N().openModal(`<div class="mhead"><h2>${NPC?'NPC':'PC'} 기본 칸</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>${tk?'<p class="small dim" style="margin:0 0 6px">제작기에 있는 트레이너예요. 이름 · 초상은 제작기에도 같이 저장돼요.</p>':''}<div class="mrow"><label class="lbl">이름${tk?'':' (비우면 제작기 이름)'}<input id="pcName" type="text" value="${esc(nmOf(p,tk))}"></label><label class="lbl">${NPC?'역할 · 소속':'플레이어'}<input id="pcPl" type="text" value="${esc(p.player||'')}"></label><label class="lbl">한 줄<input id="pcSub" type="text" value="${esc(p.sub||'')}"></label>${N().gm()?`<label class="lbl">공개${N().visSelect(N().doc(KD,id).vis,'pcVis',{noPl:true})}</label>`:''}</div><div class="sec">초상${tk?'':' (비우면 제작기 초상)'}</div><div class="updz" id="pcDz"><div class="pv" style="${imOf(p,tk)?`background-image:url('${cssu(imOf(p,tk))}')`:''}"></div><b>＋ 그림</b></div><div class="row" style="margin-top:12px"><button class="btn xs ghost" id="pcImgX">초상 빼기</button><span class="sp"></span><button class="btn pri" id="pcOk">저장</button></div>`);
+  if(k==='edit'){const p=N().data(KD,id);if(!p)return;await MK().load();const tk=MK().trainer(id);const md=N().openModal(`<div class="mhead"><h2>${NPC?'NPC':'PC'} 기본 칸</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>${tk?'<p class="small dim" style="margin:0 0 6px">제작기에 있는 트레이너예요. 이름 · 초상은 제작기에도 같이 저장돼요.</p>':''}<div class="mrow"><label class="lbl">이름${tk?'':' (비우면 제작기 이름)'}<input id="pcName" type="text" value="${esc(nmOf(p,tk))}"></label><label class="lbl">${NPC?'역할 · 소속':'플레이어'}<input id="pcPl" type="text" value="${esc(p.player||'')}"></label><label class="lbl">한 줄<input id="pcSub" type="text" value="${esc(p.sub||'')}"></label>${N().gm()?`<label class="lbl">공개${N().visSelect(N().doc(KD,id).vis,'pcVis',{noPl:true})}</label>`:''}</div><div class="sec">초상${tk?'':' (비우면 제작기 초상)'}</div><div class="updz" id="pcDz"><div class="pv" style="${imOf(p,tk)?`background-image:url('${cssu(imOf(p,tk))}')`:''}"></div><b>＋ 그림</b></div><div class="row" style="margin-top:12px"><button class="btn xs ghost" id="pcImgX">초상 빼기</button><span class="sp"></span><button class="btn pri" id="pcOk">저장</button></div>`);
    let image=imOf(p,tk);N().bindDrop($('#pcDz',md),async fs=>{try{image=await N().upload(fs[0],'face','pc');$('#pcDz .pv',md).style.backgroundImage=`url('${cssu(image)}')`}catch(x){N().toast('올리기 실패: '+x.message)}});$('#pcImgX',md).onclick=()=>{image='';$('#pcDz .pv',md).style.backgroundImage=''};
    $('#pcOk',md).onclick=async()=>{const v=$('#pcVis',md);const name=$('#pcName',md).value.trim();
     /* 10-29 망령: 제작기 트레이너면 이름 · 초상을 제작기에도 쓴다 (노트 칸은 사본) */
-    if(tk&&(name&&name!==tk.name||image!==(tk.image||''))){const DB=N().DBS();if(DB.makerPut)try{const cur=await DB.makerGet('trainers',id);if(cur){const doc=JSON.parse(JSON.stringify(cur.data||{}));const d=doc.data||doc;if(name)d.name=name;d.image=image;await DB.makerPut('trainers',id,doc);Object.assign(tk,{name:name||tk.name,image})}}catch(x){N().toast('제작기에 못 썼어요: '+x.message)}}
-    await N().put(KD,id,Object.assign({},p,{name,player:$('#pcPl',md).value.trim(),sub:$('#pcSub',md).value.trim(),image}),v?v.value:undefined);N().closeModal()};return}
+    const now=new Date().toISOString();const imCh=image!==imOf(p,tk);const imAt=imCh?now:(p.imageAt||'');const nmCh=!!name&&name!==nmOf(p,tk);const nmAt=nmCh?now:(p.nameAt||'');
+    if(tk&&(nmCh||imCh)){try{await MK().edit('trainers',id,d=>{if(nmCh){d.name=name;d.nameAt=nmAt}if(imCh){d.image=image;d.imageAt=imAt}})}catch(x){N().toast('제작기에 못 썼어요 — 노트 초상이 먼저 보이고, GM 이 열 때 다시 넣어요: '+(x.message||x))}}
+    await N().put(KD,id,Object.assign({},await fresh(KD,id),{name,player:$('#pcPl',md).value.trim(),sub:$('#pcSub',md).value.trim(),image},imAt?{imageAt:imAt}:{},nmAt?{nameAt:nmAt}:{}),v?v.value:undefined);N().closeModal();N().render()};return}
   /* 10-30 망령 「학생증은 클릭하면 안쪽 내용(이름 소속 학번 담당 자질 등)을 바꿀 수 있게」.
      이름 · 사진 · 자질은 제작기 트레이너에 쓴다(제작기에 없으면 이 시트에만). 소속 = p.sub · 학번 = p.stuNo(비우면 자동) · 담당 = p.player */
-  if(k==='idedit'){const p=N().data(KD,id);if(!p||!canEditPc(id))return;const tk=MK().trainer(id);const rk=Object.assign({},(tk&&tk.ranks)||{});
+  if(k==='idedit'){const p=N().data(KD,id);if(!p||!canEditPc(id))return;await MK().load();const tk=MK().trainer(id);const rk=Object.assign({},(tk&&tk.ranks)||{});
    /* 10-30 망령 「학생증 고치기에 입력 칸 UI 도 좀 개선하고 여기서 스탠딩 이미지나 표정을 넣어 둘 수 있도록 — 제작기에도 있던, 웹툴로 넘길 수 있는 그 기능」:
       두 장(학생증 · 스탠딩 · 표정). 스탠딩 = 제작기 트레이너 stands[{label(표정 이름), src, point(보정 px), kind}] · standActive(기본) — 제작기와 같은 칸이라 웹툴 명단 「제작기 동기화」 때 무대 그림으로 넘어간다 */
    const RK=['S','AAA+','AAA','AAA-','AA+','AA','AA-','A+','A','A-','B+','B','B-','C+','C','C-','D+','D','D-','E+','E','E-'];
@@ -421,9 +431,9 @@
     stBox.addEventListener('input',e=>{const t2=e.target;if(t2.dataset.slab!=null){stands[+t2.dataset.slab].label=t2.value.slice(0,40);stCh=true}else if(t2.dataset.spt!=null){stands[+t2.dataset.spt].point=+t2.value||0;stCh=true}});
     stBox.addEventListener('change',e=>{const t2=e.target;if(t2.dataset.skind!=null){const s2=stands[+t2.dataset.skind];if(t2.value)s2.kind=t2.value;else delete s2.kind;stCh=true}})}
    $('#idOk',md).onclick=async()=>{const b=$('#idOk',md);b.disabled=true;const name=$('#idName',md).value.trim();const R={};$$('[data-rk]',md).forEach(x=>{R[x.dataset.rk]=x.value.trim().toUpperCase()});
-    const rkCh=tk&&Object.keys(R).some(q=>R[q]!==(rk[q]||''));const mkCh=tk&&(name&&name!==tk.name||image!==(tk.image||'')||rkCh||stCh);
-    try{if(mkCh)await MK().edit('trainers',id,d=>{if(name)d.name=name;d.image=image;if(rkCh)d.ranks=Object.assign({},d.ranks||{},R);if(stCh){d.stands=stands.filter(x=>x&&/^https?:\/\//.test(String(x.src||''))).map(x=>Object.assign({label:String(x.label||'기본').trim().slice(0,40)||'기본',src:x.src,point:+x.point||0},x.kind?{kind:x.kind}:{}));d.standActive=Math.max(0,Math.min(d.stands.length-1,sAct))}})}catch(x){N().toast('제작기에 못 썼어요: '+(x.message||x))}
-    const pl=$('#idPl',md);await N().put(KD,id,Object.assign({},p,{name,sub:$('#idSub',md).value.trim(),stuNo:$('#idNo',md).value.trim(),player:pl?pl.value.trim():(p.player||''),image,dorm:$('#idDorm',md).value.trim(),club:$('#idClub',md).value.trim(),motto:$('#idMotto',md).value.trim(),idNote:$('#idNote',md).value.trim()}));if(stCh)await MK().load(true);N().closeModal();N().render()};return}
+    const rkCh=tk&&Object.keys(R).some(q=>R[q]!==(rk[q]||''));const now=new Date().toISOString();const imCh=image!==imOf(p,tk);const imAt=imCh?now:(p.imageAt||'');const nmCh=!!name&&name!==nmOf(p,tk);const nmAt=nmCh?now:(p.nameAt||'');const mkCh=tk&&(nmCh||imCh||rkCh||stCh);
+    try{if(mkCh)await MK().edit('trainers',id,d=>{if(nmCh){d.name=name;d.nameAt=nmAt}if(imCh){d.image=image;d.imageAt=imAt}if(rkCh)d.ranks=Object.assign({},d.ranks||{},R);if(stCh){d.stands=stands.filter(x=>x&&/^https?:\/\//.test(String(x.src||''))).map(x=>Object.assign({label:String(x.label||'기본').trim().slice(0,40)||'기본',src:x.src,point:+x.point||0},x.kind?{kind:x.kind}:{}));d.standActive=Math.max(0,Math.min(d.stands.length-1,sAct))}})}catch(x){N().toast('제작기에 못 썼어요 — 노트 사진이 먼저 보이고, GM 이 열 때 다시 넣어요: '+(x.message||x))}
+    const pl=$('#idPl',md);await N().put(KD,id,Object.assign({},await fresh(KD,id),imAt?{imageAt:imAt}:{},nmAt?{nameAt:nmAt}:{},{name,sub:$('#idSub',md).value.trim(),stuNo:$('#idNo',md).value.trim(),player:pl?pl.value.trim():(p.player||''),image,dorm:$('#idDorm',md).value.trim(),club:$('#idClub',md).value.trim(),motto:$('#idMotto',md).value.trim(),idNote:$('#idNote',md).value.trim()}));if(stCh)await MK().load(true);N().closeModal();N().render()};return}
   if(k==='editbox'){const key=b.dataset.k,kind=b.dataset.kind;const docId=kind==='sec'?KD+':'+id:id;const cur=N().data(kind,docId)||{};const lab=([...PUB(),...PRIV,['t','GM 메모']].find(x=>x[0]===key)||['','메모'])[1];
    const md=N().openModal(`<div class="mhead"><h2>${esc(lab)}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><textarea id="bxT" rows="8">${esc(cur[key]||'')}</textarea><div class="row" style="margin-top:10px"><span class="small dim">${kind==='pc'||kind==='npc'?'이 시트의 공개 설정대로 보여요':kind==='pcp'?'본인과 GM 에게만 보여요':'GM 에게만 보여요'}</span><span class="sp"></span><button class="btn pri" id="bxOk">저장</button></div>`);
    $('#bxT',md).focus();$('#bxOk',md).onclick=async()=>{const n=Object.assign({},cur,{[key]:$('#bxT',md).value.trim()});const vis=kind==='pc'||kind==='npc'?undefined:kind==='pcp'?'pl:'+id:'gm';if((kind==='pc'||kind==='npc')&&!N().doc(kind,id))return N().toast('시트를 찾지 못했어요 — 새로고침해 주세요');await N().put(kind,docId,n,vis);N().closeModal()};return}
@@ -443,15 +453,15 @@
    $('#gOk',md).onclick=async()=>{keep();const ch={};for(const x of items){if(x.del){if(!x.fresh)ch[x.k]=null;continue}const v=String(x.v||'').replace(/\s+$/,'');const was=(L0.find(q=>q.k===x.k)||{v:''}).v;if(v!==was||x.fresh)ch[x.k]=v}
     if(!Object.keys(ch).length)return N().closeModal();const ok=$('#gOk',md);ok.disabled=true;try{await bioSave(id,ch);N().closeModal()}catch(e){ok.disabled=false;N().toast(e.message||String(e))}};return}
   if(k==='editbio'||k==='bioadd'){let lab=b.dataset.bk||'';if(k==='bioadd'){const n=await N().promptBox('새 항목 이름','','예: 좋아하는 것 · 대사 · 외모');if(n==null||!n.trim())return;lab=n.trim()}
-   const L0=sheetBio(id,NPC);const cur=(L0.find(x=>x.k===lab)||{v:''}).v;const t=MK().trainer(id);const fixed=bioDef(t?t.kind==='npc'||NPC:NPC).includes(lab);
+   const L0=sheetBio(id,NPC);const cur=(L0.find(x=>x.k===lab)||{v:''}).v;const t=MK().trainer(id)||(N().DBS().makerGet?await N().DBS().makerGet('trainers',id).then(r=>r&&Object.assign({id},(r.data&&r.data.data)||r.data||{})).catch(()=>null):null);const fixed=bioDef(t?t.kind==='npc'||NPC:NPC).includes(lab);
    const md=N().openModal(`<div class="mhead"><h2>${esc(lab)}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><textarea id="bxT" rows="8">${esc(cur)}</textarea><div class="row" style="margin-top:10px"><span class="small dim">${t?'제작기 트레이너 「상세」에 바로 저장돼요 · 오레마스엔 「제작기 동기화」로':'이 시트에 저장 · 「⇪ 제작기로」를 누르면 제작기 「상세」로 가요'}</span><span class="sp"></span>${fixed?'':'<button class="btn xs ghost danger" id="bxDel">항목 지우기</button>'}<button class="btn pri" id="bxOk">저장</button></div>`);
    $('#bxT',md).focus();
    const save=async v=>{const set=L=>{const e=L.find(x=>x.k===lab);if(v==null){const i=L.indexOf(e);if(i>=0)L.splice(i,1)}else if(e)e.v=v;else L.push({k:lab,v});return L.filter(x=>String(x.v||'').trim()).map(x=>({k:x.k,v:x.v}))};
-    if(t){const DB=N().DBS();if(!DB.makerPut)return N().toast('이 화면에서는 제작기에 쓸 수 없어요');const curD=await DB.makerGet('trainers',id);if(!curD)return N().toast('제작기 문서를 찾지 못했어요');const doc=JSON.parse(JSON.stringify(curD.data||{}));const d=doc.data||doc;const p=N().data(KD,id)||{};
-     d.bio=set(bioMerge(d.kind==='npc'||NPC,d.bio,d.rp,oldOf(p)));delete d.rp;delete d.rpAt;await DB.makerPut('trainers',id,doc);
+    if(t){const DB=N().DBS();if(!DB.makerPut)return N().toast('이 화면에서는 제작기에 쓸 수 없어요');const curD=await DB.makerGet('trainers',id);if(!curD)return N().toast('제작기 문서를 찾지 못했어요');const doc=JSON.parse(JSON.stringify(curD.data||{}));const d=doc.data||doc;const p=N().data(KD,id)||{};const pb=pend(p,d,'bio');
+     d.bio=set(bioMerge(d.kind==='npc'||NPC,pb?bioOver(d.bio,p.bio):d.bio,d.rp,oldOf(p)));if(pb)d.bioAt=p.bioAt;delete d.rp;delete d.rpAt;await DB.makerPut('trainers',id,doc);
      if(Object.keys(oldOf(p)).length&&N().doc(KD,id)){const np=Object.assign({},p);for(const kk of ['bg','goal','bond','style','note'])delete np[kk];await N().put(KD,id,np)}   /* 옮겨 간 예전 노트 칸은 비운다 */
      await MK().load(true);N().render()}
-    else{if(!N().doc(KD,id))return N().toast('시트를 찾지 못했어요 — 새로고침해 주세요');await N().patch(KD,id,p=>{p.bio=set(bioMerge(NPC,p.bio,oldOf(p)));for(const kk of ['bg','goal','bond','style','note'])delete p[kk]})}
+    else{if(!N().doc(KD,id))return N().toast('시트를 찾지 못했어요 — 새로고침해 주세요');await N().patch(KD,id,p=>{p.bio=set(bioMerge(NPC,p.bio,oldOf(p)));p.bioAt=new Date().toISOString();for(const kk of ['bg','goal','bond','style','note'])delete p[kk]})}
     N().closeModal()};
    $('#bxOk',md).onclick=()=>save($('#bxT',md).value.replace(/\s+$/,''));const bd=$('#bxDel',md);if(bd)bd.onclick=()=>save(null);return}
   if(k==='bioall'){await MK().load(true);const L=pcs().filter(p=>Object.keys(oldOf(p)).length&&MK().trainer(p.id));if(!L.length)return N().toast('옮길 칸이 없어요');if(!await N().confirmBox(`${L.length}개 시트의 예전 공개 칸을 제작기 트레이너 「상세」의 빈 칸으로 옮길까요? 제작기에 이미 적힌 칸은 덮어쓰지 않아요.`,'옮기기'))return;

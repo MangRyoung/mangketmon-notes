@@ -17,7 +17,17 @@ window.NT_MAKER=(()=>{
  async function load(force){if(M.loading)return M.loading;if(!force&&M.at&&Date.now()-M.at<600000)return M;
   M.loading=(async()=>{try{const x=await pull();M.trainers=x.trainers.map(unwrap);M.pokemon=x.pokemon.map(unwrap);M.folders=x.folders.map(unwrap);M.at=Date.now();heal()}catch(e){console.warn('maker',e)}finally{M.loading=null}return M})();return M.loading}
  /* 10-29 망령 「제작기에서 이름을 바꿔도 노트엔 처음 이름」: GM 이 열 때 노트 칸의 이름 · 초상 사본을 제작기 값으로 맞춘다 (바뀐 것만) */
- function heal(){try{if(!N().gm())return;const rows=[];for(const k of ['pc','npc'])for(const d of N().list(k)){const t=M.trainers.find(x=>x.id===d.id);if(!t)continue;const p=N().data(k,d.id)||{};const nm=t.name||p.name||'',im=t.image||p.image||'';if(nm!==(p.name||'')||im!==(p.image||''))rows.push({kind:k,id:d.id,data:Object.assign({},p,{name:nm,image:im}),vis:(N().doc(k,d.id)||{}).vis})}if(rows.length)N().putMany(rows)}catch(e){console.warn('heal',e)}}
+ /* 10-31 망령 「대학에서 포트 바꾸면 제작기 원본에 반영이 안 돼서 어느 순간 다시 불려 온다」「이름 · 메모 같은 트레이너 변경 사항도 다 점검」:
+    노트에서 바꾼 이름 · 초상 · 상세에는 바꾼 시각(nameAt · imageAt · bioAt)이 남는다. 제작기 트레이너의 그 시각이 다르면 = 제작기에 안 들어갔다 → 노트를 덮지 않고, 제작기를 노트 값으로 고친다(GM · 그 PL).
+    시각이 같으면 그 뒤 제작기에서 바꾼 것 → 예전처럼 노트 사본(이름 · 초상)을 제작기에 맞춘다 */
+ const pendF=(p,t,f)=>!!p[f+'At']&&t[f+'At']!==p[f+'At'];
+ const bioOver=(A,B)=>{const L=(Array.isArray(A)?A:[]).map(x=>({k:x.k,v:x.v}));for(const b of B||[]){if(!b||!b.k)continue;const e=L.find(x=>x.k===b.k);if(e)e.v=b.v;else L.push({k:b.k,v:b.v})}return L};
+ function heal(){try{const G=N().gm(),me=N().me();const rows=[],fix=[];for(const k of ['pc','npc'])for(const d of N().list(k)){const t=M.trainers.find(x=>x.id===d.id);if(!t)continue;const p=N().data(k,d.id)||{};
+   const kn=pendF(p,t,'name'),ki=pendF(p,t,'image'),kb=pendF(p,t,'bio')&&Array.isArray(p.bio);if((kn||ki||kb)&&(G||me===d.id))fix.push({id:d.id,p,kn,ki,kb});if(!G)continue;
+   const nm=kn?(p.name||t.name||''):(t.name||p.name||''),im=ki?(p.image||''):(t.image||p.image||'');if(nm!==(p.name||'')||im!==(p.image||''))rows.push({kind:k,id:d.id,data:Object.assign({},p,{name:nm,image:im}),vis:(N().doc(k,d.id)||{}).vis})}
+  if(rows.length)(async()=>{const out=[];for(const r of rows){let d=r.data;try{const fr=await N().DBS().get(N().ST.camp,N().ST.secret,r.kind,r.id);if(fr&&fr.data){if((fr.data.imageAt||'')!==(r.data.imageAt||'')||(fr.data.nameAt||'')!==(r.data.nameAt||''))continue;d=Object.assign({},fr.data,{name:r.data.name,image:r.data.image})}}catch(e){}out.push(Object.assign({},r,{data:d}))}if(out.length)N().putMany(out)})();   /* 최신 노트 문서 위에 이름 · 초상만 (옛 사본으로 다른 칸을 되돌리지 않게) */
+  for(const f of fix)edit('trainers',f.id,x=>{let ch=false;const p=f.p;if(f.kn&&x.nameAt!==p.nameAt){if(p.name)x.name=p.name;x.nameAt=p.nameAt;ch=true}if(f.ki&&x.imageAt!==p.imageAt){x.image=p.image||'';x.imageAt=p.imageAt;ch=true}
+   if(f.kb&&x.bioAt!==p.bioAt){x.bio=bioOver(x.bio,p.bio).filter(q=>String(q.v||'').trim());x.bioAt=p.bioAt;ch=true}return ch?undefined:false}).catch(e=>console.warn('heal fix',e))}catch(e){console.warn('heal',e)}}
  const visible=t=>!t.priv||N().gm()||t.id===N().me();
  const trainers=()=>M.trainers.filter(visible).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ko'));
  const trainer=id=>M.trainers.find(t=>t.id===id)||null;
