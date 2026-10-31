@@ -244,8 +244,8 @@ html:not(#_) .awab-r.sel{border-color:var(--yel);box-shadow:inset 3px 0 0 var(--
 html:not(#_) .awab-t{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 html:not(#_) .awab-t b{font-size:13px}
 html:not(#_) .awab-e{margin-top:3px;font-size:11.5px;line-height:1.5;color:var(--fg2)}
-.awres{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-height:66vh;overflow:auto;padding-right:4px}
-@media (max-width:860px){.awres{grid-template-columns:1fr}}
+.awrb{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-height:66vh;overflow:auto;padding-right:4px}
+@media (max-width:860px){.awrb{grid-template-columns:1fr}}
 .awres-s{border:1px solid var(--line2);background:rgba(128,128,128,.05);padding:8px}
 .awres-h{display:flex;gap:8px;align-items:center}
 .awres-h .awbth{width:44px;height:56px;flex:none}
@@ -261,3 +261,26 @@ html:not(#_) .awab-e{margin-top:3px;font-size:11.5px;line-height:1.5;color:var(-
 .awrc-s{margin-top:2px;color:var(--fg2)}
 .awrc-s span{font-variant-numeric:tabular-nums}
 .awrc-w{margin-top:2px}
+/* 10-31 망령 「각성체 DB 에서 누르면 칸에 반영 · 추천 관리 · 쓰기 쉽게」 */
+html:not(#_) .awc-click{cursor:pointer;transition:border-color .12s,transform .12s}
+html:not(#_) .awc-click:hover{border-color:var(--yel)}
+html:not(#_) .awc.pk{border-color:var(--yel);box-shadow:inset 0 0 0 1px var(--yel),0 0 0 2px rgba(230,195,92,.15)}
+html:not(#_) .awc-add{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:120px;border:1px dashed var(--line2);background:transparent;color:var(--fg2);cursor:pointer;font:inherit;text-align:center}
+html:not(#_) .awc-add:hover{border-color:var(--yel);color:var(--fg)}
+html:not(#_) .awx.rec{border-color:var(--yel);color:var(--yel)}
+html:not(#_) .awpk-s{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px}
+html:not(#_) .awms{display:inline-flex;align-items:center;gap:2px;font-variant-numeric:tabular-nums}
+html:not(#_) .awms i{font-style:normal;font-size:11px;min-width:26px;text-align:center;padding:0 3px;border:1px solid var(--line2);border-radius:3px;color:var(--fg)}
+html:not(#_) .awms small{font-size:11px;color:var(--mute);margin-left:4px}
+html:not(#_) .awms-ab{font-size:11.5px;color:var(--fg2)}
+html:not(#_) .awft{flex-wrap:wrap;gap:4px}
+html:not(#_) .awtbl-act{white-space:nowrap}
+html:not(#_) .awtbl-act .btn{margin-right:6px}
+html:not(#_) .aetypes .aety.on{background:var(--tc);border-color:var(--tc);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+html:not(#_) .aespec{border:1px solid var(--line2);background:rgba(0,0,0,.18);padding:8px;margin-top:6px}
+html:not(#_) .aespec .awsp-st{padding:0}
+html:not(#_) .aespec .awsp-s input{width:100%;height:32px;text-align:center;font-size:14px;font-weight:700;box-sizing:border-box}
+html:not(#_) .aespec select,html:not(#_) .aespec input#aeAb{height:30px}
+html:not(#_) details.awtags>summary{list-style:none;cursor:pointer;margin-bottom:0}
+html:not(#_) details.awtags>summary::-webkit-details-marker{display:none}
+html:not(#_) details.awtags[open]>summary{margin-bottom:6px}

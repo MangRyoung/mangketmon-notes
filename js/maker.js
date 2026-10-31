@@ -57,7 +57,10 @@ window.NT_MAKER=(()=>{
   const doc=JSON.parse(JSON.stringify(cur.data||{}));const d=doc.data||doc;const r=await fn(d,doc);if(r===false)return false;await DB.makerPut(kind,id,doc);
   const L=kind==='trainers'?M.trainers:kind==='pokemon'?M.pokemon:null;if(L){const i=L.findIndex(x=>x.id===id);const o=unwrap({id,data:doc});if(i>=0)L[i]=o;else L.push(o)}
   try{const c=JSON.parse(localStorage.getItem(MKC)||'null');if(c&&c.docs&&c.docs[kind]){c.docs[kind][id]={id,data:doc};localStorage.setItem(MKC,JSON.stringify(c))}}catch(e){}
+  try{N().DBS().ping(N().ST.camp,{t:'mk',kind,id})}catch(e){}   /* 10-31: 같은 캠페인을 연 다른 사람도 제작기 사본을 다시 받게 */
   return true}
+ /* 10-31: 창으로 돌아오면(1분 넘게 지났으면) 제작기 사본을 다시 맞춘다 — 제작기 앱에서 고친 것도 새로고침 없이 */
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&M.at&&Date.now()-M.at>60000)load(true).then(()=>{try{N().render()}catch(e){}})});
  const dbReady=()=>!!DBX.moves;
  const move=n=>(DBX.moves&&DBX.moves.get(n))||null;
  const baseLv=rank=>{const L=DBX.lvl||[];const r=L.find(x=>x[0]===rank)||L.find(x=>x[0]===String(rank||'').replace(/[+-]+$/,''));return r?+r[2]:100};

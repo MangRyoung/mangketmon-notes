@@ -74,8 +74,27 @@ window.NT=(()=>{
  document.addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey)||e.isComposing||!(e.key==='s'||e.key==='S'||e.key==='Enter'))return;const L=$$('.modalbg');if(!L.length)return;const m=L[L.length-1];const ok=$('.mfoot .btn.pri',m)||[...$$('.btn.pri',m)].pop();if(!ok||ok.disabled)return;e.preventDefault();const a=document.activeElement;if(a&&a.blur)a.blur();ok.click()});
  document.addEventListener('click',e=>{const b=e.target.closest('[data-visq]');if(b){e.preventDefault();e.stopPropagation();return visMenu(b)}if(!e.target.closest('.visqm'))document.querySelectorAll('.visqm').forEach(x=>x.remove())},true);
 
- async function put(kind,id,obj,vis){if(!ST.camp)return false;mark(kind,id);const cur=doc(kind,id);const v=vis||(cur?cur.vis:'pub');
-  try{const t=await DBS().put(ST.camp,ST.secret,kind,id,obj,v);col(kind)[id]={data:clone(obj),vis:v,updated_at:typeof t==='string'?t:new Date().toISOString()};
+ /* 10-31 망령 「여러 사람이 겹치면? 새로고침 안 하면 안 고쳐지는 곳이 있는데 덮어씌워지는 거 아니지?」:
+    문서는 통째로 저장된다. 창을 연 뒤 남이 같은 문서를 고쳤거나(실시간이 끊겼던 동안 포함) 옛 사본으로 저장하면 남의 칸이 옛 값으로 돌아갔다.
+    → 저장 직전에 DB 의 최신 문서를 읽어 칸 단위로 합친다. 내 값이 「예전에 본 판」 그대로인 칸 = 내가 안 고친 칸 → 최신 값을 둔다.
+    내가 바꾼 칸만 내 값으로. 객체 · 같은 길이 배열은 안쪽까지 같은 규칙. 예전 판 = 이 브라우저가 받은 지난 판들(HIST) + 아직 못 받은 판 직전의 사본 */
+ const HIST=new Map();const hkey=(k,id)=>k+'/'+id;
+ function histPush(kind,id){const c=col(kind)[id];if(!c||!c.data)return;const L=HIST.get(hkey(kind,id))||[];let j;try{j=JSON.stringify(c.data)}catch(e){return}if(L[L.length-1]!==j){L.push(j);while(L.length>6)L.shift();HIST.set(hkey(kind,id),L)}}
+ const jeq=(a,b)=>{try{return JSON.stringify(a)===JSON.stringify(b)}catch(e){return false}};
+ const isObj=x=>x&&typeof x==='object'&&!Array.isArray(x);
+ function mergeVal(m,t,P){if(jeq(m,t))return m;
+  if(isObj(m)&&isObj(t)){const o={};for(const k of new Set(Object.keys(m).concat(Object.keys(t)))){const Pk=P.filter(isObj).map(p=>p[k]);
+    if(!(k in m)){if(Pk.some(v=>v!==undefined&&jeq(v,t[k])))continue;o[k]=t[k];continue}   /* 내가 지운 칸(최신이 예전 그대로) → 지움 · 남이 새로 넣은 칸 → 둠 */
+    if(!(k in t)){if(P.filter(isObj).some(p=>(k in p)&&jeq(p[k],m[k])))continue;o[k]=m[k];continue}   /* 남이 지운 칸을 내가 안 고쳤으면 지운 채로 */
+    o[k]=mergeVal(m[k],t[k],Pk.filter(v=>v!==undefined))}return o}
+  if(Array.isArray(m)&&Array.isArray(t)&&m.length===t.length&&P.length&&P.every(p=>Array.isArray(p)&&p.length===m.length))return m.map((v,i)=>mergeVal(v,t[i],P.map(p=>p[i])));
+  return P.some(p=>jeq(p,m))?t:m}   /* 내 값이 예전 판 그대로 = 안 고친 칸 → 최신 */
+ async function fresh3(kind,id,obj){try{if(DBS().mode!=='supabase')return obj;const r=await DBS().get(ST.camp,ST.secret,kind,id);if(!r||!r.data)return obj;const cur=doc(kind,id);
+   if(cur&&cur.updated_at&&r.updated_at&&r.updated_at<=cur.updated_at&&jeq(r.data,cur.data))return obj;   /* 내가 본 판이 최신 → 그대로 */
+   const P=(HIST.get(hkey(kind,id))||[]).map(j=>{try{return JSON.parse(j)}catch(e){return null}}).filter(Boolean);if(cur&&cur.data&&!jeq(cur.data,r.data))P.push(cur.data);
+   if(!P.length)return obj;const m=mergeVal(obj,r.data,P);if(!jeq(m,obj))console.info('[노트] 남이 고친 칸을 살려서 합쳤어요',kind,id);return m}catch(e){return obj}}
+ async function put(kind,id,obj,vis,opt){if(!ST.camp)return false;mark(kind,id);const cur=doc(kind,id);const v=vis||(cur?cur.vis:'pub');
+  try{if(cur&&!(opt&&opt.force))obj=await fresh3(kind,id,obj);histPush(kind,id);const t=await DBS().put(ST.camp,ST.secret,kind,id,obj,v);col(kind)[id]={data:clone(obj),vis:v,updated_at:typeof t==='string'?t:new Date().toISOString()};
    if(v!=='pub')DBS().ping(ST.camp,{t:'doc',kind,id});render();return true}
   catch(e){toast('저장 실패: '+e.message);return false}}
  async function patch(kind,id,fn,vis){const cur=data(kind,id);if(!cur)return false;const n=clone(cur);const r=fn(n);if(r===false)return false;return put(kind,id,n,vis)}
@@ -94,7 +113,7 @@ window.NT=(()=>{
  function cacheGet(){try{if(DBS().mode!=='supabase')return null;const j=JSON.parse(localStorage.getItem(CK())||'null');return j&&j.v===1&&j.since&&Date.now()-j.t<7*864e5?j:null}catch(e){return null}}
  let cacheT=0;function cacheSave(){if(!ST.camp||!ST.since)return;clearTimeout(cacheT);const key=CK();cacheT=setTimeout(()=>{try{const s=JSON.stringify({v:1,t:Date.now(),since:ST.since,D});if(s.length<3e6)localStorage.setItem(key,s);else localStorage.removeItem(key)}catch(e){try{localStorage.removeItem(key)}catch(e2){}}},1200)}
  const SYNC={full:0,delta:0,last:''};
- function apply(rows){for(const r of rows){col(r.kind)[r.id]={data:r.data||{},vis:r.vis,updated_at:r.updated_at};if(!ST.since||r.updated_at>ST.since)ST.since=r.updated_at}}
+ function apply(rows){for(const r of rows){histPush(r.kind,r.id);col(r.kind)[r.id]={data:r.data||{},vis:r.vis,updated_at:r.updated_at};if(!ST.since||r.updated_at>ST.since)ST.since=r.updated_at}}
  async function loadAll(){const c=cacheGet();for(const k in D)delete D[k];
   if(c){Object.assign(D,c.D);ST.since=c.since;try{const ids=await DBS().ids(ST.camp,ST.secret);const rows=await DBS().all(ST.camp,ST.secret,ST.since);const have=new Set(ids.map(x=>x.kind+'/'+x.id).concat(rows.map(x=>x.kind+'/'+x.id)));
     for(const k in D)for(const id in D[k])if(!have.has(k+'/'+id))delete D[k][id];apply(rows);SYNC.delta++;SYNC.last='바뀐 문서 '+rows.length+'개만 받음';cacheSave();return}catch(e){console.warn('cache',e);for(const k in D)delete D[k];ST.since=null}}
@@ -105,10 +124,10 @@ window.NT=(()=>{
  let unsub=null;
  const MINE=new Map();const mark=(k,id)=>MINE.set(k+'/'+id,Date.now());const recent=(k,id)=>{const t=MINE.get(k+'/'+id);return t&&Date.now()-t<6000};
  function listen(){if(unsub)unsub();unsub=DBS().subscribe(ST.camp,{
-  onDoc(kind,id,dat,vis,at){if(!canSee(vis)){if(doc(kind,id))delete col(kind)[id];render();return}const cur=doc(kind,id);if(cur&&cur.updated_at>=at)return;col(kind)[id]={data:dat||{},vis,updated_at:at};if(at>(ST.since||''))ST.since=at;if(window.NT_NOTICE&&!recent(kind,id))NT_NOTICE.push(kind,id,cur?'edit':'new',dat);render()},
+  onDoc(kind,id,dat,vis,at){if(!canSee(vis)){if(doc(kind,id))delete col(kind)[id];render();return}const cur=doc(kind,id);if(cur&&cur.updated_at>=at)return;histPush(kind,id);col(kind)[id]={data:dat||{},vis,updated_at:at};if(at>(ST.since||''))ST.since=at;if(window.NT_NOTICE&&!recent(kind,id))NT_NOTICE.push(kind,id,cur?'edit':'new',dat);render()},
   onDel(kind,id){const had=doc(kind,id);if(had){if(window.NT_NOTICE&&!recent(kind,id))NT_NOTICE.push(kind,id,'del',had.data);delete col(kind)[id];render()}},
-  async onPing(p){if(!p)return;if(p.t==='all')return resync();if(p.t==='del'){const had=doc(p.kind,p.id);if(had){if(window.NT_NOTICE&&!recent(p.kind,p.id))NT_NOTICE.push(p.kind,p.id,'del',had.data);delete col(p.kind)[p.id];render()}return}
-   if(p.t==='doc'){try{const had=doc(p.kind,p.id);const r=await DBS().get(ST.camp,ST.secret,p.kind,p.id);if(r){if(had&&had.updated_at>=r.updated_at)return;col(p.kind)[p.id]={data:r.data||{},vis:r.vis,updated_at:r.updated_at};if(window.NT_NOTICE&&!recent(p.kind,p.id))NT_NOTICE.push(p.kind,p.id,had?'edit':'new',r.data)}else delete col(p.kind)[p.id];render()}catch(e){}}},
+  async onPing(p){if(!p)return;if(p.t==='all')return resync();if(p.t==='mk'){if(window.NT_MAKER)try{await NT_MAKER.load(true);render()}catch(e){}return}   /* 10-31: 남이 노트에서 제작기 문서를 고쳤다 → 제작기 사본 다시 받기 */if(p.t==='del'){const had=doc(p.kind,p.id);if(had){if(window.NT_NOTICE&&!recent(p.kind,p.id))NT_NOTICE.push(p.kind,p.id,'del',had.data);delete col(p.kind)[p.id];render()}return}
+   if(p.t==='doc'){try{const had=doc(p.kind,p.id);const r=await DBS().get(ST.camp,ST.secret,p.kind,p.id);if(r){if(had&&had.updated_at>=r.updated_at)return;histPush(p.kind,p.id);col(p.kind)[p.id]={data:r.data||{},vis:r.vis,updated_at:r.updated_at};if(window.NT_NOTICE&&!recent(p.kind,p.id))NT_NOTICE.push(p.kind,p.id,had?'edit':'new',r.data)}else delete col(p.kind)[p.id];render()}catch(e){}}},
   onStatus(st){ST.online=st==='SUBSCRIBED';const b=$('#ntLive');if(b){b.classList.toggle('on',ST.online);b.title=ST.online?'실시간 연결됨':'실시간 끊김 — 새로고침'}if(ST.online&&ST.since)resync()}})}
 
  /* ----- 그림 올리기 (줄여서) ----- */
