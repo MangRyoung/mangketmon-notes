@@ -18,8 +18,9 @@ window.NT_PHONE=(()=>{
     이어 둔 웹툴 방의 학교 게시판을 휴대폰 화면 안에 그린다. 글쓴이 = 휴대폰 주인, 신분 = 이 브라우저의 웹툴 신분(who) */
  const omBase=()=>String((window.NT_CONFIG||{}).oremasUrl||'https://mangryoung.github.io/oremas/').replace(/[#?].*$/,'').replace(/index\.html$/,'').replace(/\/?$/,'/');
  let BBSL=null;
- function bbsLoad(){if(window.OM_BBS_UI)return Promise.resolve(true);if(BBSL)return BBSL;const base=omBase();
-  BBSL=new Promise(res=>{const l=document.createElement('link');l.rel='stylesheet';l.href=base+'css/bbs.css?v=3';document.head.appendChild(l);const s=document.createElement('script');s.src=base+'js/bbs_ui.js?v=3';s.onload=()=>res(!!window.OM_BBS_UI);s.onerror=()=>{BBSL=null;res(false)};document.head.appendChild(s)});return BBSL}
+ const BBS_V=4;   /* 웹툴 bbs_ui 의 V — 페이지에 옛 것이 남아 있으면(전에 연 것) 새로 불러온다 */
+ function bbsLoad(){if(window.OM_BBS_UI&&(window.OM_BBS_UI.V||0)>=BBS_V)return Promise.resolve(true);if(BBSL)return BBSL;const base=omBase();
+  BBSL=new Promise(res=>{const l=document.createElement('link');l.rel='stylesheet';l.href=base+'css/bbs.css?v='+BBS_V;document.head.appendChild(l);const s=document.createElement('script');s.src=base+'js/bbs_ui.js?v='+BBS_V;s.onload=()=>res(!!window.OM_BBS_UI);s.onerror=()=>{BBSL=null;res(false)};document.head.appendChild(s)});return BBSL}
  /* 글쓴이 고르기 (노트 왼쪽 아래 「✎ 게시판」 창): GM 은 GM · 명단 트레이너 · 관계도 NPC, 좌석은 자기 트레이너 */
  function bbsAuthors(){const id=PH.id||{};const out=[];if(id.role==='gm'){out.push({cid:'gm',n:'GM',img:'',sub:'운영 · 공지',grp:''});for(const t of Object.values(T()))if(t&&t.name)out.push({cid:t.id,n:t.name,img:t.image||'',sub:t.kind==='npc'?'NPC 트레이너':'PC',grp:t.kind==='npc'?'NPC':'PC'});const have=new Set(out.map(x=>x.n));
    for(const [nid,n] of Object.entries(nodes())){if(!n||!n.name||have.has(n.name)||n.kind==='org')continue;have.add(n.name);out.push({cid:'n:'+nid,n:n.name,img:n.img||cidImg('n:'+nid)||'',sub:'관계도 '+(n.kind==='pc'?'PC':'NPC'),grp:'NPC'})}return out}
