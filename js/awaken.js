@@ -56,7 +56,7 @@ window.NT_AWK=(()=>{
  /* 10-31 망령 「NPC 시트도 추가하면 각성체 칸에 등록되지?」: 각성체가 있는 NPC(제작기 각성체 포켓몬 · 칸 그림/코멘트 · 감우 결과)도 PC 뒤에 같이 */
  const isNpc=id=>!N().data('pc',id)&&!!N().data('npc',id);
  const pvis=id=>isNpc(id)?'gm':'pl:'+id;
- const npcAw=()=>N().gm()?N().list('npc').filter(p=>{const id=p.id;if(N().data('pc',id))return false;const L=(N().data('pcp',id)||{}).awk;return mkAw(id).length||(Array.isArray(L)&&L.some(x=>x&&(x.img||x.note||x.src||x.fixed)))||N().data('awk',id+'~1')}).sort((a,b)=>(a.order||0)-(b.order||0)):[];
+ const npcAw=()=>N().gm()?N().list('npc').filter(p=>{const id=p.id;if(N().data('pc',id))return false;const L=(N().data('pcp',id)||{}).awk;return mkAw(id).some(Boolean)||(Array.isArray(L)&&L.some(x=>x&&(x.img||x.note||x.src||x.fixed)))||N().data('awk',id+'~1')}).sort((a,b)=>(a.order||0)-(b.order||0)):[];
  const pcs=()=>N().list('pc').sort((a,b)=>(a.order||0)-(b.order||0)).concat(npcAw());
  const rec=id=>N().data('awk',id)||{};
  async function save(id,fn){const cur=N().clone(rec(id));const r=fn(cur);if(r===false)return;await N().put('awk',id,cur,'gm')}
@@ -65,7 +65,17 @@ window.NT_AWK=(()=>{
  const portrait=id=>{const p=N().data('pc',id)||N().data('npc',id)||{};const t=MK()&&MK().trainer(id);return p.image||(t&&t.image)||''};
  const pcp=id=>N().data('pcp',id)||{};
  const sidOf=(pc,n)=>pc+'~'+n;const sidPc=x=>String(x).split('~')[0];const sidN=x=>+String(x).split('~')[1]||1;
- const mkAw=pc=>{try{return MK()?MK().mons(pc).filter(m=>m.awaken==='free'||m.awaken==='c'):[]}catch(e){return []}};
+ /* 11-01 망령 (보구 묻는 글에서 「제페토 · 각성체 1 (존 호크우드)」 원전 자케드로 — 칸과 시트가 뒤바뀜): 칸 n = 트레이너 시트의 n번째 각성체였는데,
+    「⇪ 시트에 각성체로」를 2번 칸부터 누르면 그 시트가 1번이 되어 칸이 엇갈렸다. 칸에 맞는 시트를 ① 그 칸에서 만든 시트(awk.made.pid) ② 시트의 awSlot
+    ③ 시트 이름 = 그 칸 원전 이름 순으로 먼저 붙이고, 남은 시트만 차례로 채운다. 돌려주는 배열은 [0] = 1번 칸, [1] = 2번 칸 (빈 칸은 undefined), 그 뒤는 남은 것 */
+ const awNm=(pc,n)=>{const s=slotRaw(pc,n);const r=rec(sidOf(pc,n));const pk=r.pick&&DB.base&&byId(r.pick);return String((s.fixed&&s.fixed.n)||(pk&&pk.n)||s.src||'').trim()};
+ const mkAw=pc=>{try{if(!MK())return [];const L=MK().mons(pc).filter(m=>m&&(m.awaken==='free'||m.awaken==='c'));if(L.length<1)return [];const out=[undefined,undefined],used=new Set();
+  const put=(i,f)=>{if(out[i])return;const m=L.find(q=>!used.has(q.id)&&f(q));if(m){out[i]=m;used.add(m.id)}};
+  for(const i of [0,1]){const pid=(rec(sidOf(pc,i+1)).made||{}).pid;if(pid)put(i,q=>q.id===pid)}
+  for(const i of [0,1])put(i,q=>+q.awSlot===i+1);
+  for(const i of [0,1]){const nm=awNm(pc,i+1);if(nm)put(i,q=>String(q.name||'').trim()===nm)}
+  const rest=L.filter(q=>!used.has(q.id));for(const i of [0,1])if(!out[i]&&rest.length){const m=rest.shift();out[i]=m;used.add(m.id)}
+  while(out.length&&!out[out.length-1])out.pop();return out.concat(rest)}catch(e){return []}};
  const slotRaw=(pc,n)=>{const L=pcp(pc).awk;return (Array.isArray(L)&&L[n-1])||{}};
  function slot(sid){const pc=sidPc(sid),n=sidN(sid);const s=slotRaw(pc,n);const m=mkAw(pc)[n-1];const mi=m?(MK().img(m)||''):'';return {sid,pc,n,img:s.img||mi,own:!!s.img,note:s.note||'',pid:m?m.id:'',mname:m?(m.name||''):'',kind:m?m.awaken:(s.main?'free':(()=>{const o=n===1?2:1,om=mkAw(pc)[o-1];return (om?om.awaken==='free':!!slotRaw(pc,o).main)?'c':''})()),pride:(m&&m.pride)||s.pride||'',cost:s.cost||'',src:s.src||'',fixed:s.fixed||null}}
  const hasSlot=sid=>{const x=slot(sid);return !!(x.img||x.note||x.pid)};
@@ -400,7 +410,7 @@ window.NT_AWK=(()=>{
     try{const ren=$('#awRen',md).checked;await MK().edit('pokemon',m.id,d=>{const rest=String(d.memo||'').replace(/【각성체 원전】[\s\S]*?(\n\n|$)/,'').trim();d.memo=memoOf(e,crec)+(rest?'\n\n'+rest:'');if(ren)d.name=e.n});
      await save(id,y=>{y.made={pid:m.id,id:e.id,at:new Date().toISOString()}});N().closeModal();N().toast('제작기 각성체 시트에 넣었어요')}
     catch(err){b.disabled=false;b.textContent='다시 시도';N().toast('넣지 못했어요: '+(err.message||err))}};return}
-  const aw=mkAw(pc);const hasFree=aw.some(q=>q.awaken==='free');const sp=slotRaw(pc,x.n),op=slotRaw(pc,x.n===1?2:1);const wantFree=!hasFree&&(sp.main||!op.main);
+  const aw=mkAw(pc);const hasFree=aw.some(q=>q&&q.awaken==='free');const sp=slotRaw(pc,x.n),op=slotRaw(pc,x.n===1?2:1);const wantFree=!hasFree&&(sp.main||!op.main);
   if(aw.length>=2)return N().toast('이 트레이너는 각성체가 이미 2체예요');
   const md=N().openModal(`<div class="mhead"><h2>⇪ 제작기 각성체로</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
    <p class="small" style="margin-top:0">제작기의 <b>「${esc(t.name)}」</b> 트레이너에 각성체로 표시한 포켓몬 시트가 ${aw.length?'이 칸엔 ':''}없어서 하나 만들어요. 이름 · 타입 · 메모(원전 · 열화 · 은열쇠)${x.own?' · 그림':''}만 채우고, 종족치 · 포텐셜은 제작기에서 짜 주세요.${t.misag?'':' <b style="color:var(--red)">이 트레이너는 포인트 칸이 「미사그 대학 (4+2)」가 아니라서 각성체 칸이 제작기에서 안 보일 수 있어요.</b>'}</p>
@@ -409,7 +419,7 @@ window.NT_AWK=(()=>{
    <div class="mfoot"><span class="sp"></span><button class="btn pri" id="awMk">만들기</button></div>`);
   $('#awMk',md).onclick=async()=>{const b=$('#awMk',md);b.disabled=true;b.textContent='만드는 중…';
    try{const cur=await DBS.makerGet('trainers',pc);if(!cur)throw new Error('제작기 트레이너 문서를 찾지 못했어요');const pid=Math.random().toString(36).slice(2,10);
-    const p=Object.assign(newPoke(),{id:pid,name:e.n,t1:(e.t||[])[0]||'-',t2:(e.t||[])[1]||'-',memo:memoOf(e,crec),image:x.own?x.img:'',awaken:$('#awKind',md).value,pride:PRIDES.includes(sp.pride)?sp.pride:''});
+    const p=Object.assign(newPoke(),{id:pid,name:e.n,t1:(e.t||[])[0]||'-',t2:(e.t||[])[1]||'-',memo:memoOf(e,crec),image:x.own?x.img:'',awaken:$('#awKind',md).value,pride:PRIDES.includes(sp.pride)?sp.pride:'',awSlot:x.n});
     await DBS.makerPut('pokemon',pid,{tid:pc,data:p});
     if(MK().edit)await MK().edit('trainers',pc,d=>{d.pids=(d.pids||[]).concat(pid)});else{const doc=JSON.parse(JSON.stringify(cur.data||{}));const d=doc.data||doc;d.pids=(d.pids||[]).concat(pid);await DBS.makerPut('trainers',pc,doc)}
     await save(id,y=>{y.made={pid,id:e.id,at:new Date().toISOString()}});await MK().load(true);N().closeModal();N().toast('제작기에 각성체 시트를 만들었어요')}
@@ -450,7 +460,7 @@ window.NT_AWK=(()=>{
   await mkSync(pc,L,'main' in patch,'pride' in patch?[n]:[]);N().render()}
  /* 노트 칸의 메인 (대가) · 프라이드를 제작기 각성체 시트에도 (있을 때만) */
  async function mkSync(pc,L,main,prideNs){const aw=mkAw(pc);const jobs=[];const mi=L.findIndex(s=>s.main);
-  if(main&&mi>=0)aw.forEach((m,i)=>{const k=i===mi?'free':'c';if(m.awaken!==k)jobs.push([m.id,d=>{d.awaken=k}])});
+  if(main&&mi>=0)aw.forEach((m,i)=>{if(!m)return;const k=i===mi?'free':'c';if(m.awaken!==k)jobs.push([m.id,d=>{d.awaken=k}])});
   for(const n of prideNs){const m=aw[n-1];const v=String((L[n-1]||{}).pride||'');if(m&&v&&String(m.pride||'')!==v)jobs.push([m.id,d=>{d.pride=v}])}
   try{for(const [id,fn] of jobs)await MK().edit('pokemon',id,fn);N().toast(jobs.length?'저장했어요 · 제작기 각성체 시트에도 넣었어요':'저장했어요')}
   catch(e){N().toast('노트엔 저장했어요 — 제작기엔 못 썼어요: '+(e.message||e))}}
@@ -622,9 +632,24 @@ window.NT_AWK=(()=>{
   draw();
   $('#npCp',md).onclick=async()=>{const t=$('#npQ',md).value;if(!t)return;try{await navigator.clipboard.writeText(t)}catch(e){const d=$('.npqd',md);if(d)d.open=true;$('#npQ',md).select();document.execCommand('copy')}N().toast(`${L.filter(s=>sel.has(s)).length}칸 글을 복사했어요`)};
   $('#npOk',md).onclick=async()=>{const s=$('#npA',md).value.trim().replace(/^```(json)?\s*|\s*```$/g,'');let j;try{j=JSON.parse(s)}catch(e){return N().toast('JSON 이 아니에요: '+e.message)}
-   const many=Array.isArray(j)?j:[j];let n=0;const miss=[];for(const o of many){if(!o)continue;let sid=String(o.pc||o.sid||'');if(!sid.includes('~')){const p=pcs().find(q=>q.id===sid||pcName(q.id)===String(o.name||'').split(' · ')[0]);sid=p?sidOf(p.id,+o.slot||1):''}
-    const nps=(o.np||o.nps||[]).filter(q=>q&&q.n).map(q=>({n:/^『/.test(q.n)?q.n:'『'+npClean(q.n)+'』',why:String(q.why||''),eff:String(q.eff||'')}));if(!sid||!nps.length){miss.push(o.name||o.pc||'?');continue}await npAdd(sid,nps,'chat');n++}
-   N().closeModal();N().toast(`${n}칸에 보구 이름을 넣었어요${miss.length?' · 못 찾은 칸: '+miss.join(', '):''}`);if(onDone)onDone()}}
+   const many=Array.isArray(j)?j:[j];let n=0;const miss=[],done=[];for(const o of many){if(!o)continue;let sid=String(o.pc||o.sid||'');if(!sid.includes('~')){const p=pcs().find(q=>q.id===sid||pcName(q.id)===String(o.name||'').split(' · ')[0]);sid=p?sidOf(p.id,+o.slot||1):''}
+    const nps=(o.np||o.nps||[]).filter(q=>q&&q.n).map(q=>({n:/^『/.test(q.n)?q.n:'『'+npClean(q.n)+'』',why:String(q.why||''),eff:String(q.eff||'')}));if(!sid||!nps.length){miss.push(o.name||o.pc||'?');continue}await npAdd(sid,nps,'chat');n++;const d0=done.find(x=>x.sid===sid);if(d0)d0.names.push(...nps.map(q=>q.n));else done.push({sid,names:nps.map(q=>q.n)})}
+   N().closeModal();if(onDone)onDone();if(done.length)npResult(done,miss);else N().toast(`넣은 칸이 없어요${miss.length?' · 못 찾은 칸: '+miss.join(', '):''}`)}}
+ /* 11-01 망령 「보구 이름도 넣으면 결과값 정리해서 보여 줘야지 · 넣은 추천은 결국 어디로 가?」: 넣은 칸마다 그림 · 원전 · 지금 시트 전용과 추천 카드(새로 들어온 것 「새로」).
+    카드를 누르면 그 칸의 고른 이름(awk/<sid>.np) · 「⇪ 시트 전용으로」 = 제작기 그 각성체 시트의 『전용』 이름. 시트가 아직 없으면 「⇪ 시트에 각성체로」 때 같이 들어간다 */
+ function npResult(done,miss){const nNew=done.reduce((a,d)=>a+d.names.length,0);
+  const sec=({sid,names})=>{const I=npInfo(sid);const r=rec(sid);const L=r.nps||[];const sel=r.np&&r.np.n;const cur=I.cur?npClean(I.cur.n):'';
+   return `<section class="awres-s" data-nrs="${esc(sid)}"><div class="awres-h">${thumb(subImg(sid))}<div style="flex:1;min-width:0"><b>${esc(subName(sid))}</b><div class="small dim">원전 ${esc(I.nm||'—')} · ${cur?'시트 전용 『'+esc(cur)+'』':I.m?'시트 전용 아직':'제작기 시트 아직'}${sel?` · 고름 ${esc(sel)}`:''}</div></div>
+    <button type="button" class="btn xs pri" data-nra="${esc(sid)}" ${sel&&I.m&&npClean(sel)!==cur?'':'disabled'} title="${I.m?'고른 이름을 제작기 이 각성체 시트의 『전용』 이름으로':'시트가 아직 없어요 — 「⇪ 시트에 각성체로」 때 고른 이름이 같이 들어가요'}">⇪ 시트 전용으로</button><button type="button" class="btn xs" data-rs="${esc(sid)}">✦ 고치기 창</button></div>
+    <div class="awnpg" style="padding:8px 0 0">${L.map((q,k)=>`<button type="button" class="awnp ${sel===q.n?'on':''} ${cur&&cur===npClean(q.n)?'cur':''}" data-nrp="${esc(sid)}" data-k="${k}" title="누르면 이 칸의 이름으로 고르기 (다시 누르면 취소)"><b>${esc(q.n)}</b>${names.includes(q.n)?'<span class="awbdg rec">새로</span>':q.by==='chat'?'<span class="awbdg rec">감우</span>':'<span class="awbdg own">초안</span>'}${q.why?`<small>${esc(q.why)}</small>`:''}${q.eff?`<em>${esc(q.eff)}</em>`:''}</button>`).join('')}</div></section>`};
+  const md=N().openModal(`<div class="mhead"><h2>✅ 보구 이름을 넣었어요</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
+   <p class="small" style="margin-top:0">${done.length}칸 · 새 이름 ${nNew}개${miss&&miss.length?` · <b style="color:var(--red)">못 찾은 칸: ${esc(miss.join(', '))}</b>`:''}. 추천은 칸마다 「✦ 고치기 창 → 보구 · 전용」에 쌓여요(칸마다 최대 24개). 카드를 눌러 하나 고르고 <b>⇪ 시트 전용으로</b>를 누르면 제작기 그 각성체 시트의 『전용』 이름이 돼요 — 시트가 아직 없으면 「⇪ 시트에 각성체로」 때 같이 들어가요.</p>
+   <div class="awrb">${done.map(sec).join('')}</div>`,'wide',{stack:true});
+  const re=sid=>{const el=$$('[data-nrs]',md).find(x=>x.dataset.nrs===sid);const d=done.find(x=>x.sid===sid);if(el&&d)el.outerHTML=sec(d)};
+  md.addEventListener('click',async e=>{let b;
+   if((b=e.target.closest('[data-nrp]'))){const sid=b.dataset.nrp;const q=(rec(sid).nps||[])[+b.dataset.k];if(!q)return;await save(sid,r=>{if(r.np&&r.np.n===q.n)delete r.np;else r.np={n:q.n,eff:q.eff||''}});re(sid);return}
+   if((b=e.target.closest('[data-nra]'))){if(b.disabled)return;const sid=b.dataset.nra;b.disabled=true;await npApply(sid);re(sid);return}
+   if((b=e.target.closest('[data-rs]')))sendBox(b.dataset.rs)})}
  async function npApply(sid){const I=npInfo(sid);const r=rec(sid);if(!r.np||!I.m)return;const q=r.np;
   if(I.cur&&I.cur.n!==q.n&&!await N().confirmBox(`시트 전용 『${npClean(I.cur.n)}』 을 ${q.n} 으로 바꿀까요?${I.cur.eff?'\n(효과 글은 그대로 둬요)':''}`,'바꾸기'))return;
   try{await MK().edit('pokemon',I.m.id,d=>{const ex=Object.assign({name:'',eff:''},d.excl||{});ex.name=npClean(q.n);if(!String(ex.eff||'').trim()&&q.eff)ex.eff=q.eff;d.excl=ex});await MK().load(true);N().toast(`시트 전용을 『${npClean(q.n)}』 으로 넣었어요`)}catch(e){N().toast('제작기에 못 썼어요: '+(e.message||e))}}
@@ -693,7 +718,7 @@ window.NT_AWK=(()=>{
   await MK().load(true);const t=MK().trainer(pc);if(!t){N().toast('이 PC 는 제작기 트레이너가 없어요 — 시트 탭에서 「⇪ 제작기로」를 먼저');return false}
   const x=slot(sid);const r=rec(sid);const sp=r.spec||{};const pk=r.pick&&byId(r.pick);const nm=(x.fixed&&x.fixed.n)||(pk&&pk.n)||x.src||'';
   const e=nm?(candOf(sid,nm)||{n:nm}):null;const P=pref(pc,x.n);const aw=mkAw(pc);const m=x.pid&&MK().M.pokemon.find(q=>q.id===x.pid);
-  let kind=P.main?'free':'c';if(!m&&kind==='free'&&aw.some(q=>q.awaken==='free'))kind='c';const pride=PRIDES.includes(P.pride)?P.pride:(kind==='c'?'C':'');
+  let kind=P.main?'free':'c';if(!m&&kind==='free'&&aw.some(q=>q&&q.awaken==='free'))kind='c';const pride=PRIDES.includes(P.pride)?P.pride:(kind==='c'?'C':'');
   const T=(sp.t||[]).filter(Boolean).length?sp.t.filter(Boolean):((e&&e.t)||[]);const B=baseFix(sp.base)||(e&&baseFix(e.base))||null;const ab=sp.ab||(e&&e.ab)||'';
   try{await MK().db()}catch(err){}const abEff=ab?String((MK().abil(ab)||[])[2]||''):'';   /* 11-01 망령 「시트 보내기 하면 특성 효과가 안 뜬다」: 효과 글 사본(effTxt.ab)은 제작기가 저장할 때만 적어서 — 보낼 때 특성 DB 글을 같이 적는다 */
   const fill=d=>{if(nm)d.name=nm;if(T.length){d.t1=T[0];d.t2=T[1]||'-'}if(B)d.base=B.slice();if(ab){d.ability=ab;d.effTxt=Object.assign({},d.effTxt||{},{ab:abEff})}d.awaken=kind;if(pride)d.pride=pride;if(x.own&&x.img)d.image=x.img;{const q=rec(sid).np;if(q&&q.n&&!(d.excl&&d.excl.name&&d.excl.name!=='전용 포텐셜')){d.excl={name:npClean(q.n),eff:q.eff||((d.excl||{}).eff)||''}}}
@@ -701,9 +726,9 @@ window.NT_AWK=(()=>{
   const what=[nm?`이름 「${nm}」`:'',T.length?'타입 '+T.join('/'):'',B?'종족치 '+B.join('/'):'',ab?`특성 「${ab}」`:sp.so?`특성 소켓 ${sp.so}`:'',`${kind==='free'?'각성 (대가)':'각성 (보조)'}${pride?' · 프라이드 '+pride:''}`,x.own?'그림':''].filter(Boolean).join(' · ');
   let pid=m?m.id:'';
   try{if(m){if(!await N().confirmBox(`제작기 「${t.name}」의 각성체 「${m.name||'?'}」 시트가 이미 있어요.\n이 값으로 고칠까요?\n${what}\n(포텐셜 · 기술 · 그 밖의 칸은 그대로)`,'고치기'))return false;await MK().edit('pokemon',m.id,fill)}
-   else{if(aw.length>=2){N().toast('이 트레이너는 각성체가 이미 2체예요');return false}if(x.n===2&&!aw.length){N().toast('각성체 1 칸 시트를 먼저 만들어 주세요 (제작기 순서대로 칸이 정해져요)');return false}
+   else{if(aw.filter(Boolean).length>=2){N().toast('이 트레이너는 각성체가 이미 2체예요');return false}
     if(!nm&&!await N().confirmBox('원전 이름이 비어 있어요. 이름 없이 만들까요?','만들기'))return false;
-    pid=Math.random().toString(36).slice(2,10);const p=Object.assign(newPoke(),{id:pid});fill(p);await DBS.makerPut('pokemon',pid,{tid:pc,data:p});await MK().edit('trainers',pc,d=>{d.pids=(d.pids||[]).concat(pid)})}
+    pid=Math.random().toString(36).slice(2,10);const p=Object.assign(newPoke(),{id:pid,awSlot:x.n});fill(p);await DBS.makerPut('pokemon',pid,{tid:pc,data:p});await MK().edit('trainers',pc,d=>{d.pids=(d.pids||[]).concat(pid)})}
    await save(sid,y=>{y.made={pid,id:(pk&&pk.n===nm?pk.id:''),n:nm,at:new Date().toISOString()}});await MK().load(true)}
   catch(err){N().toast('제작기에 못 썼어요: '+(err.message||err));return false}
   N().closeModal();N().render();N().toast(`${m?'고쳤어요':'만들었어요'} — 「${t.name}」 시트의 각성체 칸에 들어갔어요`);return true}   /* 11-01 망령 「보내고 바로 이동하는 거 은근 불편」: 시트로 옮겨 가지 않고 이 화면에 머문다 */
