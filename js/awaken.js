@@ -158,7 +158,7 @@ window.NT_AWK=(()=>{
    <div class="awch"><b>${esc(e.n)}</b>${e.o?`<small class="dim">${esc(e.o)}</small>`:''}<span class="sp"></span>${rp?'<span class="awbdg rec">감우 추천</span>':''}${e.own?'<span class="awbdg own">직접 추가</span>':''}${e.x?'<span class="awbdg" title="Fate 에 서번트로 나온 인물이에요 — 열화판으로만">Fate</span>':''}<span class="awsc" title="맞은 태그 점수">${x.s?x.s.toFixed(1):'-'}</span></div>
    <div class="awmeta"><span>${esc(e.r||'')}${e.e?' · '+esc(e.e):''}</span><span>${esc(e.c||'')}</span><span class="awfm" title="지명도 ${e.f}/5">${stars(e.f)}</span></div>
    ${e.l?`<p class="awl">${esc(e.l)}</p>`:''}
-   ${specBlock(sp)||((e.t||[]).length?`<div class="awspk"><div class="awspk-t">${(e.t||[]).map(tchip).join('')}</div></div>`:'')}
+   ${specBlock(sp,'',stepOf(id))||((e.t||[]).length?`<div class="awspk"><div class="awspk-t">${(e.t||[]).map(tchip).join('')}</div></div>`:'')}
    ${x.why?`<p class="awwhy">🔍 ${esc(x.why)}</p>`:''}
    ${kvRows([['열화',e.d],['은열쇠',e.k],['대가 추천',x.cost,'awcostrec'],['대가 성향',e.w]])}
    ${x.hit.length?`<div class="awft"><small class="awhit">태그 · ${x.hit.map(esc).join(' · ')}</small></div>`:''}
@@ -168,7 +168,7 @@ window.NT_AWK=(()=>{
  function extraCards(id,rd){const X=(rd&&rd.extra)||[];const have=new Set(all().map(e=>e.n));const cn=curName(id);
   return X.map((e,i)=>{const inDb=have.has(e.n);const cur=cn===e.n;return `<div class="awc card extra awc-click ${cur?'pk':''}" data-aw="xapply" data-v="${i}" title="누르면 이 칸에 넣어요"><div class="awch"><b>${esc(e.n)}</b>${e.o?`<small class="dim">${esc(e.o)}</small>`:''}<span class="sp"></span>${i===0?'<span class="awbdg rec">1순위</span>':''}<span class="awbdg">DB 밖</span></div>
    <div class="awmeta"><span>${esc(e.r||'')}${e.e?' · '+esc(e.e):''}</span><span>${esc(e.c||'')}</span><span class="awfm">${stars(e.f||2)}</span></div>${e.l?`<p class="awl">${esc(e.l)}</p>`:''}
-   ${specBlock(specOfCand(e))}
+   ${specBlock(specOfCand(e),'',stepOf(id))}
    ${e.why?`<p class="awwhy">🔍 ${esc(e.why)}</p>`:''}
    ${kvRows([['열화',e.d],['은열쇠',e.k],['대가 추천',e.cost,'awcostrec'],['대가 성향',e.w]])}
    <div class="awbtn2"><div class="awlinks"><button type="button" class="linkbtn small" data-aw="xedit" data-v="${i}">✎ 고치기</button><button type="button" class="linkbtn small" data-aw="xdrop" data-v="${i}">✕ 빼기</button>${inDb?'<small class="dim">DB 에 있음</small>':`<button type="button" class="linkbtn small" data-aw="xadd" data-v="${i}">＋ DB 에 넣기</button>`}</div><button type="button" class="btn sm awgo ${cur?'pri':''}" data-aw="xapply" data-v="${i}">${cur?'✦ 이 칸에 들어가 있어요':'✦ 이 칸에 넣기'}</button></div></div>`}).join('')+`<button type="button" class="awc card awc-add" data-aw="xnew"><b>＋ 추천 후보 직접 더하기</b><small class="dim">이 칸 추천 목록에 이름 · 타입 · 종족치 · 특성을 적어 넣어요</small></button>`}
@@ -256,16 +256,16 @@ window.NT_AWK=(()=>{
   const P=pcs();let n=0;const miss=[],done=[];for(const x of many){if(!x||x.kind==='trainer'||x.slot==='t')continue;const pc0=String(x.pc||'');const k=+x.slot||(pc0.includes('~')?sidN(pc0):1);let p=P.find(q=>q.id===sidPc(pc0))||P.find(q=>pcName(q.id)===x.name||pcName(q.id)===pc0||String(x.name||'').startsWith(pcName(q.id)+' '));if(!p){miss.push(x.name||x.pc||'?');continue}await applyRead(sidOf(p.id,k),x,'chat');done.push(sidOf(p.id,k));n++}
   if(done.length)resultBox(done,miss);else N().toast('넣은 칸이 없어요'+(miss.length?` · 못 찾은 PC: ${miss.join(', ')}`:''));return n>0||!miss.length}
  /* 10-31 망령 「결과 넣기 하고 나면 결과 반영된 거 정리해서 보여 주는 창」 */
- function candLine(e,first,extra){const b=e.base;return `<div class="awrc ${first?'top':''}"><div class="awrc-h"><b>${esc(e.n)}</b>${e.o?` <small class="dim">${esc(e.o)}</small>`:''}${first?' <span class="awrc-1">1순위</span>':''}${extra?'':' <span class="awrc-db">DB</span>'}<span class="sp"></span>${(e.t||[]).map(tchip).join('')}</div>
+ function candLine(e,first,extra,g){const b=e.base;return `<div class="awrc ${first?'top':''}"><div class="awrc-h"><b>${esc(e.n)}</b>${e.o?` <small class="dim">${esc(e.o)}</small>`:''}${first?' <span class="awrc-1">1순위</span>':''}${extra?'':' <span class="awrc-db">DB</span>'}<span class="sp"></span>${(e.t||[]).map(tchip).join('')}</div>
    <div class="awrc-m small">${esc([e.r,e.e,e.c].filter(Boolean).join(' · '))}${e.f?` · 지명도 ${e.f}`:''}${e.cost?` · <span class="awcostrec">대가 ${esc(e.cost)}</span>`:''}</div>
-   ${e.l?`<div class="awrc-l small">${esc(e.l)}</div>`:''}${specBlock(specOfCand(e))}
+   ${e.l?`<div class="awrc-l small">${esc(e.l)}</div>`:''}${specBlock(specOfCand(e),'',g)}
    ${e.why?`<div class="awrc-w small dim">${esc(e.why)}</div>`:''}</div>`}
  function resultBox(sids,miss){const L=sids.filter((v,i,a)=>a.indexOf(v)===i);const nX=L.reduce((a,sid)=>a+(((rec(sid).read||{}).extra)||[]).length,0),nP=L.reduce((a,sid)=>a+(((rec(sid).read||{}).picks)||[]).length,0);
   const md=N().openModal(`<div class="mhead"><h2>✅ 감우 결과를 넣었어요</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
    <p class="small" style="margin-top:0">${L.length}칸 · DB 밖 새 후보 ${nX}명 · DB 후보 ${nP}명${miss&&miss.length?` · <b style="color:var(--red)">못 찾은 PC: ${esc(miss.join(', '))}</b>`:''}. 칸의 「✦ 고치기 창」에서 원전을 고르고 「⇪ 시트에 각성체로」를 누르면 바로 제작기 시트가 생겨요.</p>
    <div class="awrb">${L.map(sid=>{const r=rec(sid);const rd=r.read||{};const X=rd.extra||[];const PK=(rd.picks||[]).map(p=>Object.assign({},byId(p.id)||{n:p.n||'?'},{why:p.why,cost:p.cost},p.t&&p.t.length?{t:p.t}:{},p.base?{base:p.base}:{},p.ab?{ab:p.ab}:{}));
     return `<section class="awres-s"><div class="awres-h">${thumb(subImg(sid))}<div style="flex:1;min-width:0"><b>${esc(subName(sid))}</b><div class="small dim">${esc(gradeLine(sid))}</div></div><button type="button" class="btn xs" data-rs="${esc(sid)}">✦ 고치기 창</button></div>
-     ${rd.sum?`<p class="awres-sum small">${esc(rd.sum)}</p>`:''}<div class="awres-c">${X.map((e,i)=>candLine(e,i===0,true)).join('')}${PK.map(e=>candLine(e,false,false)).join('')}</div></section>`}).join('')}</div>`,'wide');
+     ${rd.sum?`<p class="awres-sum small">${esc(rd.sum)}</p>`:''}<div class="awres-c">${X.map((e,i)=>candLine(e,i===0,true,stepOf(sid))).join('')}${PK.map(e=>candLine(e,false,false,stepOf(sid))).join('')}</div></section>`}).join('')}</div>`,'wide');
   md.addEventListener('click',e=>{const b=e.target.closest('[data-rs]');if(b)sendBox(b.dataset.rs)});N().render()}
 
  /* ----- 📦 감우에게 보낼 묶음: 그림 한 장(번호 · 이름) + 글(코멘트 · 고른 태그 · 돌려받을 꼴) ----- */
@@ -280,12 +280,13 @@ window.NT_AWK=(()=>{
   '후보는 각성체 DB 에 갇히지 말고 DB 밖에서 새로 찾아 주세요(extra 3~5명이 중심). DB 후보(picks)는 그림에 정말 잘 맞을 때만 0~2명.',
   '규칙: 각성체 프라이드가 원전의 격을 정해요 — 파워 차이만큼 격 차이. C · C+ = 격 낮음(이름만 남은 사람 · 민담 조연, 지명도 1~2) · B · B+ = 격 중간(한 고장 전설의 주인공, 지명도 2~3) · A = 격 높음(한 나라에 알려진 인물 · 신화 조연급, 유명 인물은 열화된 한 시절, 지명도 3~4). 각성 (보조)는 C 권장 · 대가 없음.',
   '후보마다 그 인물에 어울리는 대가를 아래 목록 안에서 하나 추천해 주세요 (대가 없음인 칸은 "없음").',COSTLIST,
-  '후보마다 제작 추천도 같이: 타입(t, 1~2개) · 종족치(base, HP/공격/방어/특공/특방/스피드 6칸) · 특성(ab, 제작기 특성 DB 에 있는 이름). 종족치 합은 그 칸 프라이드의 계단 이하(C 480 · C+ 503 · B 525 · B+ 548 · A 570, 보조는 C), 칸마다 하한(C 40 · B 45 · A 50) 이상, HP 95 · 주력 공격 105 를 넘기면 할증이 붙으니 되도록 그 안에서. 「GM 이 정한 제작 조건」이 있는 칸은 그대로 따르고 나머지만 채워 주세요.',
+  '후보마다 제작 추천도 같이: 타입(t, 1~2개) · 종족치(base, HP/공격/방어/특공/특방/스피드 6칸) · 특성(ab, 제작기 특성 DB 에 있는 이름). 「계산 종족치」가 그 칸 프라이드의 계단 이하(C 480 · C+ 503 · B 525 · B+ 548 · A 570, 보조는 C)여야 해요. 「GM 이 정한 제작 조건」이 있는 칸은 그대로 따르고 나머지만 채워 주세요.',
+  '계산 종족치 (제작기 「포켓몬 제작」 규칙) = 실제 합 + 하한분 + 내구 할증 + HP 할증 + 화력·스피드 할증 + 특성 TO 조정. ① 하한분: 공격 · 특공 · 스피드가 계단 하한(C 40 · C+ 43 · B 45 · B+ 48 · A 50)보다 낮으면 모자란 만큼, 공격 · 특공 중 낮은 쪽이 높은 쪽(주력)의 40%(반올림)보다 낮으면 모자란 만큼 더해요. ② 내구 할증: 방어 · 특방 중 낮은 쪽이 85 를 넘는 몫 ×0.5 (105 넘는 몫은 ×0.75). ③ HP 할증: HP 95 넘는 몫 ×0.5 (120 넘는 몫 ×0.75). ④ 화력·스피드 할증: 주력 공격 105 넘는 몫 ×0.5 (120 넘는 몫 ×1) × 스피드 계수((스피드 − 90) ÷ 50, 0~1). ⑤ 특성 TO 조정: 특성 DB 의 소켓 값(특성 TO)이 계단 기본(C ~ B+ 1 · A 1.5)보다 0.5 높을 때마다 +45, 1 보다 0.5 낮을 때마다 −25 (A 의 덤 0.5 는 되팔 수 없어요). 그래서 TO 가 높은 특성을 고르면 그만큼 실제 합을 낮춰요 — 되도록 계단 기본 TO 의 특성으로. 후보마다 "so"(그 특성의 TO)를 적고, why 끝에 「계산 종족치 n/계단」을 붙여요. 세션 노트가 넣을 때 다시 계산해서 넘으면 붉게 보여 줘요.',
   '타입 고르는 법 (10-31 망령 「너무 쓰는 타입만 넣지 말고 마이너한 타입도」): ① 겉모습 하나(갑옷 → 강철 · 무사 → 격투 · 마녀 → 악)로 끝내지 말고, 그 인물을 대표하는 이야기의 한 장면 · 물건 · 재료 · 죽은 방식 · 땅에서 둘째 타입을 뽑아요 — 독살 · 저주 · 뱀 · 약초 목욕 → 독, 벼락 · 폭풍 · 전기 → 전기, 밀랍 · 누에 · 거미 · 겹눈 → 벌레, 서리 · 눈 · 차가움 → 얼음, 용 · 뱀신 · 왕권 · 괴수 → 드래곤, 진흙 · 무덤 · 들판 → 땅, 숲 · 꽃 · 나무 → 풀, 돌 · 성 · 조각상 → 바위. ② 노말 · 격투 · 악 · 강철 · 에스퍼는 그 인물의 핵심일 때만 — 「싸웠다 → 격투」「나쁜 사람 → 악」「신비 → 에스퍼」 같은 기본값으로 쓰지 않아요. ③ 한 칸 후보끼리 같은 타입 조합은 쓰지 않고, 같은 타입은 칸 안에서 2명까지(그림 자체가 그 타입인 칸 — 바다 · 불꽃 등 — 만 4명까지). 칸마다 적어도 한 명은 마이너 타입(벌레 · 독 · 전기 · 얼음 · 드래곤 · 땅 · 바위 · 풀). ④ 묶음 전체에서 18 타입을 고루 — 한 타입이 전체 타입 칸의 12% 를 넘지 않게, 안 나온 타입이 없게. ⑤ why 끝에 「· 타입 독/악 — 근거 한 마디」를 붙여요.',
   '그리고 JSON 과 함께, 사람이 보기 좋게 꾸민 결과 목록(문서)도 같이 만들어 주세요 — 맨 앞에 칸마다 1순위 · 격 · 대가를 한눈에 보는 그림, 그 아래 PC 별로 칸마다 그림 요약과 후보 표(이름 · 지역/시대 · 지명도 · 타입 · 대가 · 종족치 · 특성 · 누구인지 · 열화 · 은열쇠 · 이유).',''];
   L.forEach((p,i)=>{const r=rec(p.id);const x=slot(p.id);out.push(`${i+1}. ${subName(p.id)} (pc: ${x.pc}, slot: ${x.n})`);out.push('   '+gradeLine(p.id));if(x.note)out.push('   코멘트: '+x.note.replace(/\n/g,' / '));if((r.tags||[]).length)out.push('   고른 태그: '+r.tags.join(', '));const pk=r.pick&&byId(r.pick);if(pk)out.push('   이미 정함: '+pk.n);const sp=r.spec||{};const st=(sp.t||[]).filter(Boolean),sb=baseFix(sp.base);const m=x.pid&&MK()&&MK().M.pokemon.find(q=>q.id===x.pid);const same=!!m&&!sp.so&&JSON.stringify(st)===JSON.stringify([m.t1,m.t2].filter(v=>v&&v!=='-'))&&JSON.stringify(sb)===JSON.stringify(baseFix(m.base))&&String(sp.ab||'')===String(m.ability||'');
    if(st.length||sb||sp.ab||sp.so)out.push((same?'   지금 제작기 시트 값 (참고만 · 고정 아님 — 후보마다 원전에 맞게 새로 골라 주세요): ':'   GM 이 정한 제작 조건 (지켜 주세요): ')+[st.length?'타입 '+st.join('/'):'',sb?'종족치 '+sb.join('/'):'',sp.ab?'특성 '+sp.ab:'',sp.so&&!sp.ab?'특성 소켓 '+sp.so+' (이 소켓의 특성으로)':''].filter(Boolean).join(' · '));out.push('')});
-  out.push('돌려받을 꼴: JSON 배열 하나. [{"pc":"<pc id>","slot":<1|2>,"name":"<이름>","sum":"…","tags":[…],"extra":[{"n":"<이름>","o":"<원어 · 한자>","r":"<지역>","e":"<시대>","c":"<분류>","f":<지명도 1~5>,"l":"<누구인지 한 문장>","d":"<각성체로 올 때의 열화된 모습>","k":"<은열쇠 물건>","t":["<포켓몬 타입>"],"base":[<HP>,<공격>,<방어>,<특공>,<특방>,<스피드>],"ab":"<특성>","why":"…","cost":"<분류 · 항목>"} DB 밖 새 후보 3~5명],"picks":[{"id":"<DB id>","n":"<이름>","t":["<타입>"],"base":[…6칸],"ab":"<특성>","why":"…","cost":"<분류 · 항목>"} DB 후보 0~2명]}]');
+  out.push('돌려받을 꼴: JSON 배열 하나. [{"pc":"<pc id>","slot":<1|2>,"name":"<이름>","sum":"…","tags":[…],"extra":[{"n":"<이름>","o":"<원어 · 한자>","r":"<지역>","e":"<시대>","c":"<분류>","f":<지명도 1~5>,"l":"<누구인지 한 문장>","d":"<각성체로 올 때의 열화된 모습>","k":"<은열쇠 물건>","t":["<포켓몬 타입>"],"base":[<HP>,<공격>,<방어>,<특공>,<특방>,<스피드>],"ab":"<특성>","so":"<특성 TO>","why":"…","cost":"<분류 · 항목>"} DB 밖 새 후보 3~5명],"picks":[{"id":"<DB id>","n":"<이름>","t":["<타입>"],"base":[…6칸],"ab":"<특성>","why":"…","cost":"<분류 · 항목>"} DB 후보 0~2명]}]');
   out.push('(받은 것은 세션 노트 시트 > 각성체 > 「📦 원전 추천 묶음」 창 아래 「📋 감우 결과 넣기」에 그대로 붙여 넣어요)');return out.join('\n')}
  async function bundle(){await MK().load();const P0=subs();if(!pcs().length)return N().toast('PC 가 없어요');const P=P0.filter(p=>!slot(p.id).fixed);const nFix=P0.length-P.length;const TP=[],tsel=new Set();const sel=new Set(P.filter(p=>subImg(p.id)&&!rec(p.id).pick).map(p=>p.id));if(!sel.size)P.forEach(p=>subImg(p.id)&&sel.add(p.id));
   const md=N().openModal(`<div class="mhead"><h2>📦 원전 추천 묶음</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
@@ -535,8 +536,21 @@ window.NT_AWK=(()=>{
  /* 10-31 망령 「종족치도 랭크 정도는 · 특성도 효과는」: 카드 · 칸 상자에 쓰는 제작 블록 (타입 · 종족치 6칸 + 랭크 · 특성 + 소켓 + 효과) */
  const abTxt=v=>String(v||'').replace(/<br\s*\/?>/gi,' ').replace(/\s+/g,' ').trim();
  let abW=0;const abWait=()=>{if(abW||!MK())return;abW=1;MK().db().then(()=>N().render()).catch(()=>{})};
- const specBlock=(sp,cls)=>{if(!sp)return '';const b=baseFix(sp.base);const t=(sp.t||[]).filter(Boolean);if(!t.length&&!b&&!sp.ab&&!sp.so)return '';const ready=MK()&&MK().dbReady();if(sp.ab&&!ready)abWait();const r=sp.ab&&ready?MK().abil(sp.ab):null;
-  return `<div class="awspk ${cls||''}">${t.length?`<div class="awspk-t">${t.map(tchip).join('')}</div>`:''}${b?`<div class="awspk-st">${b.map((v,i)=>{const g=grd(v);return `<span class="awspk-c ${gcls(g)}" title="${BASEN[i]} ${v} · ${g}"><small>${BASEN[i]}</small><b>${v}</b><em>${g}</em></span>`}).join('')}<span class="awspk-sum"><small>합</small><b>${sumOf(b)}</b></span></div>`:''}${sp.ab||sp.so?`<div class="awspk-ab"><div class="awspk-abh"><small>특성</small><b>${esc(sp.ab||'아직 — 소켓만')}</b>${r||sp.so?`<span class="awsp-so">소켓 ${esc(r?r[0]:sp.so)}</span>`:''}${r&&r[3]==='O'?'<span class="awsp-kb">틀깨기 대상</span>':''}${r&&r[4]==='O'?'<span class="awsp-kb">방호</span>':''}</div>${r?`<p>${esc(abTxt(r[2]))}</p>`:sp.ab&&ready?'<p class="dim">제작기 특성 DB 에 없는 이름이에요</p>':sp.ab?'<p class="dim">효과 읽는 중…</p>':''}</div>`:''}</div>`};
+ /* 11-01 망령 「감우 종족치랑 특성 추천에서 우리 제작 룰 반영이 안 돼 있다 — 할증 · 특성 점수」: 제작기 customCalc(룰북 「포켓몬 제작」) 와 같은 계산 종족치.
+    = 실제 합 + 하한분(공격 · 특공 · 스피드 계단 하한, 약한 쪽 공격은 주력의 40%) + 내구 할증 + HP 할증 + 화력·스피드 할증 + 특성 TO 조정 (쌍두 할인 · 선공 하한은 기술이 있어야 해서 뺌) */
+ const PSTEP={C:[480,40,1],'C+':[503,43,1],B:[525,45,1],'B+':[548,48,1],A:[570,50,1.5]};
+ const stepOf=sid=>{const x=slot(sid);if(x.kind==='c')return 'C';const p=String(x.pride||'').trim();if(PSTEP[p])return p;const g=slotGrade(sid);return PSTEP[g]?g:''};
+ const pTwo=(x,lo,hi,k1,k2)=>k1*Math.max(0,Math.min(x,hi)-lo)+k2*Math.max(0,x-hi);
+ function pCalc(b,to,g){const S0=PSTEP[g]||PSTEP.C;const [cap,fl,st]=S0;const real=b.reduce((a,c)=>a+c,0),main=Math.max(b[1],b[3]),opp=Math.round(main*0.4);
+  const fa=Math.max(0,Math.max(fl,b[1]<main?opp:0)-b[1]),fc=Math.max(0,Math.max(fl,b[3]<main?opp:0)-b[3]),fsp=Math.max(0,fl-b[5]);
+  const bulk=pTwo(Math.min(b[2],b[4]),85,105,.5,.75),hp=pTwo(b[0],95,120,.5,.75),fs=pTwo(main,105,120,.5,1)*Math.max(0,Math.min(1,(Math.min(b[5],140)-90)/50));
+  const toAdj=to==null?0:90*Math.max(0,to-st)-50*Math.max(0,1-to);const ct=Math.round((real+fa+fc+fsp+bulk+hp+fs+toAdj)*100)/100;
+  const P=[['하한',fa+fc+fsp],['내구',bulk],['HP',hp],['화력·스피드',fs],['특성 TO',toAdj]].filter(x=>Math.abs(x[1])>1e-9).map(([k,v])=>`${k} ${v>0?'+':''}${Math.round(v*100)/100}`);
+  return {ct,cap,real,P,ok:ct<=cap+1e-9,g:g&&PSTEP[g]?g:''}}
+ const toOf=(r,so)=>{const v=String(r?r[0]:so||'').trim();const m=v.match(/^(\d+(?:\.\d+)?)/);return m?+m[1]:null};
+ const calcLine=(b,to,g)=>{if(!b)return '';const c=pCalc(b,to,g);return `<div class="awspk-calc ${g&&!c.ok?'over':''}" title="제작기 계산 종족치 (쌍두 할인 · 선공 하한은 기술을 넣은 뒤 제작기에서)"><small>계산 종족치</small><b>${c.ct}${g?` / ${c.cap}`:''}</b>${g?`<span>${c.ok?'✓ '+g+' 안':'✕ '+g+' 넘음'}</span>`:''}${c.P.length?`<em>합 ${c.real} · ${esc(c.P.join(' · '))}</em>`:''}${to==null?'<em>특성 TO 모름</em>':''}</div>`};
+ const specBlock=(sp,cls,g)=>{if(!sp)return '';const b=baseFix(sp.base);const t=(sp.t||[]).filter(Boolean);if(!t.length&&!b&&!sp.ab&&!sp.so)return '';const ready=MK()&&MK().dbReady();if(sp.ab&&!ready)abWait();const r=sp.ab&&ready?MK().abil(sp.ab):null;
+  return `<div class="awspk ${cls||''}">${t.length?`<div class="awspk-t">${t.map(tchip).join('')}</div>`:''}${b?`<div class="awspk-st">${b.map((v,i)=>{const g=grd(v);return `<span class="awspk-c ${gcls(g)}" title="${BASEN[i]} ${v} · ${g}"><small>${BASEN[i]}</small><b>${v}</b><em>${g}</em></span>`}).join('')}<span class="awspk-sum"><small>합</small><b>${sumOf(b)}</b></span></div>`:''}${sp.ab||sp.so?`<div class="awspk-ab"><div class="awspk-abh"><small>특성</small><b>${esc(sp.ab||'아직 — 소켓만')}</b>${r||sp.so?`<span class="awsp-so">소켓 ${esc(r?r[0]:sp.so)}</span>`:''}${r&&r[3]==='O'?'<span class="awsp-kb">틀깨기 대상</span>':''}${r&&r[4]==='O'?'<span class="awsp-kb">방호</span>':''}</div>${r?`<p>${esc(abTxt(r[2]))}</p>`:sp.ab&&ready?'<p class="dim">제작기 특성 DB 에 없는 이름이에요</p>':sp.ab?'<p class="dim">효과 읽는 중…</p>':''}</div>`:''}${b?calcLine(b,toOf(r,sp.so),g):''}</div>`};
  const kvRows=L=>{const R=L.filter(([,v])=>v);return R.length?`<div class="awkv">${R.map(([k,v,c])=>`<span>${k}</span><p ${c?`class="${c}"`:''}>${esc(v)}</p>`).join('')}</div>`:''};
  async function applyCand(sid,e){if(!e||!e.n)return;const x=slot(sid);
   if(x.fixed&&x.fixed.n!==e.n&&!await N().confirmBox(`각성체 ${x.n} 칸은 「${x.fixed.n}」(으)로 확정돼 있어요.\n「${e.n}」(으)로 바꿀까요? (확정은 풀려요)`,'바꾸기'))return;
@@ -588,13 +602,25 @@ window.NT_AWK=(()=>{
   '- 결과는 이 꼴의 JSON 배열만: [{"pc":"<아래 id>","name":"<아래 이름>","np":[{"n":"『…』","why":"…","eff":"…"}]}]',''];
   for(const sid of sids){const I=npInfo(sid);if(!I.nm)continue;out.push(`## id ${sid} · ${subName(sid)}`,`원전: ${I.nm}${I.e&&I.e.o?' ('+I.e.o+')':''}${I.reg?' · '+I.reg:''}`,I.who?'누구: '+I.who:'',I.deg?'열화: '+I.deg:'',I.key?'은열쇠: '+I.key:'',I.T.length?'타입: '+I.T.join('/'):'',I.ab?'특성: '+I.ab:'',`각성: ${I.x.kind==='c'?'보조':'대가'}${I.x.pride?' · 프라이드 '+I.x.pride:''}`,I.cur?'지금 전용: '+I.cur.n:'',I.x.note?'GM 코멘트: '+I.x.note.replace(/\n/g,' '):'','')}
   return out.filter((l,k,a)=>l||a[k-1]).join('\n')}
- function npAsk(sids,onDone){const L=sids.filter(s=>npInfo(s).nm);if(!L.length)return N().toast('원전이 정해진 각성체가 없어요');
+ /* 11-01 망령 「이미지 포함된 목록을 보고 클릭해서 뺄 수 있게 — 글만 24칸 늘어놓는 게 뭐니」: 각성체 그림 카드를 눌러 넣고 빼면 글이 바로 바뀐다.
+    처음 고른 칸 = pre(칸에서 연 경우 그 칸) · 없으면 아직 추천을 안 받은 칸 (다 받았으면 전부) */
+ function npAsk(sids,onDone,pre){const L=sids.filter((s,k,a)=>a.indexOf(s)===k&&npInfo(s).nm);if(!L.length)return N().toast('원전이 정해진 각성체가 없어요');
+  const sel=new Set((pre||[]).filter(s=>L.includes(s)));if(!sel.size)L.filter(s=>!(rec(s).nps||[]).length).forEach(s=>sel.add(s));if(!sel.size)L.forEach(s=>sel.add(s));
+  const card=s=>{const I=npInfo(s);const n=(rec(s).nps||[]).length;const im=subImg(s);return `<button type="button" class="npsel ${sel.has(s)?'on':''}" data-nps="${esc(s)}" aria-pressed="${sel.has(s)}" title="누르면 ${sel.has(s)?'빼요':'넣어요'}"><span class="npsel-i ${im?'':'no'}" style="${im?`background-image:url('${cssu(im)}')`:''}">${im?'':'그림 없음'}</span><span class="npsel-t"><b>${esc(subName(s))}</b><small>${esc(I.nm)}</small><em>${I.cur?'전용 『'+esc(npClean(I.cur.n))+'』':'전용 아직'}${n?' · 추천 '+n:''}</em></span></button>`};
   const md=N().openModal(`<div class="mhead"><h2>📋 보구 이름 · 감우에게</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
-   <p class="small" style="margin-top:0">${L.length}칸의 원전 정보를 모았어요. 이 글을 대화에 붙여 넣으면 감우가 JSON 으로 드려요. 받은 JSON 을 아래에 넣으면 칸마다 추천 카드로 들어가요.</p>
-   <textarea id="npQ" rows="9" readonly style="width:100%;font-family:var(--mono);font-size:12px">${esc(npAskText(L))}</textarea><div class="row" style="margin:6px 0 12px"><span class="sp"></span><button class="btn sm" id="npCp">글 복사</button></div>
-   <textarea id="npA" rows="7" placeholder='[{"pc":"…~1","np":[{"n":"『…』","why":"…","eff":"…"}]}]' style="width:100%;font-family:var(--mono);font-size:12px"></textarea>
+   <p class="small" style="margin-top:0">물어볼 각성체를 눌러 고르세요 (다시 누르면 빠져요). 아래 글을 대화에 붙여 넣으면 감우가 JSON 으로 드려요. 받은 JSON 을 맨 아래에 넣으면 칸마다 추천 카드로 들어가요.</p>
+   <div class="npselbar"><b id="npN"></b><span class="sp"></span><button type="button" class="btn xs" data-npa="all">전부</button><button type="button" class="btn xs" data-npa="new">추천 없는 칸만</button><button type="button" class="btn xs" data-npa="none">비우기</button></div>
+   <div class="npsgrid" id="npG">${L.map(card).join('')}</div>
+   <details class="npqd"><summary class="small">보낼 글 보기</summary><textarea id="npQ" rows="8" readonly style="width:100%;font-family:var(--mono);font-size:12px"></textarea></details>
+   <div class="row" style="margin:6px 0 12px"><span class="small dim" id="npM"></span><span class="sp"></span><button class="btn sm pri" id="npCp">📝 글 복사</button></div>
+   <textarea id="npA" rows="6" placeholder='[{"pc":"…~1","np":[{"n":"『…』","why":"…","eff":"…"}]}]' style="width:100%;font-family:var(--mono);font-size:12px"></textarea>
    <div class="mfoot"><span class="sp"></span><button class="btn pri" id="npOk">결과 넣기</button></div>`,'wide',{stack:true});
-  $('#npCp',md).onclick=async()=>{const t=$('#npQ',md).value;try{await navigator.clipboard.writeText(t)}catch(e){$('#npQ',md).select();document.execCommand('copy')}N().toast('글을 복사했어요')};
+  const draw=()=>{const S=L.filter(s=>sel.has(s));$('#npQ',md).value=S.length?npAskText(S):'';$('#npN',md).textContent=`${S.length} / ${L.length}칸 고름`;$('#npCp',md).disabled=!S.length;$('#npM',md).textContent=S.length?'':'한 칸 이상 골라 주세요';
+   $$('[data-nps]',md).forEach(b=>{const on=sel.has(b.dataset.nps);b.classList.toggle('on',on);b.setAttribute('aria-pressed',on);b.title='누르면 '+(on?'빼요':'넣어요')})};
+  md.addEventListener('click',e=>{const b=e.target.closest('[data-nps]');if(b){const v=b.dataset.nps;sel.has(v)?sel.delete(v):sel.add(v);return draw()}
+   const a=e.target.closest('[data-npa]');if(a){sel.clear();if(a.dataset.npa==='all')L.forEach(s=>sel.add(s));if(a.dataset.npa==='new')L.filter(s=>!(rec(s).nps||[]).length).forEach(s=>sel.add(s));draw()}});
+  draw();
+  $('#npCp',md).onclick=async()=>{const t=$('#npQ',md).value;if(!t)return;try{await navigator.clipboard.writeText(t)}catch(e){const d=$('.npqd',md);if(d)d.open=true;$('#npQ',md).select();document.execCommand('copy')}N().toast(`${L.filter(s=>sel.has(s)).length}칸 글을 복사했어요`)};
   $('#npOk',md).onclick=async()=>{const s=$('#npA',md).value.trim().replace(/^```(json)?\s*|\s*```$/g,'');let j;try{j=JSON.parse(s)}catch(e){return N().toast('JSON 이 아니에요: '+e.message)}
    const many=Array.isArray(j)?j:[j];let n=0;const miss=[];for(const o of many){if(!o)continue;let sid=String(o.pc||o.sid||'');if(!sid.includes('~')){const p=pcs().find(q=>q.id===sid||pcName(q.id)===String(o.name||'').split(' · ')[0]);sid=p?sidOf(p.id,+o.slot||1):''}
     const nps=(o.np||o.nps||[]).filter(q=>q&&q.n).map(q=>({n:/^『/.test(q.n)?q.n:'『'+npClean(q.n)+'』',why:String(q.why||''),eff:String(q.eff||'')}));if(!sid||!nps.length){miss.push(o.name||o.pc||'?');continue}await npAdd(sid,nps,'chat');n++}
@@ -605,7 +631,7 @@ window.NT_AWK=(()=>{
  function npBind(md,S){const redraw=i=>{const g=$(`[data-npg="${i}"]`,md);if(g)g.innerHTML=npCards(i,S[i].sid);const d=g&&g.closest('.awnps');if(d){const sm=d.querySelector('summary small');const I=npInfo(S[i].sid);const r=rec(S[i].sid);if(sm)sm.textContent=(I.cur?`시트 전용 『${npClean(I.cur.n)}』`:'시트 전용 아직')+(r.np?` · 고른 이름 ${r.np.n}`:'');const bar=d.querySelector('.awnpbar');if(bar&&r.np&&!bar.querySelector('[data-np="apply"]'))bar.insertAdjacentHTML('beforeend',`<button type="button" class="btn xs pri" data-np="apply" data-i="${i}" ${I.m?'':'disabled title="시트가 아직 없어요 — 「⇪ 시트에 각성체로」 때 같이 들어가요"'}>⇪ 시트 전용으로</button>`)}};
   md.addEventListener('click',async e=>{const b=e.target.closest('[data-np]');if(!b||!md.contains(b))return;e.preventDefault();e.stopPropagation();const k=b.dataset.np,i=+b.dataset.i,sid=S[i]&&S[i].sid;if(!sid)return;
    if(k==='gen'){await npAdd(sid,npGen(sid),'gen');redraw(i);return}
-   if(k==='ask')return npAsk([sid],()=>redraw(i));
+   if(k==='ask')return npAsk(subs().map(p=>p.id),()=>S.forEach((_,j)=>redraw(j)),[sid]);
    if(k==='drop'){const kk=+b.dataset.k;await save(sid,r=>{const q=(r.nps||[])[kk];r.nps=(r.nps||[]).filter((_,j)=>j!==kk);if(q&&r.np&&r.np.n===q.n)delete r.np});redraw(i);return}
    if(k==='pick'){const q=(rec(sid).nps||[])[+b.dataset.k];if(!q)return;await save(sid,r=>{if(r.np&&r.np.n===q.n)delete r.np;else r.np={n:q.n,eff:q.eff||''}});redraw(i);return}
    if(k==='apply'){await npApply(sid);redraw(i)}})}
