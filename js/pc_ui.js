@@ -247,6 +247,14 @@
   const om=String(m.memo||'').match(/【각성체 원전】\s*([^\n]+)/);const origin=om?om[1].split(' · ')[0].trim():'';
   return {E,lv,b0,bu,bs,tot:bs.reduce((a,v)=>a+v,0),types,mv,pots,ex,items,pride,origin}}
  const gGlyph=g=>g==='♂'?'<span class="mkr-gen m">♂</span>':g==='♀'?'<span class="mkr-gen f">♀</span>':'';
+ /* 11-01 망령 「여백이 많이 남는다 — 종족치를 왼쪽 넉넉한 칸에 보기 좋게, 기술은 오른쪽(예전 종족치 자리)에」
+    statBox = 육각형 + 능력치 6줄(이름 · 막대 · 값 · 등급) + 합 · 기술 · 포텐셜 수 / mvBox = 기술 칩(타입 색 띠 · 이름 · 분류 · 위력), 8개까지 · 넘으면 +n */
+ function statBox(X){return `<div class="mkr-bs">${radar(X.bs)}<div class="mkr-bsl">${STL.map((l,k)=>{const v=+X.bs[k]||0,g=grd(X.bs[k]),up=X.bu&&X.bu[k]!==X.b0[k];
+   return `<div class="mkr-br ${gcls(g)}" title="${l} ${v||'-'}${up?` (포텐셜로 ${X.b0[k]} → ${X.bu[k]})`:''}"><small>${l}</small><i><em style="width:${Math.min(100,v/180*100).toFixed(1)}%"></em></i><b>${v||'-'}${up?'<sup>▲</sup>':''}</b><span>${esc(g)}</span></div>`}).join('')}
+   <div class="mkr-bst">종족치 합 <b>${X.tot||'-'}</b> · 기술 ${X.mv.length} · 포텐셜 ${X.pots.length+X.ex.length}</div></div></div>`}
+ function mvBox(mv){if(!mv.length)return '<div class="mkr-mv none"><span class="dim small">기술이 아직 없어요</span></div>';const N=8,L=mv.slice(0,N);
+  return `<div class="mkr-mv"><div class="mkr-mvh"><span>기술</span><small>${mv.length}</small></div><div class="mkr-mvg">${L.map(x=>{const r=MK().move(x.name);const ty=r&&r[5]&&r[5]!=='-'?r[5]:'';const cl=r?String(r[6]||''):'';const pw=r&&+r[7]?r[7]:'';
+   const eff=r?oneLn(r[13]||''):'';return `<span class="mkr-mc" style="--tc:${T2C[ty]||'#8f7b52'}" title="${esc(x.name+(ty?' · '+ty:'')+(cl?' · '+cl:'')+(pw?' · 위력 '+pw:'')+(eff?'\n'+eff:''))}"><b>${esc(x.name)}</b>${cl?`<i class="c-${CLS[cl]||'st'}">${esc(cl[0])}</i>`:''}${pw?`<em>${esc(pw)}</em>`:''}</span>`}).join('')}${mv.length>N?`<span class="mkr-mc more">＋${mv.length-N}</span>`:''}</div></div>`}
  /* 11-01 망령 「각성체 줄에 한장보기 버튼이랑 전용도 보이게」: 특성 칸 아래 전용 포텐셜 이름 · 효과 한 줄, 「▤ 한 장 보기」 = 제작기 ?sec=pcard (한 장 요약을 바로 띄움) */
  function mkRow(t,m,i,ED,aw){const X=monInfo(t,m);const E=X.E;const c1=T2C[X.types[0]]||'#8f7b52',c2=T2C[X.types[1]]||c1;
   const kindOf=k=>String((E.kinds||[])[k]||(m.potKind||[])[k]||'').replace(/^\d+(\.\d+)*\.\s*/,'');const effOf=k=>brN((E.pots||[])[k]||(m.potEff||[])[k]||'');
@@ -258,8 +266,9 @@
     <div class="mkr-id"><div class="mkr-n"><b>${esc(m.nick||m.name||'(이름 없음)')}</b>${m.nick?`<small class="mkr-sp" title="종 이름">${esc(m.name||'')}</small>`:''}${gGlyph(m.gender)}${m.partner?'<span class="mkr-star" title="파트너">★</span>':''}</div>
      <div class="mkr-c">${X.types.map(tchip).join('')}<span class="mkr-lv">Lv.${X.lv}</span></div>
      <div class="mkr-c">${aw?`<span class="mkr-aw">${AWL[m.awaken]}</span>`:''}${X.pride?`<span class="mkr-pr">프라이드 <b>${esc(X.pride)}</b></span>`:''}${m.tera&&m.tera!=='-'?`<span class="mkr-tg">테라 ${esc(m.tera)}</span>`:''}</div></div>
+    ${statBox(X)}
     <div class="mkr-ab"><div class="mkr-abn"><span class="mkr-k">특성</span><b>${esc(m.ability||'특성 없음')}</b></div>${abE?`<p title="${esc(abE)}">${esc(abE)}</p>`:''}${X.ex.map(x=>{const e=oneLn(x.eff||'');return `<div class="mkr-abn mkr-exn"><span class="mkr-k ex">전용</span><b>『${esc(String(x.name).replace(/[『』]/g,''))}』</b></div>${e?`<p class="mkr-exe" title="${esc(e)}">${esc(e)}</p>`:''}`}).join('')}${X.items.length?`<div class="mkr-it">${X.items.map(x=>`<span title="${esc(oneLn(x.e||''))}">${esc(x.n)}</span>`).join('')}</div>`:''}</div>
-    <div class="mkr-st">${radar(X.bs)}<div><div class="mkr-gs">${STL.map((l,k)=>{const g=grd(X.bs[k]);return `<span title="${l} ${X.bs[k]||'-'}${X.bu&&X.bu[k]!==X.b0[k]?` (포텐셜로 ${X.b0[k]} → ${X.bu[k]})`:''}"><small>${l}</small><b class="${gcls(g)}">${esc(g)}</b></span>`}).join('')}</div><div class="mkr-sum">종족치 합 <b>${X.tot||'-'}</b> · 기술 ${X.mv.length} · 포텐셜 ${X.pots.length+X.ex.length}</div></div></div>
+    ${mvBox(X.mv)}
     ${ED&&t.id?`<div class="mkr-act">${window.NT_MONED?`<button type="button" class="btn xs" data-moned="${esc(m.id)}" data-id="${esc(t.id)}" title="제작기 화면 그대로 이 포켓몬 한 장을 고쳐요">✎ 고치기</button><button type="button" class="btn xs ghost" data-moned="${esc(m.id)}" data-id="${esc(t.id)}" data-sec="pcard" title="제작기 「한 장 요약」 — 기술 · 포텐셜 · 상성을 한 장으로 (PNG 저장도)">▤ 한 장 보기</button>`:''}<button type="button" class="btn xs ghost" data-ux="item" data-id="${esc(t.id)}" data-pid="${esc(m.id)}">소지품</button></div>`:''}</div>
    ${X.mv.length||X.pots.length||X.ex.length||m.memo?`<details class="mkr-more"><summary>${[X.mv.length?'기술 '+X.mv.length:'',X.pots.length?'포텐셜 '+X.pots.length:'',X.ex.length?'전용 '+X.ex.length:'',m.memo?'메모':''].filter(Boolean).join(' · ')}</summary><div class="mkr-mb">
     ${moveGrid(X.mv)}${potGrid([...X.ex.map(x=>({k:'전용',n:'『'+String(x.name).replace(/[『』]/g,'')+'』',e:x.eff})),...X.pots.map(x=>({k:kindOf(x.i),n:'『'+x.n+'』',e:effOf(x.i)}))])}${m.memo?memoHtml(m.memo,'mkr-memo'):''}</div></details>`:''}

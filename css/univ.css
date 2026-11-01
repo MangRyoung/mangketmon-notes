@@ -563,3 +563,32 @@ html[data-skin="univ"] .idrkc input{font-family:'Cinzel','Noto Serif KR',serif;c
 .ptb i.pen{background:repeating-linear-gradient(135deg,#8f1a26 0 6px,#a8323d 6px 12px)!important;color:#f3eadb}
 .ptx{display:inline-block;margin-left:5px;padding:0 6px;border-radius:8px;font-size:10px;font-weight:700;background:rgba(127,127,127,.18);color:var(--mute);vertical-align:1px;white-space:nowrap}
 .ptx.pen{background:rgba(143,26,38,.14);color:var(--crim2,#8f1a26)}
+/* 11-01 망령 「여백이 많이 남는다」: 파티 줄 = 이름 칸 | 종족치(넉넉히) | 특성 · 전용 | 기술 | 단추 */
+.mkr-h{display:grid;grid-template-columns:auto auto minmax(150px,200px) minmax(250px,1fr) minmax(240px,1.15fr) minmax(220px,1fr) auto;align-items:center}
+.mkr-id{min-width:0}
+.mkr-bs{display:flex;align-items:center;gap:10px;min-width:0;padding:6px 10px;border:1px solid #c9b994;background:rgba(255,255,255,.35)}
+.mkr-bs .mkr-rd{width:66px;height:66px}
+.mkr-bsl{flex:1;min-width:0;display:grid;grid-template-columns:1fr 1fr;gap:3px 12px}
+.mkr-br{display:grid;grid-template-columns:34px minmax(24px,1fr) 30px 32px;align-items:center;gap:5px;font-size:11px}
+.mkr-br small{font-size:10.5px;font-weight:700;color:var(--ink2)}
+.mkr-br i{display:block;height:6px;border-radius:3px;background:rgba(26,20,13,.12);overflow:hidden}
+.mkr-br i em{display:block;height:100%;background:var(--gc,#8d97a6);border-radius:3px}
+.mkr-br b{font-family:'Cinzel','Noto Serif KR',serif;font-size:12.5px;text-align:right;color:var(--ink)}
+.mkr-br b sup{font-size:8px;color:#2e8a4f;margin-left:1px}
+.mkr-br span{text-align:center;font-size:10.5px;font-weight:700;padding:1px 0;border-radius:4px;color:#fff;background:var(--gc,#8d97a6)}
+.mkr-bst{grid-column:1/-1;margin-top:3px;padding-top:3px;border-top:1px dashed #c9b994;font-size:11px;color:var(--ink2)}
+.mkr-bst b{color:var(--ink)}
+.mkr-mv{min-width:0;align-self:stretch;display:flex;flex-direction:column;gap:5px;padding:6px 10px;background:#1a140d;color:#efe6d2;border-left:3px solid #cfae6e}
+.mkr-mv.none{justify-content:center}
+.mkr-mvh{display:flex;align-items:baseline;gap:6px}.mkr-mvh span{font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:999px;background:#cfae6e;color:#1a140d}.mkr-mvh small{color:#b0a38a;font-size:11px}
+.mkr-mvg{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.mkr-mc{display:flex;align-items:center;gap:5px;min-width:0;padding:3px 7px 3px 8px;border-radius:4px;background:rgba(255,255,255,.06);border-left:3px solid var(--tc);font-size:12px}
+.mkr-mc b{flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mkr-mc i{flex:none;font-style:normal;font-size:10px;font-weight:700;width:16px;height:16px;line-height:16px;text-align:center;border-radius:50%;color:#fff;background:#7b7f8a}
+.mkr-mc i.c-ph{background:#c4492a}.mkr-mc i.c-sp{background:#3a6fc4}
+.mkr-mc em{flex:none;font-style:normal;font-family:'Cinzel','Noto Serif KR',serif;font-size:11.5px;color:#e9c46a;min-width:20px;text-align:right}
+.mkr-mc.more{justify-content:center;color:#b0a38a;border-left-color:transparent}
+.mkr-ab{align-self:stretch}
+@media(max-width:1400px){.mkr-h{grid-template-columns:auto auto minmax(130px,170px) minmax(0,1fr) minmax(0,1fr) auto}.mkr-bs{grid-column:4;grid-row:1}.mkr-mv{grid-column:5;grid-row:1}.mkr-ab{grid-column:3/6;grid-row:2}.mkr-act{grid-column:6;grid-row:1/span 2}}
+@media(max-width:900px){.mkr-h{grid-template-columns:auto auto minmax(0,1fr)}.mkr-bs,.mkr-ab,.mkr-mv{grid-column:1/-1;grid-row:auto}.mkr-act{grid-column:1/-1;grid-row:auto;flex-direction:row}}
+@media(max-width:560px){.mkr-bsl{grid-template-columns:1fr}.mkr-mvg{grid-template-columns:1fr}}

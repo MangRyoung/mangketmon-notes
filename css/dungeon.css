@@ -28,7 +28,7 @@
 .dgtools .dghelp{flex:1 1 260px}
 .dgwrap{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:12px;align-items:start}
 @media(max-width:900px){.dgwrap{grid-template-columns:1fr}}
-.dgcs{overflow:auto;min-width:0}
+.dgcs{overflow:auto;min-width:0;padding:0 7px 7px 0}
 /* 11-01 망령 「던전 글자 잘 안 보임 · 맵 촌티」 — 판: 먹빛 바탕 · 모눈 점 · 가장자리 어둡게. 통로는 벽 + 바닥 두 겹, 방은 종류 표 붙은 패 */
 .dgc{--dsel:#ffd84a;position:relative;width:100%;aspect-ratio:1000/640;background:#0c1019 radial-gradient(ellipse 70% 60% at 50% 42%,#18203070,transparent 75%);background-size:cover;background-position:center;border:1px solid #232c3f;border-radius:10px;overflow:hidden;touch-action:pan-x pan-y;user-select:none;color:#e9edf5;box-shadow:inset 0 0 0 1px rgba(255,255,255,.03),0 10px 30px -12px rgba(0,0,0,.8)}
 .dgc::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;background-image:radial-gradient(circle,rgba(160,180,215,.2) 1px,transparent 1.3px),linear-gradient(rgba(130,150,190,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(130,150,190,.07) 1px,transparent 1px);background-size:2.5% 3.90625%,10% 15.625%,10% 15.625%;background-position:1.25% 1.953%,0 0,0 0}
@@ -67,8 +67,59 @@
 .dgn:hover .dgport,.dgc.linking .dgport{background:var(--c)}
 .dgn .dgport:hover{transform:scale(1.35);background:var(--dsel);border-color:var(--dsel)}
 .dgc.linking .dgn{cursor:crosshair}
+/* ===== 11-01 망령 「던전 ui는 rp 에서 미니맵을 띄우는 구조를 참조해서」 — 입체 판 (웹툴 .dg-map3d · .dg-tilt · .dg-haze · .dg-map-cap 과 같은 꼴) ===== */
+.dged{--dg-acc:var(--yel2,#f0c84a)}
+.dgc.iso{aspect-ratio:1540/1020;border:2px solid #000;border-radius:2px;box-shadow:5px 5px 0 var(--dg-acc);background:radial-gradient(ellipse at 50% 35%,#1a2236 0,#090b13 62%,#04050a 100%);isolation:isolate}
+.dgc.iso::before{display:none}.dgc.iso::after{z-index:2;background:radial-gradient(ellipse 80% 75% at 50% 50%,transparent 60%,rgba(2,3,7,.55))}
+.dgtilt{position:absolute;inset:0;z-index:1;transform:perspective(1200px) rotateX(var(--rx,8deg)) rotateY(var(--ry,0deg)) scale(.97);transform-origin:50% 60%;transition:transform .35s ease-out;will-change:transform}
+.dgtilt svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.dgiso .fl{fill:#111829}.dgiso .sl.r{fill:#0b111e}.dgiso .sl.l{fill:#070b14}
+.dgiso .fld{fill:rgba(6,9,16,.42)}
+.dgiso .gr{fill:none;stroke:rgba(120,150,220,.1);stroke-width:1}
+.dgiso .gr2{fill:none;stroke:rgba(120,150,220,.2);stroke-width:1.3}
+.dgiso .fle{fill:none;stroke:rgba(140,170,230,.35);stroke-width:1.6}
+.dgiso .cs{fill:#000;opacity:.45}
+.dgiso .cor{fill:#26304a;stroke:rgba(140,170,230,.4);stroke-width:1.5;stroke-linejoin:round}
+.dgiso .cor.on{fill:var(--dg-acc);stroke:#fff;stroke-width:2}
+.dgiso .cor.hid{stroke-dasharray:7 6;opacity:.65}
+.dgiso .hit{fill:transparent;cursor:pointer}.dgiso .hit:hover{fill:rgba(255,216,74,.16)}
+.dgi{cursor:grab}.dged.pl .dgi{cursor:pointer}.dgc.linking .dgi{cursor:crosshair}
+.dgi .shd{fill:#000;opacity:.4}
+.dgi .tp{transition:filter .12s}.dgi:hover .tp{filter:brightness(1.18)}
+.dgi .in{fill:none;stroke:rgba(255,255,255,.38);stroke-width:1.2}
+.dgi.on{filter:drop-shadow(0 0 9px color-mix(in srgb,var(--dg-acc) 65%,transparent))}.dgi.on .tp{stroke:#fff;stroke-width:3.5;stroke-linejoin:round}
+.dgi.from .tp{stroke:#59b6ff;stroke-width:4;stroke-linejoin:round}
+.dgi.hid{opacity:.42}.dgi.hid .tp{stroke:#fff;stroke-dasharray:6 5;stroke-width:1.5}
+.dgi .ic{overflow:visible;pointer-events:none;filter:drop-shadow(0 1.5px 1px rgba(0,0,0,.55))}
+.dgi .ic *{fill:none;stroke:#fff;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}.dgi .ic .f{fill:#fff;stroke:none}
+.dgi .dgport{fill:#10141f;stroke:var(--c);stroke-width:3;cursor:crosshair;transition:fill .12s}
+.dgi:hover .dgport,.dgc.linking .dgi .dgport{fill:var(--c)}.dgi .dgport:hover{fill:var(--dg-acc);stroke:#fff}
+.dgiso .pulse{fill:none;stroke:var(--dg-acc);stroke-width:3;transform-box:fill-box;transform-origin:center;animation:dgPulse 1.7s ease-out infinite;pointer-events:none}
+.dgiso .stR{fill:none;stroke:#59b6ff;stroke-width:2.5;stroke-dasharray:2 8;stroke-linecap:round;opacity:.9;pointer-events:none}
+.dgiso .fog{pointer-events:none;fill:url(#dgCl)}
+.dgiso .lab text{font-family:var(--font);font-weight:700;font-size:25px;text-anchor:middle;fill:#eef3ff;paint-order:stroke;stroke:#04050a;stroke-width:7px;stroke-linejoin:round;pointer-events:none}
+.dgiso .lab .hid{opacity:.5}
+.dgiso .lab .stt{font-size:15px;letter-spacing:.22em;fill:#59b6ff;stroke-width:5px}
+.dgiso .tmp{stroke:var(--dg-acc);stroke-width:3;stroke-dasharray:9 7;stroke-linecap:round;pointer-events:none}
+@keyframes dgPulse{0%{transform:scale(.72);opacity:.95}100%{transform:scale(1.22);opacity:0}}
+.dghaze{position:absolute;inset:-12%;z-index:2;pointer-events:none;opacity:.32;mix-blend-mode:screen;background:radial-gradient(closest-side at 22% 30%,rgba(150,170,210,.35),transparent),radial-gradient(closest-side at 72% 64%,rgba(130,150,200,.3),transparent),radial-gradient(closest-side at 48% 88%,rgba(170,180,220,.22),transparent);animation:dgHaze 18s ease-in-out infinite alternate}
+@keyframes dgHaze{0%{transform:translate3d(-2%,-1.5%,0)}100%{transform:translate3d(2%,1.5%,0)}}
+.dghud{position:absolute;left:14px;top:14px;z-index:3;display:flex;flex-direction:column;align-items:flex-start;gap:6px;pointer-events:none;max-width:60%}
+.dgloc{display:flex;flex-direction:column;gap:2px;padding:6px 14px 8px;background:#050608;color:#fff;transform:rotate(-2deg) skewX(var(--skew,-6deg));box-shadow:4px 4px 0 var(--dg-acc);max-width:100%}
+.dgloc span{font:11px/1 var(--head);letter-spacing:.25em;color:var(--dg-acc)}
+.dgloc b{font:400 21px/1.2 var(--head);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dgtype{margin-left:8px;transform:rotate(-2deg);padding:3px 10px;font:700 12px/1.4 var(--font);color:#fff;background:#050608;border-left:4px solid var(--c,#888)}
+.dgcap{position:absolute;left:12px;bottom:10px;z-index:3;font:700 11px/1.4 var(--font);color:#cdd6e6;background:rgba(0,0,0,.62);padding:3px 9px;pointer-events:none}
+.dgcap b{letter-spacing:.15em;color:var(--dg-acc);margin-right:6px}
+.dglegend{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:9px;font-size:12px;color:var(--mute)}
+.dglegend span{display:inline-flex;align-items:center;gap:5px}
+.dglegend i{display:grid;place-items:center;width:18px;height:18px;border-radius:4px;background:color-mix(in srgb,var(--c) 20%,transparent);color:var(--c)}
+.dglegend svg{width:12px;height:12px;display:block;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}.dglegend svg .f{fill:currentColor;stroke:none}
+.dgtools .seg.dgview{margin-left:auto;order:9}
+@media(prefers-reduced-motion:reduce){.dgtilt{transition:none}.dghaze,.dgiso .pulse{animation:none}}
 @media(max-width:760px){.dgc{width:720px}.dgn{font-size:11px;max-width:120px;padding:3px 8px 3px 3px}.dgn i{width:19px;height:19px}.dgtools .dghelp{display:none}}
 @media(prefers-reduced-motion:reduce){.dgn,.dgn .dgport{transition:none}}
+@media(max-width:760px){.dgc.iso{width:100%}.dgiso .lab text{font-size:36px;stroke-width:9px}.dgiso .lab .stt{font-size:22px}.dghud{left:8px;top:8px}.dgloc{padding:3px 9px 5px}.dgloc b{font-size:15px}.dgtype{display:none}.dgcap{left:6px;bottom:5px;font-size:10px;padding:2px 7px}.dgtools .seg.dgview{margin-left:0}}
 .dgp{border:1px solid var(--line2,#555);padding:10px 12px;border-radius:8px;display:flex;flex-direction:column;gap:6px;max-height:72vh;overflow:auto}
 .dgp h3{margin:2px 0}
 .dgp label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--fg2,var(--mute))}
