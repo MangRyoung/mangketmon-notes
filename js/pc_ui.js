@@ -218,7 +218,7 @@
     <div class="row" style="gap:4px;flex-wrap:wrap;margin-top:3px"><span class="pmlv">Lv ${lv}</span>${m.pride?`<span class="pmb">프라이드 ${esc(m.pride)}</span>`:''}${types.map(tchip).join('')}${m.tera&&m.tera!=='-'?`<small class="dim">테라 ${esc(m.tera)}</small>`:''}${m.gender&&m.gender!=='-'?`<small class="dim">${esc(m.gender)}</small>`:''}</div>
     <div class="small dim" style="margin-top:2px">${[m.egg1,m.egg2].filter(x=>x&&x!=='-').map(esc).join(' · ')}${(m.forms||[]).filter(f=>f&&f.name).length?` · 폼 ${(m.forms||[]).filter(f=>f&&f.name).map(f=>esc(f.name)).join(' · ')}`:''}</div></div></div>
    <div class="pmst">${STL.map((l,i)=>`<span class="${bu&&bu[i]!==b0[i]?'up':''}" title="${bu&&bu[i]!==b0[i]?`포텐셜로 ${b0[i]} → ${bu[i]}`:''}"><small>${l}</small><b>${bs[i]||'-'}</b></span>`).join('')}<span class="tot"><small>합</small><b>${tot}</b></span></div>
-   ${m.ability?line('특성',m.ability,E.ab):''}${items.map(x=>line('소지품',x.n,x.e)).join('')}${ED&&t.id?`<div class="ux-itbs"><button type="button" class="linkbtn small ux-itb" data-ux="item" data-id="${esc(t.id)}" data-pid="${esc(m.id)}">✎ 소지품${items.length?' 고치기':' 넣기'}</button>${window.NT_MONED?`<button type="button" class="linkbtn small ux-itb" data-moned="${esc(m.id)}" data-id="${esc(t.id)}">✎ 포켓몬 고치기</button>`:''}</div>`:''}
+   ${m.ability?line('특성',m.ability,E.ab||(MK().abil(m.ability)||[])[2]||''):''}${items.map(x=>line('소지품',x.n,x.e)).join('')}${ED&&t.id?`<div class="ux-itbs"><button type="button" class="linkbtn small ux-itb" data-ux="item" data-id="${esc(t.id)}" data-pid="${esc(m.id)}">✎ 소지품${items.length?' 고치기':' 넣기'}</button>${window.NT_MONED?`<button type="button" class="linkbtn small ux-itb" data-moned="${esc(m.id)}" data-id="${esc(t.id)}">✎ 포켓몬 고치기</button>`:''}</div>`:''}
    ${moveGrid(mv)}
    ${ex.length||pots.length?`<details class="pmpot"><summary>포텐셜 ${ex.length+pots.length} <span class="dim small">${[...ex.map(x=>x.name),...pots.map(x=>x.n)].map(esc).join(' · ')}</span></summary>${potGrid([...ex.map(x=>({k:'전용',n:'『'+String(x.name).replace(/[『』]/g,'')+'』',e:x.eff})),...pots.map(x=>({k:kindOf(x.i),n:'『'+x.n+'』',e:effOf(x.i)}))])}</details>`:''}
    ${m.memo?`<details class="pmpot"><summary>메모</summary>${memoHtml(m.memo)}</details>`:''}
@@ -259,7 +259,7 @@
  function mkRow(t,m,i,ED,aw){const X=monInfo(t,m);const E=X.E;const c1=T2C[X.types[0]]||'#8f7b52',c2=T2C[X.types[1]]||c1;
   const kindOf=k=>String((E.kinds||[])[k]||(m.potKind||[])[k]||'').replace(/^\d+(\.\d+)*\.\s*/,'');const effOf=k=>brN((E.pots||[])[k]||(m.potEff||[])[k]||'');
   const line=(lab,name,eff)=>`<div class="pml"><span class="pmk">${lab}</span><b>${esc(name)}</b>${eff?`<div class="pme pre">${esc(brN(eff))}</div>`:''}</div>`;
-  const abE=oneLn(E.ab);
+  const abE=oneLn(E.ab||(m.ability&&(MK().abil(m.ability)||[])[2])||'');
   return `<article class="mkr ${aw?'aw '+(m.awaken==='free'?'free':'sub'):''}" id="pm-${esc(m.id)}" style="--c1:${c1};--c2:${c2}">
    <div class="mkr-h"><span class="mkr-no"><small>No.</small>${String(i+1).padStart(3,'0')}</span>
     <span class="mkr-av">${monPic(m)}</span>

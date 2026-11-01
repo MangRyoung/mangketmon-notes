@@ -59,7 +59,7 @@ window.NT_GLOBE=(()=>{
      <div class="zoom"><button type="button" data-g="zi" aria-label="확대">+</button><button type="button" data-g="zo" aria-label="축소">−</button></div>
      <button class="back" type="button" data-g="back">← 관측실로</button>
      <div class="title-ov" aria-hidden="true"><div class="n">${cur?esc(ovNo(cur)):''}</div><div class="t">${cur?(cur.redacted?'관측 불가':esc(cur.title)):''}</div></div></div>
-    <aside class="gpanel"><ul class="glist">${L.map(it=>`<li><button type="button" data-g="sel" data-id="${esc(it.id)}" aria-current="${st.sel===it.id}">${it.redacted?`<span class="no">${esc(it.no)}</span><span class="tt"><b><span class="bar">■■■■■■■■</span></b><span>관측 불가</span></span><span class="st redacted">미관측</span>`:`<span class="no">${esc(it.no)}</span><span class="tt"><b>${esc(it.title)}${it.hid?' 🔒':''}</b><span>${esc([it.year,it.place].filter(Boolean).join(' · '))}</span></span><span class="st ${esc(it.status)}">${it.label||STL[it.status]||it.status}</span>`}</button></li>`).join('')||'<li class="dim small" style="padding:10px">특이점이 없어요.'+(G?' 「＋ 특이점」으로 넣어요.':'')+'</li>'}</ul>
+    <aside class="gpanel"><ul class="glist">${L.map(it=>`<li><button type="button" data-g="sel" data-id="${esc(it.id)}" aria-current="${st.sel===it.id}">${it.redacted?`<span class="no">${esc(it.no)}</span><span class="tt"><b><span class="bar">■■■■■■■■</span></b><span>관측 불가</span></span><span class="st redacted">미관측</span>`:`<span class="no">${esc(it.no)}</span><span class="tt"><b>${esc(it.title)}${it.hid?' 🔒':''}</b><span>${esc([it.year,it.place].filter(Boolean).join(' · '))}</span></span><span class="st ${esc(it.status)}">${it.label||STL[it.status]||it.status}</span>${goMap(it)?`<span class="gomap" title="누르면 「${esc(goMap(it).name||'지도')}」 지도로">🗺</span>`:''}`}</button></li>`).join('')||'<li class="dim small" style="padding:10px">특이점이 없어요.'+(G?' 「＋ 특이점」으로 넣어요.':'')+'</li>'}</ul>
      <section class="gdet" aria-live="polite">${cur?detail(cur):'<p class="none">지구본의 표시나 목록에서 특이점을 고르세요.</p>'}</section></aside></div></div>`;
   st.gw=$('#gw',el);st.cv=$('#gcv',el);readColors();size();draw(0);if(!st.raf)st.raf=requestAnimationFrame(loop);
   if(window.ResizeObserver){if(st.ro)st.ro.disconnect();st.ro=new ResizeObserver(()=>{if(st.gw&&st.gw.isConnected){size();draw(performance.now())}});st.ro.observe(st.gw)}
@@ -69,7 +69,7 @@ window.NT_GLOBE=(()=>{
  function detail(it){const G=N().gm();let h=`<div class="k">${esc(ovNo(it))}</div>`;
   if(it.redacted)return h+`<h2><span class="bar">■■■■■■■■■■</span></h2><div class="meta"><span class="bar">■■■■</span> · <span class="bar">■■■■■■</span></div><p class="redline"><span class="bar">██████████████</span> <span class="bar">████████</span><br><span class="bar">██████████</span></p><p class="none">아직 관측되지 않았다. 관측되면 이곳에 기록된다.</p>${G?`<p class="small dim">GM: 이 번호(${esc(it.no)})의 특이점을 만들어 공개하면 가림막이 걷혀요.</p>`:''}`;
   const sec=G?N().data('sec','spot:'+it.id):null;
-  h+=`<div class="row" style="gap:6px"><h2 style="flex:1">${esc(it.title)}</h2>${N().visBadge(it._s._vis,'spots',it.id)}${G?`<button class="btn xs" data-g="edit" data-id="${esc(it.id)}">고치기</button>`:''}</div><div class="meta">${esc([it.year,it.place].filter(Boolean).join(' · '))} · <span class="st ${esc(it.status)}">${it.label||STL[it.status]||it.status}</span> · ${fmt(it.lat,'N','S')} ${fmt(it.lon,'E','W')}</div>`;
+  h+=`<div class="row" style="gap:6px"><h2 style="flex:1">${esc(it.title)}</h2>${N().visBadge(it._s._vis,'spots',it.id)}${goMap(it)?`<button class="btn xs" data-g="go" data-id="${esc(it.id)}">🗺 ${esc(goMap(it).name||'지도')}</button>`:''}${G?`<button class="btn xs" data-g="edit" data-id="${esc(it.id)}">고치기</button>`:''}</div><div class="meta">${esc([it.year,it.place].filter(Boolean).join(' · '))} · <span class="st ${esc(it.status)}">${it.label||STL[it.status]||it.status}</span> · ${fmt(it.lat,'N','S')} ${fmt(it.lon,'E','W')}</div>`;
   if(it.pl.length)h+=`<ul>${it.pl.map(s=>`<li>${esc(s)}</li>`).join('')}</ul>`;
   if(sec&&sec.t)h+=`<div class="conf"><div class="ck">GM 전용 · 미공개</div><div class="pre">${esc(sec.t)}</div></div>`;
   if(it.img)h+=`<div class="gmap"><img src="${esc(it.img)}" alt="${esc(it.title)} 지도" data-big="${esc(it.img)}"></div>`;
@@ -80,6 +80,11 @@ window.NT_GLOBE=(()=>{
  function pick(id,el){st.sel=id;const it=id?items(N().data('maps',(N().list('spots').find(s=>s.id===id)||{}).map)||curMapFor(el)).find(x=>x.id===id):null;
   if(!it){st.dive=false;animTo(20*RAD,st.lon,1,1100)}else if(it.redacted||it.lat==null){st.dive=false;animTo(st.lat,st.lon,1,1800,2*Math.PI)}else{st.dive=true;animTo(Math.max(-75,Math.min(75,it.lat))*RAD,it.lon*RAD,2.8,2000,2*Math.PI)}}
  function select(id,el){pick(id,el);N().render()}
+ /* 11-01 망령 「지구본 목록에서 누르면 지도가 바로 그 맵으로」: 특이점의 연결 지도(spots.go) — 비우면 이름이 겹치는 지도(지도 이름의 낱말이 특이점 이름 · 장소에 들어 있으면), '-' 면 연결 안 함 */
+ const GENERIC=new Set(['시내','지도','마을','도시','전체','지역','지하','본관','캠퍼스']);
+ function goMap(it){if(!it||it.redacted||!it._s)return null;const g=it._s.go;if(g==='-')return null;const L=N().list('maps').filter(x=>x.kind!=='globe');if(g)return L.find(x=>x.id===g)||null;
+  const hay=String((it.title||'')+' '+(it.place||''));let best=null,bl=0;for(const x of L){for(const w of String(x.name||'').split(/[\s·,/()]+/)){if(w.length<2||GENERIC.has(w))continue;if(hay.includes(w)&&w.length>bl){best=x;bl=w.length}}}return best}
+ function toMap(mm){if(!mm)return false;if(window.NT_MAP&&NT_MAP.selectMap){NT_MAP.selectMap(mm.id);N().render();N().toast(`「${mm.name||'지도'}」 지도로 넘어왔어요`);return true}return false}
  const curMapFor=()=>N().MOD.map&&N().MOD.map.curMap?N().MOD.map.curMap():null;
  function bind(el,m){const cv=st.cv;let sx,sy,slon,slat,moved,lastX,lastT;
   cv.addEventListener('pointerdown',e=>{st.drag=true;moved=false;cv.setPointerCapture(e.pointerId);cv.classList.add('drag');sx=e.clientX;sy=e.clientY;slon=st.lon;slat=st.lat;lastX=e.clientX;lastT=performance.now();st.anim=null});
@@ -92,7 +97,8 @@ window.NT_GLOBE=(()=>{
   cv.addEventListener('wheel',e=>{e.preventDefault();st.anim=null;st.z=Math.max(.8,Math.min(3.2,st.z*(e.deltaY<0?1.12:1/1.12)))},{passive:false});
   el.addEventListener('click',e=>{const b=e.target.closest('[data-g]');if(!b)return;const k=b.dataset.g,id=b.dataset.id;
    if(k==='zi')return animTo(st.lat,st.lon,Math.min(3.2,st.z*1.3),400);if(k==='zo')return animTo(st.lat,st.lon,Math.max(.8,st.z/1.3),400);
-   if(k==='back')return select(null,el);if(k==='sel'){select(id,el);if(innerWidth<980)st.gw.scrollIntoView({behavior:'smooth',block:'start'});return}
+   if(k==='back')return select(null,el);if(k==='sel'){const it=items(m).find(x=>x.id===id);if(toMap(goMap(it)))return;select(id,el);if(innerWidth<980)st.gw.scrollIntoView({behavior:'smooth',block:'start'});return}
+   if(k==='go'){const it=items(m).find(x=>x.id===id);toMap(goMap(it));return}
    if(k==='edit')return N().MOD.map.editSpot(id);
    if(k==='addspot')return addSpot(m,{lat:st.lat/RAD,lon:((st.lon/RAD+540)%360)-180})})}
  function unproj(px,py){const R=st.R0*st.z;const x=(px-st.cx)/R,y=-(py-st.cy)/R;const r2=x*x+y*y;if(r2>1)return null;const z=Math.sqrt(1-r2);const s0=Math.sin(st.lat),c0=Math.cos(st.lat);const lat=Math.asin(z*s0+y*c0);const lon=st.lon+Math.atan2(x,z*c0-y*s0);return {lat:lat/RAD,lon:((lon/RAD+540)%360)-180}}
