@@ -29,7 +29,7 @@
    10-31 망령 「감우 결과 넣기 하고 나면 결과 반영된 거 정리해서 보여 주는 창」: 넣은 뒤 resultBox — 칸마다 그림 · 요약 · 1순위 · 후보(타입 · 대가 · 종족치 · 특성) · 「✦ 고치기 창」.
    10-31 망령 「시트 각성체 칸에서 포트 · 조건 설정해서 곧바로 트레이너 쪽에 각성체로 추가하고 그쪽으로 이동」「타입 · 종족치 · 특성은 GM 이 정해 두거나 감우가 추천에 포함」:
      고치기 창(sendBox, GM)에 칸마다 「제작」 줄 — 타입 2 · 종족치 6 · 특성(제작기 특성 DB 목록). 저장 = awk/<sid>.spec {t[],base[6],ab}. 원전을 고르면 그 후보의 추천(t · base · ab)으로 채운다.
-     「⇪ 시트에 각성체로」= 저장 → 제작기 트레이너에 각성체 포켓몬 시트를 만들거나(그 칸 시트가 있으면 덮어쓰기 확인) → 그 트레이너 시트로 이동(NT_PC.select).
+     「⇪ 시트에 각성체로」= 저장 → 제작기 트레이너에 각성체 포켓몬 시트를 만들거나(그 칸 시트가 있으면 덮어쓰기 확인) (11-01 부터 그 시트로 옮겨 가지 않음).
      감우 결과 꼴에 후보마다 base(종족치 6) · ab(특성) 추천을 더했다. 묶음 글은 JSON 과 함께 꾸민 결과 목록(문서)도 달라고 한다. */
 "use strict";
 window.NT_AWK=(()=>{
@@ -492,7 +492,7 @@ window.NT_AWK=(()=>{
   const chip=(l,v)=>`<span><small>${esc(l)}</small> <b>${esc(v)}</b></span>`;
   return `<div class="awtwo"><b>2체 기준</b>${chip('4식'+cnt(o,'o'),o.length?o.join(' · '):'안 고름')}${chip('6령'+cnt(c,'c'),c.length?c.join(' · '):'안 고름')}${g.aw||g.pl?chip('3계제권',`각성체 ${g.aw||'-'} · PL ${g.pl||'-'}`):''}${w.b1?chip('통솔 B-1','각성체 2체 모두 지정 타입'):''}${w.role?chip('역할','중복 불가'):''}${ck.length?`<span class="awtwock">${ck.map(x=>`⚠ ${esc(x)}`).join('<br>')}</span>`:''}</div>`}
  function idCard(pc){if(!canSend(pc))return '';const S=[1,2].map(n=>slot(sidOf(pc,n)));const any=S.some(x=>x.img||x.note);
-  return twoLine(pc)+`<div class="awid"><b>✦ 각성체</b><span class="awidt">${S.filter(x=>x.img).map(x=>`<i style="background-image:url('${cssu(x.img)}')" title="각성체 ${x.n}"></i>`).join('')}<small>${any?S.filter(x=>x.note).map(x=>esc(x.note.slice(0,40))).join(' · ')||'그림 있음':'각성체 그림과 바라는 점을 넣으면 어울리는 원전 인물을 골라 드려요'}</small></span><button type="button" class="btn xs" onclick="NT_AWK.sendBox('${esc(pc)}')">${any?'고치기':'넣기'}</button></div>`}
+  return twoLine(pc)+`<div class="awid"><b>✦ 각성체</b><span class="awidt">${S.filter(x=>x.img).map(x=>`<i style="background-image:url('${cssu(x.img)}')" title="각성체 ${x.n}"></i>`).join('')}<small>${any?S.filter(x=>x.note&&!slotRaw(x.pc,x.n).fixed).map(x=>esc(x.note.slice(0,40))).join(' · ')||(S.every(x=>slotRaw(x.pc,x.n).fixed)?'두 칸 모두 확정':'그림 있음'):'각성체 그림과 바라는 점을 넣으면 어울리는 원전 인물을 골라 드려요'}</small></span><button type="button" class="btn xs" onclick="NT_AWK.sendBox('${esc(pc)}')">${any?'고치기':'넣기'}</button></div>`}
  /* 10-30 망령 「이 설정에서 추천 후보 중에 고르던가 직접 입력하고 확정도」: GM 이면 칸마다 원전 줄 — 감우 추천(extra · picks) · 고른 후보 목록에서 고르거나 이름을 직접 적고 ✦ 확정.
     확정 안 하고 저장하면 DB 에 있는 이름은 고른 후보(awk.pick), 없는 이름은 칸의 src 로 남는다 */
  function srcCands(sid){const r=rec(sid);const rd=r.read||{};const out=[];const add=(n,why)=>{n=String(n||'').trim();if(n&&!out.some(q=>q.n===n))out.push({n,why:why||''})};
@@ -524,7 +524,7 @@ window.NT_AWK=(()=>{
   return `<div class="awspec"><div class="awsp-h"><b>제작 설정</b><small>${sp.mk?'⇄ 지금 제작기 시트 값':'비워 두면 감우 추천 · 고른 후보 값으로'}</small><span class="sp"></span><span class="awsp-sum" data-sbt="${i}"></span></div>
    <div class="awsp-row"><div class="awsp-f"><span class="awsp-l">타입</span><div class="awsp-tys">${tsel(0)}${tsel(1)}</div></div><div class="awsp-f grow"><span class="awsp-l">특성</span><div class="awsp-abw"><select class="awsp-so-sel" data-sso="${i}" title="특성을 아직 안 골라도 특성 소켓(특성 TO)만 정해 둘 수 있어요"><option value="">소켓 —</option>${['0.5','1','1.5','2','2.5','3','3.5','4'].map(v=>`<option value="${v}" ${String(sp.so||'')===v?'selected':''}>소켓 ${v}</option>`).join('')}</select><input class="awsp-ab" data-sab="${i}" list="awAbList" value="${esc(sp.ab||'')}" placeholder="이름을 적거나 DB 에서 고르기"><button type="button" class="btn sm awsp-abp" data-sabp="${i}">🔍 특성 DB</button></div><div class="awsp-abi" data-sabi="${i}"></div></div></div>
    <div class="awsp-st">${BASEN.map((n,k)=>`<div class="awsp-s ${gcls(grd(bv(k)))}" data-sbc="${i}" data-k="${k}"><div class="awsp-sl"><span class="awsp-l">${n}</span><b class="awsp-rk" data-sbr="${i}" data-k="${k}">${grd(bv(k))}</b></div><input type="number" min="1" max="255" step="1" inputmode="numeric" data-sb="${i}" data-k="${k}" value="${esc(bv(k))}" placeholder="—"><i class="awsp-bar"><b data-sbb="${i}" data-k="${k}"></b></i></div>`).join('')}</div>
-   <div class="awsp-ft"><small class="dim">저장하고 제작기 「${esc(pcName(x.pc))}」에 이 칸 각성체 시트를 만든 뒤 그 시트로 가요</small><span class="sp"></span><button type="button" class="btn sm pri awsp-go" data-smk="${i}">⇪ 시트에 각성체로</button></div></div>`}
+   <div class="awsp-ft"><small class="dim">저장하고 제작기 「${esc(pcName(x.pc))}」에 이 칸 각성체 시트를 만들어요 (화면은 그대로)</small><span class="sp"></span><button type="button" class="btn sm pri awsp-go" data-smk="${i}">⇪ 시트에 각성체로</button></div></div>`}
  function candOf(sid,n){const rd=rec(sid).read||{};const ex=(rd.extra||[]).find(e=>e.n===n);if(ex)return ex;const L=all();const db=L.find(q=>q.n===n);if(!db)return null;const p=(rd.picks||[]).find(q=>q.id===db.id)||{};return Object.assign({},db,{t:p.t&&p.t.length?p.t:db.t,base:p.base||baseFix(db.base)||null,ab:p.ab||db.ab||'',so:p.so||db.so||'',cost:p.cost||'',why:p.why||''})}
  /* 10-31 망령 「각성체 DB 에서 선택할 방법이 없잖니 — 클릭하면 각성체 칸에 반영」「타입 · 종족치도 DB 에 저장」「추천 항목을 추가 · 삭제 · 관리」 */
  const specOfCand=e=>{const o={};const t=(e&&e.t||[]).filter(t=>T2C[t]);if(t.length)o.t=t.slice(0,2);const b=baseFix(e&&e.base);if(b)o.base=b;if(e&&e.ab)o.ab=String(e.ab);if(e&&e.so)o.so=String(e.so);return o};
@@ -616,7 +616,7 @@ window.NT_AWK=(()=>{
     pid=Math.random().toString(36).slice(2,10);const p=Object.assign(newPoke(),{id:pid});fill(p);await DBS.makerPut('pokemon',pid,{tid:pc,data:p});await MK().edit('trainers',pc,d=>{d.pids=(d.pids||[]).concat(pid)})}
    await save(sid,y=>{y.made={pid,id:(pk&&pk.n===nm?pk.id:''),n:nm,at:new Date().toISOString()}});await MK().load(true)}
   catch(err){N().toast('제작기에 못 썼어요: '+(err.message||err));return false}
-  N().closeModal();N().toast(`${m?'고쳤어요':'만들었어요'} — 「${t.name}」 시트로 갈게요`);if(window.NT_PC&&NT_PC.select)NT_PC.select(N().data('npc',pc)&&!N().data('pc',pc)?'npc':'pc',pc);return true}
+  N().closeModal();N().render();N().toast(`${m?'고쳤어요':'만들었어요'} — 「${t.name}」 시트의 각성체 칸에 들어갔어요`);return true}   /* 11-01 망령 「보내고 바로 이동하는 거 은근 불편」: 시트로 옮겨 가지 않고 이 화면에 머문다 */
 
  N().MOD.awk={render:entry};
  N().MOD.awdb={render};

@@ -26,12 +26,15 @@ window.NT_UNIV=(()=>{
    <p class="small dim" style="margin-top:0">저장하면 제작기 트레이너 시트의 고유 포텐셜에 바로 들어가요.</p>
    <div class="mrow"><label class="lbl">이름<input id="uqN" type="text" value="${esc(u.name)}" placeholder="예) 신출귀몰 종횡무진"></label><label class="lbl">문구 <small class="dim">(한자 · 표어 · 비우면 안 보여요)</small><input id="uqL" type="text" value="${esc(u.line||'')}" placeholder="예) 神出鬼沒 縱橫無盡"></label></div>
    <label class="lbl">효과<textarea id="uqE" rows="6" placeholder="【등장】【소진】/ …">${esc(brN(u.eff))}</textarea></label>
+   <label class="lbl">구문 <small class="dim">웹툴 배틀 자동 처리 · 비우면 같은 이름의 레디메이드 또는 손으로</small><textarea id="uqA" rows="2" spellcheck="false" style="font-family:var(--mono,monospace);font-size:12px" placeholder="예) 랭크 공격+1 임시">${esc(u.auto||'')}</textarea></label>
+   <div id="uqW"></div>
    <div class="ux-prev" id="uqP"></div>
    <div class="row" style="margin-top:12px">${L[i]&&(L[i].name||L[i].eff)?'<button class="btn xs ghost danger" id="uqDel">비우기</button>':''}<span class="sp"></span><button class="btn pri" id="uqOk">저장</button></div>`,'wide');
   const pv=()=>{$('#uqP',md).innerHTML=`<div class="ux-uc solo">${$('#uqL',md).value.trim()?`<div class="ux-line">${esc($('#uqL',md).value.trim())}</div>`:''}<div class="ux-ub"><div class="ux-un"><i class="ux-gem"></i><b>${esc($('#uqN',md).value.trim()||'(이름)')}</b></div><div class="ux-ue">${fx($('#uqE',md).value)}</div></div></div>`};
   md.addEventListener('input',pv);pv();
+  if(window.NT_WORD)NT_WORD.mount($('#uqW',md),{eff:$('#uqE',md),auto:$('#uqA',md),kind:'pot'});   /* 11-01 망령 「노트쪽 제작기에도 문법 점검 · 구문 추천」 */
   const save=v=>{N().closeModal();run('trainers',id,d=>{d.unique=Array.isArray(d.unique)?d.unique:[];while(d.unique.length<=i)d.unique.push({name:'',eff:''});const o=Object.assign({},d.unique[i]||{},v);if(!o.line)delete o.line;d.unique[i]=o},'고유 포텐셜을 제작기에 넣었어요')};
-  $('#uqOk',md).onclick=()=>save({name:$('#uqN',md).value.trim(),line:$('#uqL',md).value.trim(),eff:$('#uqE',md).value.trim()});
+  $('#uqOk',md).onclick=()=>{const a=$('#uqA',md).value.trim();save(Object.assign({name:$('#uqN',md).value.trim(),line:$('#uqL',md).value.trim(),eff:$('#uqE',md).value.trim()},a||u.auto?{auto:a}:{}))};
   const dl=$('#uqDel',md);if(dl)dl.onclick=async()=>{if(await N().confirmBox('이 고유 포텐셜을 비울까요? (칸은 남아요)','비우기'))save({name:'',line:'',eff:'',auto:''})}}
 
  /* ===== 덱 ===== */
@@ -113,9 +116,10 @@ window.NT_UNIV=(()=>{
      ${r&&r[4]&&k!==make?`<div class="ux-ue">${fx(r[4])}</div>`:''}
      ${k===pick?`<div class="ux-ip"><input type="search" id="ieQ" data-nodirty placeholder="소지품 이름 · 종류 · 효과로 찾기" value="${esc(q)}"><div class="ux-ipl" id="ieL"></div></div>`:''}
      ${k===make?(()=>{const o=Object.assign({name:x.item||'',kind:'오리지널',cons:false,sock:'-',eff:'',auto:''},x.own||{});return `<div class="ux-im"><div class="mrow"><label class="lbl">이름<input id="imN" type="text" value="${esc(o.name)}"></label><label class="lbl">종류<input id="imK" type="text" list="imKL" value="${esc(o.kind)}"><datalist id="imKL">${kinds().map(k=>`<option value="${esc(k)}">`).join('')}</datalist></label><label class="lbl">소모품<select id="imC"><option value="">아니오</option><option value="O" ${o.cons?'selected':''}>소모품 (쓰면 없어짐)</option></select></label><label class="lbl">소켓<input id="imS" type="text" value="${esc(o.sock)}" style="width:70px"></label></div>
-      <label class="lbl">효과<textarea id="imE" rows="4">${esc(brN(o.eff))}</textarea></label><label class="lbl">구문 <small class="dim">웹툴 배틀 자동 처리 · 비우면 효과 글을 읽어요</small><textarea id="imA" rows="2" style="font-family:var(--mono,monospace);font-size:12px">${esc(o.auto||'')}</textarea></label>
+      <label class="lbl">효과<textarea id="imE" rows="4">${esc(brN(o.eff))}</textarea></label><label class="lbl">구문 <small class="dim">웹툴 배틀 자동 처리 · 비우면 효과 글을 읽어요</small><textarea id="imA" rows="2" spellcheck="false" style="font-family:var(--mono,monospace);font-size:12px">${esc(o.auto||'')}</textarea></label><div id="imW"></div>
       <div class="row" style="gap:6px;margin-top:6px"><span class="sp"></span><button type="button" class="btn xs ghost" data-ie="mkcancel">그만두기</button><button type="button" class="btn xs pri" data-ie="mkok" data-k="${k}">이 칸에 두기</button></div></div>`})():''}</div>`}).join('')
     +(S.length<3?'<button type="button" class="btn xs ghost" data-ie="add" style="margin-top:6px">＋ 소지품 칸</button> <small class="dim">기본 1칸 · 2 · 3번 칸은 제작기 조건(특성 · 포텐셜)을 따라요</small>':'');
+   if(make>=0&&window.NT_WORD)NT_WORD.mount($('#imW',md),{eff:$('#imE',md),auto:$('#imA',md),kind:'item',name:()=>$('#imN',md).value.trim(),nameEl:$('#imN',md)});   /* 11-01 망령: 오리지널 소지품도 워딩 점검 · 구문 추천 */
    if(pick>=0){const i=$('#ieQ',md);list();i.addEventListener('input',()=>{q=i.value;list()});setTimeout(()=>i.focus(),0)}};
   const list=()=>{const el=$('#ieL',md);if(!el)return;const s=q.trim().toLowerCase();const L=MK().itemList().filter(r=>!s||[r[1],r[2],r[0],r[4]].some(v=>String(v||'').toLowerCase().includes(s))).slice(0,60);
    el.innerHTML=L.length?L.map(r=>`<button type="button" class="ux-ipr" data-ipk="${esc(r[1])}"><b>${esc(r[1])}</b><small>${esc(r[0]||'')}${r[3]==='O'?' · 소모품':''}</small><em>${esc(brN(r[4]).slice(0,110))}</em></button>`).join(''):`<div class="small dim" style="padding:8px 2px">${MK().itemList().length?'찾는 소지품이 없어요 — 「오리지널 만들기」로 만들 수 있어요':'소지품 DB 를 불러오는 중…'}</div>`};

@@ -9,6 +9,13 @@ window.NT_DG=(()=>{
  const N=()=>window.NT;const esc=s=>N().esc(s);
  const TY={entry:['입구','⛩','#59b6ff'],room:['통로','◇','#8fa3bf'],battle:['조우 구역','☠','#ff4d5e'],trap:['함정·기믹','⚙','#ffa53a'],puzzle:['수수께끼','✦','#c58bff'],treasure:['보물','◆','#ffd84a'],safe:['세이프룸','☗','#3ee0a1'],boss:['심층부','♛','#ff2a6d']};
  const ty=t=>TY[t]||TY.room;
+ /* 11-01 망령 「던전 글자 잘 안 보임 · 맵 촌티」 — 판 위 방 표시는 이모지 대신 작은 선 그림 (16×16) */
+ const IC={entry:'<path d="M3 14V7.5a5 5 0 0 1 10 0V14M1.5 14h13M6 14v-3.5a2 2 0 0 1 4 0V14"/>',room:'<path d="M8 2.5 13.5 8 8 13.5 2.5 8Z"/>',battle:'<path d="M3 3l8.5 8.5M13 3 4.5 11.5M9.5 13.5l4-4M2.5 9.5l4 4"/>',trap:'<path d="M1.5 13.5h13M2.5 13.5 5 6l2.5 7.5L10 6l2.5 7.5"/>',puzzle:'<path class="f" d="M8 1.5 9.6 6.4 14.5 8 9.6 9.6 8 14.5 6.4 9.6 1.5 8 6.4 6.4Z"/>',treasure:'<path d="M2 7.5h12V13H2ZM2 7.5C2 5 4.5 3.5 8 3.5S14 5 14 7.5M8 9.5v1.5"/>',safe:'<path d="M8 1.8c.6 2.6 4 3.7 4 7.4a4 4 0 0 1-8 0c0-1.9 1-3 1.9-3.8.1 1.6.8 2.5 1.7 2.7-.4-2.4-.4-4.1.4-6.3Z"/>',boss:'<path class="f" d="M2 12.5 2.8 5l3.1 3.1L8 3l2.1 5.1L13.2 5l.8 7.5Z"/>'};
+ const ico=t=>`<svg viewBox="0 0 16 16" aria-hidden="true">${IC[t]||IC.room}</svg>`;
+ /* 통로: 두 방 사이를 가로 · 세로 꺾인 길(모서리 둥글게)로. 거의 한 줄이면 방 몸통 안에서 맞춰 곧게 */
+ function cor(a,b){const dx=b.x-a.x,dy=b.y-a.y,sx=Math.sign(dx),sy=Math.sign(dy),ax=Math.abs(dx),ay=Math.abs(dy);if(ax<3||ay<3)return `M${a.x} ${a.y}L${b.x} ${b.y}`;if(ay>ax&&ax<36){const m=(a.x+b.x)/2;return `M${m} ${a.y}V${b.y}`}if(ax>ay&&ay<12){const m=(a.y+b.y)/2;return `M${a.x} ${m}H${b.x}`}
+  if(ax>=ay){const m=(a.x+b.x)/2,r=Math.min(22,ax/2,ay/2);return `M${a.x} ${a.y}H${m-sx*r}Q${m} ${a.y} ${m} ${a.y+sy*r}V${b.y-sy*r}Q${m} ${b.y} ${m+sx*r} ${b.y}H${b.x}`}
+  const m=(a.y+b.y)/2,r=Math.min(22,ax/2,ay/2);return `M${a.x} ${a.y}V${m-sy*r}Q${a.x} ${m} ${a.x+sx*r} ${m}H${b.x-sx*r}Q${b.x} ${m} ${b.x} ${m+sy*r}V${b.y}`}
  const RK={long:'긴 휴식',mid:'중간 휴식',short:'짧은 휴식',breath:'숨돌리기'};
  const W=1000,H=640;
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -103,15 +110,17 @@ window.NT_DG=(()=>{
  function save(now){if(!canEd())return;clearTimeout(E.t);const id=E.id,d=JSON.parse(JSON.stringify(E.d));const go=()=>N().put('dgs',id,d);if(now)return go();E.t=setTimeout(go,500)}
  function openEd(id){const d=N().data('dgs',id);if(!d)return N().toast('던전을 찾지 못했어요');E.id=id;E.d=JSON.parse(JSON.stringify(d));E.d.r=E.d.r||{};E.d.l=E.d.l||{};E.sel='';E.mode='move';
   const G=canEd();const vis=(N().doc('dgs',id)||{}).vis||'gm';
-  E.m=N().openModal(`<div data-nodirty class="dged ${G?'gm':'pl'}"><div class="mhead dghead">${G?`<input class="dgname" data-df="n" value="${esc(E.d.n||'')}" placeholder="던전 이름">`:`<h2>⛩ ${esc(E.d.n||'던전')}</h2>`}
+  E.m=N().openModal(`<div data-nodirty class="dged ${G?'gm':'pl'}"><div class="mhead dghead">${G?`<input type="text" class="dgname" data-df="n" spellcheck="false" autocomplete="off" value="${esc(E.d.n||'')}" placeholder="던전 이름">`:`<h2>⛩ ${esc(E.d.n||'던전')}</h2>`}
    <span class="sp"></span>${G?`${N().visSelect(vis,'dgVis',{})}${omHref(id)?`<a class="btn sm" href="${esc(omHref(id))}" target="oremas" rel="noopener" title="이어 둔 웹툴 방의 던전 탭으로 보내요. 웹툴에 같은 던전이 있으면 바뀐 때만 덮어써요">🎲 웹툴로</a>`:`<span class="small dim" title="설정 탭 「세 도구 잇기」에서 웹툴 방을 이어 두면 바로 보낼 수 있어요">웹툴 방 없음</span>`}<button type="button" class="btn sm ghost" data-de="json" title="웹툴 「JSON 가져오기」에 붙여 넣을 글">JSON</button><button type="button" class="btn sm ghost danger" data-de="del" title="던전 지우기">🗑</button>`:''}<button class="btn ghost" data-x>닫기</button></div>
    ${G?`<div class="dgtools"><button type="button" class="btn xs" data-de="add">＋ 방</button><span class="seg"><button type="button" data-de="m:move" class="on">✋ 옮기기</button><button type="button" data-de="m:link">🔗 잇기</button></span><label class="btn xs ghost">🖼 판 그림<input type="file" accept="image/*" data-dimg="bg" hidden style="display:none"></label>${E.d.bg?'<button type="button" class="btn xs ghost" data-de="bgdel">판 그림 빼기</button>':''}<span class="small dim dghelp">방을 끌어 옮겨요 · 방 오른쪽 점을 끌어 다른 방에 놓으면 통로 · 선을 누르면 통로 지우기</span></div>`:''}
    <div class="dgwrap"><div class="dgcs"><div class="dgc" id="dgC"></div></div><aside class="dgp" id="dgP"></aside></div></div>`,'wide dgm');
   draw();bind()}
  function nodeHTML(id,r){const t=ty(r.t);const hid=(E.d.hide||[]).includes(id);
-  return `<div class="dgn ${id===E.sel?'on':''} ${hid?'hid':''} ${id===E.d.st?'st':''}" data-n="${esc(id)}" style="left:${r.x/W*100}%;top:${r.y/H*100}%;--c:${t[2]}">${r.b?`<span class="dgth" style="background-image:url('${N().cssu(r.b)}')"></span>`:''}<i>${t[1]}</i><b>${esc(r.n||'')}</b>${canEd()?'<em class="dgport" title="끌어서 다른 방과 잇기"></em>':''}</div>`}
+  return `<div class="dgn k-${TY[r.t]?r.t:'room'} ${id===E.sel?'on':''} ${hid?'hid':''} ${id===E.d.st?'st':''}" data-n="${esc(id)}" title="${esc(t[0])}" style="left:${r.x/W*100}%;top:${r.y/H*100}%;--c:${t[2]}">${r.b?`<span class="dgth" style="background-image:url('${N().cssu(r.b)}')"></span>`:''}<i>${ico(r.t)}</i><b>${esc(r.n||'')}</b>${canEd()?'<em class="dgport" title="끌어서 다른 방과 잇기"></em>':''}</div>`}
+ /* 11-01 통로 = 벽(바깥 선) 을 먼저 다 깔고 바닥(안쪽 선)을 위에 → 갈림길이 한 굴처럼 이어진다. 숨긴 방에 닿은 통로는 점선 벽 */
  function linesSVG(){const r=R();const G=canEd();const hide=new Set(E.d.hide||[]);const ok=id=>G||!hide.has(id);
-  return Object.keys(E.d.l).map(k=>{const [a,b]=k.split('~');if(!r[a]||!r[b]||!ok(a)||!ok(b))return '';return `<g class="${E.sel==='l:'+k?'on':''}"><line x1="${r[a].x}" y1="${r[a].y}" x2="${r[b].x}" y2="${r[b].y}"/>${G?`<line class="hit" data-l="${esc(k)}" x1="${r[a].x}" y1="${r[a].y}" x2="${r[b].x}" y2="${r[b].y}"/>`:''}</g>`}).join('')+'<line id="dgTmp" class="tmp" x1="0" y1="0" x2="0" y2="0" style="display:none"/>'}
+  const L=Object.keys(E.d.l).map(k=>{const [a,b]=k.split('~');if(!r[a]||!r[b]||!ok(a)||!ok(b))return null;return {k,d:cor(r[a],r[b]),c:(E.sel==='l:'+k?'on ':'')+(hide.has(a)||hide.has(b)?'hid':'')}}).filter(Boolean);
+  return `<g class="dgw">${L.map(x=>`<path class="${x.c}" d="${x.d}"/>`).join('')}</g><g class="dgf">${L.map(x=>`<path class="${x.c}" d="${x.d}"/>`).join('')}</g>${L.filter(x=>x.c.startsWith('on')).map(x=>`<g class="dgw"><path class="${x.c}" d="${x.d}"/></g><g class="dgf"><path class="${x.c}" d="${x.d}"/></g>`).join('')}${G?`<g class="dgh">${L.map(x=>`<path class="hit" data-l="${esc(x.k)}" d="${x.d}"/>`).join('')}</g>`:''}<line id="dgTmp" class="tmp" x1="0" y1="0" x2="0" y2="0" style="display:none"/>`}
  function draw(){const c=E.m&&E.m.querySelector('#dgC');if(!c)return;const G=canEd();const hide=new Set(E.d.hide||[]);
   c.style.backgroundImage=E.d.bg?`url('${N().cssu(E.d.bg)}')`:'';c.classList.toggle('hasbg',!!E.d.bg);c.classList.toggle('linking',E.mode==='link');
   c.innerHTML=`<svg class="dgl" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${linesSVG()}</svg>${Object.entries(R()).filter(([id])=>G||!hide.has(id)).map(([id,r])=>nodeHTML(id,r)).join('')}`;panel()}
@@ -120,21 +129,21 @@ window.NT_DG=(()=>{
  function panel(){const p=E.m&&E.m.querySelector('#dgP');if(!p)return;const G=canEd();const r=R()[E.sel];
   if(E.sel.startsWith('l:')){const [a,b]=E.sel.slice(2).split('~');p.innerHTML=`<h3>통로</h3><p>${esc((R()[a]||{}).n||'?')} ↔ ${esc((R()[b]||{}).n||'?')}</p><button type="button" class="btn sm danger" data-de="ldel">이 통로 지우기</button> <button type="button" class="btn sm ghost" data-de="desel">닫기</button>`;return}
   if(r&&G){const t=ty(r.t);const hid=(E.d.hide||[]).includes(E.sel);
-   p.innerHTML=`<div class="row" style="gap:6px"><b style="color:${t[2]}">${t[1]} ${esc(t[0])}</b><span class="sp"></span><button type="button" class="btn xs ghost" data-de="desel">← 던전</button></div>
-    <label>이름<input data-rf="n" value="${esc(r.n||'')}" maxlength="40"></label>
+   p.innerHTML=`<div class="row" style="gap:6px"><b class="dgpk" style="--c:${t[2]}"><i>${ico(r.t)}</i>${esc(t[0])}</b><span class="sp"></span><button type="button" class="btn xs ghost" data-de="desel">← 던전</button></div>
+    <label>이름<input type="text" data-rf="n" value="${esc(r.n||'')}" maxlength="40" spellcheck="false" autocomplete="off"></label>
     <label>종류<select data-rf="t">${Object.entries(TY).map(([k,v])=>`<option value="${k}" ${k===r.t?'selected':''}>${v[1]} ${v[0]}</option>`).join('')}</select></label>
     <div class="dgimg" id="dgImg">${r.b?`<img src="${esc(r.b)}" alt="">`:'<span>🖼 방 그림을 끌어 놓거나 눌러서 올려요<br><small>웹툴에서 이 방에 들어가면 배경으로 떠요</small></span>'}<input type="file" accept="image/*" hidden></div>
-    <div class="row" style="gap:6px;margin-top:4px">${r.b?'<button type="button" class="btn xs ghost" data-de="imgdel">그림 빼기</button>':''}<input data-rf="b" value="${esc(r.b||'')}" placeholder="또는 그림 주소 https://…" style="flex:1;min-width:0"></div>
+    <div class="row" style="gap:6px;margin-top:4px">${r.b?'<button type="button" class="btn xs ghost" data-de="imgdel">그림 빼기</button>':''}<input type="text" data-rf="b" spellcheck="false" autocomplete="off" value="${esc(r.b||'')}" placeholder="또는 그림 주소 https://…" style="flex:1;min-width:0"></div>
     <label>GM 메모<textarea data-rf="m" rows="6">${esc(r.m||'')}</textarea></label>
     ${r.sk?`<div class="dgsk small">${skLine(r.sk)}<br><span class="dim">체크 칸은 웹툴 던전 탭에서 고쳐요</span></div>`:''}
-    <label>단서 제목<input data-rf="cl.t" value="${esc((r.cl||{}).t||'')}" placeholder="보물 · 단서 방에서 보여 줄 것"></label><label>단서 내용<textarea data-rf="cl.d" rows="3">${esc((r.cl||{}).d||'')}</textarea></label>
+    <label>단서 제목<input type="text" data-rf="cl.t" spellcheck="false" autocomplete="off" value="${esc((r.cl||{}).t||'')}" placeholder="보물 · 단서 방에서 보여 줄 것"></label><label>단서 내용<textarea data-rf="cl.d" rows="3">${esc((r.cl||{}).d||'')}</textarea></label>
     <label>휴식<select data-rf="rk"><option value="">없음</option>${Object.entries(RK).map(([k,v])=>`<option value="${k}" ${k===r.rk?'selected':''}>${v}</option>`).join('')}</select></label>
     <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px"><button type="button" class="btn xs" data-de="start" ${E.d.st===E.sel?'disabled':''}>${E.d.st===E.sel?'★ 시작 방':'시작 방으로'}</button><button type="button" class="btn xs ${hid?'pri':'ghost'}" data-de="hide" title="공개한 던전이라도 PL 미리 보기에서 이 방을 숨겨요">${hid?'🙈 PL 에게 숨김':'PL 에게 숨기기'}</button><span class="sp"></span><button type="button" class="btn xs ghost danger" data-de="rdel">방 지우기</button></div>`;
    N().bindDrop(p.querySelector('#dgImg'),fs=>upImg(fs[0],'room'),false,'image/*');return}
-  if(r){const t=ty(r.t);p.innerHTML=`<div class="row"><b style="color:${t[2]}">${t[1]} ${esc(t[0])}</b><span class="sp"></span><button type="button" class="btn xs ghost" data-de="desel">←</button></div><h3>${esc(r.n||'')}</h3>${r.b?`<img class="dgpimg" src="${esc(r.b)}" alt="" data-big="${esc(r.b)}">`:''}${r.cl&&(r.cl.t||r.cl.d)?`<div class="dgclue"><b>${esc(r.cl.t||'단서')}</b><div class="pre">${esc(r.cl.d||'')}</div></div>`:''}`;return}
+  if(r){const t=ty(r.t);p.innerHTML=`<div class="row"><b class="dgpk" style="--c:${t[2]}"><i>${ico(r.t)}</i>${esc(t[0])}</b><span class="sp"></span><button type="button" class="btn xs ghost" data-de="desel">←</button></div><h3>${esc(r.n||'')}</h3>${r.b?`<img class="dgpimg" src="${esc(r.b)}" alt="" data-big="${esc(r.b)}">`:''}${r.cl&&(r.cl.t||r.cl.d)?`<div class="dgclue"><b>${esc(r.cl.t||'단서')}</b><div class="pre">${esc(r.cl.d||'')}</div></div>`:''}`;return}
   const n=Object.keys(R()).length,nl=Object.keys(E.d.l).length,sp=E.d.spot;const src=E.d.src||{};
   p.innerHTML=G?`<h3>던전</h3><label>장소<select data-df="spot"><option value="">(장소 없음)</option>${N().list('spots').sort((a,b)=>String(a.num||'').localeCompare(String(b.num||''),'ko',{numeric:true})).map(s=>`<option value="${esc(s.id)}" ${s.id===sp?'selected':''}>${esc((s.num?s.num+'. ':'')+(s.name||''))}</option>`).join('')}</select></label>
-    <label>주인<input data-df="o" value="${esc(E.d.o||'')}" placeholder="던전의 주인 (보스)"></label><label>분위기<input data-df="a" value="${esc(E.d.a||'')}" placeholder="어둠 · 동굴"></label>
+    <label>주인<input type="text" data-df="o" spellcheck="false" autocomplete="off" value="${esc(E.d.o||'')}" placeholder="던전의 주인 (보스)"></label><label>분위기<input type="text" data-df="a" spellcheck="false" autocomplete="off" value="${esc(E.d.a||'')}" placeholder="어둠 · 동굴"></label>
     <div class="small dim" style="margin-top:8px">방 ${n} · 통로 ${nl}${src.from==='sim'?` · 시뮬레이터 ${esc(TIER[src.tier]||src.tier||'')}${src.seed?' 씨앗 '+esc(src.seed):''}`:src.from==='om'?' · 웹툴에서 받음':''}</div>${src.note?`<div class="small dim pre" style="margin-top:4px">${esc(src.note)}</div>`:''}
     <div class="small dim" style="margin-top:10px">방을 누르면 이름 · 종류 · 그림 · 메모를 고쳐요. 체크 · 야생 배치처럼 전투 쪽은 웹툴 던전 탭에서 고치고 「📓 던전을 노트로」로 돌려보내요.</div>`
    :`<h3>${esc(E.d.n||'')}</h3>${E.d.a?`<div class="small dim">${esc(E.d.a)}</div>`:''}<div class="small dim" style="margin-top:8px">방을 누르면 이름 · 그림을 봐요.</div>`}
@@ -163,7 +172,7 @@ window.NT_DG=(()=>{
    if(k==='del'){if(!await N().confirmBox(`던전 「${E.d.n||''}」 를 지울까요? (웹툴에 보낸 던전은 웹툴에 그대로 남아요)`,'지우기'))return;clearTimeout(E.t);await N().del('dgs',E.id);N().closeModal();N().toast('던전을 지웠어요')}});
   /* 끌기: 방 옮기기 · 점에서 끌어 잇기 · 잇기 모드에서 두 방 차례로 누르기 */
   let P=null;const pt=e=>{const b=c.getBoundingClientRect();return [clamp(Math.round((e.clientX-b.left)/b.width*W),30,970),clamp(Math.round((e.clientY-b.top)/b.height*H),30,600)]};
-  c.addEventListener('pointerdown',e=>{const hit=e.target.closest('line.hit');if(hit&&canEd()){E.sel='l:'+hit.dataset.l;draw();return}
+  c.addEventListener('pointerdown',e=>{const hit=e.target.closest('.hit');if(hit&&canEd()){E.sel='l:'+hit.dataset.l;draw();return}
    const n=e.target.closest('.dgn');if(!n){if(E.sel){E.sel='';draw()}return}const id=n.dataset.n;
    if(!canEd()){E.sel=id;draw();return}
    if(e.target.closest('.dgport')||E.mode==='link'){if(E.mode==='link'&&E.from&&E.from!==id){toggleLink(E.from,id);E.from='';draw();return}P={link:id,x0:e.clientX,y0:e.clientY};E.from=id;c.setPointerCapture(e.pointerId);e.preventDefault();return}

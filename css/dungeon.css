@@ -21,39 +21,62 @@
 
 .modal.dgm{width:min(1320px,100%)}
 .dged .dghead{gap:6px;flex-wrap:wrap}
-.dged .dgname{font-size:18px;font-weight:700;min-width:0;flex:1 1 220px;max-width:420px}
+.dged .dgname{font-family:var(--head);font-weight:400;font-size:20px;letter-spacing:.02em;padding:4px 10px;min-width:0;flex:1 1 220px;max-width:420px;color:var(--fg)}
 .dgtools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0 8px}
 .dgtools .seg{display:inline-flex}.dgtools .seg button{border:1px solid var(--line2,#555);background:transparent;color:inherit;padding:2px 10px;font-size:12px;cursor:pointer}
 .dgtools .seg button.on{background:#ffd84a;color:#111;border-color:#ffd84a}
 .dgtools .dghelp{flex:1 1 260px}
 .dgwrap{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:12px;align-items:start}
 @media(max-width:900px){.dgwrap{grid-template-columns:1fr}}
-.dgc{position:relative;width:100%;aspect-ratio:1000/640;background:#0b0e16 radial-gradient(circle at 50% 40%,#1b2235,#0b0e16 70%);background-size:cover;background-position:center;border:1px solid #2a3348;border-radius:8px;overflow:hidden;touch-action:pan-x pan-y;user-select:none;color:#eef}
 .dgcs{overflow:auto;min-width:0}
-.dgn{touch-action:none}
-@media(max-width:760px){.dgc{width:720px}.dgn{font-size:11px;max-width:120px;padding:4px 8px 4px 5px}.dgtools .dghelp{display:none}}
-.dgc.hasbg::before{content:'';position:absolute;inset:0;background:rgba(5,8,14,.35);pointer-events:none}
-.dgc .dgl{position:absolute;inset:0;width:100%;height:100%}
-.dgc .dgl line{stroke:#8fa3bf;stroke-width:6;stroke-linecap:round;opacity:.85;vector-effect:non-scaling-stroke}
-.dgc .dgl line{stroke-width:5px}
-.dgc .dgl g.on line:not(.hit){stroke:#ffd84a;opacity:1}
-.dgc .dgl line.hit{stroke:transparent;stroke-width:18px;cursor:pointer;opacity:1}
-.dgc .dgl line.tmp{stroke:#ffd84a;stroke-dasharray:6 5;stroke-width:3px}
-.dgn{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:5px;padding:5px 10px 5px 6px;min-width:64px;max-width:150px;background:rgba(10,13,22,.92);border:2px solid var(--c);border-radius:8px;cursor:grab;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.6);z-index:2}
+/* 11-01 망령 「던전 글자 잘 안 보임 · 맵 촌티」 — 판: 먹빛 바탕 · 모눈 점 · 가장자리 어둡게. 통로는 벽 + 바닥 두 겹, 방은 종류 표 붙은 패 */
+.dgc{--dsel:#ffd84a;position:relative;width:100%;aspect-ratio:1000/640;background:#0c1019 radial-gradient(ellipse 70% 60% at 50% 42%,#18203070,transparent 75%);background-size:cover;background-position:center;border:1px solid #232c3f;border-radius:10px;overflow:hidden;touch-action:pan-x pan-y;user-select:none;color:#e9edf5;box-shadow:inset 0 0 0 1px rgba(255,255,255,.03),0 10px 30px -12px rgba(0,0,0,.8)}
+.dgc::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;background-image:radial-gradient(circle,rgba(160,180,215,.2) 1px,transparent 1.3px),linear-gradient(rgba(130,150,190,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(130,150,190,.07) 1px,transparent 1px);background-size:2.5% 3.90625%,10% 15.625%,10% 15.625%;background-position:1.25% 1.953%,0 0,0 0}
+.dgc::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse 85% 80% at 50% 50%,transparent 55%,rgba(3,5,10,.6))}
+.dgc.hasbg::before{background-color:rgba(6,9,15,.5)}
+.dgc .dgl{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+.dgc .dgl path{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.dgc .dgw path{stroke:#4f5d78;stroke-width:15px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
+.dgc .dgw path.hid{stroke-dasharray:5 6;stroke:#6b7895;filter:none}
+.dgc .dgf path{stroke:#161c29;stroke-width:10px}
+.dgc .dgw path.on{stroke:var(--dsel);filter:drop-shadow(0 0 6px rgba(255,216,74,.55))}
+.dgc .dgf path.on{stroke:#2a2614}
+.dgc .dgh path.hit{stroke:transparent;stroke-width:20px;cursor:pointer;pointer-events:stroke}
+.dgc .dgh path.hit:hover{stroke:rgba(255,216,74,.12)}
+.dgc .dgl line.tmp{stroke:var(--dsel);stroke-dasharray:6 6;stroke-width:2.5px;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.dgn{touch-action:none;position:absolute;z-index:2;transform:translate(-50%,-50%);display:flex;align-items:center;gap:7px;padding:4px 12px 4px 4px;min-width:64px;max-width:160px;background:linear-gradient(180deg,#1b2232,#131926);border:1px solid color-mix(in srgb,var(--c) 50%,#2b3446);border-radius:9px;cursor:grab;font-size:12.5px;line-height:1.2;color:#e9edf5;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 0 0 3px rgba(9,12,19,.9),0 8px 16px -6px rgba(0,0,0,.8);transition:border-color .12s,box-shadow .12s}
+.dgn:hover{border-color:var(--c)}
 .dged.pl .dgn{cursor:pointer}
-.dgn i{font-style:normal;color:var(--c);font-size:15px;line-height:1;flex:none}
-.dgn b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative}
-.dgn .dgth{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.32;border-radius:6px;pointer-events:none}
-.dgn.on{box-shadow:0 0 0 3px #ffd84a,0 2px 10px rgba(0,0,0,.7);z-index:3}
-.dgn.from{box-shadow:0 0 0 3px #59b6ff;z-index:3}
-.dgn.st::after{content:'★';position:absolute;top:-9px;left:-7px;color:#ffd84a;font-size:13px;text-shadow:0 0 3px #000}
-.dgn.hid{opacity:.55;border-style:dashed}
-.dgn .dgport{position:absolute;right:-7px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:#ffd84a;border:2px solid #0b0e16;cursor:crosshair}
+.dgn i{position:relative;flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:6px;background:color-mix(in srgb,var(--c) 17%,transparent);color:var(--c)}
+.dgn i svg,.dgpk i svg{width:14px;height:14px;display:block;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.dgn i svg .f,.dgpk i svg .f{fill:currentColor;stroke:none}
+.dgn b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;letter-spacing:-.01em}
+.dgn .dgth{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.28;border-radius:8px;pointer-events:none}
+/* 입구 · 심층부는 조금 더 무겁게: 꽉 찬 종류 표 · 은은한 빛 */
+.dgn.k-entry,.dgn.k-boss{padding:6px 14px 6px 6px;font-size:13px;border-color:var(--c);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 0 0 3px rgba(9,12,19,.9),0 0 22px -4px color-mix(in srgb,var(--c) 60%,transparent),0 8px 16px -6px rgba(0,0,0,.8)}
+.dgn.k-entry i,.dgn.k-boss i{width:24px;height:24px;background:var(--c);color:#0c1019}
+.dgn.k-entry b,.dgn.k-boss b{font-weight:700}
+.dgn.k-boss{background:linear-gradient(180deg,#2a1622,#170f18)}
+.dgn.k-entry{background:linear-gradient(180deg,#152437,#0f1826)}
+.dgn.st::before{content:'시작';position:absolute;left:7px;top:-8px;padding:1px 5px;border-radius:4px;background:var(--c);color:#0c1019;font-size:9.5px;font-weight:700;line-height:1.35;letter-spacing:.02em;box-shadow:0 0 0 2px rgba(9,12,19,.9)}
+.dgn.hid{opacity:.62;border-style:dashed;background:rgba(19,25,38,.75)}
+.dgn.on{border-color:var(--dsel);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 0 0 2px rgba(9,12,19,.95),0 0 0 4px var(--dsel),0 0 20px rgba(255,216,74,.35);z-index:3}
+.dgn.from{border-color:#59b6ff;box-shadow:0 0 0 2px rgba(9,12,19,.95),0 0 0 4px #59b6ff,0 0 20px rgba(89,182,255,.4);z-index:3}
+.dgn .dgport{position:absolute;right:-6px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;background:#131926;border:1.5px solid color-mix(in srgb,var(--c) 70%,#fff);cursor:crosshair;transition:transform .12s,background .12s}
+.dgn .dgport::after{content:'';position:absolute;inset:-7px;border-radius:50%}
+.dgn:hover .dgport,.dgc.linking .dgport{background:var(--c)}
+.dgn .dgport:hover{transform:scale(1.35);background:var(--dsel);border-color:var(--dsel)}
 .dgc.linking .dgn{cursor:crosshair}
+@media(max-width:760px){.dgc{width:720px}.dgn{font-size:11px;max-width:120px;padding:3px 8px 3px 3px}.dgn i{width:19px;height:19px}.dgtools .dghelp{display:none}}
+@media(prefers-reduced-motion:reduce){.dgn,.dgn .dgport{transition:none}}
 .dgp{border:1px solid var(--line2,#555);padding:10px 12px;border-radius:8px;display:flex;flex-direction:column;gap:6px;max-height:72vh;overflow:auto}
 .dgp h3{margin:2px 0}
-.dgp label{display:flex;flex-direction:column;gap:3px;font-size:12px;opacity:.95}
-.dgp input,.dgp select,.dgp textarea{width:100%;font-size:13px}
+.dgp label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--fg2,var(--mute))}
+.dgp input,.dgp select,.dgp textarea{width:100%;font-size:13px;color:var(--fg)}
+/* 11-01 글자 칸: type 없던 input 이 브라우저 흰 바탕 + 테마 옅은 글씨가 되던 것 → 다른 창과 같은 칸. 안내 글씨도 테마 흐린 색 */
+.dged input[type=text]::placeholder,.dged textarea::placeholder{color:var(--mute);opacity:1}
+.dgpk{display:inline-flex;align-items:center;gap:7px;color:var(--c)}
+.dgpk i{display:grid;place-items:center;width:22px;height:22px;border-radius:6px;background:color-mix(in srgb,var(--c) 18%,transparent)}
 .dgimg{border:1px dashed var(--line2,#555);border-radius:6px;min-height:110px;display:grid;place-items:center;text-align:center;cursor:pointer;overflow:hidden;font-size:12px;opacity:.9}
 .dgimg img{width:100%;max-height:220px;object-fit:cover;display:block}
 .dgimg.over{border-color:#ffd84a}

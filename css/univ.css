@@ -543,3 +543,23 @@ html[data-skin="univ"] .idrkc input{font-family:'Cinzel','Noto Serif KR',serif;c
 .ntph-head .btn.xs{flex:none}
 /* 10-30 포켓몬 별명: 별명 옆 작은 종 이름 */
 .mkr-sp{font-size:11px;font-weight:400;color:var(--ink3);margin-left:2px;white-space:nowrap}
+/* 11-01 망령 「각성체 둘 기술점 TO 도 구분해서」: PL 4체 몫 · 각성체 2체 몫 */
+.ptsub .ptsk{font-family:'Pretendard','Noto Sans KR',sans-serif;font-size:11.5px;letter-spacing:0;color:var(--mute);font-weight:500}
+.ptsub .ptsk b{font-size:13px;letter-spacing:0;color:var(--ink,#2a1c12);font-weight:800}
+.ptsub .ptsk em{font-style:normal;margin-left:4px;padding:0 6px;border-radius:9px;background:rgba(143,123,82,.14);font-size:10.5px}
+.ptsub .ptsk em.warn,.ptsub .ptsk.warn b{color:var(--red,#e4002b)}.ptsub .ptsk em.warn{background:rgba(228,0,43,.1)}
+.awx-sk{margin-left:4px;color:#c9b994}.awx-sk i{font-style:normal;font-family:'Cinzel','Noto Serif KR',serif;font-size:13px;font-weight:700;color:#fff}
+.mkr-exn{margin-top:6px;padding-top:5px;border-top:1px dashed rgba(207,174,110,.35)}
+.mkr-k.ex{background:#b08a3e;color:#1a140d}
+.mkr-exn b{color:#f1d58e}
+.mkr-ab p.mkr-exe{-webkit-line-clamp:2}
+/* 11-01 망령: 서머리 각성체 카드 — 원전 (메모 【각성체 원전】) */
+.awx-org{display:flex;flex-direction:column;gap:4px;margin:1px 0 2px;padding:6px 9px;border-left:2px solid rgba(207,174,110,.6);background:rgba(0,0,0,.22);border-radius:0 4px 4px 0;max-width:640px}
+.awx-orh{font-size:11px;letter-spacing:.06em;color:#cfae6e}
+.awx-okv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;font-size:12px;line-height:1.5;color:#e9dfc9}
+.awx-ok{display:contents}.awx-ok i{font-style:normal;font-size:10.5px;font-weight:700;color:#cfae6e;white-space:nowrap;padding-top:1px;text-align:right}
+.awx-ok span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* 11-01: PT 서머리 — 각성체 대가로 빠진 분배레벨 · 덤프 표시 */
+.ptb i.pen{background:repeating-linear-gradient(135deg,#8f1a26 0 6px,#a8323d 6px 12px)!important;color:#f3eadb}
+.ptx{display:inline-block;margin-left:5px;padding:0 6px;border-radius:8px;font-size:10px;font-weight:700;background:rgba(127,127,127,.18);color:var(--mute);vertical-align:1px;white-space:nowrap}
+.ptx.pen{background:rgba(143,26,38,.14);color:var(--crim2,#8f1a26)}
