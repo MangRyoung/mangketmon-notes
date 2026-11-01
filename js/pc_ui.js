@@ -282,7 +282,7 @@
    ${aw.map((m,i)=>mkRow(t,m,i,E,true)).join('')||'<p class="mkpe">포켓몬 시트의 「각성체」 칸에서 각성 (대가) · (보조)를 고르면 이쪽으로 와요</p>'}</section>`}
  /* 파티 서머리의 각성체 카드 */
  function costLines(o){if(!o||!o.pen)return [];const L=[],e=o.pen;
-  if(e.지시){const c=(o.ordOff&&o.ordOff.c||[]).length,d=(o.ordOff&&o.ordOff.o||[]).length;L.push(`<b>지시 ${esc(e.지시)}</b> 지령 −${c}${d?` · 명령 −${d}`:''}`)}
+  if(e.지시){const c=(o.ordOff&&o.ordOff.c||[]).length,d=(o.ordOff&&o.ordOff.o||[]).length;L.push(`<b>지시 ${esc(e.지시)}</b> ${[c||!d?`지령 −${c}`:'',d?`명령 −${d}`:''].filter(Boolean).join(' · ')}`)}
   if(e.육성)L.push(`<b>육성 ${esc(e.육성)}</b> 분배레벨 −${esc(o.dist||0)}`);
   if(e.통솔){(o.items||[]).forEach(x=>L.push(`<b>통솔 ${esc(x.grade||e.통솔)}</b> ${esc(x.key||'')} ${esc(x.desc||'')}${x.need==='type'&&o.type?` [${esc(o.type)}]`:''}${x.need==='role'&&o.role?` [${esc(o.role)}]`:''}`));if(!(o.items||[]).length)L.push(`<b>통솔 ${esc(e.통솔)}</b> 항목을 아직 안 골랐어요`)}
   if(e.능력)L.push(`<b>능력 ${esc(e.능력)}</b> 전용 −${esc(o.excl||0)}${o.uq?` · 고유 점수 −${esc(o.uq)}`:''}`);
