@@ -95,7 +95,7 @@ window.NT_UNIV=(()=>{
    <div class="row" style="margin-top:12px"><span class="sp"></span><button class="btn pri" id="cnOk">만들고 덱에 넣기</button></div>`,'',{stack:true});
   let img='';N().bindDrop($('#cnDz',md),async fs=>{try{img=await N().upload(fs[0],'thumb','card');$('#cnDz .pv',md).style.backgroundImage=`url('${cssu(img)}')`}catch(x){N().toast('올리기 실패: '+x.message)}});
   $('#cnOk',md).onclick=async()=>{const n=$('#cnN',md).value.trim();if(!n)return N().toast('이름을 적어요');if(MK().card(n)&&!await N().confirmBox(`카드 DB 에 「${n}」이(가) 이미 있어요. 그 카드를 덱에 넣을까요?`,'덱에 넣기'))return;
-   const DB=N().DBS();try{if(!MK().card(n)){if(!DB.makerPut)throw new Error('이 화면에서는 제작기에 쓸 수 없어요');const row=['',n,$('#cnK',md).value.trim(),$('#cnC',md).value.trim(),$('#cnE',md).value.trim(),$('#cnCol',md).value,img,String(Math.max(1,+$('#cnQ',md).value||1)),'노트에서 만듦',''];
+   const DB=N().DBS();try{if(!MK().card(n)){if(!DB.makerPut)throw new Error('이 화면에서는 제작기에 쓸 수 없어요');const row=['',n,$('#cnK',md).value.trim(),$('#cnC',md).value.trim(),$('#cnE',md).value.trim(),$('#cnCol',md).value,img,String(Math.max(1,+$('#cnQ',md).value||1)),'노트에서 만듦','','',String((MK().trainer(id)||{}).name||'').trim()];   /* 11-01: 10 아이콘 · 11 출처 = 만든 트레이너 (제작기 카드 DB 폴더) */
      await DB.makerPut('dbedit','cards.'+hex(n),{kind:'cards',key:n,row,custom:true,pos:MK().cardList().length});MK().dbSet('cards',n,row)}
     N().closeModal();const r=MK().card(n);run('trainers',id,d=>{d.deck=Array.isArray(d.deck)?d.deck:[];if(!d.deck.some(x=>x.n===n))d.deck.push({n,q:Math.max(1,Math.round(+(r&&r[7]))||1)})},'카드를 만들고 덱에 넣었어요')}catch(e){N().toast('만들지 못했어요: '+e.message)}}}
 
