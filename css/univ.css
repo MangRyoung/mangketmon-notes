@@ -593,3 +593,11 @@ html[data-skin="univ"] .idrkc input{font-family:'Cinzel','Noto Serif KR',serif;c
 @media(max-width:1400px){.mkr-h{grid-template-columns:auto auto minmax(130px,170px) minmax(0,1fr) minmax(0,1fr) auto}.mkr-bs{grid-column:4;grid-row:1}.mkr-mv{grid-column:5;grid-row:1}.mkr-ab{grid-column:3/6;grid-row:2}.mkr-act{grid-column:6;grid-row:1/span 2}}
 @media(max-width:900px){.mkr-h{grid-template-columns:auto auto minmax(0,1fr)}.mkr-bs,.mkr-ab,.mkr-mv{grid-column:1/-1;grid-row:auto}.mkr-act{grid-column:1/-1;grid-row:auto;flex-direction:row}}
 @media(max-width:560px){.mkr-bsl{grid-template-columns:1fr}.mkr-mvg{grid-template-columns:1fr}}
+/* 11-02 학교 게시판 — 노트 왼쪽 아래 아이콘 · 창 (게시판 그림은 웹툴 css/bbs.css 를 불러온다) */
+.ntbbsfab{position:fixed;left:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:900;display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 12px 0 10px;border:2px solid #000;background:#ffd12e;color:#000;font:700 13px/1 'Do Hyeon',sans-serif;border-radius:19px;box-shadow:3px 3px 0 #000;cursor:pointer}
+.ntbbsfab[hidden]{display:none}
+.ntbbsfab b{position:absolute;top:-8px;right:-8px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#e4002b;color:#fff;font:700 11px/20px monospace;text-align:center;border:2px solid #000}
+.ntbbsfab:focus-visible{outline:2px solid #fff;outline-offset:2px}
+@media (max-width:760px){.ntbbsfab{left:8px;height:34px;padding:0 10px}.ntbbsfab-t{display:none}}
+.modal.ntbbs-modal{width:min(720px,96vw)}
+.ntbbs-box{min-height:200px}

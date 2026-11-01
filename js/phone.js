@@ -14,6 +14,32 @@ window.NT_PHONE=(()=>{
  const LSg=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}};
  const LSs=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
  const omRoom=()=>(((N().ST.campInfo||{}).data||{}).om||{}).room||'';
+ /* 11-02 망령 「PC 들 휴대폰으로도 게시판 · 캠페인이 이어진 웹툴의 게시판을 노트에서도」: 웹툴의 js/bbs_ui.js · css/bbs.css 를 웹툴 주소에서 불러와
+    이어 둔 웹툴 방의 학교 게시판을 휴대폰 화면 안에 그린다. 글쓴이 = 휴대폰 주인, 신분 = 이 브라우저의 웹툴 신분(who) */
+ const omBase=()=>String((window.NT_CONFIG||{}).oremasUrl||'https://mangryoung.github.io/oremas/').replace(/[#?].*$/,'').replace(/index\.html$/,'').replace(/\/?$/,'/');
+ let BBSL=null;
+ function bbsLoad(){if(window.OM_BBS_UI)return Promise.resolve(true);if(BBSL)return BBSL;const base=omBase();
+  BBSL=new Promise(res=>{const l=document.createElement('link');l.rel='stylesheet';l.href=base+'css/bbs.css?v=2';document.head.appendChild(l);const s=document.createElement('script');s.src=base+'js/bbs_ui.js?v=2';s.onload=()=>res(!!window.OM_BBS_UI);s.onerror=()=>{BBSL=null;res(false)};document.head.appendChild(s)});return BBSL}
+ /* 글쓴이 고르기 (노트 왼쪽 아래 「✎ 게시판」 창): GM 은 GM · 명단 트레이너 · 관계도 NPC, 좌석은 자기 트레이너 */
+ function bbsAuthors(){const id=PH.id||{};const out=[];if(id.role==='gm'){out.push({cid:'gm',n:'GM',img:''});for(const t of Object.values(T()))if(t&&t.name)out.push({cid:t.id,n:t.name,img:t.image||''});const have=new Set(out.map(x=>x.n));
+   for(const [nid,n] of Object.entries(nodes())){if(!n||!n.name||have.has(n.name)||n.kind==='org')continue;have.add(n.name);out.push({cid:'n:'+nid,n:n.name,img:n.img||''})}return out}
+  if(id.role==='seat'){const t=T()[id.seat];if(t)out.push({cid:t.id,n:t.name||'?',img:t.image||''})}return out}
+ function bbsEnv(canW){const B=window.OM_BBS_UI;return {key:'nt',room:()=>PH.room,secret:()=>(PH.id&&PH.id.secret)||'',role:()=>canW()?((PH.id&&PH.id.role)||'view'):'view',seat:()=>(PH.id&&PH.id.seat)||'',
+  api:()=>(PH.bbsApi=PH.bbsApi||B.apiFromRpc((fn,a)=>DB().omRpc(fn,a))),upload:f=>N().upload(f,'photo','bbs'),toast:x=>N().toast(x),notify:()=>{},authors:bbsAuthors,roomName:()=>((N().ST.campInfo||{}).name)||''}}
+ function bbsMount(el){const box=$('#ntphBbs',el);if(!box)return;const t=trOf(PH.sid);
+  bbsLoad().then(ok=>{if(!ok){box.innerHTML='<div class="ntph-empty sm">웹툴 게시판을 불러오지 못했어요.</div>';return}if(!box.isConnected)return;
+   window.OM_BBS_UI.mount(box,{who:t?{cid:t.id,n:t.name||'?',img:t.image||''}:null,env:bbsEnv(()=>canWrite(t))})})}
+ /* 11-02 망령 「세션 노트에도 만들어야지 — 거기서도 쉽게 적을 수 있어야」: 노트 어느 탭에서든 왼쪽 아래 「✎ 게시판」 → 이어 둔 웹툴 방의 학교 게시판 창 */
+ async function openBoard(){const room=omRoom();if(!room)return N().toast('이 캠페인에 웹툴 방이 이어져 있지 않아요 — 설정 탭 「세 도구 잇기 → 웹툴 방」');
+  const md=N().openModal('<div class="mhead"><h2>학교 게시판</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div id="ntBbsBox" class="ntbbs-box"><div class="ntph-empty sm">불러오는 중…</div></div>','ntbbs-modal');
+  await load();const ok=await bbsLoad();const box=$('#ntBbsBox',md);if(!box||!box.isConnected)return;
+  if(!ok){box.innerHTML='<div class="ntph-empty sm">웹툴 게시판을 불러오지 못했어요.</div>';return}
+  window.OM_BBS_UI.mount(box,{who:null,env:bbsEnv(()=>!!(PH.id&&PH.id.secret&&PH.id.role))});
+  if(!(PH.id&&PH.id.role))N().toast('이 브라우저는 이어 둔 웹툴 방에 들어간 적이 없어 읽기만 해요 — 웹툴에서 한 번 들어오면 여기서도 써요')}
+ function bbsFab(){let e=document.getElementById('ntbbsfab');const on=!!(N()&&N().ST&&N().ST.camp&&omRoom());if(!on){if(e)e.hidden=true;return}
+  if(!e){e=document.createElement('button');e.type='button';e.id='ntbbsfab';e.className='ntbbsfab';e.title='학교 게시판 (이어 둔 웹툴 방)';e.setAttribute('aria-label','학교 게시판 열기');e.onclick=openBoard;document.body.appendChild(e)}
+  const n=window.OM_BBS_UI?window.OM_BBS_UI.unread():0;e.hidden=false;e.innerHTML=`<span aria-hidden="true">✎</span><span class="ntbbsfab-t">게시판</span>${n?`<b>${n>99?'99+':n}</b>`:''}`}
+ setInterval(()=>{try{bbsFab()}catch(e){}},2000);
  const acctTok=()=>{try{const a=JSON.parse(localStorage.getItem('om_acct')||sessionStorage.getItem('om_acct')||'null');return (a&&a.token)||''}catch(e){return ''}};
  /* 이 브라우저의 웹툴 신분 (계정 → GM 비밀값 → 좌석 비밀값 순) */
  async function who(room){if(PH.id&&PH.id.room===room)return PH.id;const C=[];const t=acctTok();if(t)C.push('u:'+t);const r=(LSg('om_rooms',[])||[]).find(x=>x&&x.id===room);if(r&&r.gm)C.push(r.gm);const si=LSg('om_seat_'+room,null);if(si&&si.secret)C.push(si.secret);
@@ -86,7 +112,7 @@ window.NT_PHONE=(()=>{
   md.addEventListener('input',e=>{if(e.target.id==='ntphIn')PH.draft[PH.chat]=e.target.value});
   draw();load(true).then(draw)}
  function draw(){const md=PH.md;if(!md||!md.isConnected)return;const el=$('#ntphS',md);if(!el)return;const keepIn=document.activeElement&&document.activeElement.id==='ntphIn';
-  el.innerHTML=screen();if(PH.scr==='chat'){const box=$('.ntph-msgs',el);if(box)box.scrollTop=box.scrollHeight;markSeen(PH.chat);if(keepIn){const i=$('#ntphIn',el);if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}}
+  el.innerHTML=screen();if(PH.scr==='bbs')bbsMount(el);if(PH.scr==='chat'){const box=$('.ntph-msgs',el);if(box)box.scrollTop=box.scrollHeight;markSeen(PH.chat);if(keepIn){const i=$('#ntphIn',el);if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}}
   const f=$('#ntphFile',el);if(f)f.onchange=()=>{const x=f.files&&f.files[0];f.value='';if(x)sendImg(x)}}
  function screen(){const room=omRoom();
   if(!room)return `<div class="ntph-empty">이 캠페인에 웹툴 방이 이어져 있지 않아요.<br><small>설정 탭 「세 도구 잇기 → 웹툴 방」에서 이으면 웹툴 휴대폰의 파티 · 문자를 여기서 써요.</small></div>`;
@@ -94,10 +120,11 @@ window.NT_PHONE=(()=>{
   const t=trOf(PH.sid);const p=N().data('pc',PH.sid)||N().data('npc',PH.sid)||{};const MKt=window.NT_MAKER&&NT_MAKER.trainer(PH.sid);const nm=(MKt&&MKt.name)||p.name||'';
   if(!t)return `<div class="ntph-empty">웹툴 방 명단에 「${esc(nm||PH.sid)}」이(가) 아직 없어요.<br><small>${N().gm()?'시트의 「⚔ 웹툴로」로 명단에 넣거나, ':''}웹툴 시트 탭에서 「내 파티 불러오기」를 하면 휴대폰이 생겨요.</small></div>`;
   const me=t.id,W=canWrite(t);
+  if(PH.scr==='bbs')return `<div class="ntph-head"><button type="button" class="ntph-back" data-ph="home">‹</button><div><b>학교 게시판</b><small>${esc(t.name||nm)}${W?'(으)로 써요':' · 보기만'} · 웹툴 방과 같은 게시판</small></div></div><div id="ntphBbs" class="ntph-bbs"><div class="ntph-empty sm">불러오는 중…</div></div>`;
   if(PH.scr==='party')return party(t,me,W);if(PH.scr==='book')return book(t,me,W);if(PH.scr==='sms')return smsList(t,me,W);if(PH.scr==='chat')return chat(t,me,W);
   const un=unreadAll(me);const code=codeOf(me);const rs=rooms(me).map(r=>({r,L:logsOf(r.id)})).filter(x=>x.L.length).slice(0,2);
   return `<div class="ntph-me">${av(me,'big')}<div><b>${esc(t.name||nm)}</b><small>${code?'파티 코드 '+esc(code):'파티 코드 없음'}${W?'':' · 보기 전용'}</small></div></div>
-   <div class="ntph-apps"><button type="button" data-ph="book"><i>📞${cardsIn(me).length?`<em>${cardsIn(me).length}</em>`:''}</i><span>연락처</span></button><button type="button" data-ph="party"><i>👥</i><span>파티</span></button><button type="button" data-ph="sms"><i>💬${un?`<em>${un}</em>`:''}</i><span>문자</span></button><a href="${esc(window.NT_LINK?NT_LINK.omUrl(room):'#')}" target="oremas" rel="noopener"><i>🎲</i><span>웹툴</span></a></div>
+   <div class="ntph-apps"><button type="button" data-ph="book"><i>📞${cardsIn(me).length?`<em>${cardsIn(me).length}</em>`:''}</i><span>연락처</span></button><button type="button" data-ph="party"><i>👥</i><span>파티</span></button><button type="button" data-ph="sms"><i>💬${un?`<em>${un}</em>`:''}</i><span>문자</span></button><button type="button" data-ph="bbs"><i>📋${window.OM_BBS_UI&&window.OM_BBS_UI.unread()?`<em>${window.OM_BBS_UI.unread()}</em>`:''}</i><span>게시판</span></button><a href="${esc(window.NT_LINK?NT_LINK.omUrl(room):'#')}" target="oremas" rel="noopener"><i>🎲</i><span>웹툴</span></a></div>
    ${rs.length?`<div class="ntph-sec">최근 문자</div>${rs.map(({r,L})=>{const l=L[L.length-1];const u=unread(r.id,me);return `<button type="button" class="ntph-row" data-ph="chat" data-room="${esc(r.id)}">${roomIcon(r)}<span class="ntph-rt"><b>${esc(r.name||'')}${u?`<em>${u}</em>`:''}</b><small>${esc(l.data.as||l.who||'')}: ${esc(preview(l.data))}</small></span><small class="ntph-tm">${hm(l.at)}</small></button>`}).join('')}`:''}
    ${W?'':`<div class="ntph-note">${PH.id&&PH.id.role?'이 브라우저는 웹툴 방에 다른 좌석으로 들어가 있어요 — 보기만 해요.':'이 브라우저에서 웹툴 방에 들어간 적이 없어 보기만 해요. 웹툴에서 이 트레이너 좌석(또는 GM)으로 한 번 들어오면 여기서도 보낼 수 있어요.'}</div>`}`}
  function party(t,me,W){const code=codeOf(me);const mem=Object.values(T()).filter(x=>x&&(x.id===me||(code&&codeOf(x.id)===code&&shared(x.id))));
@@ -128,6 +155,7 @@ window.NT_PHONE=(()=>{
    <div class="ntph-msgs">${rows||'<div class="ntph-empty sm">첫 메시지를 보내 봐요</div>'}</div>
    ${W?`<div class="ntph-in"><label class="ntph-clip" title="그림 보내기">📎<input type="file" accept="image/*" id="ntphFile" hidden></label><input type="text" id="ntphIn" data-nodirty placeholder="${esc(t.name||'')}${ro(t.name)} 보내기" value="${esc(PH.draft[r.id]||'')}"><button type="button" class="btn pri sm" data-ph="send">➤</button></div>`:'<div class="ntph-note">보기 전용이에요</div>'}`}
  function onClick(e){const b=e.target.closest('[data-ph]');if(!b)return;const a=b.dataset.ph;const t=trOf(PH.sid);
+  if(a==='bbs'){PH.scr='bbs';draw();return}
   if(a==='home'||a==='party'||a==='sms'||a==='book'){PH.scr=a;draw();if(a!=='home')load().then(draw);return}
   if(a==='chat'){PH.scr='chat';PH.chat=b.dataset.room;draw();return}
   if(a==='send')return send();
@@ -193,7 +221,7 @@ window.NT_PHONE=(()=>{
   const me=t.id,code=codeOf(me),un=unreadAll(me);const mem=code?Object.values(T()).filter(x=>x&&x.id!==me&&codeOf(x.id)===code&&shared(x.id)):[];
   const rs=rooms(me).map(r=>({r,L:logsOf(r.id)})).filter(x=>x.L.length).slice(0,3);
   return head(un,`<small>${code?'방 '+esc(code):'방 코드 없음'}${canWrite(t)?'':' · 보기 전용'}</small>`)+`
-   <div class="ntph-papps"><button type="button" class="ntph-pa" data-phone="${esc(sid)}" data-phscr="party"><i>👥</i><span><b>파티</b><small>${code?mem.length+1+'명':'코드를 맺어요'}</small></span><span class="ntph-pm">${mem.slice(0,5).map(x=>av(x.id,'sm')).join('')}</span></button><button type="button" class="ntph-pa" data-phone="${esc(sid)}" data-phscr="sms"><i>💬</i><span><b>문자${un?`<em>${un}</em>`:''}</b><small>${rooms(me).length}개 방</small></span></button></div>
+   <div class="ntph-papps"><button type="button" class="ntph-pa" data-phone="${esc(sid)}" data-phscr="party"><i>👥</i><span><b>파티</b><small>${code?mem.length+1+'명':'코드를 맺어요'}</small></span><span class="ntph-pm">${mem.slice(0,5).map(x=>av(x.id,'sm')).join('')}</span></button><button type="button" class="ntph-pa" data-phone="${esc(sid)}" data-phscr="sms"><i>💬</i><span><b>문자${un?`<em>${un}</em>`:''}</b><small>${rooms(me).length}개 방</small></span></button><button type="button" class="ntph-pa" data-phone="${esc(sid)}" data-phscr="bbs"><i>📋</i><span><b>게시판</b><small>학교 게시판</small></span></button></div>
    ${rs.length?rs.map(({r,L})=>{const l=L[L.length-1];const u=unread(r.id,me);return `<button type="button" class="ntph-row" data-phone="${esc(sid)}" data-phscr="chat" data-room="${esc(r.id)}">${roomIcon(r)}<span class="ntph-rt"><b>${esc(r.name||'')}${u?`<em>${u}</em>`:''}</b><small>${esc(l.data.as||l.who||'')}: ${esc(preview(l.data))}</small></span><small class="ntph-tm">${hm(l.at)}</small></button>`}).join(''):'<div class="ntph-pe">아직 주고받은 문자가 없어요.</div>'}`}
  function panel(sid){if(!(N().gm()||N().me()===sid))return '';if(omRoom()&&!PH.st&&!PH.loading&&!PH.err)setTimeout(()=>load(),0);
   return `<section class="ux-sec ux-ph" data-phpanel="${esc(sid)}">${panelIn(sid)}</section>`}
@@ -206,5 +234,5 @@ window.NT_PHONE=(()=>{
  function boot(){try{if(!N()||!N().ST||!N().ST.camp)return;const room=omRoom();if(!room){if(PH.room)stopSub();return}if(watchSid()&&(PH.room!==room||(!PH.sub&&!PH.loading)))load()}catch(e){}}
  setInterval(boot,15000);setTimeout(boot,2500);
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&PH.sub&&Date.now()-PH.at>60000)load(true)});
- return {open,btn,panel,boot,load,PH};
+ return {open,btn,panel,boot,load,PH,openBoard};
 })();
