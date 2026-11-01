@@ -202,7 +202,7 @@
  const brN=v=>String(v==null?'':v).replace(/<br\s*\/?>/gi,'\n').replace(/\\n/g,'\n');
  const STL=['HP','공격','방어','특공','특방','스피드'];
  function partySec(t,ms,E){if(!ms.length)return '';if(!MK().dbReady())MK().db().then(()=>N().render());
-  return `<div class="rpbox pty" style="margin-top:10px"><h4>파티 ${ms.length}체 <small class="dim">제작기 값${E?' · ✎ 로 고치면 제작기로':' · 읽기 전용'}${t?'':' · 제작기에 없는 트레이너'}</small></h4><div class="ptygrid">${ms.map(m=>monCard(t||{},m,E)).join('')}</div></div>`}
+  return `<div class="rpbox pty" style="margin-top:10px"><h4>파티 ${ms.length}체 <small class="dim">제작기 값${E?' · ✎ 로 고치면 제작기로':' · 읽기 전용'}${t?'':' · 제작기에 없는 트레이너'}</small></h4>${t&&t.id&&window.NT_FLD?NT_FLD.chips(t,'t',t.id,'',E):''}<div class="ptygrid">${ms.map(m=>monCard(t||{},m,E)).join('')}</div></div>`}
  function monCard(t,m,ED){const E=m.effTxt||{};const rk=(t.ranks||{})['육성'];const lv=MK().baseLv(rk)+(Math.round(+m.dist)||0);
   const b0=(m.base||[]).map(v=>+v||0),bu=m.baseUp&&Array.isArray(m.baseUp.base)?m.baseUp.base.map(v=>+v||0):null,bs=bu||b0,tot=bs.reduce((a,v)=>a+v,0);
   const types=[m.t1,m.t2,m.t3].filter(x=>x&&x!=='-');
@@ -218,7 +218,7 @@
     <div class="row" style="gap:4px;flex-wrap:wrap;margin-top:3px"><span class="pmlv">Lv ${lv}</span>${m.pride?`<span class="pmb">프라이드 ${esc(m.pride)}</span>`:''}${types.map(tchip).join('')}${m.tera&&m.tera!=='-'?`<small class="dim">테라 ${esc(m.tera)}</small>`:''}${m.gender&&m.gender!=='-'?`<small class="dim">${esc(m.gender)}</small>`:''}</div>
     <div class="small dim" style="margin-top:2px">${[m.egg1,m.egg2].filter(x=>x&&x!=='-').map(esc).join(' · ')}${(m.forms||[]).filter(f=>f&&f.name).length?` · 폼 ${(m.forms||[]).filter(f=>f&&f.name).map(f=>esc(f.name)).join(' · ')}`:''}</div></div></div>
    <div class="pmst">${STL.map((l,i)=>`<span class="${bu&&bu[i]!==b0[i]?'up':''}" title="${bu&&bu[i]!==b0[i]?`포텐셜로 ${b0[i]} → ${bu[i]}`:''}"><small>${l}</small><b>${bs[i]||'-'}</b></span>`).join('')}<span class="tot"><small>합</small><b>${tot}</b></span></div>
-   ${m.ability?line('특성',m.ability,E.ab||(MK().abil(m.ability)||[])[2]||''):''}${items.map(x=>line('소지품',x.n,x.e)).join('')}${ED&&t.id?`<div class="ux-itbs"><button type="button" class="linkbtn small ux-itb" data-ux="item" data-id="${esc(t.id)}" data-pid="${esc(m.id)}">✎ 소지품${items.length?' 고치기':' 넣기'}</button>${window.NT_MONED?`<button type="button" class="linkbtn small ux-itb" data-moned="${esc(m.id)}" data-id="${esc(t.id)}">✎ 포켓몬 고치기</button>`:''}</div>`:''}
+   ${m.ability?line('특성',m.ability,E.ab||(MK().abil(m.ability)||[])[2]||''):''}${items.map(x=>line('소지품',x.n,x.e)).join('')}${window.NT_FLD&&t.id?NT_FLD.chips(m,'p',m.id,t.id,ED):''}${ED&&t.id?`<div class="ux-itbs"><button type="button" class="linkbtn small ux-itb" data-ux="item" data-id="${esc(t.id)}" data-pid="${esc(m.id)}">✎ 소지품${items.length?' 고치기':' 넣기'}</button>${window.NT_MONED?`<button type="button" class="linkbtn small ux-itb" data-moned="${esc(m.id)}" data-id="${esc(t.id)}">✎ 포켓몬 고치기</button>`:''}</div>`:''}
    ${moveGrid(mv)}
    ${ex.length||pots.length?`<details class="pmpot"><summary>포텐셜 ${ex.length+pots.length} <span class="dim small">${[...ex.map(x=>x.name),...pots.map(x=>x.n)].map(esc).join(' · ')}</span></summary>${potGrid([...ex.map(x=>({k:'전용',n:'『'+String(x.name).replace(/[『』]/g,'')+'』',e:x.eff})),...pots.map(x=>({k:kindOf(x.i),n:'『'+x.n+'』',e:effOf(x.i)}))])}</details>`:''}
    ${m.memo?`<details class="pmpot"><summary>메모</summary>${memoHtml(m.memo)}</details>`:''}
@@ -267,7 +267,7 @@
      <div class="mkr-c">${X.types.map(tchip).join('')}<span class="mkr-lv">Lv.${X.lv}</span></div>
      <div class="mkr-c">${aw?`<span class="mkr-aw">${AWL[m.awaken]}</span>`:''}${X.pride?`<span class="mkr-pr">프라이드 <b>${esc(X.pride)}</b></span>`:''}${m.tera&&m.tera!=='-'?`<span class="mkr-tg">테라 ${esc(m.tera)}</span>`:''}</div></div>
     ${statBox(X)}
-    <div class="mkr-ab"><div class="mkr-abn"><span class="mkr-k">특성</span><b>${esc(m.ability||'특성 없음')}</b></div>${abE?`<p title="${esc(abE)}">${esc(abE)}</p>`:''}${X.ex.map(x=>{const e=oneLn(x.eff||'');return `<div class="mkr-abn mkr-exn"><span class="mkr-k ex">전용</span><b>『${esc(String(x.name).replace(/[『』]/g,''))}』</b></div>${e?`<p class="mkr-exe" title="${esc(e)}">${esc(e)}</p>`:''}`}).join('')}${X.items.length?`<div class="mkr-it">${X.items.map(x=>`<span title="${esc(oneLn(x.e||''))}">${esc(x.n)}</span>`).join('')}</div>`:''}</div>
+    <div class="mkr-ab"><div class="mkr-abn"><span class="mkr-k">특성</span><b>${esc(m.ability||'특성 없음')}</b></div>${abE?`<p title="${esc(abE)}">${esc(abE)}</p>`:''}${X.ex.map(x=>{const e=oneLn(x.eff||'');return `<div class="mkr-abn mkr-exn"><span class="mkr-k ex">전용</span><b>『${esc(String(x.name).replace(/[『』]/g,''))}』</b></div>${e?`<p class="mkr-exe" title="${esc(e)}">${esc(e)}</p>`:''}`}).join('')}${X.items.length?`<div class="mkr-it">${X.items.map(x=>`<span title="${esc(oneLn(x.e||''))}">${esc(x.n)}</span>`).join('')}</div>`:''}${window.NT_FLD&&t.id?NT_FLD.chips(m,'p',m.id,t.id,ED):''}</div>
     ${mvBox(X.mv)}
     ${ED&&t.id?`<div class="mkr-act">${window.NT_MONED?`<button type="button" class="btn xs" data-moned="${esc(m.id)}" data-id="${esc(t.id)}" title="제작기 화면 그대로 이 포켓몬 한 장을 고쳐요">✎ 고치기</button><button type="button" class="btn xs ghost" data-moned="${esc(m.id)}" data-id="${esc(t.id)}" data-sec="pcard" title="제작기 「한 장 요약」 — 기술 · 포텐셜 · 상성을 한 장으로 (PNG 저장도)">▤ 한 장 보기</button>`:''}<button type="button" class="btn xs ghost" data-ux="item" data-id="${esc(t.id)}" data-pid="${esc(m.id)}">소지품</button></div>`:''}</div>
    ${X.mv.length||X.pots.length||X.ex.length||m.memo?`<details class="mkr-more"><summary>${[X.mv.length?'기술 '+X.mv.length:'',X.pots.length?'포텐셜 '+X.pots.length:'',X.ex.length?'전용 '+X.ex.length:'',m.memo?'메모':''].filter(Boolean).join(' · ')}</summary><div class="mkr-mb">
@@ -275,7 +275,7 @@
   </article>`}
  function univParty(id,t,ms,E){if(!t)return '';if(!MK().dbReady())MK().db().then(()=>N().render());const pl=ms.filter(m=>!isAw(m)),aw=ms.filter(isAw).sort((a,b)=>(a.awaken==='free'?0:1)-(b.awaken==='free'?0:1));const G=N().gm();
   const add=(k,n)=>E&&(k!=='aw'||G)&&n?`<button type="button" class="btn xs" data-monadd="${k}" data-id="${esc(id)}" title="제작기에 새 시트를 만들어 바로 열어요">＋ ${k==='aw'?'각성체':'PL 포켓몬'}</button>`:'';
-  return `<section class="mkparty" style="margin-top:10px">
+  return `<section class="mkparty" style="margin-top:10px">${window.NT_FLD?`<div class="mkpg"><b>트레이너 필드 전개</b><span class="sp"></span>${NT_FLD.chips(t,'t',t.id||id,'',E)}</div>`:''}
    <div class="mkpg"><b>PL 포켓몬</b><span>${pl.length} / 4 · PL이 짠다</span><span class="sp"></span>${add('pl',pl.length<4)}</div>
    ${pl.map((m,i)=>mkRow(t,m,i,E,false)).join('')||'<p class="mkpe">아직 없어요</p>'}
    <div class="mkpg aw"><b>각성체</b><span>${aw.length} / 2 · GM이 짠다 · 통솔점을 쓰지 않는다</span><span class="sp"></span>${add('aw',aw.length<2)}</div>
