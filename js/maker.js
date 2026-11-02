@@ -9,9 +9,13 @@ window.NT_MAKER=(()=>{
  const MKC='nt_mk_cache',KS=['trainers','pokemon','folders'];
  async function pull(){const DB=N().DBS();if(!DB.makerSince||!DB.makerIds){const [t,p,f]=await Promise.all([DB.makerDocs('trainers'),DB.makerDocs('pokemon'),DB.makerDocs('folders').catch(()=>[])]);return {trainers:t,pokemon:p,folders:f}}
   let c=null;try{c=JSON.parse(localStorage.getItem(MKC)||'null')}catch(e){}if(!c||c.v!==1||Date.now()-c.t>7*864e5)c={v:1,t:Date.now(),since:{},docs:{}};
-  let got=0;await Promise.all(KS.map(async k=>{const D=c.docs[k]=c.docs[k]||{};const had=Object.keys(D).length;const [ids,rows]=await Promise.all([had?DB.makerIds(k):null,DB.makerSince(k,had?c.since[k]:null)]);
+  /* 11-02 망령 「제작기엔 있는데 노트엔 없다」: 같은 때 저장된 문서는 수정 시각 순서와 들어온 순서가 어긋날 수 있다 → 1분 앞부터 받고,
+     id 목록에 있는데 사본에 없는 문서가 있으면 그 종류는 전부 다시 받는다 */
+  const back=t=>{const ms=Date.parse(t||'');return ms?new Date(ms-60000).toISOString():null};
+  let got=0;await Promise.all(KS.map(async k=>{let D=c.docs[k]=c.docs[k]||{};const had=Object.keys(D).length;const [ids,rows]=await Promise.all([had?DB.makerIds(k):null,DB.makerSince(k,had?back(c.since[k]):null)]);
    for(const r of rows){D[r.id]={id:r.id,data:r.data};if(!c.since[k]||r.updated_at>c.since[k])c.since[k]=r.updated_at}got+=rows.length;
-   if(ids){const have=new Set(ids.concat(rows.map(r=>r.id)));for(const id of Object.keys(D))if(!have.has(id))delete D[id]}}));
+   if(ids){const have=new Set(ids.concat(rows.map(r=>r.id)));for(const id of Object.keys(D))if(!have.has(id))delete D[id];
+    if(ids.some(id=>!D[id])){const all=await DB.makerSince(k,null);D=c.docs[k]={};c.since[k]=null;for(const r of all){D[r.id]={id:r.id,data:r.data};if(!c.since[k]||r.updated_at>c.since[k])c.since[k]=r.updated_at}got+=all.length}}}));
   M.got=got;try{const s=JSON.stringify(c);if(s.length<4e6)localStorage.setItem(MKC,s);else localStorage.removeItem(MKC)}catch(e){try{localStorage.removeItem(MKC)}catch(e2){}}
   return Object.fromEntries(KS.map(k=>[k,Object.values(c.docs[k]||{})]))}
  async function load(force){if(M.loading)return M.loading;if(!force&&M.at&&Date.now()-M.at<600000)return M;

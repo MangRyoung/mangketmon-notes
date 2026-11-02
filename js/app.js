@@ -111,15 +111,18 @@ window.NT=(()=>{
     지워진 것 · 볼 수 없게 바뀐 것은 id 목록(nt_ids · 내용 없음)으로 걸러 낸다. 사본이 7일 넘었거나 3MB 를 넘으면 전부 새로 받는다 */
  const CK=()=>'nt_cache_'+ST.camp+'_'+(ST.role||'x')+(me()?'_'+me():'');
  function cacheGet(){try{if(DBS().mode!=='supabase')return null;const j=JSON.parse(localStorage.getItem(CK())||'null');return j&&j.v===1&&j.since&&Date.now()-j.t<7*864e5?j:null}catch(e){return null}}
- let cacheT=0;function cacheSave(){if(!ST.camp||!ST.since)return;clearTimeout(cacheT);const key=CK();cacheT=setTimeout(()=>{try{const s=JSON.stringify({v:1,t:Date.now(),since:ST.since,D});if(s.length<3e6)localStorage.setItem(key,s);else localStorage.removeItem(key)}catch(e){try{localStorage.removeItem(key)}catch(e2){}}},1200)}
+ /* 11-02 망령 「자리에 앉았을 때 항목 · 지도가 안 보인다」: 저장을 미루는 1.2초 사이에 캠페인을 나가거나 다시 열면(D 를 비움) 빈 D 가 「since 까지 다 받음」으로 저장돼,
+    그 뒤로는 바뀐 것만 받아서 영영 비어 보였다 → 저장할 때도 같은 캠페인 · 같은 역할인지 보고, 비었으면 저장하지 않는다. 열 때는 id 목록에 있는데 사본에 없는 게 있으면 전부 다시 받는다 */
+ let cacheT=0;function cacheSave(){if(!ST.camp||!ST.since)return;clearTimeout(cacheT);const key=CK();cacheT=setTimeout(()=>{if(key!==CK()||!ST.since)return;let n=0;for(const k in D)n+=Object.keys(D[k]||{}).length;if(!n)return;try{const s=JSON.stringify({v:1,t:Date.now(),since:ST.since,D});if(s.length<3e6)localStorage.setItem(key,s);else localStorage.removeItem(key)}catch(e){try{localStorage.removeItem(key)}catch(e2){}}},1200)}
  const SYNC={full:0,delta:0,last:''};
  function apply(rows){for(const r of rows){histPush(r.kind,r.id);col(r.kind)[r.id]={data:r.data||{},vis:r.vis,updated_at:r.updated_at};if(!ST.since||r.updated_at>ST.since)ST.since=r.updated_at}}
- async function loadAll(){const c=cacheGet();for(const k in D)delete D[k];
+ async function loadAll(){clearTimeout(cacheT);const c=cacheGet();for(const k in D)delete D[k];
   if(c){Object.assign(D,c.D);ST.since=c.since;try{const ids=await DBS().ids(ST.camp,ST.secret);const rows=await DBS().all(ST.camp,ST.secret,ST.since);const have=new Set(ids.map(x=>x.kind+'/'+x.id).concat(rows.map(x=>x.kind+'/'+x.id)));
-    for(const k in D)for(const id in D[k])if(!have.has(k+'/'+id))delete D[k][id];apply(rows);SYNC.delta++;SYNC.last='바뀐 문서 '+rows.length+'개만 받음';cacheSave();return}catch(e){console.warn('cache',e);for(const k in D)delete D[k];ST.since=null}}
+    for(const k in D)for(const id in D[k])if(!have.has(k+'/'+id))delete D[k][id];apply(rows);
+    const lack=ids.filter(x=>!(D[x.kind]&&D[x.kind][x.id]));if(lack.length)throw new Error('사본에 빠진 문서 '+lack.length+'개 — 전부 다시 받기');SYNC.delta++;SYNC.last='바뀐 문서 '+rows.length+'개만 받음';cacheSave();return}catch(e){console.warn('cache',e);for(const k in D)delete D[k];ST.since=null}}
   const rows=await DBS().all(ST.camp,ST.secret,null);ST.since=null;apply(rows);SYNC.full++;SYNC.last='전부 받음 '+rows.length+'개';cacheSave()}
  /* 다시 맞추기: 바뀐 것만 + 지워진 것 */
- async function resync(){if(!ST.camp)return;try{const ids=await DBS().ids(ST.camp,ST.secret);const rows=await DBS().all(ST.camp,ST.secret,ST.since);apply(rows);
+ async function resync(){if(!ST.camp)return;try{const ids=await DBS().ids(ST.camp,ST.secret);let rows=await DBS().all(ST.camp,ST.secret,ST.since);apply(rows);if(ids.some(x=>!(D[x.kind]&&D[x.kind][x.id]))){rows=await DBS().all(ST.camp,ST.secret,null);apply(rows)}
   const have=new Set(ids.map(x=>x.kind+'/'+x.id).concat(rows.map(x=>x.kind+'/'+x.id)));for(const k in D)for(const id in D[k])if(!have.has(k+'/'+id))delete D[k][id];render()}catch(e){console.warn('resync',e)}}
  let unsub=null;
  const MINE=new Map();const mark=(k,id)=>MINE.set(k+'/'+id,Date.now());const recent=(k,id)=>{const t=MINE.get(k+'/'+id);return t&&Date.now()-t<6000};
@@ -256,7 +259,7 @@ window.NT=(()=>{
    await loadAll();if(window.NT_MAKER)NT_MAKER.load().then(()=>render()).catch(()=>{});
    setHash();app.innerHTML='';render();listen();if(window.NT_ACCT)NT_ACCT.afterOpen()}
   catch(e){app.innerHTML=`<div class="empty">열지 못했어요: ${esc(e.message)} <button class="btn sm" onclick="NT.leave()">캠페인 목록</button></div>`}}
- function leave(){if(unsub){unsub();unsub=null}ST.camp='';ST.role=null;ST.campInfo=null;campLook(null);for(const k in D)delete D[k];setHash();render()}
+ function leave(){clearTimeout(cacheT);if(unsub){unsub();unsub=null}ST.camp='';ST.role=null;ST.campInfo=null;campLook(null);for(const k in D)delete D[k];setHash();render()}
  async function refreshCamp(){try{ST.camps=await DBS().camps();ST.campInfo=ST.camps.find(c=>c.id===ST.camp)||ST.campInfo;campLook(ST.campInfo)}catch(e){}try{ST.seats=await DBS().seats(ST.camp)||[]}catch(e){}render()}
 
  window.addEventListener('hashchange',()=>{const q=readHash();if(q.camp!==ST.camp){if(q.camp)open(q.camp,q.view);else leave()}else if(q.view&&q.view!==ST.view)go(q.view)});
