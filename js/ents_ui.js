@@ -5,31 +5,36 @@
 "use strict";
 (()=>{
  const N=()=>window.NT;const {$,$$,esc,cssu}=window.NT;
- const TYPES=[['인물','person','#1e88e5'],['조직','org','#8e44ad'],['설정','lore','#00a676'],['이벤트','event','#f08a00'],['아이템','item','#ffd23f'],['기타','etc','#8e8e8e']];
+ /* 11-02 망령 「세계관 · 지역 따로, 설정 따로, 인물은 학생증 · 교원증 느낌」: 세계관 종류 새로 · 순서 = 세계관 → 설정 → 인물 → … */
+ const TYPES=[['세계관','world','#b5832a'],['설정','lore','#00a676'],['인물','person','#1e88e5'],['조직','org','#8e44ad'],['이벤트','event','#f08a00'],['아이템','item','#ffd23f'],['기타','etc','#8e8e8e']];
  const tc=t=>TYPES.find(x=>x[0]===t)||TYPES[TYPES.length-1];
+ const TL={'세계관':'세계관 · 지역'};const tl=t=>TL[t]||t;
+ /* 종류가 「설정」이어도 세계관 · 지역 태그가 붙어 있으면 세계관 칸에 보인다 (예전 항목을 그대로 두고 나눔) */
+ const WTAG=['세계관','지역','지리','역사','장소','세계'];
+ const ety=e=>e.type==='설정'&&(e.tags||[]).some(x=>WTAG.includes(String(x).trim()))?'세계관':(TYPES.some(x=>x[0]===e.type)?e.type:'기타');
  const VK='nt_ent_view';
  const U={sel:'',type:'',tag:'',q:'',tagsOpen:false,fold:{},dense:(()=>{try{return localStorage.getItem(VK)==='list'}catch(e){return false}})(),ids:[]};
  /* 10-29: 종류마다 기본 칸 (새 항목에 미리 깔고, 고치기 창의 「칸 틀」 로 빠진 것만 더한다. 빈 칸은 저장하지 않는다) */
- const TPL={'인물':['정체','외모','성격 · 말투','원하는 것','비밀'],'조직':['목적','구성원','거점','가진 것','숨긴 것'],'설정':['요약','규칙','예외 · 주의'],'이벤트':['언제','어디서','무슨 일','결과'],'아이템':['효과','출처','값 · 구하는 법'],'기타':[]};
+ const TPL={'세계관':['개요','지리 · 위치','역사','분위기','주요 장소'],'인물':['정체','외모','성격 · 말투','원하는 것','비밀'],'조직':['목적','구성원','거점','가진 것','숨긴 것'],'설정':['요약','규칙','예외 · 주의'],'이벤트':['언제','어디서','무슨 일','결과'],'아이템':['효과','출처','값 · 구하는 법'],'기타':[]};
  const TAGMAX=10;
  const ents=()=>N().list('ents').sort((a,b)=>(a.order||0)-(b.order||0)||String(a.title||'').localeCompare(String(b.title||''),'ko'));
  const tags=()=>[...new Set(ents().flatMap(e=>e.tags||[]))].sort((a,b)=>a.localeCompare(b,'ko'));
  const spotName=id=>{const s=N().data('spots',id);return s?(s.num?s.num+'. ':'')+s.name:''};
 
  function render(el){const G=N().gm();const all=ents();const q=U.q.trim().toLowerCase();
-  const L=all.filter(e=>(!U.type||e.type===U.type)&&(!U.tag||(e.tags||[]).includes(U.tag))&&(!q||[e.title,e.sub,e.body,(e.tags||[]).join(' '),(e.rows||[]).map(r=>r.k+' '+r.v).join(' ')].join(' ').toLowerCase().includes(q)));
-  U.ids=(U.type||q||U.tag?L:TYPES.flatMap(([t])=>U.fold[t]?[]:L.filter(e=>e.type===t))).map(e=>e.id);
+  const L=all.filter(e=>(!U.type||ety(e)===U.type)&&(!U.tag||(e.tags||[]).includes(U.tag))&&(!q||[e.title,e.sub,e.body,(e.tags||[]).join(' '),(e.rows||[]).map(r=>r.k+' '+r.v).join(' ')].join(' ').toLowerCase().includes(q)));
+  U.ids=(U.type||q||U.tag?L:TYPES.flatMap(([t])=>U.fold[t]?[]:L.filter(e=>ety(e)===t))).map(e=>e.id);
   const sel=U.sel&&N().data('ents',U.sel)?Object.assign({id:U.sel,_vis:(N().doc('ents',U.sel)||{}).vis},N().data('ents',U.sel)):null;
-  el.innerHTML=`${window.NT_SHELF?NT_SHELF.bar():''}<div class="toolbar"><h2>항목</h2><div class="seg" id="enTypes"><button data-t="" class="${!U.type?'on':''}">전체 ${all.length}</button>${TYPES.map(([t,,c])=>{const n=all.filter(e=>e.type===t).length;return n||G?`<button data-t="${t}" class="${U.type===t?'on':''}" style="--c:${c}"><i class="kdot"></i>${t} ${n}</button>`:''}).join('')}</div>
+  el.innerHTML=`${window.NT_SHELF?NT_SHELF.bar():''}<div class="toolbar"><h2>항목</h2><div class="seg" id="enTypes"><button data-t="" class="${!U.type?'on':''}">전체 ${all.length}</button>${TYPES.map(([t,,c])=>{const n=all.filter(e=>ety(e)===t).length;return n||G?`<button data-t="${t}" class="${U.type===t?'on':''}" style="--c:${c}"><i class="kdot"></i>${tl(t)} ${n}</button>`:''}).join('')}</div>
    <input type="search" id="enQ" placeholder="찾기" title="제목 · 한 줄 · 본문 · 상세 칸 · 태그에서 찾아요" value="${esc(U.q)}" style="width:160px"><div class="entview" title="카드로 보기 · 한 줄씩 보기"><button type="button" data-ev="card" class="${U.dense?'':'on'}">카드</button><button type="button" data-ev="list" class="${U.dense?'on':''}">목록</button></div><span class="sp"></span>${N().bulkBtns('ents',null,'항목')}${G?'<button class="btn sm pri" data-e="new">＋ 항목</button>':''}</div>
    ${(()=>{const T=tags();if(!T.length)return '';const cnt=t=>all.filter(e=>(e.tags||[]).includes(t)).length;const sorted=[...T].sort((a,b)=>cnt(b)-cnt(a)||a.localeCompare(b,'ko'));const show=U.tagsOpen||U.tag?sorted:sorted.slice(0,TAGMAX);
     return `<div class="tagbar">${U.tag?`<button class="chip on" data-tag="">${esc(U.tag)} ×</button>`:''}${show.filter(t=>t!==U.tag).map(t=>`<button class="chip" data-tag="${esc(t)}">${esc(t)}<small>${cnt(t)}</small></button>`).join('')}${sorted.length>TAGMAX&&!U.tag?`<button class="chip ghost" data-tagmore>${U.tagsOpen?'접기':'+'+(sorted.length-TAGMAX)+' 태그'}</button>`:''}</div>`})()}
-   <div class="split wideR entsplit"><div class="entcol">${U.type||q||U.tag?`<div class="entgrid ${U.dense?'dense':''}">${L.map(card).join('')||emptyBox(G)}</div>`:TYPES.map(([t,,c])=>{const g=L.filter(e=>e.type===t);if(!g.length)return '';const fold=U.fold[t];return `<section class="entsec ${fold?'fold':''}" style="--c:${c}"><h3 data-fold="${t}"><i class="kdot"></i>${t}<small>${g.length}</small><span class="sp"></span><em>${fold?'펼치기 ▾':'접기 ▴'}</em></h3>${fold?'':`<div class="entgrid ${U.dense?'dense':''}">${g.map(card).join('')}</div>`}</section>`}).join('')||emptyBox(G)}</div><aside class="side" id="entSide">${sel?detail(sel):'<div class="card dim small">항목을 누르면 여기에 자세히 나와요.</div>'}</aside></div>`;
+   <div class="split wideR entsplit"><div class="entcol">${U.type||q||U.tag?`<div class="entgrid ${gridCls(U.type)}">${L.map(cardOf).join('')||emptyBox(G)}</div>`:TYPES.map(([t,,c])=>{const g=L.filter(e=>ety(e)===t);if(!g.length)return '';const fold=U.fold[t];return `<section class="entsec es-${tc(t)[1]} ${fold?'fold':''}" style="--c:${c}"><h3 data-fold="${t}"><i class="kdot"></i>${tl(t)}<small>${g.length}</small><span class="sp"></span><em>${fold?'펼치기 ▾':'접기 ▴'}</em></h3>${fold?'':`<div class="entgrid ${gridCls(t)}">${g.map(cardOf).join('')}</div>`}</section>`}).join('')||emptyBox(G)}</div><aside class="side" id="entSide">${sel?detail(sel):'<div class="card dim small">항목을 누르면 여기에 자세히 나와요.</div>'}</aside></div>`;
   const qi=$('#enQ',el);qi.oncompositionend=()=>qi.oninput({isComposing:false});qi.oninput=e=>{if(e.isComposing)return;U.q=qi.value;const v=qi.value;N().render();const q2=$('#enQ');if(q2){q2.focus();q2.setSelectionRange(v.length,v.length)}};
   el.addEventListener('click',e=>{const t=e.target;const shb=t.closest('[data-shelf]');if(shb){NT_SHELF.open(shb.dataset.shelf);return}   /* 10-31 룰북 서가 (꾸밈 「대학」) */
    const tb=t.closest('#enTypes button');if(tb){U.type=tb.dataset.t;N().render();return}
    const ev=t.closest('[data-ev]');if(ev){U.dense=ev.dataset.ev==='list';try{localStorage.setItem(VK,U.dense?'list':'card')}catch(x){}N().render();return}
-   const nv=t.closest('[data-enav]');if(nv){const k=U.ids.indexOf(U.sel);const j=k+(+nv.dataset.enav);if(j>=0&&j<U.ids.length){U.sel=U.ids[j];N().render();const c=document.querySelector(`.entcard[data-sel="${CSS.escape(U.sel)}"]`);if(c)c.scrollIntoView({block:'nearest'})}return}
+   const nv=t.closest('[data-enav]');if(nv){const k=U.ids.indexOf(U.sel);const j=k+(+nv.dataset.enav);if(j>=0&&j<U.ids.length){U.sel=U.ids[j];N().render();const c=document.querySelector(`.entgrid [data-sel="${CSS.escape(U.sel)}"]`);if(c)c.scrollIntoView({block:'nearest'})}return}
    const ap=t.closest('[data-appear]');if(ap){const [rid,i]=ap.dataset.appear.split('|');if(window.NT_SCEN){if(N().gm())NT_SCEN.write(rid,'ws'+i+'n');else N().go('scen')}return}
    const tm=t.closest('[data-tagmore]');if(tm){U.tagsOpen=!U.tagsOpen;N().render();return}
    const fd=t.closest('[data-fold]');if(fd){U.fold[fd.dataset.fold]=!U.fold[fd.dataset.fold];N().render();return}
@@ -42,9 +47,9 @@
    const big=t.closest('img[data-big]');if(big){N().openModal(`<img src="${esc(big.dataset.big)}" style="max-width:100%;max-height:80vh;display:block;margin:auto">`,'wide');return}
    const b=t.closest('[data-e]');if(b)act(b.dataset.e,b)});
   /* 10-26 망령: 끌어서 순서 바꾸기(GM) · 우클릭 · 길게 누르기 메뉴 */
-  if(G)$$('.entgrid',el).forEach(g=>N().sortable(g,'.entcard',ids=>N().reorder('ents',ids)));
+  if(G)$$('.entgrid',el).forEach(g=>N().sortable(g,'.entcard,.enti',ids=>N().reorder('ents',ids)));
   if(window.NT_SHELF)NT_SHELF.bind(el);   /* 10-31 룰북 서가: ＋ 책 · 끌어서 순서 */
-  N().bindCtx(el,'.entcard',c=>ctxItems(c.dataset.id))}
+  N().bindCtx(el,'.entcard,.enti',c=>ctxItems(c.dataset.id))}
  const emptyBox=G=>`<div class="empty">항목이 없어요.${G?' <button type="button" class="btn sm pri" data-e="new" style="margin-left:8px">＋ 항목</button>':''}</div>`;
  function ctxItems(id){const d=N().doc('ents',id);if(!d)return null;const e=d.data;const G=N().gm();const it=[];const cur=d.vis||'pub';
   if(G){const vis=[['pub','👥 모두에게'],['gm','🔒 GM만']].concat((N().ST.seats||[]).map(s=>['pl:'+s.seat,'👤 '+(N().seatName(s.seat)||s.seat)+' 에게만']));
@@ -54,12 +59,46 @@
   it.push({t:'🕸 관계도에서 보기',on:()=>{N().go('graph');setTimeout(()=>window.NT_GRAPH&&NT_GRAPH.focus&&NT_GRAPH.focus(id),0)}});
   if(G){it.push('-');it.push({t:'🗑 지우기',danger:true,on:()=>act('del',{dataset:{id}})})}
   return it}
- function card(e){const t=tc(e.type);return `<button type="button" class="entcard ${e.id===U.sel?'on':''}" data-sel="${esc(e.id)}" data-id="${esc(e.id)}" data-drag style="--c:${e.color||t[2]}"><span class="face" style="${e.face?`background-image:url('${cssu(e.face)}')`:''}">${e.face?'':t[0][0]}</span><span class="eb"><b>${esc(e.title||'(제목 없음)')}</b><small>${esc(e.sub||'')}</small><span class="etags">${(e.tags||[]).slice(0,3).map(x=>`<em>${esc(x)}</em>`).join('')}${(e.tags||[]).length>3?`<em class="more">+${e.tags.length-3}</em>`:''}${N().visBadge(e._vis,'ents',e.id)}${linkIcons(e)}</span></span></button>`}
+ function card(e){const t=tc(ety(e));return `<button type="button" class="entcard ${e.id===U.sel?'on':''}" data-sel="${esc(e.id)}" data-id="${esc(e.id)}" data-drag style="--c:${e.color||t[2]}"><span class="face" style="${e.face?`background-image:url('${cssu(e.face)}')`:''}">${e.face?'':t[0][0]}</span><span class="eb"><b>${esc(e.title||'(제목 없음)')}</b><small>${esc(e.sub||'')}</small><span class="etags">${(e.tags||[]).slice(0,3).map(x=>`<em>${esc(x)}</em>`).join('')}${(e.tags||[]).length>3?`<em class="more">+${e.tags.length-3}</em>`:''}${N().visBadge(e._vis,'ents',e.id)}${linkIcons(e)}</span></span></button>`}
  const linkIcons=e=>(e.rb&&e.rb.ch?'<i class="lki" title="룰북과 이어져 있어요">📖</i>':'')+(e.mk?'<i class="lki" title="제작기 트레이너와 이어져 있어요">🎴</i>':'')+((e.files||[]).length?`<i class="lki" title="첨부 ${e.files.length}개">📎${e.files.length}</i>`:'');
- function detail(e){const G=N().gm(),t=tc(e.type);const sec=N().data('sec','ent:'+e.id);const rels=N().list('rels').filter(r=>r.a===e.id||r.b===e.id);
-  return `<div class="card entd" style="--c:${e.color||t[2]}"><div class="row" style="gap:6px"><span class="chip static" style="border-color:var(--c);color:var(--c)">${esc(e.type||'')}</span>${window.NT_FAV?NT_FAV.btn('ents',e.id,e.title):''}${N().visBadge(e._vis,'ents',e.id)}<span class="sp"></span>${U.ids.length>1&&U.ids.includes(e.id)?`<span class="entnav"><button class="btn xs ghost" data-enav="-1" ${U.ids[0]===e.id?'disabled':''} title="앞 항목">◀</button><button class="btn xs ghost" data-enav="1" ${U.ids[U.ids.length-1]===e.id?'disabled':''} title="다음 항목">▶</button></span>`:''}${G?`<button class="btn xs" data-e="edit" data-id="${esc(e.id)}">고치기</button><button class="btn xs ghost danger" data-e="del" data-id="${esc(e.id)}">지우기</button>`:''}</div>
-   <div class="enthead">${e.face?`<img class="face" src="${esc(e.face)}" alt="" data-big="${esc(e.face)}">`:''}<div><h3>${esc(e.title||'')}</h3>${e.sub?`<div class="dim">${esc(e.sub)}</div>`:''}${(e.tags||[]).length?`<div class="etags">${e.tags.map(x=>`<em>${esc(x)}</em>`).join('')}</div>`:''}</div></div>
-   ${e.photo?`<img class="photo" src="${esc(e.photo)}" alt="" data-big="${esc(e.photo)}" loading="lazy">`:''}
+ /* ----- 11-02 카드 모양: 세계관 = 지도첩 카드(넓게), 설정 = 규칙 카드, 인물 = 학생증 · 교원증 · 신분증, 나머지 = 예전 카드. 「목록」 보기는 모두 예전 한 줄 ----- */
+ const gridCls=t=>U.dense?'dense':t==='세계관'?'eg-w':t==='인물'?'eg-id':t==='설정'?'eg-l':'';
+ function cardOf(e){if(U.dense)return card(e);const t=ety(e);return t==='세계관'?cardWorld(e):t==='인물'?cardId(e,false):t==='설정'?cardLore(e):card(e)}
+ const rowsV=e=>(e.rows||[]).filter(r=>r&&r.k);
+ const clip=(s,n)=>{s=String(s||'').replace(/\s+/g,' ').trim();return s.length>n?s.slice(0,n)+'…':s};
+ function cardWorld(e){const R=rowsV(e);return `<button type="button" class="enti ew ${e.id===U.sel?'on':''}" data-sel="${esc(e.id)}" data-id="${esc(e.id)}" data-drag style="--c:${e.color||tc('세계관')[2]}">
+   <span class="ew-band"><i aria-hidden="true">🧭</i>${esc(tl('세계관'))}<span class="sp"></span>${N().visBadge(e._vis,'ents',e.id)}${linkIcons(e)}</span>
+   ${e.photo||e.face?`<span class="ew-img" style="background-image:url('${cssu(e.photo||e.face)}')"></span>`:''}
+   <b class="ew-t">${esc(e.title||'(제목 없음)')}</b>${e.sub?`<small class="ew-s">${esc(e.sub)}</small>`:''}
+   ${e.body?`<span class="ew-b">${esc(clip(e.body,90))}</span>`:''}
+   ${R.length?`<span class="ew-rows">${R.slice(0,6).map(r=>`<em>${esc(r.k)}</em>`).join('')}${R.length>6?`<em class="more">+${R.length-6}</em>`:''}</span>`:''}
+   ${(e.tags||[]).length?`<span class="etags">${e.tags.filter(x=>!WTAG.includes(x)).slice(0,4).map(x=>`<em>${esc(x)}</em>`).join('')}</span>`:''}</button>`}
+ function cardLore(e){const R=rowsV(e);return `<button type="button" class="enti el ${e.id===U.sel?'on':''}" data-sel="${esc(e.id)}" data-id="${esc(e.id)}" data-drag style="--c:${e.color||tc('설정')[2]}">
+   <span class="el-k" aria-hidden="true">§</span><span class="el-m"><b>${esc(e.title||'(제목 없음)')}</b>${e.sub?`<small>${esc(e.sub)}</small>`:''}
+   <span class="etags">${(e.tags||[]).slice(0,3).map(x=>`<em>${esc(x)}</em>`).join('')}${R.length?`<em class="cnt">${R.length}칸</em>`:''}${N().visBadge(e._vis,'ents',e.id)}${linkIcons(e)}</span></span></button>`}
+ /* 인물 = 신분증. 소속 · 한 줄 · 태그 · 칸에 교수 · 교원 · 직원 … 이 있으면 교원증, 학생 · 학년 … 이면 학생증, 꾸밈 「대학」 캠페인은 기본 학생증, 그 밖은 신분증 */
+ const STAFF=/(교수|교원|강사|교직|직원|선생|교사|학장|총장|조교|이사장|사감|사서|연구원)/,STU=/(학생|학부|대학원|신입생|재학|휴학|\d\s*학년|학번)/;
+ function idKind(e){const tx=[e.sub,(e.tags||[]).join(' '),(e.rows||[]).map(r=>r.k+' '+r.v).join(' '),e.title].join(' ');
+  if(STAFF.test(tx))return 'staff';if(STU.test(tx))return 'stu';return document.documentElement.getAttribute('data-skin')==='univ'?'stu':'gen'}
+ const IDK={stu:['학생증','STUDENT ID','소속','학번'],staff:['교원증','FACULTY ID','직위','번호'],gen:['신분증','IDENTIFICATION','소속','번호']};
+ const idNo=id=>{let h=7;for(const ch of String(id))h=(h*31+ch.charCodeAt(0))>>>0;return '2026-'+String(h%10000).padStart(4,'0')};
+ const idCrest='<svg viewBox="0 0 40 46" aria-hidden="true"><path d="M20 2 37 8v14c0 11-7.5 18.5-17 22C10.5 40.5 3 33 3 22V8Z" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M11 16h18v14H11zM20 16v14" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="20" cy="9.5" r="2.2" fill="currentColor"/></svg>';
+ function idOrg(){const c=(N().ST&&N().ST.campInfo)||{};const nm=c.name||'';const univ=document.documentElement.getAttribute('data-skin')==='univ';
+  return univ?['MISAG UNIVERSITY',/대학/.test(nm)?nm.replace(/대학$/,'대학교'):'미사그 대학교']:[nm||'CAMPAIGN','캠페인 인물 기록']}
+ function cardId(e,big){const k=idKind(e),K=IDK[k];const img=e.face||e.photo||'';const org=idOrg();const ini=esc([...String(e.title||'?')][0]||'?');const R=rowsV(e).filter(r=>r.v);
+  const tag=big?'div':'button';
+  return `<${tag} ${big?'':'type="button"'} class="enti eid eid-${k} ${big?'big':''} ${!big&&e.id===U.sel?'on':''}" ${big?'':`data-sel="${esc(e.id)}" data-id="${esc(e.id)}" data-drag`} style="--c:${e.color||tc('인물')[2]}">
+   <span class="eid-h"><i class="eid-cr">${idCrest}</i><span class="eid-o"><b>${esc(org[0])}</b><small>${esc(org[1])}</small></span><span class="eid-k">${K[0]}<small>${K[1]}</small></span></span>
+   <span class="eid-b"><span class="eid-p ${img?'':'noimg'}" style="${img?`background-image:url('${cssu(img)}')`:''}" ${big&&img?`data-big="${esc(img)}"`:''}>${img?'':ini}</span>
+    <span class="eid-f"><span class="eid-l">성명</span><b class="eid-n">${esc(e.title||'(이름 없음)')}</b>
+     <span class="eid-l">${K[2]}</span><span class="eid-v">${esc(e.sub||'—')}</span>
+     <span class="eid-l">${K[3]}</span><span class="eid-v eid-no">${esc(idNo(e.id))}</span>
+     ${(big?[]:R.slice(0,1)).map(r=>`<span class="eid-l">${esc(clip(r.k,6))}</span><span class="eid-v">${esc(clip(r.v,big?60:22))}</span>`).join('')}</span></span>
+   <span class="eid-ft"><span class="eid-bar" aria-hidden="true"></span>${(e.tags||[]).length?`<span class="eid-tg">${e.tags.slice(0,big?6:2).map(x=>`<em>${esc(x)}</em>`).join('')}</span>`:'<span class="sp"></span>'}${big?'':N().visBadge(e._vis,'ents',e.id)+linkIcons(e)}<span class="eid-seal" aria-hidden="true">${k==='staff'?'교무':k==='stu'?'총장':'확인'}</span></span></${tag}>`}
+ function detail(e){const G=N().gm(),ty=ety(e),t=tc(ty);const sec=N().data('sec','ent:'+e.id);const rels=N().list('rels').filter(r=>r.a===e.id||r.b===e.id);
+  return `<div class="card entd" style="--c:${e.color||t[2]}"><div class="row" style="gap:6px"><span class="chip static" style="border-color:var(--c);color:var(--c)">${esc(tl(ty))}</span>${window.NT_FAV?NT_FAV.btn('ents',e.id,e.title):''}${N().visBadge(e._vis,'ents',e.id)}<span class="sp"></span>${U.ids.length>1&&U.ids.includes(e.id)?`<span class="entnav"><button class="btn xs ghost" data-enav="-1" ${U.ids[0]===e.id?'disabled':''} title="앞 항목">◀</button><button class="btn xs ghost" data-enav="1" ${U.ids[U.ids.length-1]===e.id?'disabled':''} title="다음 항목">▶</button></span>`:''}${G?`<button class="btn xs" data-e="edit" data-id="${esc(e.id)}">고치기</button><button class="btn xs ghost danger" data-e="del" data-id="${esc(e.id)}">지우기</button>`:''}</div>
+   ${ty==='인물'?`<div class="eidwrap">${cardId(e,true)}</div>`:`<div class="enthead ${ty==='세계관'?'ewh':''}">${e.face?`<img class="face" src="${esc(e.face)}" alt="" data-big="${esc(e.face)}">`:''}<div><h3>${esc(e.title||'')}</h3>${e.sub?`<div class="dim">${esc(e.sub)}</div>`:''}${(e.tags||[]).length?`<div class="etags">${e.tags.map(x=>`<em>${esc(x)}</em>`).join('')}</div>`:''}</div></div>`}
+   ${e.photo&&!(ty==='인물'&&!e.face)?`<img class="photo" src="${esc(e.photo)}" alt="" data-big="${esc(e.photo)}" loading="lazy">`:''}
    ${e.body?`<p class="pre">${esc(e.body)}</p>`:''}
    ${e.mk?mkBox(e.mk):''}${e.rb&&e.rb.ch&&window.NT_RB?NT_RB.box(e.rb):''}${(e.files||[]).length?filesBox(e):''}
    ${(e.rows||[]).some(r=>r.v)?`<div class="kv">${e.rows.filter(r=>r.v).map(r=>`<b>${esc(r.k)}</b><span class="pre">${esc(r.v)}</span>`).join('')}</div>`:''}
@@ -107,7 +146,7 @@
      <div class="updz face" id="etFace"><div class="pv" style="${face?`background-image:url('${cssu(face)}')`:''}"></div><b>얼굴</b><span>카드 · 관계도 · 지도 핀 옆</span></div>
      <div class="updz" id="etPhoto"><div class="pv" style="${photo?`background-image:url('${cssu(photo)}')`:''}"></div><b>큰 그림</b><span>끌어 놓기 · 클릭 · Ctrl+V</span></div>
      <div class="row small" style="gap:4px"><button class="btn xs ghost" id="etFaceX">얼굴 빼기</button><button class="btn xs ghost" id="etPhotoX">큰 그림 빼기</button></div>
-     <label class="lbl">종류<select id="etType">${TYPES.map(([t])=>`<option ${t===e.type?'selected':''}>${t}</option>`).join('')}</select></label>
+     <label class="lbl">종류<select id="etType">${TYPES.map(([t])=>`<option value="${t}" ${t===e.type?'selected':''}>${tl(t)}</option>`).join('')}</select></label>
      <label class="lbl">공개${N().visSelect(N().doc('ents',id).vis,'etVis')}</label>
      <label class="lbl">색<input id="etColor" type="color" value="${esc(e.color||tc(e.type)[2])}"></label>
     </div>
@@ -161,5 +200,5 @@
    await N().put('ents',id,n,$('#etVis',md).value);const t=$('#etSec',md).value.trim();if(t)await N().put('sec','ent:'+id,{t},'gm');else if(N().doc('sec','ent:'+id))await N().del('sec','ent:'+id);N().closeModal()}}
 
  N().MOD.ents={render};
- window.NT_ENTS={TYPES,tc,select:id=>{U.sel=id;N().render()},edit};
+ window.NT_ENTS={TYPES,tc,ety,tl,select:id=>{U.sel=id;N().render()},edit};
 })();

@@ -1,0 +1,95 @@
+/* ---------- 11-02 망령 「항목 개선 — 세계관 · 지역 따로, 설정 따로, 인물은 학생증 · 교원증 느낌으로 보기 이쁘게」 ----------
+   js/ents_ui.js cardWorld · cardLore · cardId. .enti = 새 카드 공통(끌기 · 우클릭 대상). 「목록」 보기는 예전 .entcard 한 줄 그대로.
+   신분증은 테마 · 꾸밈과 상관없이 종이 카드(학생증 = 진홍, 교원증 = 남색, 신분증 = 먹회색 띠) */
+.entsplit .entgrid.eg-w{grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+.entsplit .entgrid.eg-id{grid-template-columns:repeat(auto-fill,minmax(262px,1fr));gap:14px 12px;padding:4px 2px 6px}
+.entsplit .entgrid.eg-l{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.enti{position:relative;display:flex;flex-direction:column;align-items:stretch;text-align:left;font:inherit;color:var(--fg);background:none;border:0;padding:0;margin:0;cursor:pointer;min-width:0;transition:transform .12s,box-shadow .12s,border-color .12s}
+.enti:hover{transform:translateY(-1px)}
+.enti:focus-visible{outline:2px solid var(--c);outline-offset:2px}
+.enti .etags{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.enti .etags em{font-style:normal;font-size:11px;padding:1px 7px;border:1px solid var(--line2);border-radius:999px;color:var(--fg2);background:transparent}
+.enti .lki{font-style:normal;font-size:11px;opacity:.85}
+
+/* 세계관 · 지역 = 지도첩 카드 */
+.enti.ew{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--c);border-radius:8px;padding:0 0 12px;overflow:hidden;
+  background-image:repeating-radial-gradient(circle at 88% 18%,transparent 0 14px,color-mix(in srgb,var(--c) 10%,transparent) 14px 15px);}
+.enti.ew:hover{border-color:var(--c);box-shadow:0 8px 20px rgba(0,0,0,.35)}
+.enti.ew.on{box-shadow:0 0 0 2px var(--c),0 8px 20px rgba(0,0,0,.35)}
+.ew-band{display:flex;align-items:center;gap:6px;padding:8px 12px 0;font-size:11px;letter-spacing:.14em;color:var(--c);font-weight:700}
+.ew-band i{font-style:normal}
+.ew-img{display:block;height:108px;margin:8px 0 0;background:center/cover no-repeat;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.ew-t{display:block;padding:8px 12px 0;font-family:'Noto Serif KR',var(--head,serif);font-weight:900;font-size:18px;line-height:1.3}
+.ew-s{display:block;padding:3px 12px 0;color:var(--mute);font-size:12.5px;line-height:1.5}
+.ew-b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding:6px 12px 0;font-size:13px;line-height:1.6;color:var(--fg2)}
+.ew-rows{display:flex;flex-wrap:wrap;gap:4px;padding:9px 12px 0}
+.ew-rows em{font-style:normal;font-size:11.5px;padding:2px 8px;border-radius:4px;background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--fg)}
+.ew-rows em.more{background:transparent;color:var(--mute)}
+.enti.ew>.etags{padding:8px 12px 0}
+
+/* 설정 = 규칙 카드 */
+.enti.el{flex-direction:row;gap:10px;padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:6px}
+.enti.el:hover{border-color:var(--line2);border-left-color:var(--c);box-shadow:0 6px 16px rgba(0,0,0,.3)}
+.enti.el.on{box-shadow:0 0 0 2px var(--c)}
+.el-k{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:900 15px/1 'Noto Serif KR',serif;color:var(--c);border:1.5px solid var(--c)}
+.el-m{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.el-m b{font-size:14.5px;line-height:1.35}
+.el-m small{color:var(--mute);font-size:12px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.el-m .etags{margin-top:3px}
+.el-m .etags em.cnt{border-style:dashed;color:var(--mute)}
+
+/* 인물 = 학생증 · 교원증 · 신분증 */
+.enti.eid{--ink:#1a140d;--ink2:#4a3f30;--ink3:#7a6a50;--hd1:#6e1019;--hd2:#4a0a12;--gold:#cfae6e;--seal:#b0202e;color:var(--ink);border-radius:12px;overflow:hidden;
+  background:radial-gradient(circle at 80% 64%,rgba(110,16,25,.06) 0 16%,transparent 17%),repeating-radial-gradient(circle at 80% 64%,transparent 0 6px,rgba(143,123,82,.09) 6px 7px),linear-gradient(160deg,#efe6d2,#e4d8bd);
+  box-shadow:0 0 0 1px #b9a77f,0 6px 16px rgba(0,0,0,.42);font-family:'Noto Sans KR','IBM Plex Sans KR',sans-serif}
+.enti.eid.eid-staff{--hd1:#1d2a3c;--hd2:#0f1622}
+.enti.eid.eid-gen{--hd1:#3a3f47;--hd2:#22262c}
+.enti.eid:hover{box-shadow:0 0 0 1px var(--gold),0 10px 22px rgba(0,0,0,.5)}
+.enti.eid.on{box-shadow:0 0 0 2px var(--hd1),0 0 0 4px var(--gold),0 10px 22px rgba(0,0,0,.5)}
+.eid-h{display:flex;align-items:center;gap:8px;padding:6px 10px;background:linear-gradient(90deg,var(--hd1),var(--hd2));color:var(--gold);border-bottom:2px solid #8f7b52}
+.eid-cr{display:block;width:17px;height:20px;flex:none}.eid-cr svg{width:100%;height:100%;display:block}
+.eid-o{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.eid-o b{font-family:'Cinzel','Noto Serif KR',serif;font-weight:700;letter-spacing:.14em;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eid-o small{font-family:'Noto Serif KR',serif;font-size:9.5px;letter-spacing:.2em;color:#e9dcc0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eid-k{margin-left:auto;text-align:right;font-family:'Noto Serif KR',serif;font-weight:900;font-size:13px;color:#f3eadb;line-height:1.1;white-space:nowrap}
+.eid-k small{display:block;font-family:'Cinzel',serif;font-weight:500;font-size:7.5px;letter-spacing:.22em;color:var(--gold)}
+.eid-b{display:flex;gap:10px;padding:10px 10px 6px}
+.eid-p{width:64px;height:84px;flex:none;background:#d8cbb0 center/cover no-repeat;border:1px solid #8f7b52;outline:1px solid #efe6d2;outline-offset:-3px;box-shadow:2px 2px 0 rgba(0,0,0,.16);filter:sepia(.15) contrast(1.02)}
+.eid-p.noimg{display:flex;align-items:center;justify-content:center;font:900 28px/1 'Noto Serif KR',serif;color:#8f7b52;background:repeating-linear-gradient(135deg,#e6dbc2 0 7px,#ddd0b2 7px 14px)}
+.eid-f{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 8px;align-content:start;min-width:0;flex:1}
+.eid-l{font-family:'Noto Serif KR',serif;font-size:10px;color:var(--ink3);letter-spacing:.14em;padding-top:2px;white-space:nowrap}
+.eid-n{font-family:'Noto Serif KR',serif;font-weight:900;font-size:17px;line-height:1.2;color:var(--ink);overflow-wrap:anywhere}
+.eid-v{font-size:12.5px;color:var(--ink);border-bottom:1px dotted #b9a77f;padding-bottom:1px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eid-no{font-family:'Special Elite','IBM Plex Mono',monospace;letter-spacing:.1em}
+.eid-ft{display:flex;align-items:center;gap:7px;margin:0 10px;padding:5px 0 8px;border-top:1px solid #c9b994;min-height:42px}
+.eid-bar{flex:none;width:64px;height:16px;background:repeating-linear-gradient(90deg,var(--ink) 0 2px,transparent 2px 4px,var(--ink) 4px 5px,transparent 5px 8px,var(--ink) 8px 11px,transparent 11px 12px,var(--ink) 12px 13px,transparent 13px 16px);opacity:.82}
+.eid-tg{display:flex;flex-wrap:wrap;gap:3px;min-width:0;flex:1;overflow:hidden;max-height:40px}
+.eid-tg em{font-style:normal;font-size:10.5px;padding:0 6px;border:1px solid #b9a77f;border-radius:3px;color:var(--ink2);background:rgba(255,255,255,.3);white-space:nowrap}
+.eid-ft .visb{transform:scale(.9)}
+.eid-ft .lki{color:var(--ink2)}
+.eid-seal{margin-left:auto;flex:none;width:30px;height:30px;border:2px solid var(--seal);border-radius:50%;display:grid;place-items:center;font:900 9px/1 'Noto Serif KR',serif;color:var(--seal);transform:rotate(-12deg);opacity:.85;letter-spacing:.05em}
+/* 오른쪽 자세히: 큰 신분증 */
+.eidwrap{margin:10px 0 14px}
+.enti.eid.big{cursor:default;max-width:470px;transform:none}
+.enti.eid.big .eid-h{padding:10px 14px}.enti.eid.big .eid-cr{width:26px;height:30px}
+.enti.eid.big .eid-o b{font-size:13.5px}.enti.eid.big .eid-o small{font-size:11px}
+.enti.eid.big .eid-k{font-size:16px}.enti.eid.big .eid-k small{font-size:9px}
+.enti.eid.big .eid-b{gap:14px;padding:14px 14px 8px}
+.enti.eid.big .eid-p{width:110px;height:144px;cursor:zoom-in}
+.enti.eid.big .eid-p.noimg{font-size:46px;cursor:default}
+.enti.eid.big .eid-f{gap:5px 10px}
+.enti.eid.big .eid-l{font-size:11px}
+.enti.eid.big .eid-n{font-size:24px}
+.enti.eid.big .eid-v{font-size:13.5px;white-space:normal;overflow-wrap:anywhere}
+.enti.eid.big .eid-ft{margin:0 14px;padding:7px 0 12px}
+.enti.eid.big .eid-bar{width:120px;height:22px}
+.enti.eid.big .eid-seal{width:46px;height:46px;font-size:12px}
+.enti.eid.big .eid-tg{max-height:none}
+/* 세계관 자세히 머리 */
+.enthead.ewh{border-left:4px solid var(--c);padding:6px 0 6px 12px;background:repeating-radial-gradient(circle at 92% 30%,transparent 0 12px,color-mix(in srgb,var(--c) 9%,transparent) 12px 13px)}
+.enthead.ewh h3{font-family:'Noto Serif KR',serif;font-weight:900}
+/* 꾸밈 「대학」: 지도첩 · 규칙 카드도 종이 결 */
+html[data-skin="univ"] .enti.ew,html[data-skin="univ"] .enti.el{--fg:#1a140d;--fg2:#4a3f30;--mute:#7a6a50;--line:#c9b994;--line2:#a8936a;--panel:#efe6d2;color:#1a140d;box-shadow:0 0 0 1px #b9a77f,0 6px 14px rgba(0,0,0,.35)}
+html[data-skin="univ"] .enti.ew{background-color:#efe6d2}
+html[data-skin="univ"] .enti.el{background:linear-gradient(160deg,#efe6d2,#e4d8bd)}
+@media (max-width:560px){.entsplit .entgrid.eg-id,.entsplit .entgrid.eg-w,.entsplit .entgrid.eg-l{grid-template-columns:1fr}}
