@@ -18,7 +18,7 @@ window.NT_PHONE=(()=>{
     이어 둔 웹툴 방의 학교 게시판을 휴대폰 화면 안에 그린다. 글쓴이 = 휴대폰 주인, 신분 = 이 브라우저의 웹툴 신분(who) */
  const omBase=()=>String((window.NT_CONFIG||{}).oremasUrl||'https://mangryoung.github.io/oremas/').replace(/[#?].*$/,'').replace(/index\.html$/,'').replace(/\/?$/,'/');
  let BBSL=null;
- const BBS_V=5;   /* 웹툴 bbs_ui 의 V — 페이지에 옛 것이 남아 있으면(전에 연 것) 새로 불러온다 */
+ const BBS_V=8;   /* 11-02 8: 「✎ 게시판」 창 두 칸(왼쪽 휴대폰 · 오른쪽 글 6개 + 접기) · GM 디스코드 연동 */   /* 웹툴 bbs_ui 의 V — 페이지에 옛 것이 남아 있으면(전에 연 것) 새로 불러온다 */
  function bbsLoad(){if(window.OM_BBS_UI&&(window.OM_BBS_UI.V||0)>=BBS_V)return Promise.resolve(true);if(BBSL)return BBSL;const base=omBase();
   BBSL=new Promise(res=>{const l=document.createElement('link');l.rel='stylesheet';l.href=base+'css/bbs.css?v='+BBS_V;document.head.appendChild(l);const s=document.createElement('script');s.src=base+'js/bbs_ui.js?v='+BBS_V;s.onload=()=>res(!!window.OM_BBS_UI);s.onerror=()=>{BBSL=null;res(false)};document.head.appendChild(s)});return BBSL}
  /* 글쓴이 고르기 (노트 왼쪽 아래 「✎ 게시판」 창): GM 은 GM · 명단 트레이너 · 관계도 NPC, 좌석은 자기 트레이너 */
@@ -26,7 +26,13 @@ window.NT_PHONE=(()=>{
    for(const [nid,n] of Object.entries(nodes())){if(!n||!n.name||have.has(n.name)||n.kind==='org')continue;have.add(n.name);out.push({cid:'n:'+nid,n:n.name,img:n.img||cidImg('n:'+nid)||'',sub:'관계도 '+(n.kind==='pc'?'PC':'NPC'),grp:'NPC'})}return out}
   if(id.role==='seat'){const t=T()[id.seat];if(t)out.push({cid:t.id,n:t.name||'?',img:t.image||'',sub:'내 트레이너',grp:'내 캐릭터'})}return out}
  function bbsEnv(canW){const B=window.OM_BBS_UI;return {key:'nt',room:()=>PH.room,secret:()=>(PH.id&&PH.id.secret)||'',role:()=>canW()?((PH.id&&PH.id.role)||'view'):'view',seat:()=>(PH.id&&PH.id.seat)||'',
-  api:()=>(PH.bbsApi=PH.bbsApi||B.apiFromRpc((fn,a)=>DB().omRpc(fn,a))),upload:f=>N().upload(f,'photo','bbs'),toast:x=>N().toast(x),notify:()=>{},authors:bbsAuthors,roomName:()=>((N().ST.campInfo||{}).name)||''}}
+  api:()=>(PH.bbsApi=PH.bbsApi||B.apiFromRpc((fn,a)=>DB().omRpc(fn,a))),upload:f=>N().upload(f,'photo','bbs'),toast:x=>N().toast(x),notify:()=>{},authors:bbsAuthors,roomName:()=>((N().ST.campInfo||{}).name)||'',
+  calendar:()=>(PH.st&&PH.st.cal)||{},phone:bbsPhone()}}
+ /* 11-02 망령 「노트 게시판도 왼쪽은 휴대폰처럼」: 게시판 창 왼쪽 칸의 앱 · 연락처를 이 노트의 휴대폰(open)으로 잇는다. 웹툴 트레이너만 휴대폰이 있다(관계도 인물 · GM 은 없음) */
+ function bbsPhone(){return {tidOf:au=>{const id=PH.id||{};if(id.role==='seat')return T()[id.seat]?id.seat:'';const c=(au&&au.cid)||'';return T()[c]?c:''},
+  apps:tid=>[['book','📞','연락처',tid?cardsIn(tid).length:0],['sms','💬','문자',tid?unreadAll(tid):0],['party','👥','파티'],['home','📱','휴대폰']],
+  book:tid=>bookOf(tid).map(e=>{const real=cidName(e.cid);return {cid:e.cid,n:e.n||real,img:cidImg(e.cid),sub:[e.n&&e.n!==real?real:'',cidSub(e.cid)].filter(Boolean).join(' · ')}}),
+  open:(tid,scr,cid)=>{if(cid){const id=dmId(tid,cid);const o=LSg(OPEN_KEY,[]);if(!o.includes(id)){o.push(id);LSs(OPEN_KEY,o.slice(-50))}return open(tid,'chat',id)}return open(tid,scr==='home'?'home':scr)}}}
  function bbsMount(el){const box=$('#ntphBbs',el);if(!box)return;const t=trOf(PH.sid);
   bbsLoad().then(ok=>{if(!ok){box.innerHTML='<div class="ntph-empty sm">웹툴 게시판을 불러오지 못했어요.</div>';return}if(!box.isConnected)return;
    try{window.OM_BBS_UI.mount(box,{who:t?{cid:t.id,n:t.name||'?',img:t.image||'',sub:'휴대폰 주인'}:null,env:bbsEnv(()=>canWrite(t))})}catch(e){box.innerHTML=`<div class="ntph-empty sm">게시판을 그리지 못했어요<br><small>${esc(e.message||String(e))}</small></div>`}})}
@@ -35,7 +41,7 @@ window.NT_PHONE=(()=>{
   const md=N().openModal('<div class="mhead"><h2>학교 게시판</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div id="ntBbsBox" class="ntbbs-box"><div class="ntph-empty sm">불러오는 중…</div></div>','ntbbs-modal');
   await load();const ok=await bbsLoad();const box=$('#ntBbsBox',md);if(!box||!box.isConnected)return;
   if(!ok){box.innerHTML='<div class="ntph-empty sm">웹툴 게시판을 불러오지 못했어요.</div>';return}
-  try{window.OM_BBS_UI.mount(box,{who:null,compact:false,env:bbsEnv(()=>!!(PH.id&&PH.id.secret&&PH.id.role))})}catch(e){box.innerHTML=`<div class="ntph-empty sm">게시판을 그리지 못했어요<br><small>${esc(e.message||String(e))}</small></div>`;return}
+  try{window.OM_BBS_UI.mount(box,{who:null,compact:false,split:true,env:bbsEnv(()=>!!(PH.id&&PH.id.secret&&PH.id.role))})}catch(e){box.innerHTML=`<div class="ntph-empty sm">게시판을 그리지 못했어요<br><small>${esc(e.message||String(e))}</small></div>`;return}
   if(!(PH.id&&PH.id.role))N().toast('이 브라우저는 이어 둔 웹툴 방에 들어간 적이 없어 읽기만 해요 — 웹툴에서 한 번 들어오면 여기서도 써요')}
  function bbsFab(){let e=document.getElementById('ntbbsfab');const on=!!(N()&&N().ST&&N().ST.camp&&omRoom());if(!on){if(e)e.hidden=true;return}
   if(!e){e=document.createElement('button');e.type='button';e.id='ntbbsfab';e.className='ntbbsfab';e.title='학교 게시판 (이어 둔 웹툴 방)';e.setAttribute('aria-label','학교 게시판 열기');e.onclick=openBoard;document.body.appendChild(e)}

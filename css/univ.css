@@ -599,5 +599,5 @@ html[data-skin="univ"] .idrkc input{font-family:'Cinzel','Noto Serif KR',serif;c
 .ntbbsfab b{position:absolute;top:-8px;right:-8px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#e4002b;color:#fff;font:700 11px/20px monospace;text-align:center;border:2px solid #000}
 .ntbbsfab:focus-visible{outline:2px solid #fff;outline-offset:2px}
 @media (max-width:760px){.ntbbsfab{left:8px;height:34px;padding:0 10px}.ntbbsfab-t{display:none}}
-.modal.ntbbs-modal{width:min(920px,97vw)}
+.modal.ntbbs-modal{width:min(1240px,97vw)}   /* 11-02 두 칸 (웹툴 bbs.css .bbs-split) */
 .ntbbs-box{min-height:200px}

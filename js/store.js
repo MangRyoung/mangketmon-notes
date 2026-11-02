@@ -57,7 +57,7 @@ window.NT_STORE=(()=>{
   /* 10-29 망령: PC 시트 휴대폰 — 이어 둔 웹툴 방(om_*)의 방 코드(파티) · 문자를 웹툴과 같은 표 · 같은 함수로 읽고 쓴다.
      신분은 같은 주소의 웹툴이 이 브라우저에 남긴 계정 · GM 비밀값 · 좌석 비밀값으로 om_whoami 에 묻는다 */
   omWho:(room,secret)=>rpc('om_whoami',{p_room:room,p_secret:secret||''}),
-  async omPhoneState(room){const r=await sb().from('om_state').select('tr:data->roster->trainers,pub:data->pub,nodes:data->graph->nodes,sms:data->rp->sms,seats:data->seats').eq('room',room).maybeSingle();if(r.error)throw err(r.error);return r.data||null},
+  async omPhoneState(room){const r=await sb().from('om_state').select('tr:data->roster->trainers,pub:data->pub,nodes:data->graph->nodes,sms:data->rp->sms,seats:data->seats,cal:data->calendar').eq('room',room).maybeSingle();if(r.error)throw err(r.error);return r.data||null},
   async omSms(room,after){let q=sb().from('om_log').select('id,at,who,kind,data').eq('room',room).eq('kind','chat').not('data->>sms','is',null).order('id',{ascending:false}).limit(400);if(after)q=q.gt('id',after);const r=await q;if(r.error)throw err(r.error);return (r.data||[]).reverse()},
   omLogAdd:(room,secret,kind,who,data)=>rpc('om_log_add',{p_room:room,p_secret:secret,p_kind:kind,p_who:who,p_data:data||{}}),
   omRpc:(fn,args)=>rpc(fn,args),   /* 11-02 망령: 학교 게시판(om_bbs_*) — 웹툴 bbs_ui 가 이 함수로 부른다 */
