@@ -485,7 +485,8 @@ window.NT_AWK=(()=>{
  /* 확정: pcp 의 그 칸에 {id,n,at} — 묶음에서 빠지고 테두리가 바뀐다. 풀면 지운다 */
  /* 10-29 망령 「각성체 탭에서도 확정 — 내가 정해도 되니까」: 고른 후보가 없어도 GM 이 원전 이름을 적어 확정한다. 이름이 DB 에 있으면 그 항목 id 를 붙인다 */
  async function toggleFix(sid){const x=slot(sid);const r=rec(sid);let e=r.pick&&byId(r.pick);
-  if(!x.fixed){const nm=String(await N().promptBox(`각성체 ${x.n} 원전 확정`,e?e.n:x.src,'원전 이름 (예: 잔 다르크)')||'').trim();if(!nm)return;
+  /* 11-02 망령 「확정 누르면 이름 입력칸 안 뜨게」: 고른 후보 → 칸에 적힌 원전 순으로 이름을 바로 쓴다. 둘 다 없으면 알리고 끝 */
+  if(!x.fixed){const nm=String((e&&e.n)||x.src||'').trim();if(!nm)return N().toast('원전을 먼저 고르거나 칸에 적어 주세요');
    if(!e||nm!==e.n){const L=DB.base?all():[];const hit=L.find(q=>q.n===nm)||L.find(q=>(q.n||'').replace(/\s/g,'')===nm.replace(/\s/g,''));e=hit?{id:hit.id,n:hit.n}:{id:'',n:nm}}}
   const cur=Object.assign({},pcp(x.pc));const L=Array.isArray(cur.awk)?cur.awk.map(o=>Object.assign({},o)):[];while(L.length<x.n)L.push({});
   if(x.fixed)delete L[x.n-1].fixed;else L[x.n-1].fixed={id:e.id,n:e.n,at:new Date().toISOString()};cur.awk=L;await N().put('pcp',x.pc,cur,pvis(x.pc));N().toast(x.fixed?'확정을 풀었어요':`「${e.n}」로 확정했어요`)}
