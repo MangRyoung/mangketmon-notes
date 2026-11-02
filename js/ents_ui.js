@@ -85,7 +85,7 @@
  const idCrest='<svg viewBox="0 0 40 46" aria-hidden="true"><path d="M20 2 37 8v14c0 11-7.5 18.5-17 22C10.5 40.5 3 33 3 22V8Z" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M11 16h18v14H11zM20 16v14" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="20" cy="9.5" r="2.2" fill="currentColor"/></svg>';
  function idOrg(){const c=(N().ST&&N().ST.campInfo)||{};const nm=c.name||'';const univ=document.documentElement.getAttribute('data-skin')==='univ';
   return univ?['MISAG UNIVERSITY',/대학/.test(nm)?nm.replace(/대학$/,'대학교'):'미사그 대학교']:[nm||'CAMPAIGN','캠페인 인물 기록']}
- function cardId(e,big){const k=idKind(e),K=IDK[k];const img=e.face||e.photo||'';const org=idOrg();const ini=esc([...String(e.title||'?')][0]||'?');const R=rowsV(e).filter(r=>r.v);
+ function cardId(e,big){const k=idKind(e),K=IDK[k];const mt=e.mk&&window.NT_MAKER&&NT_MAKER.trainer?NT_MAKER.trainer(e.mk):null;const img=e.face||e.photo||(mt&&/^https?:\/\//.test(mt.image||'')?mt.image:'');const org=idOrg();const ini=esc([...String(e.title||'?')][0]||'?');const R=rowsV(e).filter(r=>r.v);
   const tag=big?'div':'button';
   return `<${tag} ${big?'':'type="button"'} class="enti eid eid-${k} ${big?'big':''} ${!big&&e.id===U.sel?'on':''}" ${big?'':`data-sel="${esc(e.id)}" data-id="${esc(e.id)}" data-drag`} style="--c:${e.color||tc('인물')[2]}">
    <span class="eid-h"><i class="eid-cr">${idCrest}</i><span class="eid-o"><b>${esc(org[0])}</b><small>${esc(org[1])}</small></span><span class="eid-k">${K[0]}<small>${K[1]}</small></span></span>
