@@ -93,3 +93,11 @@ html[data-skin="univ"] .enti.ew,html[data-skin="univ"] .enti.el{--fg:#1a140d;--f
 html[data-skin="univ"] .enti.ew{background-color:#efe6d2}
 html[data-skin="univ"] .enti.el{background:linear-gradient(160deg,#efe6d2,#e4d8bd)}
 @media (max-width:560px){.entsplit .entgrid.eg-id,.entsplit .entgrid.eg-w,.entsplit .entgrid.eg-l{grid-template-columns:1fr}}
+/* 끌어 옮기기 표시 (같은 칸 = 바로 자리 바꿈, 다른 칸 = 놓일 자리만 표시) */
+.entsplit.dragging,.entcol.dragging{user-select:none}
+.entgrid.drop{outline:2px dashed var(--c,#ffd23f);outline-offset:4px;border-radius:6px}
+.entsec h3.drop{background:color-mix(in srgb,var(--c) 22%,transparent);border-radius:4px}
+.entgrid .insb{box-shadow:-5px 0 0 var(--yel,#ffd23f)!important}
+.entgrid .insa{box-shadow:5px 0 0 var(--yel,#ffd23f)!important}
+.entgrid .nt-dragging{opacity:.35}
+.entsec h3 .esadd{padding:0 8px;line-height:18px;font-size:13px;margin-right:6px}

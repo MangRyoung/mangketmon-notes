@@ -29,7 +29,7 @@
    <input type="search" id="enQ" placeholder="찾기" title="제목 · 한 줄 · 본문 · 상세 칸 · 태그에서 찾아요" value="${esc(U.q)}" style="width:160px"><div class="entview" title="카드로 보기 · 한 줄씩 보기"><button type="button" data-ev="card" class="${U.dense?'':'on'}">카드</button><button type="button" data-ev="list" class="${U.dense?'on':''}">목록</button></div><span class="sp"></span>${N().bulkBtns('ents',null,'항목')}${G?'<button class="btn sm pri" data-e="new">＋ 항목</button>':''}</div>
    ${(()=>{const T=tags();if(!T.length)return '';const cnt=t=>all.filter(e=>(e.tags||[]).includes(t)).length;const sorted=[...T].sort((a,b)=>cnt(b)-cnt(a)||a.localeCompare(b,'ko'));const show=U.tagsOpen||U.tag?sorted:sorted.slice(0,TAGMAX);
     return `<div class="tagbar">${U.tag?`<button class="chip on" data-tag="">${esc(U.tag)} ×</button>`:''}${show.filter(t=>t!==U.tag).map(t=>`<button class="chip" data-tag="${esc(t)}">${esc(t)}<small>${cnt(t)}</small></button>`).join('')}${sorted.length>TAGMAX&&!U.tag?`<button class="chip ghost" data-tagmore>${U.tagsOpen?'접기':'+'+(sorted.length-TAGMAX)+' 태그'}</button>`:''}</div>`})()}
-   <div class="split wideR entsplit"><div class="entcol">${U.type||q||U.tag?`<div class="entgrid ${gridCls(U.type)}">${L.map(cardOf).join('')||emptyBox(G)}</div>`:TYPES.map(([t,,c])=>{const g=L.filter(e=>ety(e)===t);if(!g.length)return '';const fold=U.fold[t];return `<section class="entsec es-${tc(t)[1]} ${fold?'fold':''}" style="--c:${c}"><h3 data-fold="${t}"><i class="kdot"></i>${tl(t)}<small>${g.length}</small><span class="sp"></span><em>${fold?'펼치기 ▾':'접기 ▴'}</em></h3>${fold?'':`<div class="entgrid ${gridCls(t)}">${g.map(cardOf).join('')}</div>`}</section>`}).join('')||emptyBox(G)}</div><aside class="side" id="entSide">${sel?detail(sel):'<div class="card dim small">항목을 누르면 여기에 자세히 나와요.</div>'}</aside></div>`;
+   <div class="split wideR entsplit"><div class="entcol">${U.type||q||U.tag?`<div class="entgrid ${gridCls(U.type)}" data-bin="${U.type||''}">${L.map(cardOf).join('')||emptyBox(G)}</div>`:TYPES.map(([t,,c])=>{const g=L.filter(e=>ety(e)===t);if(!g.length)return '';const fold=U.fold[t];return `<section class="entsec es-${tc(t)[1]} ${fold?'fold':''}" style="--c:${c}"><h3 data-fold="${t}" data-ebin="${t}"><i class="kdot"></i>${tl(t)}<small>${g.length}</small><span class="sp"></span>${G?`<button type="button" class="btn xs ghost esadd" data-e="new" data-t="${t}" title="${esc(tl(t))} 새로 만들기">＋</button>`:''}<em>${fold?'펼치기 ▾':'접기 ▴'}</em></h3>${fold?'':`<div class="entgrid ${gridCls(t)}" data-bin="${t}">${g.map(cardOf).join('')}</div>`}</section>`}).join('')||emptyBox(G)}</div><aside class="side" id="entSide">${sel?detail(sel):'<div class="card dim small">항목을 누르면 여기에 자세히 나와요.</div>'}</aside></div>`;
   const qi=$('#enQ',el);qi.oncompositionend=()=>qi.oninput({isComposing:false});qi.oninput=e=>{if(e.isComposing)return;U.q=qi.value;const v=qi.value;N().render();const q2=$('#enQ');if(q2){q2.focus();q2.setSelectionRange(v.length,v.length)}};
   el.addEventListener('click',e=>{const t=e.target;const shb=t.closest('[data-shelf]');if(shb){NT_SHELF.open(shb.dataset.shelf);return}   /* 10-31 룰북 서가 (꾸밈 「대학」) */
    const tb=t.closest('#enTypes button');if(tb){U.type=tb.dataset.t;N().render();return}
@@ -37,7 +37,7 @@
    const nv=t.closest('[data-enav]');if(nv){const k=U.ids.indexOf(U.sel);const j=k+(+nv.dataset.enav);if(j>=0&&j<U.ids.length){U.sel=U.ids[j];N().render();const c=document.querySelector(`.entgrid [data-sel="${CSS.escape(U.sel)}"]`);if(c)c.scrollIntoView({block:'nearest'})}return}
    const ap=t.closest('[data-appear]');if(ap){const [rid,i]=ap.dataset.appear.split('|');if(window.NT_SCEN){if(N().gm())NT_SCEN.write(rid,'ws'+i+'n');else N().go('scen')}return}
    const tm=t.closest('[data-tagmore]');if(tm){U.tagsOpen=!U.tagsOpen;N().render();return}
-   const fd=t.closest('[data-fold]');if(fd){U.fold[fd.dataset.fold]=!U.fold[fd.dataset.fold];N().render();return}
+   const fd=t.closest('[data-fold]');if(fd&&!t.closest('[data-e]')){U.fold[fd.dataset.fold]=!U.fold[fd.dataset.fold];N().render();return}
    const tg=t.closest('[data-tag]');if(tg){U.tag=tg.dataset.tag===U.tag?'':tg.dataset.tag;N().render();return}
    const c=t.closest('[data-sel]');if(c&&!t.closest('button.btn')){U.sel=c.dataset.sel;N().render();const s=$('#entSide');if(s&&innerWidth<1000)s.scrollIntoView({behavior:'smooth',block:'start'});return}
    const go=t.closest('[data-spot]');if(go){N().go('map');setTimeout(()=>{window.NT_MAP.select(go.dataset.spot);N().render()},0);return}
@@ -47,9 +47,39 @@
    const big=t.closest('img[data-big]');if(big){N().openModal(`<img src="${esc(big.dataset.big)}" style="max-width:100%;max-height:80vh;display:block;margin:auto">`,'wide');return}
    const b=t.closest('[data-e]');if(b)act(b.dataset.e,b)});
   /* 10-26 망령: 끌어서 순서 바꾸기(GM) · 우클릭 · 길게 누르기 메뉴 */
-  if(G)$$('.entgrid',el).forEach(g=>N().sortable(g,'.entcard,.enti',ids=>N().reorder('ents',ids)));
+  if(G)bindDrag(el);
   if(window.NT_SHELF)NT_SHELF.bind(el);   /* 10-31 룰북 서가: ＋ 책 · 끌어서 순서 */
   N().bindCtx(el,'.entcard,.enti',c=>ctxItems(c.dataset.id))}
+ /* 11-02 망령 「추가 · 수정 · 삭제 편하고 드래그로 이동도」: 같은 칸 = 순서(가로 · 세로 둘 다 봄), 다른 칸 · 칸 제목 위에 놓기 = 종류를 그 칸으로.
+    세계관으로 = 종류 「세계관」, 세계관에서 다른 칸으로 = 세계관 · 지역 태그도 뗀다 (태그 때문에 다시 세계관에 보이지 않게). pc_ui bindDrag 와 같은 방식 */
+ const CARD='.entcard,.enti';
+ function bindDrag(root){if(!root||root._enDrag)return;root._enDrag=1;let d=null;
+  const clear=()=>$$('.drop,.insb,.insa',root).forEach(x=>x.classList.remove('drop','insb','insa'));
+  root.addEventListener('pointerdown',e=>{if(e.button!==0)return;const it=e.target.closest(CARD);if(!it||!root.contains(it)||!it.closest('.entgrid'))return;if(e.target.closest('input,textarea,select,button:not([data-drag]),a,[data-visq],[data-fav]'))return;d={it,x:e.clientX,y:e.clientY,id:e.pointerId,moved:false,ph:null,t:null}});
+  root.addEventListener('pointermove',e=>{if(!d||d.id!==e.pointerId)return;if(!d.moved){if(Math.hypot(e.clientX-d.x,e.clientY-d.y)<6)return;d.moved=true;try{root.setPointerCapture(e.pointerId)}catch(x){}
+    const r=d.it.getBoundingClientRect();d.ox=e.clientX-r.left;d.oy=e.clientY-r.top;d.ph=d.it.cloneNode(true);d.ph.classList.add('nt-ghost');d.ph.style.cssText+=`;position:fixed;pointer-events:none;z-index:2000;opacity:.85;width:${r.width}px;left:${r.left}px;top:${r.top}px;margin:0`;document.body.appendChild(d.ph);d.it.classList.add('nt-dragging');root.classList.add('dragging');document.body.classList.add('nt-sorting')}
+   e.preventDefault();d.ph.style.left=(e.clientX-d.ox)+'px';d.ph.style.top=(e.clientY-d.oy)+'px';
+   const el=document.elementFromPoint(e.clientX,e.clientY);clear();d.t=null;if(!el||!root.contains(el))return;
+   const h=el.closest('[data-ebin]');if(h){h.classList.add('drop');d.t={bin:h.dataset.ebin,ref:'',before:false};return}
+   const g=el.closest('.entgrid');if(!g)return;const c=el.closest(CARD);
+   const place=c2=>{const r=c2.getBoundingClientRect();const one=getComputedStyle(g).gridTemplateColumns.split(' ').length<2;return one?e.clientY<r.top+r.height/2:e.clientX<r.left+r.width/2};
+   if(g===d.it.parentNode){if(c&&c!==d.it){const before=place(c);g.insertBefore(d.it,before?c:c.nextSibling)}return}
+   g.classList.add('drop');if(c){const before=place(c);c.classList.add(before?'insb':'insa');d.t={bin:g.dataset.bin||'',ref:c.dataset.id,before}}else d.t={bin:g.dataset.bin||'',ref:'',before:false}});
+  const end=async e=>{if(!d||d.id!==e.pointerId)return;const w=d;d=null;try{root.releasePointerCapture(e.pointerId)}catch(x){}if(w.ph)w.ph.remove();w.it.classList.remove('nt-dragging');root.classList.remove('dragging');document.body.classList.remove('nt-sorting');clear();
+   if(!w.moved)return;root.dataset.sorted='1';setTimeout(()=>{delete root.dataset.sorted},0);
+   const mid=w.it.dataset.id;const home=(w.it.parentNode&&w.it.parentNode.dataset.bin)||'';const t=w.t&&w.t.bin&&w.t.bin!==home?w.t:null;
+   /* 화면 순서대로 order 를 다시 매긴다 (보이는 칸들 → 숨은 것은 뒤에) */
+   let ids=$$('.entgrid',root).flatMap(g=>$$(CARD,g).map(x=>x.dataset.id)).filter(Boolean);
+   if(t){ids=ids.filter(id=>id!==mid);const tgt=$(`.entgrid[data-bin="${CSS.escape(t.bin)}"]`,root);const L=tgt?$$(CARD,tgt).map(x=>x.dataset.id).filter(id=>id!==mid):[];
+    let at=-1;if(t.ref){at=ids.indexOf(t.ref);if(at>=0&&!t.before)at++}else if(L.length){at=ids.indexOf(L[L.length-1])+1}
+    if(at<0)ids.push(mid);else ids.splice(at,0,mid)}
+   const rest=ents().map(x=>x.id).filter(id=>!ids.includes(id));ids=ids.concat(rest);
+   const rows=[];let msg='';ids.forEach((id,i)=>{const dd=N().doc('ents',id);if(!dd)return;const n=Object.assign({},dd.data);let ch=(n.order||0)!==i;n.order=i;
+    if(id===mid&&t){const to=t.bin;const from=ety(n);if(to!==from){n.type=to;if(to!=='세계관'&&(n.tags||[]).some(x=>WTAG.includes(String(x).trim())))n.tags=(n.tags||[]).filter(x=>!WTAG.includes(String(x).trim()));ch=true;msg=`「${n.title||''}」 → ${tl(to)}`}}
+    if(ch)rows.push({kind:'ents',id,data:n,vis:dd.vis})});
+   if(rows.length){await N().putMany(rows);if(msg)N().toast(msg)}else N().render()};
+  root.addEventListener('pointerup',end);root.addEventListener('pointercancel',end);
+  root.addEventListener('click',e=>{if(root.dataset.sorted){e.stopPropagation();e.preventDefault()}},true)}
  const emptyBox=G=>`<div class="empty">항목이 없어요.${G?' <button type="button" class="btn sm pri" data-e="new" style="margin-left:8px">＋ 항목</button>':''}</div>`;
  function ctxItems(id){const d=N().doc('ents',id);if(!d)return null;const e=d.data;const G=N().gm();const it=[];const cur=d.vis||'pub';
   if(G){const vis=[['pub','👥 모두에게'],['gm','🔒 GM만']].concat((N().ST.seats||[]).map(s=>['pl:'+s.seat,'👤 '+(N().seatName(s.seat)||s.seat)+' 에게만']));
@@ -134,7 +164,7 @@
   throw new Error(`「${nm}」 은 아직 못 올려요 — 그림 · .txt · .md 만 돼요. PDF 는 드라이브 같은 곳에 올리고 「＋ 링크」로 붙여 주세요`)}
  async function mkAdd(tid){const t=window.NT_MAKER&&NT_MAKER.trainer(tid);if(!t)return;const k=t.kind==='npc'?'npc':'pc';await N().put(k,tid,{name:t.name||'',image:t.image||'',player:'',sub:'',log:[],order:N().list(k).length},k==='npc'?'gm':'pub');N().toast((k==='npc'?'NPC':'PC')+' 시트에 넣었어요');N().render()}
  async function act(k,b){const id=b.dataset.id||U.sel;
-  if(k==='new'){const nid=N().uid('e');await N().put('ents',nid,{type:U.type||'인물',title:'새 항목',sub:'',body:'',rows:(TPL[U.type||'인물']||[]).map(k=>({k,v:''})),tags:U.tag?[U.tag]:[],teams:[],face:'',photo:'',at:[],created:Date.now(),order:ents().length},'gm');U.sel=nid;edit(nid);N().armDraft('ents',nid);return}
+  if(k==='new'){const nid=N().uid('e');const nty=(b&&b.dataset&&b.dataset.t)||U.type||'인물';await N().put('ents',nid,{type:nty,title:'새 항목',sub:'',body:'',rows:(TPL[nty]||[]).map(k=>({k,v:''})),tags:U.tag?[U.tag]:[],teams:[],face:'',photo:'',at:[],created:Date.now(),order:ents().length},'gm');U.sel=nid;edit(nid);N().armDraft('ents',nid);return}
   if(k==='edit')return edit(id);
   if(k==='graph'){const id=U.sel;N().go('graph');setTimeout(()=>window.NT_GRAPH&&NT_GRAPH.focus&&NT_GRAPH.focus(id),0);return}
   if(k==='del'){const e=N().data('ents',id);if(!e||!await N().confirmBox(`「${e.title}」 항목을 지울까요? 관계선도 같이 지워져요.`,'지우기'))return;for(const r of N().list('rels').filter(r=>r.a===id||r.b===id))await N().del('rels',r.id);await N().del('ents',id);if(N().doc('sec','ent:'+id))await N().del('sec','ent:'+id);U.sel='';return}}
