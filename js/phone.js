@@ -18,7 +18,7 @@ window.NT_PHONE=(()=>{
     이어 둔 웹툴 방의 학교 게시판을 휴대폰 화면 안에 그린다. 글쓴이 = 휴대폰 주인, 신분 = 이 브라우저의 웹툴 신분(who) */
  const omBase=()=>String((window.NT_CONFIG||{}).oremasUrl||'https://mangryoung.github.io/oremas/').replace(/[#?].*$/,'').replace(/index\.html$/,'').replace(/\/?$/,'/');
  let BBSL=null;
- const BBS_V=9;   /* 11-02 9: 시트 카드 스레드 칸 · 8: 「✎ 게시판」 창 두 칸(왼쪽 휴대폰 · 오른쪽 글 6개 + 접기) · GM 디스코드 연동 */   /* 웹툴 bbs_ui 의 V — 페이지에 옛 것이 남아 있으면(전에 연 것) 새로 불러온다 */
+ const BBS_V=10;   /* 11-02 9: 시트 카드 스레드 칸 · 8: 「✎ 게시판」 창 두 칸(왼쪽 휴대폰 · 오른쪽 글 6개 + 접기) · GM 디스코드 연동 */   /* 웹툴 bbs_ui 의 V — 페이지에 옛 것이 남아 있으면(전에 연 것) 새로 불러온다 */
  function bbsLoad(){if(window.OM_BBS_UI&&(window.OM_BBS_UI.V||0)>=BBS_V)return Promise.resolve(true);if(BBSL)return BBSL;const base=omBase();
   BBSL=new Promise(res=>{const l=document.createElement('link');l.rel='stylesheet';l.href=base+'css/bbs.css?v='+BBS_V;document.head.appendChild(l);const s=document.createElement('script');s.src=base+'js/bbs_ui.js?v='+BBS_V;s.onload=()=>res(!!window.OM_BBS_UI);s.onerror=()=>{BBSL=null;res(false)};document.head.appendChild(s)});return BBSL}
  /* 글쓴이 고르기 (노트 왼쪽 아래 「✎ 게시판」 창): GM 은 GM · 명단 트레이너 · 관계도 NPC, 좌석은 자기 트레이너 */
@@ -36,6 +36,12 @@ window.NT_PHONE=(()=>{
  function bbsMount(el){const box=$('#ntphBbs',el);if(!box)return;const t=trOf(PH.sid);
   bbsLoad().then(ok=>{if(!ok){box.innerHTML='<div class="ntph-empty sm">웹툴 게시판을 불러오지 못했어요.</div>';return}if(!box.isConnected)return;
    try{window.OM_BBS_UI.mount(box,{who:t?{cid:t.id,n:t.name||'?',img:t.image||'',sub:'휴대폰 주인'}:null,env:bbsEnv(()=>canWrite(t))})}catch(e){box.innerHTML=`<div class="ntph-empty sm">게시판을 그리지 못했어요<br><small>${esc(e.message||String(e))}</small></div>`}})}
+ /* 11-02 18:58 망령 「디스코드 설정은 세션 노트 오른쪽 위 웹툴 옆 버튼으로」: 웹툴 bbs_ui 의 dcMount 를 이어 둔 웹툴 방 · 이 브라우저의 웹툴 신분으로 */
+ async function openDc(){const room=omRoom();if(!room)return N().toast('이 캠페인에 웹툴 방이 이어져 있지 않아요 — 설정 탭 「세 도구 잇기 → 웹툴 방」');
+  const md=N().openModal('<div class="mhead"><h2>🔗 디스코드 연동</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div id="ntDcBox"><div class="ntph-empty sm">불러오는 중…</div></div>','ntdc-modal');
+  await load();const ok=await bbsLoad();const box=$('#ntDcBox',md);if(!box||!box.isConnected)return;
+  if(!ok||!window.OM_BBS_UI.dcMount){box.innerHTML='<div class="ntph-empty sm">웹툴 게시판을 불러오지 못했어요.</div>';return}
+  window.OM_BBS_UI.dcMount(box,{env:bbsEnv(()=>!!(PH.id&&PH.id.secret&&PH.id.role))})}
  /* 11-02 망령 「세션 노트에도 만들어야지 — 거기서도 쉽게 적을 수 있어야」: 노트 어느 탭에서든 왼쪽 아래 「✎ 게시판」 → 이어 둔 웹툴 방의 학교 게시판 창 */
  async function openBoard(){const room=omRoom();if(!room)return N().toast('이 캠페인에 웹툴 방이 이어져 있지 않아요 — 설정 탭 「세 도구 잇기 → 웹툴 방」');
   const md=N().openModal('<div class="mhead"><h2>학교 게시판</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div id="ntBbsBox" class="ntbbs-box"><div class="ntph-empty sm">불러오는 중…</div></div>','ntbbs-modal');
@@ -241,5 +247,5 @@ window.NT_PHONE=(()=>{
  function boot(){try{if(!N()||!N().ST||!N().ST.camp)return;const room=omRoom();if(!room){if(PH.room)stopSub();return}if(watchSid()&&(PH.room!==room||(!PH.sub&&!PH.loading)))load()}catch(e){}}
  setInterval(boot,15000);setTimeout(boot,2500);
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&PH.sub&&Date.now()-PH.at>60000)load(true)});
- return {open,btn,panel,boot,load,PH,openBoard};
+ return {open,btn,panel,boot,load,PH,openBoard,openDc};
 })();
