@@ -51,7 +51,7 @@
     <div class="small dim" style="margin-top:4px">웹툴 캘린더에서 고쳐요 · 여기 세션 일정은 웹툴 캘린더에 「세션」으로 떠요</div></div>`}).join('')}
  function render(el){const G=N().gm();const total=sessAll().length,done=sessAll().filter(x=>x.st==='done').length;
   el.innerHTML=`<div class="toolbar"><h2>일정</h2><div class="seg"><button data-pt="sess" class="${U.tab==='sess'?'on':''}">세션 ${done}/${total}</button><button data-pt="cal" class="${U.tab==='cal'?'on':''}">달력</button><button data-pt="poll" class="${U.tab==='poll'?'on':''}">조율 ${cands().length?cands().filter(c=>c.date>=today).length:''}</button><button data-pt="note" class="${U.tab==='note'?'on':''}">설계 메모 ${notes().length}</button></div><span class="sp"></span>
-    ${U.tab==='sess'||U.tab==='cal'?`<button class="btn sm ghost" data-pl="ics" title="휴대폰 · 데스크톱 캘린더에 넣기">📅 .ics</button>`:''}${G?(U.tab==='sess'?'<button class="btn sm" data-pl="newpart">＋ 부</button><button class="btn sm pri" data-pl="newsess">＋ 세션</button><button class="btn xs ghost danger" data-pl="wipe" data-w="sess" title="부 · 세션 전부 지우기">비우기</button>':U.tab==='poll'?'<button class="btn sm pri" data-pl="newcand">＋ 후보 날짜</button>':U.tab==='note'?'<button class="btn sm pri" data-pl="newnote">＋ 메모</button><button class="btn xs ghost danger" data-pl="wipe" data-w="note" title="설계 메모 전부 지우기">비우기</button>':''):''}${N().bulkBtns('plan',null,U.tab==='note'?'설계 메모':'부 · 세션')}</div>
+    ${U.tab==='sess'||U.tab==='cal'?`<button class="btn sm ghost" data-pl="ics" title="휴대폰 · 데스크톱 캘린더에 넣기">📅 .ics</button>`:''}${G?(U.tab==='sess'?'<button class="btn sm" data-pl="newpart">＋ 부</button><button class="btn sm pri" data-pl="newsess">＋ 세션</button>':U.tab==='poll'?'<button class="btn sm pri" data-pl="newcand">＋ 후보 날짜</button>':U.tab==='note'?'<button class="btn sm pri" data-pl="newnote">＋ 메모</button>':''):''}${N().bulkBtns('plan',null,U.tab==='note'?'설계 메모':'부 · 세션')}</div>
    ${U.tab==='sess'||U.tab==='cal'?omCalHtml():''}${U.tab==='sess'?sessHtml():U.tab==='cal'?calHtml():U.tab==='poll'?pollHtml():notesHtml()}`;
   el.addEventListener('click',e=>{const t=e.target;if(t.closest('a'))return;const pt=t.closest('[data-pt]');if(pt){U.tab=pt.dataset.pt;N().render();return}
    const lf=t.closest('[data-lf]');if(lf){U.listf=lf.dataset.lf;N().render();return}
@@ -69,13 +69,15 @@
  /* ---- 10-26 공용: 세션 메뉴 · 상태 · 순서 · PL 열람 ---- */
  const SST={'':'예정',now:'진행 중',done:'끝'};
  async function setSessSt(id,st){if(st==='now')for(const o of sessAll().filter(x=>x.st==='now'&&x.id!==id))await N().patch('plan',o.id,x=>{x.st=''});await N().patch('plan',id,x=>{x.st=st});N().toast('세션 상태: '+SST[st])}
- async function delSess(id){const s=N().data('plan',id);if(!s)return false;if(!await N().confirmBox(`세션 ${s.label||''} ${s.what?'「'+s.what+'」':''}을 지울까요? (설정 탭 「🗑 최근 지운 것」에서 되살릴 수 있어요)`,'지우기'))return false;await N().del('plan',id);if(N().doc('sec','sess:'+id))await N().del('sec','sess:'+id);N().toast('세션을 지웠어요');return true}
+ async function delSess(id){const s=N().data('plan',id);if(!s)return false;if(!await N().confirmBox(`세션 ${s.label||''} ${s.what?'「'+s.what+'」':''}을 지울까요? (설정 탭 「🗑 최근 지운 것」에서 되살릴 수 있어요)`,'지우기'))return false;await N().del('plan',id);if(N().doc('sec','sess:'+id))await N().del('sec','sess:'+id);N().toastUndo('세션을 지웠어요');return true}
  function visItems(id){const d=N().doc('plan',id);if(!d||!N().gm())return [];const cur=d.vis||'pub';const o=[['pub','👥 모두에게'],['gm','🔒 GM만']].concat((N().ST.seats||[]).map(x=>['pl:'+x.seat,'👤 '+(N().seatName(x.seat)||x.seat)+' 에게만']));
   return o.map(([v,l])=>({t:(v===cur?'✓ ':'　')+l,on:async()=>{if(v===cur)return;await N().put('plan',id,N().clone(d.data),v);N().toast('공개 범위: '+N().visLabel(v))}}))}
  function sessCtx(id){const s=N().data('plan',id);if(!s)return null;const G=N().gm();const L=[];
   if(G)L.push(...visItems(id),'-',{t:'✎ 고치기',on:()=>editSess(id)});else L.push({t:'자세히',on:()=>viewSess(id)});
   if(window.NT_FAV)L.push({t:NT_FAV.has('sess',id)?'★ 즐겨찾기에서 빼기':'☆ 즐겨찾기에 넣기',on:()=>NT_FAV.toggle('sess',id,(s.label||'')+' '+(s.what||''))});
   if(G)L.push('-',...Object.entries(SST).filter(([v])=>v!==(s.st||'')).map(([v,l])=>({t:(v==='now'?'▶ ':v==='done'?'✓ ':'○ ')+l+'으로',on:()=>setSessSt(id,v)})),'-',{t:'🗑 세션 지우기',danger:true,on:()=>delSess(id)});return L}
+ /* 11-03 감우: 「비우기」(부 · 세션 · 후보 날짜 / 설계 메모 전부 지우기)는 「＋ 세션」 옆에서 설정 탭 「위험」 칸으로 옮겼다 (NT_PLAN.wipe) */
+ async function wipe(w){if(!N().gm())return;const L=all().filter(x=>w==='note'?x.t==='note':(x.t==='part'||x.t==='sess'||x.t==='cand'));if(!L.length)return N().toast('지울 게 없어요');const v=await N().promptBox(`${w==='note'?'설계 메모':'부 · 세션 · 후보 날짜'} ${L.length}개를 모두 지워요. 바로 지워져요 (설정 탭 「🗑 최근 지운 것」에서 30일 안에 되살릴 수 있어요) — 「지우기」라고 적어요`,'','');if(v==null||v.trim()!=='지우기')return;for(const x of L)await N().del('plan',x.id);N().toastUndo(`${L.length}개를 지웠어요`)}
  /* 한 부 안에서 바뀐 순서를 전체 세션 순서에 끼워 넣는다 */
  function orderSess(ids){const set=new Set(ids);let k=0;return N().reorder('plan',sessAll().map(x=>set.has(x.id)?ids[k++]:x.id))}
  function orderNotes(ids){const set=new Set(ids);let k=0;return N().reorder('plan',notes().map(x=>set.has(x.id)?ids[k++]:x.id))}
@@ -118,7 +120,7 @@
   if(k==='goset')return N().go('set');
   if(!G)return;
   if(k==='delsess')return delSess(id);
-  if(k==='wipe'){const w=b.dataset.w;const L=all().filter(x=>w==='note'?x.t==='note':(x.t==='part'||x.t==='sess'||x.t==='cand'));if(!L.length)return N().toast('지울 게 없어요');const v=await N().promptBox(`${w==='note'?'설계 메모':'부 · 세션 · 후보 날짜'} ${L.length}개를 모두 지워요. 바로 지워져요 (설정 탭 「🗑 최근 지운 것」에서 30일 안에 되살릴 수 있어요) — 「지우기」라고 적어요`,'','');if(v==null||v.trim()!=='지우기')return;for(const x of L)await N().del('plan',x.id);N().toast('지웠어요');return}
+  if(k==='wipe')return wipe(b.dataset.w);
   if(k==='newpart'){const t=await N().promptBox('부 이름','','예: 1부 · 관측의 진실 (1~6세션)');if(t==null||!t.trim())return;await N().put('plan',N().uid('p'),{t:'part',title:t.trim(),order:parts().length},'gm');return}
   if(k==='editpart'){const p=N().data('plan',id);const md=N().openModal(`<div class="mhead"><h2>부 고치기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div class="mrow"><label class="lbl">이름<input id="ppT" type="text" value="${esc(p.title||'')}"></label><label class="lbl">한 줄<input id="ppS" type="text" value="${esc(p.sub||'')}"></label><label class="lbl">순서<input id="ppO" type="number" class="n" value="${p.order||0}"></label><label class="lbl">공개${N().visSelect(N().doc('plan',id).vis,'ppV',{noPl:true})}</label></div><div class="row" style="margin-top:12px"><button class="btn danger ghost sm" id="ppDel">부 지우기 (세션은 분류 없음으로)</button><span class="sp"></span><button class="btn pri" id="ppOk">저장</button></div>`);
    $('#ppOk',md).onclick=async()=>{await N().put('plan',id,Object.assign({},p,{title:$('#ppT',md).value.trim(),sub:$('#ppS',md).value.trim(),order:+$('#ppO',md).value||0}),$('#ppV',md).value);N().closeModal()};
@@ -154,7 +156,7 @@
   bindGmSec(md,id);
   $('#ssOk',md).onclick=async()=>{const st=$('#ssSt',md).value;if(st==='now')for(const o of sessAll().filter(x=>x.st==='now'&&x.id!==id))await N().patch('plan',o.id,x=>{x.st=''});
    await N().put('plan',id,Object.assign({},s,{label:$('#ssL',md).value.trim(),part:$('#ssP',md).value,kind:$('#ssK',md).value.trim(),st,order:+$('#ssO',md).value||0,what:$('#ssW',md).value.trim(),memo:$('#ssM',md).value.trim(),date:$('#ssD',md).value,time:$('#ssT',md).value,dur:+$('#ssDu',md).value||180,where:$('#ssWh',md).value.trim()}),$('#ssV',md).value);await saveRetro(md,id);N().closeModal()};
-  $('#ssDel',md).onclick=async()=>{if(!await N().confirmBox('이 세션을 지울까요? (설정 탭 「🗑 최근 지운 것」에서 되살릴 수 있어요)','지우기'))return;await N().del('plan',id);if(N().doc('sec','sess:'+id))await N().del('sec','sess:'+id);N().closeModal()}}
+  $('#ssDel',md).onclick=async()=>{if(!await N().confirmBox('이 세션을 지울까요? (설정 탭 「🗑 최근 지운 것」에서 되살릴 수 있어요)','지우기'))return;await N().del('plan',id);if(N().doc('sec','sess:'+id))await N().del('sec','sess:'+id);N().closeModal();N().toastUndo('세션을 지웠어요')}}
  /* ---- 11-03 GM 준비 · 쓸 것 · 회고 (sec 'sess:<id>' · GM만) ---- */
  const secOf=id=>N().data('sec','sess:'+id)||{};
  async function secSave(id,fn){const cur=N().clone(secOf(id));fn(cur);const empty=!(cur.prep||[]).length&&!(cur.use||[]).length&&!(cur.retro||'').trim();if(empty){if(N().doc('sec','sess:'+id))await N().del('sec','sess:'+id);return}await N().put('sec','sess:'+id,cur,'gm')}
@@ -196,6 +198,7 @@
    <div class="row" style="margin-top:12px"><button class="btn danger ghost sm" id="nnDel">지우기</button><span class="sp"></span><button class="btn pri" id="nnOk">저장</button></div>`);
   $('#nnK',md).focus();
   $('#nnOk',md).onclick=async()=>{await N().put('plan',id,Object.assign({},n,{k:$('#nnK',md).value.trim(),list:$('#nnL',md).value,v:$('#nnV2',md).value.trim()}),$('#nnV',md).value);N().closeModal()};
-  $('#nnDel',md).onclick=async()=>{if(!await N().confirmBox('이 메모를 지울까요?','지우기'))return;await N().del('plan',id);N().closeModal()}}
+  $('#nnDel',md).onclick=async()=>{if(!await N().confirmBox('이 메모를 지울까요?','지우기'))return;await N().del('plan',id);N().closeModal();N().toastUndo('메모를 지웠어요')}}
  N().MOD.plan={render,nextSess,gcal};
+ window.NT_PLAN=Object.assign(window.NT_PLAN||{},{wipe});
 })();

@@ -56,7 +56,7 @@
   if(!N().gm())return;
   if(k==='new'||k==='edit')return edit(k==='new'?'':id);
   if(k==='del'){const own=!!N().doc('logs',id)&&!String(id).startsWith('mt_');
-   if(own){const x=N().data('logs',id)||{};if(!await N().confirmBox(`「${x.title||'기록'}」 을(를) 지울까요? 바로 지워져요 (설정 탭 「🗑 최근 지운 것」에서 30일 안에 되살릴 수 있어요).`))return;await N().del('logs',id);N().toast('지웠어요');return}
+   if(own){const x=N().data('logs',id)||{};if(!await N().confirmBox(`「${x.title||'기록'}」 을(를) 지울까요? 바로 지워져요 (설정 탭 「🗑 최근 지운 것」에서 30일 안에 되살릴 수 있어요).`))return;await N().del('logs',id);N().toastUndo('지웠어요');return}
    const r=C.rows.find(x=>x.id===id);if(!await N().confirmBox(`「${(ovOf(id)||{}).title||(r&&r.title)||id}」 을(를) 이 캠페인 기록 목록에서 뺄까요?\n보관소 원본은 그대로 남아요 (정말 지우려면 제작기 로그 정리기에서). 「🗑 뺀 것」에서 되살릴 수 있어요.`))return;
    const L=new Set(d.logDel||[]);L.add(id);await saveCamp({logDel:[...L],logPin:{[id]:null}});return}
   if(k==='undel'){const L=(d.logDel||[]);const md=N().openModal(`<div class="mhead"><h2>목록에서 뺀 보관소 로그</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div class="col" style="gap:6px">${L.map(x=>{const r=C.rows.find(y=>y.id===x);return `<div class="row" style="gap:8px"><span style="flex:1">${esc((r&&r.title)||x)}</span><button class="btn xs" data-ud="${esc(x)}">되살리기</button></div>`}).join('')}</div>`);
