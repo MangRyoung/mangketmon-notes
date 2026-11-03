@@ -17,7 +17,7 @@
  const entsAt=sid=>N().list('ents').filter(e=>(e.at||[]).includes(sid));
  /* 10-29 망령 「장소엔 인물 배치」: 인물 = 항목(인물 · 얼굴 있는 것) + PC · NPC 시트. 놓인 곳은 저마다의 at=[장소 id] (항목은 원래 있던 칸, 시트는 새 칸).
     GM: 장소 칸 「＋ 인물 놓기」 · 지도 위 얼굴을 다른 핀으로 끌어 옮기기 · ✕ 로 빼기 */
- const omRoom=()=>(((N().ST.campInfo||{}).data||{}).om||{}).room||'';   /* 10-30 「🗺 웹툴로 · 연동」 — 이어 둔 웹툴 방 */
+ const omRoom=()=>window.NT_LINK&&NT_LINK.cur?NT_LINK.cur():((((N().ST.campInfo||{}).data||{}).om||{}).room||'');   /* 11-03 여러 방 — 이 브라우저에서 쓰는 방 */   /* 10-30 「🗺 웹툴로 · 연동」 — 이어 둔 웹툴 방 */
  const isPerson=e=>e.type==='인물'||!!e.face;
  /* 10-30 망령 「PC · 객원 · NPC 로 거르기」: cls = 시트 분류(js/cls.js) · 항목 인물은 'ent'. 지도 위 얼굴 · 장소 목록 얼굴만 거른다 (장소 칸의 「인물 배치」 목록은 다 보인다) */
  const CL=()=>window.NT_CLS;

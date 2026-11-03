@@ -105,7 +105,7 @@
   const fw=$('.pcfolds',el);if(fw)N().bindCtx(fw,'.pccard',c=>ctxItems(c.dataset.id));
   el.addEventListener('change',e=>{const s=e.target.closest('[data-pcls]');if(s)return setCls(s.dataset.pcls,s.value);const q=e.target.closest('[data-pgsub]');if(q)setGsub(q.dataset.pgsub,q.value)})}
  /* 10-29 망령: 시트 → 웹툴. 이어 둔 웹툴 방을 #r=<방>&add=<트레이너 id,…> 로 열면, 웹툴이 (GM 이면) 제작기에서 그 트레이너를 방 명단으로 가져온다 */
- const omRoom=()=>(((N().ST.campInfo||{}).data||{}).om||{}).room||'';
+ const omRoom=()=>window.NT_LINK&&NT_LINK.cur?NT_LINK.cur():((((N().ST.campInfo||{}).data||{}).om||{}).room||'');   /* 11-03 여러 방 — 이 브라우저에서 쓰는 방 */
  const omHref=ids=>window.NT_LINK?NT_LINK.omUrl(omRoom())+'&add='+ids.map(encodeURIComponent).join(','):'#';
  const omOne=id=>omRoom()?`<a class="btn xs" href="${esc(omHref([id]))}" target="oremas" rel="noopener" title="이 트레이너를 이어 둔 웹툴 방 명단으로 보내요 (제작기 값 그대로)">⚔ 웹툴로</a>`:'';
  const omAll=L=>{if(!omRoom())return '';const ids=L.map(p=>p.id).filter(id=>MK().trainer(id));return ids.length?`<a class="btn sm" href="${esc(omHref(ids))}" target="oremas" rel="noopener" title="이 탭의 시트 ${ids.length}명을 웹툴 방 명단으로 보내요">⚔ 모두 웹툴로</a>`:''};

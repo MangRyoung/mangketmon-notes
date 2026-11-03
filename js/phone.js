@@ -13,7 +13,7 @@ window.NT_PHONE=(()=>{
  const PH={room:'',id:null,st:null,log:[],at:0,sub:null,loading:null,md:null,sid:'',scr:'home',chat:'',draft:{},err:''};
  const LSg=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}};
  const LSs=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
- const omRoom=()=>(((N().ST.campInfo||{}).data||{}).om||{}).room||'';
+ const omRoom=()=>window.NT_LINK&&NT_LINK.cur?NT_LINK.cur():((((N().ST.campInfo||{}).data||{}).om||{}).room||'');   /* 11-03 여러 방 — 이 브라우저에서 쓰는 방 */
  /* 11-02 망령 「PC 들 휴대폰으로도 게시판 · 캠페인이 이어진 웹툴의 게시판을 노트에서도」: 웹툴의 js/bbs_ui.js · css/bbs.css 를 웹툴 주소에서 불러와
     이어 둔 웹툴 방의 학교 게시판을 휴대폰 화면 안에 그린다. 글쓴이 = 휴대폰 주인, 신분 = 이 브라우저의 웹툴 신분(who) */
  const omBase=()=>String((window.NT_CONFIG||{}).oremasUrl||'https://mangryoung.github.io/oremas/').replace(/[#?].*$/,'').replace(/index\.html$/,'').replace(/\/?$/,'/');

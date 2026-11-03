@@ -72,29 +72,45 @@
   $('#cpDel',el).onclick=async()=>{const v=await N().promptBox(`정말 지우려면 캠페인 이름 「${c.name}」 을 적어요`,'','');if(v==null)return;if(v.trim()!==c.name)return N().toast('이름이 달라요');try{await N().DBS().campDel(S.camp,S.secret);try{localStorage.removeItem('nt_sec_'+S.camp)}catch(e){}N().toast('지웠어요');N().ST.camps=[];N().leave()}catch(e){N().toast('실패: '+e.message)}}}
  /* 10-29 망령: 세 도구 잇기 — 제작기 폴더 · 웹툴 방 · 룰북. 웹툴 방 목록은 같은 주소(mangryoung.github.io)의 오레마스가 이 브라우저에 남긴 「최근 방」에서 */
  const omRooms=()=>{try{return (JSON.parse(localStorage.getItem('om_rooms')||'[]')||[]).filter(r=>r&&r.id)}catch(e){return []}};
+ /* 11-03 19:50 망령 「미사그 캠퍼스를 복제한 미사그 캠퍼스 2 도 노트랑 연동」: 웹툴 방을 여럿 잇는다.
+    data.om = {room:<주 방>, rooms:{<방 id>:{n:이름}}} — 예전 om.room 은 그대로 「주 방」. 칸 단위로 합쳐지게 목록은 객체(지울 때 null).
+    「쓰는 방」(휴대폰 · 게시판 · ⚔ 웹툴로 · 지도/던전 웹툴로 · 장면 보내기가 가는 방)은 이 브라우저마다 고른다(nt_omcur_<캠페인>), 안 골랐으면 주 방 */
+ const omData=()=>((((N().ST.campInfo||{}).data||{}).om)||{});
+ const roomsOf=om=>{om=om||{};const R=omRooms();const ids=[];if(om.room)ids.push(om.room);for(const [k,v] of Object.entries(om.rooms||{}))if(v&&!ids.includes(k))ids.push(k);
+  return ids.map(id=>({id,main:id===om.room,name:((om.rooms||{})[id]||{}).n||(R.find(r=>r.id===id)||{}).name||''}))};
+ const curKey=()=>'nt_omcur_'+(N().ST.camp||'');
+ const curRoom=()=>{const om=omData();const L=roomsOf(om);if(!L.length)return '';let c='';try{c=localStorage.getItem(curKey())||''}catch(e){}return L.some(r=>r.id===c)?c:(om.room||L[0].id)};
+ const setCur=id=>{try{if(id)localStorage.setItem(curKey(),id);else localStorage.removeItem(curKey())}catch(e){}};
+ const roomName=id=>{const r=roomsOf(omData()).find(x=>x.id===id);return (r&&r.name)||id};
  const roomId=v=>{const m=String(v||'').match(/[#&?]r=([a-z0-9]+)/i);return m?m[1]:/^[a-z0-9]{4,}$/i.test(String(v||'').trim())?String(v).trim():''};
  /* 11-03: 칸 단위 patch (null = 그 칸 지움) */
  const campPatch=patch=>N().campPatch(patch);
  /* 11-03: 자리 앉기 승인 대기 (camp.data.claims = {uid:{seat,name,at}}) */
  function claimsCard(d){const C=Object.entries(d.claims||{});if(!C.length)return '';
   return `<div class="card claimcard" style="grid-column:1/-1"><h3>🪑 자리 앉기 요청 <small>${C.length}건 · 승인하면 그 계정이 그 PC 시트에 앉아요</small></h3>${C.map(([uid,x])=>`<div class="seatrow"><div><b>${esc(x.name||uid)}</b> <small class="mono">@${esc(uid)}</small> → <b>${esc(N().seatName(x.seat)||x.seat)}</b> <small class="dim">${esc(String(x.at||'').replace('T',' ').slice(0,16))}</small></div><div class="row" style="gap:4px"><button class="btn xs pri" data-claim="${esc(uid)}|1">승인</button><button class="btn xs ghost danger" data-claim="${esc(uid)}|0">거절</button></div></div>`).join('')}</div>`}
- function linkCard(d){const MK=window.NT_MAKER;const fl=MK?MK.linked():[];const om=(d.om||{}).room||'';const R=omRooms();const rn=(R.find(r=>r.id===om)||{}).name||'';
+ function linkCard(d){const MK=window.NT_MAKER;const fl=MK?MK.linked():[];const R=omRooms();const OL=roomsOf(d.om);const cur=curRoom();
   const nRb=N().list('ents').filter(e=>e.rb&&e.rb.ch).length,nMk=N().list('ents').filter(e=>e.mk).length;
   return `<div class="card linkcard" style="grid-column:1/-1"><h3>세 도구 잇기 <small>제작기 · 웹툴 · 룰북</small></h3><div class="lkgrid">
    <div class="lkc"><b>📁 제작기 폴더</b><p class="small dim">이 폴더에 만든 트레이너가 시트 탭에 「아직 안 넣은 트레이너」로 떠요.</p><div class="lkv">${fl.length?fl.map(id=>`<span class="chip static">📁 ${esc(MK.fpath(id)||MK.folderName(id))}</span>`).join(' '):'<span class="dim small">이어진 폴더 없음</span>'}</div><div class="acts"><button class="btn xs" id="lkMk">${fl.length?'폴더 바꾸기':'폴더 잇기'}</button></div></div>
-   <div class="lkc"><b>🎲 웹툴 방</b><p class="small dim">이으면 위 막대에 「웹툴」 단추가 생기고, 웹툴에서 이 캠페인의 지도 · 관계도를 비밀구 없이 한 번에 가져와요.</p>
-    <div class="lkv">${om?`<span class="chip static">🎲 ${esc(rn||'방')} <code>${esc(om)}</code></span> <a class="btn xs ghost" href="${esc(omUrl(om))}" target="oremas" rel="noopener">열기 ↗</a>`:'<span class="dim small">이어진 방 없음</span>'}</div>
-    <div class="row" style="gap:4px;flex-wrap:wrap;margin-top:6px">${R.length?`<select id="lkOmSel"><option value="">이 브라우저의 최근 방에서 고르기</option>${R.map(r=>`<option value="${esc(r.id)}" ${r.id===om?'selected':''}>${esc(r.name||r.id)}</option>`).join('')}</select>`:''}<input id="lkOmIn" type="text" placeholder="또는 방 링크 · id 붙여 넣기" style="flex:1;min-width:150px"><button class="btn xs pri" id="lkOmOk">잇기</button>${om?'<button class="btn xs ghost" id="lkOmX">풀기</button>':''}</div></div>
+   <div class="lkc"><b>🎲 웹툴 방</b><p class="small dim">이으면 위 막대에 「웹툴」 단추가 생기고, 웹툴에서 이 캠페인의 지도 · 관계도를 비밀구 없이 한 번에 가져와요. 방을 여럿 이을 수 있어요(복제한 방 등).</p>
+    <div class="lkv lkrooms">${OL.length?OL.map(r=>`<div class="lkroom ${r.id===cur&&OL.length>1?'cur':''}"><span class="chip static">🎲 ${esc(r.name||'방')} <code>${esc(r.id)}</code></span>${r.main?'<em class="lkb">주 방</em>':''}${OL.length>1&&r.id===cur?'<em class="lkb on">이 브라우저에서 쓰는 방</em>':''}<span class="sp"></span><a class="btn xs ghost" href="${esc(omUrl(r.id))}" target="oremas" rel="noopener">열기 ↗</a>${OL.length>1&&r.id!==cur?`<button class="btn xs ghost" data-omcur="${esc(r.id)}" title="휴대폰 · 게시판 · ⚔ 웹툴로 · 장면 보내기를 이 브라우저에서는 이 방으로">여기서 쓰기</button>`:''}${OL.length>1&&!r.main?`<button class="btn xs ghost" data-ommain="${esc(r.id)}" title="주 방 — 다른 브라우저 · 새로 연 사람이 처음 쓰는 방">★ 주 방으로</button>`:''}<button class="btn xs ghost" data-omx="${esc(r.id)}">풀기</button></div>`).join(''):'<span class="dim small">이어진 방 없음</span>'}</div>
+    <div class="row" style="gap:4px;flex-wrap:wrap;margin-top:6px">${R.length?`<select id="lkOmSel"><option value="">이 브라우저의 최근 방에서 고르기</option>${R.filter(r=>!OL.some(x=>x.id===r.id)).map(r=>`<option value="${esc(r.id)}">${esc(r.name||r.id)}</option>`).join('')}</select>`:''}<input id="lkOmIn" type="text" placeholder="또는 방 링크 · id 붙여 넣기" style="flex:1;min-width:150px"><button class="btn xs pri" id="lkOmOk">${OL.length?'＋ 방 더 잇기':'잇기'}</button></div></div>
    <div class="lkc"><b>📖 룰북</b><p class="small dim">자료 탭에서 항목을 고칠 때 「제작기 룰북 장」을 고르면, 룰북 원문을 그대로 보여 줘요. 룰북을 고치면 같이 바뀌어요.</p><div class="lkv small">룰북과 이어진 항목 <b>${nRb}</b>개 · 제작기 트레이너와 이어진 항목 <b>${nMk}</b>개</div><div class="acts"><a class="btn xs ghost" href="${esc(window.NT_RB?NT_RB.link(''):'#')}" target="_blank" rel="noopener">룰북 열기 ↗</a></div></div>
   </div></div>`}
  const omUrl=room=>String((window.NT_CONFIG||{}).oremasUrl||'https://mangryoung.github.io/oremas/').replace(/#.*$/,'')+'#r='+encodeURIComponent(room);
  function bindLink(el,d){const b=$('#lkMk',el);if(b)b.onclick=()=>window.NT_MAKER&&NT_MAKER.pickLinked();
   const ok=$('#lkOmOk',el);if(ok)ok.onclick=async()=>{const v=roomId(($('#lkOmIn',el)||{}).value)||(($('#lkOmSel',el)||{}).value||'');if(!v)return N().toast('방 링크나 id 를 적거나 골라 주세요');
-   try{await campPatch({om:{room:v}});N().toast('웹툴 방을 이었어요');N().render()}catch(e){N().toast('저장 실패: '+e.message)}};
+   const om=d.om||{};const nm=(omRooms().find(r=>r.id===v)||{}).name||'';if(roomsOf(om).some(r=>r.id===v))return N().toast('이미 이어진 방이에요');
+   try{await campPatch({om:Object.assign(om.room?{}:{room:v},{rooms:{[v]:{n:nm}}})});N().toast(om.room?'웹툴 방을 하나 더 이었어요':'웹툴 방을 이었어요');N().render()}catch(e){N().toast('저장 실패: '+e.message)}};
   const sel=$('#lkOmSel',el);if(sel)sel.onchange=()=>{const i=$('#lkOmIn',el);if(i)i.value=''};
-  const x=$('#lkOmX',el);if(x)x.onclick=async()=>{try{await campPatch({om:null});N().toast('웹툴 방 잇기를 풀었어요');N().render()}catch(e){N().toast('저장 실패: '+e.message)}}}
+  $$('[data-omcur]',el).forEach(b=>b.onclick=()=>{setCur(b.dataset.omcur);N().toast(`이 브라우저에서는 「${roomName(b.dataset.omcur)}」 방을 써요`);N().render()});
+  $$('[data-ommain]',el).forEach(b=>b.onclick=async()=>{const id=b.dataset.ommain;const om=d.om||{};const pt={room:id,rooms:{[id]:{n:roomName(id)}}};if(om.room&&om.room!==id)pt.rooms[om.room]={n:roomName(om.room)};try{await campPatch({om:pt});N().toast('주 방을 바꿨어요');N().render()}catch(e){N().toast('저장 실패: '+e.message)}});
+  $$('[data-omx]',el).forEach(b=>b.onclick=async()=>{const id=b.dataset.omx;const om=d.om||{};const rest=roomsOf(om).filter(r=>r.id!==id);
+   if(!await N().confirmBox(`「${roomName(id)}」 방 잇기를 풀까요? (웹툴 방 자체는 그대로예요)`))return;
+   const pt=rest.length?{rooms:{[id]:null}}:null;if(pt&&om.room===id)pt.room=rest[0].id;
+   try{await campPatch({om:pt});if(curRoom()===id)setCur('');N().toast(rest.length?'그 방 잇기를 풀었어요':'웹툴 방 잇기를 풀었어요');N().render()}catch(e){N().toast('저장 실패: '+e.message)}})}
  function showLink(seat,sec){const u=link(sec);N().openModal(`<div class="mhead"><h2>초대 링크 — ${esc(N().seatName(seat)||seat)}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div class="linkbox"><input type="text" readonly value="${esc(u)}" id="lkSeat"><button class="btn xs" data-copy="lkSeat">복사</button></div><p class="small dim">이 링크를 한 번 열면 그 브라우저에 좌석 비밀구가 저장돼요. 비밀구: <code>${esc(sec)}</code></p>`);bindCopy(document)}
  function bindCopy(root){$$('[data-copy]',root).forEach(b=>b.onclick=()=>{const i=$('#'+b.dataset.copy);if(!i)return;i.select();const done=()=>N().toast('복사했어요');if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(i.value).then(done,()=>{document.execCommand('copy');done()});else{document.execCommand('copy');done()}})}
  N().MOD.set={render};
- window.NT_LINK={omUrl,omRooms};
+ window.NT_LINK={omUrl,omRooms,rooms:()=>roomsOf(omData()),cur:curRoom,setCur,roomName};
 })();

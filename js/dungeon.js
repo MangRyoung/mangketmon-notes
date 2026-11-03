@@ -40,7 +40,7 @@ window.NT_DG=(()=>{
  const at=spot=>all().filter(d=>d.spot===spot).sort((a,b)=>String(a.n||'').localeCompare(String(b.n||''),'ko'));
  const has=spot=>all().some(d=>d.spot===spot);
  const spotName=id=>{const s=id&&N().data('spots',id);return s?s.name||'':''};
- const omRoom=()=>(((N().ST.campInfo||{}).data||{}).om||{}).room||'';
+ const omRoom=()=>window.NT_LINK&&NT_LINK.cur?NT_LINK.cur():((((N().ST.campInfo||{}).data||{}).om||{}).room||'');   /* 11-03 여러 방 — 이 브라우저에서 쓰는 방 */
  const omBase=()=>String((window.NT_CONFIG||{}).oremasUrl||'https://mangryoung.github.io/oremas/').replace(/[#?].*$/,'').replace(/index\.html$/,'').replace(/\/?$/,'/');
  const omHref=id=>window.NT_LINK&&omRoom()?NT_LINK.omUrl(omRoom())+'&dg='+encodeURIComponent(id):'';
 
