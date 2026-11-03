@@ -63,7 +63,8 @@ html[data-vt="cd"] .hpm,html[data-vt="cd"] .hpmn{color:#fff!important}
 html[data-vt="cd"] .top .name small{color:#a9c4dc!important}
 
 /* 칼데아 (밤) 덧칠 — 하얀 테 · 문장 */
-html[data-vt="cd"] body{background:radial-gradient(70vmax 50vmax at 30% 20%,rgba(60,170,255,.16),transparent 70%) fixed,linear-gradient(rgba(95,210,255,.06) 1px,transparent 1px) 0 0/44px 44px,linear-gradient(90deg,rgba(95,210,255,.06) 1px,transparent 1px) 0 0/44px 44px,#050b16!important}
+html[data-vt="cd"]{background:radial-gradient(70vmax 50vmax at 30% 20%,rgba(60,170,255,.16),transparent 70%) fixed,linear-gradient(rgba(95,210,255,.06) 1px,transparent 1px) 0 0/44px 44px,linear-gradient(90deg,rgba(95,210,255,.06) 1px,transparent 1px) 0 0/44px 44px,#050b16!important}
+html[data-vt="cd"] body{background:transparent!important}   /* 바탕은 html 에 — body::before(LED 문장)가 바탕과 글 사이에 오게 */
 html[data-vt="cd"] .top{border-bottom:1px solid #fff!important;box-shadow:0 1px 0 rgba(95,210,255,.6),0 0 22px rgba(95,210,255,.2)!important}
 html[data-vt="cd"] .top .name::before{content:"";display:inline-block;width:1.25em;height:1.25em;margin-right:.45em;vertical-align:-.22em;background:url("../img/chaldea_emblem_w.png") center/contain no-repeat;filter:drop-shadow(0 0 6px rgba(95,210,255,.55))}
 html[data-vt="cd"] .top .badge.gm{background:#fff!important;color:#06121f!important}
