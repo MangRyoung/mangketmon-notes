@@ -18,15 +18,17 @@ window.NT_PHONE=(()=>{
     이어 둔 웹툴 방의 학교 게시판을 휴대폰 화면 안에 그린다. 글쓴이 = 휴대폰 주인, 신분 = 이 브라우저의 웹툴 신분(who) */
  const omBase=()=>String((window.NT_CONFIG||{}).oremasUrl||'https://mangryoung.github.io/oremas/').replace(/[#?].*$/,'').replace(/index\.html$/,'').replace(/\/?$/,'/');
  let BBSL=null;
- const BBS_V=11;   /* 11-02 11: 디스코드 설정에 전당 칸 · 9: 시트 카드 스레드 칸 · 8: 「✎ 게시판」 창 두 칸(왼쪽 휴대폰 · 오른쪽 글 6개 + 접기) · GM 디스코드 연동 */   /* 웹툴 bbs_ui 의 V — 페이지에 옛 것이 남아 있으면(전에 연 것) 새로 불러온다 */
- function bbsLoad(){if(window.OM_BBS_UI&&(window.OM_BBS_UI.V||0)>=BBS_V)return Promise.resolve(true);if(BBSL)return BBSL;const base=omBase();
-  BBSL=new Promise(res=>{const l=document.createElement('link');l.rel='stylesheet';l.href=base+'css/bbs.css?v='+BBS_V;document.head.appendChild(l);const s=document.createElement('script');s.src=base+'js/bbs_ui.js?v='+BBS_V;s.onload=()=>res(!!window.OM_BBS_UI);s.onerror=()=>{BBSL=null;res(false)};document.head.appendChild(s)});return BBSL}
+ /* 11-03 감우: 웹툴 bbs_ui 의 판 번호(OM_BBS_UI.V)를 노트가 손으로 따라 적지 않는다 — 한 시간 단위 주소(?v=)로 불러오면 웹툴이 새 판을 올려도 한 시간 안에 따라온다.
+    불러온 뒤 window.OM_BBS_UI.V 를 읽어 콘솔에 남긴다(어느 판을 쓰는지). 이미 페이지에 있으면 그것을 쓴다 */
+ const bbsStamp=()=>String(Math.floor(Date.now()/3600000).toString(36));
+ function bbsLoad(){if(window.OM_BBS_UI)return Promise.resolve(true);if(BBSL)return BBSL;const base=omBase();const v=bbsStamp();
+  BBSL=new Promise(res=>{const l=document.createElement('link');l.rel='stylesheet';l.href=base+'css/bbs.css?v='+v;document.head.appendChild(l);const s=document.createElement('script');s.src=base+'js/bbs_ui.js?v='+v;s.onload=()=>{if(window.OM_BBS_UI)console.info('[노트] 웹툴 bbs_ui V'+(window.OM_BBS_UI.V||'?'));res(!!window.OM_BBS_UI)};s.onerror=()=>{BBSL=null;res(false)};document.head.appendChild(s)});return BBSL}
  /* 글쓴이 고르기 (노트 왼쪽 아래 「✎ 게시판」 창): GM 은 GM · 명단 트레이너 · 관계도 NPC, 좌석은 자기 트레이너 */
  function bbsAuthors(){const id=PH.id||{};const out=[];if(id.role==='gm'){out.push({cid:'gm',n:'GM',img:'',sub:'운영 · 공지',grp:''});for(const t of Object.values(T()))if(t&&t.name)out.push({cid:t.id,n:t.name,img:t.image||'',sub:t.kind==='npc'?'NPC 트레이너':'PC',grp:t.kind==='npc'?'NPC':'PC'});const have=new Set(out.map(x=>x.n));
    for(const [nid,n] of Object.entries(nodes())){if(!n||!n.name||have.has(n.name)||n.kind==='org')continue;have.add(n.name);out.push({cid:'n:'+nid,n:n.name,img:n.img||cidImg('n:'+nid)||'',sub:'관계도 '+(n.kind==='pc'?'PC':'NPC'),grp:'NPC'})}return out}
   if(id.role==='seat'){const t=T()[id.seat];if(t)out.push({cid:t.id,n:t.name||'?',img:t.image||'',sub:'내 트레이너',grp:'내 캐릭터'})}return out}
  function bbsEnv(canW){const B=window.OM_BBS_UI;return {key:'nt',room:()=>PH.room,secret:()=>(PH.id&&PH.id.secret)||'',role:()=>canW()?((PH.id&&PH.id.role)||'view'):'view',seat:()=>(PH.id&&PH.id.seat)||'',
-  api:()=>(PH.bbsApi=PH.bbsApi||B.apiFromRpc((fn,a)=>DB().omRpc(fn,a))),upload:f=>N().upload(f,'photo','bbs'),toast:x=>N().toast(x),notify:()=>{},authors:bbsAuthors,roomName:()=>((N().ST.campInfo||{}).name)||'',
+  api:()=>(PH.bbsApi=PH.bbsApi||B.apiFromRpc((fn,a)=>DB().omRpc(fn,a))),upload:f=>N().upload(f,'photo','bbs'),toast:x=>N().toast(x),notify:()=>{try{if(DB().omBroadcast)DB().omBroadcast(PH.room,{t:'bbs',room:PH.room,at:Date.now()})}catch(e){}}   /* 11-03: 웹툴 omEnv 처럼 같은 방 채널로 「게시판 새 글」 신호 — 웹툴 · 다른 노트가 바로 다시 읽는다 */,authors:bbsAuthors,roomName:()=>((N().ST.campInfo||{}).name)||'',
   calendar:()=>(PH.st&&PH.st.cal)||{},phone:bbsPhone()}}
  /* 11-02 망령 「노트 게시판도 왼쪽은 휴대폰처럼」: 게시판 창 왼쪽 칸의 앱 · 연락처를 이 노트의 휴대폰(open)으로 잇는다. 웹툴 트레이너만 휴대폰이 있다(관계도 인물 · GM 은 없음) */
  function bbsPhone(){return {tidOf:au=>{const id=PH.id||{};if(id.role==='seat')return T()[id.seat]?id.seat:'';const c=(au&&au.cid)||'';return T()[c]?c:''},
@@ -63,7 +65,9 @@ window.NT_PHONE=(()=>{
   if(!force&&PH.st&&Date.now()-PH.at<20000)return PH.st;if(PH.loading)return PH.loading;
   PH.loading=(async()=>{try{await who(room);const last=PH.log.length?PH.log[PH.log.length-1].id:0;const [st,rows]=await Promise.all([DB().omPhoneState(room),DB().omSms(room,last||null)]);
     PH.st=st||{};for(const r of rows||[])if(!PH.log.some(x=>x.id===r.id))PH.log.push(r);PH.log.sort((a,b)=>a.id-b.id);PH.at=Date.now();PH.err='';startSub()}catch(e){PH.err=e.message||String(e);console.warn('phone',e)}finally{PH.loading=null}badges();return PH.st})();return PH.loading}
- function startSub(){if(PH.sub||!DB().omSub)return;PH.sub=DB().omSub(PH.room,onLog)}
+ function startSub(){if(PH.sub||!DB().omSub)return;PH.sub=DB().omSub(PH.room,onLog,onEv)}
+ /* 웹툴 방 채널의 신호: 게시판 새 글(t 'bbs') → 불러온 bbs_ui 에 넘긴다 */
+ function onEv(p){try{if(p&&p.t==='bbs'&&window.OM_BBS_UI&&OM_BBS_UI.onEvent)OM_BBS_UI.onEvent(p)}catch(e){}}
  function stopSub(){if(PH.sub){try{PH.sub()}catch(e){}PH.sub=null}}
  const T=()=>(PH.st&&PH.st.tr)||{};const nodes=()=>(PH.st&&PH.st.nodes)||{};
  /* 노트 시트(제작기 트레이너 id) → 웹툴 명단 트레이너 (같은 id 또는 mkId) */
@@ -247,5 +251,21 @@ window.NT_PHONE=(()=>{
  function boot(){try{if(!N()||!N().ST||!N().ST.camp)return;const room=omRoom();if(!room){if(PH.room)stopSub();return}if(watchSid()&&(PH.room!==room||(!PH.sub&&!PH.loading)))load()}catch(e){}}
  setInterval(boot,15000);setTimeout(boot,2500);
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&PH.sub&&Date.now()-PH.at>60000)load(true)});
- return {open,btn,panel,boot,load,PH,openBoard,openDc};
+ /* 11-03 감우 「시나리오 단계를 웹툴로」: 낭독문 → 나레이션 줄(*…* · GM), 장소 그림 → 배경(rp.bg), 등장 인물 스탠딩 → 무대(rp.stage, 셋까지), 같은 묶음을 씬 프리셋(rp.scenes.<id>)으로도.
+    경로는 휴대폰과 같은 길(이 브라우저의 웹툴 신분 → om_put · om_log_add). 웹툴 GM 신분이 있어야 한다.
+    스탠딩 키: 항목이 제작기 트레이너와 이어져 있고(mk) 그 트레이너가 방 명단에 있으면 그 id, 아니면 방 관계도 · 명단에 같은 이름이 있으면 'npc:이름' / 그 id. 없으면 못 세운다(알려 준다) */
+ async function sendScene(sc){const room=omRoom();if(!room)return N().toast('이 캠페인에 웹툴 방이 이어져 있지 않아요 — 설정 탭 「세 도구 잇기 → 웹툴 방」');
+  await load(true);const id=PH.id||{};if(!(id.secret&&id.role==='gm'))return N().toast('이 브라우저의 웹툴 신분이 그 방의 GM 이 아니에요 — 웹툴을 GM 으로 한 번 열어 주세요');
+  const sec=id.secret;const names=new Map(Object.values(T()).filter(t=>t&&t.name).map(t=>[t.name,t.id]));const nodeNames=new Set(Object.values(nodes()).map(n=>n&&n.name).filter(Boolean));
+  const keyOf=e=>{if(e.mk&&trOf(e.mk))return trOf(e.mk).id;if(names.has(e.title))return names.get(e.title);if(nodeNames.has(e.title))return 'npc:'+e.title;return ''};
+  const cast=(sc.ents||[]).map(e=>({e,key:keyOf(e)}));const have=cast.filter(x=>x.key).slice(0,3);const miss=cast.filter(x=>!x.key).map(x=>x.e.title);
+  const stage=have.length?(have.length===1?{center:{key:have[0].key}}:have.length===2?{left:{key:have[0].key},right:{key:have[1].key}}:{left:{key:have[0].key},center:{key:have[1].key},right:{key:have[2].key}}):null;
+  const bg=sc.bg?{src:sc.bg,name:sc.bgName||sc.title||'',at:Date.now()}:null;const done=[];
+  try{if(bg){await DB().omPut(room,sec,['rp','bg'],bg);done.push('배경')}
+   if(stage){await DB().omPut(room,sec,['rp','stage'],stage);done.push('스탠딩 '+have.length)}
+   if(sc.read){await DB().omLogAdd(room,sec,'chat','GM',{t:'*'+String(sc.read).trim()+'*',nf:1});done.push('나레이션')}
+   try{const pid='nt_'+String(sc.id||Date.now()).replace(/[^a-z0-9_]/gi,'_');await DB().omPut(room,sec,['rp','scenes',pid],{id:pid,name:sc.title||'장면',bg:bg?{src:bg.src,name:bg.name}:null,bgm:null,stage,sub:sc.read||'',from:'notes',at:Date.now()});done.push('프리셋')}catch(e){console.warn('scenes preset',e)}
+  }catch(e){return N().toast('보내지 못했어요: '+(e.message||e))}
+  N().toast((done.length?'웹툴로 보냈어요: '+done.join(' · '):'보낼 것이 없었어요')+(miss.length?' / 스탠딩 없음: '+miss.join(', '):''))}
+ return {open,btn,panel,boot,load,PH,openBoard,openDc,sendScene,omRoom};
 })();
