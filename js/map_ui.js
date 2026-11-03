@@ -117,7 +117,7 @@
   return `<div class="splist grouped">${areas.map(a=>{const L=sp.filter(s=>(s.area||'')===a).sort(byNum);const n=L.reduce((c,s)=>c+P.filter(x=>x.at.includes(s.id)).length,0);const off=!!U.fold[a];
    return `<div class="sparea ${off?'off':''}"><button type="button" class="sparh" data-fold="${esc(a)}"><span class="caret">▾</span><b>${esc(a||'구역 없음')}</b><small>${L.length}곳${n?` · 인물 ${n}`:''}</small></button>${off?'':L.map(row).join('')}</div>`}).join('')}</div>`}
  function spotPanel(s,m){const G=N().gm(),k=kc(s.kind);const ents=entsAt(s.id);const ls=links().filter(l=>l.a===s.id||l.b===s.id);
-  const head=`<div class="card spot" style="--c:${k[2]}"><div class="row" style="gap:6px"><button class="linkbtn" data-go="">← 목록</button>${window.NT_FAV?NT_FAV.btn('spots',s.id,s.name):''}<span class="sp"></span>${G?`<button class="btn xs" data-m="edit">고치기</button><button class="btn xs ${m.party===s.id?'pri':'ghost'}" data-m="party" title="PC 들이 지금 있는 곳">PC 위치</button><button class="btn xs ghost danger" data-m="delspot" title="지우기">🗑</button>`:''}</div>
+  const head=`<div class="card spot" style="--c:${k[2]}"><div class="row" style="gap:6px"><button class="linkbtn" data-go="">← 목록</button>${window.NT_FAV?NT_FAV.btn('spots',s.id,s.name):''}${window.NT_HIST?NT_HIST.btn('spots',s.id):''}<span class="sp"></span>${G?`<button class="btn xs" data-m="edit">고치기</button><button class="btn xs ${m.party===s.id?'pri':'ghost'}" data-m="party" title="PC 들이 지금 있는 곳">PC 위치</button><button class="btn xs ghost danger" data-m="delspot" title="지우기">🗑</button>`:''}</div>
    <h3><i class="kdot" style="background:${k[2]}"></i>${s.num?`<b class="num">${esc(s.num)}</b>`:''}${esc(s.name||'(이름 없음)')} <small>${esc(s.kind||'')}${s.area?' · '+esc(s.area):''}</small>${N().visBadge(s._vis,'spots',s.id)}</h3>`;
   const imgs=[s.img?{p:s.img,t:''}:null,...(s.imgs||[])].filter(Boolean);
   /* 10-30 망령 「지도도 배경 첨부」: s.bg = 웹툴 무대 배경 (웹툴 「지도 가져오기」 때 핀 배경으로 넘어감) */
@@ -403,7 +403,7 @@
    for(const cb of $$('#spLinks input[type=checkbox]',md)){const o=cb.value;const had=linkBetween(id,o);if(cb.checked&&!had)await N().put('links',N().uid('l'),{a:id,b:o,note:''},'gm');else if(!cb.checked&&had)for(const l of links().filter(l=>(l.a===id&&l.b===o)||(l.a===o&&l.b===id)))await N().del('links',l.id)}
    N().closeModal()};
   $('#spDel',md).onclick=()=>delSpot(id,true)}
- async function delSpot(id,inModal){const s=N().data('spots',id);if(!s)return;if(!await N().confirmBox(`「${s.name}」 를 지울까요? 이어진 선도 같이 지워져요.`,'지우기'))return;for(const l of links().filter(l=>l.a===id||l.b===id))await N().del('links',l.id);await N().del('spots',id);if(N().doc('sec','spot:'+id))await N().del('sec','spot:'+id);U.sel='';U.pop=null;if(inModal)N().closeModal();N().toast('지웠어요')}
+ async function delSpot(id,inModal){const s=N().data('spots',id);if(!s)return;if(!await N().confirmBox(`「${s.name}」 를 지울까요? 이어진 선도 같이 지워져요. (설정 탭 「🗑 최근 지운 것」에서 되살릴 수 있어요)`,'지우기'))return;for(const l of links().filter(l=>l.a===id||l.b===id))await N().del('links',l.id);await N().del('spots',id);if(N().doc('sec','spot:'+id))await N().del('sec','spot:'+id);U.sel='';U.pop=null;if(inModal)N().closeModal();N().toast('지웠어요')}
 
  N().MOD.map={render};
  window.NT_MAP={KINDS,selectMap:id=>{U.map=id;U.sel='';U.fitDone=false},select:id=>{const s=N().data('spots',id);if(s){U.map=s.map;U.sel=id;U.fitDone=false;const mm=N().data('maps',s.map);if(mm&&mm.kind==='globe'&&window.NT_GLOBE&&NT_GLOBE.pick)NT_GLOBE.pick(id)}},curMap,spots};

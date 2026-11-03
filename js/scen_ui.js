@@ -38,7 +38,7 @@
  const STL={'':'예정',now:'진행 중',done:'끝',skip:'건너뜀',fail:'실패'};
  async function setStep(rid,i,v){const r=N().data('routes',rid);const s=r&&(r.steps||[])[i];if(!s)return;await N().patch('routes',rid,rr=>{const st=rr.steps[i];if(!st)return false;if(v==='now')rr.steps.forEach(x=>{if(x.st==='now')x.st=''});st.st=v});N().toast(`「${stepTitle(s)}」 → ${STL[v]||v}`)}
  function cycleStep(rid,i){const r=N().data('routes',rid);const s=r&&(r.steps||[])[i];if(!s)return;const cur=s.st||'';return setStep(rid,i,cur==='now'?'done':cur==='done'?'':'now')}
- async function delRoute(id){const r=N().data('routes',id);if(!r)return false;if(!await N().confirmBox(`「${r.name||'루트'}」 루트를 지울까요? 단계도 함께 사라져요.`,'지우기'))return false;await N().del('routes',id);if(N().doc('sec','route:'+id))await N().del('sec','route:'+id);N().toast('루트를 지웠어요');return true}
+ async function delRoute(id){const r=N().data('routes',id);if(!r)return false;if(!await N().confirmBox(`「${r.name||'루트'}」 루트를 지울까요? 단계도 함께 사라져요. (설정 탭 「🗑 최근 지운 것」에서 되살릴 수 있어요)`,'지우기'))return false;await N().del('routes',id);if(N().doc('sec','route:'+id))await N().del('sec','route:'+id);N().toast('루트를 지웠어요');return true}
  /* 한 묶음(열 · 분류) 안에서 바뀐 순서를 전체 순서에 끼워 넣는다 — 다른 묶음의 자리 번호는 그대로 */
  function orderRoutes(ids){const set=new Set(ids);let k=0;const merged=routes().map(r=>set.has(r.id)?ids[k++]:r.id);return N().reorder('routes',merged)}
  function orderSteps(rid,ids){return N().patch('routes',rid,r=>{const S=r.steps||[];const idx=ids.map(Number).filter(i=>S[i]);if(idx.length!==S.length)return false;r.steps=idx.map(i=>S[i])})}
@@ -49,7 +49,7 @@
   if(window.NT_FAV)L.push({t:(NT_FAV.has('routes',rid)?'★ 즐겨찾기에서 빼기':'☆ 즐겨찾기에 넣기'),on:()=>NT_FAV.toggle('routes',rid,r.name)});
   if(G)L.push('-',{t:'🗑 루트 지우기',danger:true,on:()=>delRoute(rid)});return L}
  function stepCtx(rid,i){if(!N().gm())return null;const r=N().data('routes',rid);const s=r&&(r.steps||[])[i];if(!s)return null;
-  return [{t:'▶ 진행 중으로',on:()=>setStep(rid,i,'now')},{t:'✓ 끝으로',on:()=>setStep(rid,i,'done')},{t:'○ 초기화 (예정)',on:()=>setStep(rid,i,'')},'-',{t:'✎ 고치기',on:()=>stepMenu(rid,i)},{t:'✍ 쓰기 화면에서',on:()=>write(rid,'ws'+i+'n')},{t:'빼기',danger:true,on:async()=>{if(!await N().confirmBox(`「${stepTitle(s)}」 단계를 뺄까요?`,'빼기'))return;await N().patch('routes',rid,rr=>{rr.steps.splice(i,1)})}}]}
+  return [{t:'▶ 진행 중으로',on:()=>setStep(rid,i,'now')},{t:'✓ 끝으로',on:()=>setStep(rid,i,'done')},{t:'○ 초기화 (예정)',on:()=>setStep(rid,i,'')},'-',...(omOn()?[{t:'🎲 웹툴로 (낭독 · 배경 · 스탠딩)',on:()=>sendStep(rid,i)}]:[]),{t:'✎ 고치기',on:()=>stepMenu(rid,i)},{t:'✍ 쓰기 화면에서',on:()=>write(rid,'ws'+i+'n')},{t:'빼기',danger:true,on:async()=>{if(!await N().confirmBox(`「${stepTitle(s)}」 단계를 뺄까요?`,'빼기'))return;await N().patch('routes',rid,rr=>{rr.steps.splice(i,1)})}}]}
  /* 흐름도 화살표: 크기가 바뀌거나 글꼴이 늦게 오면 다시 긋는다 (관찰자는 하나만) */
  let RO=null;
  function watchFlow(el){const fl=el.querySelector('#flow');if(!fl)return;if(RO){try{RO.disconnect()}catch(e){}RO=null}
@@ -111,7 +111,7 @@
     <label class="lbl">메모 <small class="dim">(무슨 일이 일어나나 · 배틀 · 단서)</small><textarea id="smNote" rows="4">${esc(s.note||'')}</textarea></label>
     <label class="lbl">낭독 · 묘사 <small class="dim">(PL에게 읽어 줄 글)</small><textarea id="smRead" rows="3">${esc(s.read||'')}</textarea></label>
     ${after?`<div class="small dim">다음 단계 → ${esc(stepTitle(after))}</div>`:''}</div></div>
-   <div class="mfoot"><button class="btn xs ghost" data-mv="-1" ${i===0?'disabled':''}>◀ 앞으로</button><button class="btn xs ghost" data-mv="1" ${i>=r.steps.length-1?'disabled':''}>뒤로 ▶</button><button class="btn xs ghost danger" id="smDel">단계 빼기</button><span class="sp"></span><button class="btn xs ghost" id="smW">쓰기 화면</button>${s.spot?'<button class="btn xs" id="smMap">지도에서</button>':''}<button class="btn pri" id="smOk">저장</button></div>`,'wide');
+   <div class="mfoot"><button class="btn xs ghost" data-mv="-1" ${i===0?'disabled':''}>◀ 앞으로</button><button class="btn xs ghost" data-mv="1" ${i>=r.steps.length-1?'disabled':''}>뒤로 ▶</button><button class="btn xs ghost danger" id="smDel">단계 빼기</button><span class="sp"></span><button class="btn xs ghost" id="smW">쓰기 화면</button>${s.spot?'<button class="btn xs" id="smMap">지도에서</button>':''}${omOn()?'<button class="btn xs" id="smSend" title="낭독문을 나레이션으로 · 장소 그림을 배경으로 · 등장 인물 스탠딩을 무대로 — 이어 둔 웹툴 방에 한 번에">▶ 웹툴로</button>':''}<button class="btn pri" id="smOk">저장</button></div>`,'wide');
   $('#smSpot',md).onchange=()=>{$('#smCard',md).innerHTML=spotCard($('#smSpot',md).value)};
   const save=(fn)=>N().patch('routes',rid,rr=>{const st=rr.steps[i];if(!st)return false;fn(rr,st)});
   $$('#smSt button',md).forEach(b=>b.onclick=async()=>{const v=b.dataset.st;await save((rr,st)=>{if(v==='now')rr.steps.forEach(x=>{if(x.st==='now')x.st=''});st.st=v});$$('#smSt button',md).forEach(x=>x.classList.toggle('on',x.dataset.st===v))});
@@ -119,7 +119,13 @@
   $('#smW',md).onclick=async()=>{await save((rr,st)=>{st.spot=$('#smSpot',md).value;st.title=$('#smTitle',md).value.trim();st.note=$('#smNote',md).value.trim();st.read=$('#smRead',md).value.trim()});N().closeModal(true);write(rid,'ws'+i+'n')};
   $$('[data-mv]',md).forEach(b=>b.onclick=async()=>{const d=+b.dataset.mv;await N().patch('routes',rid,rr=>{const j=i+d;if(j<0||j>=rr.steps.length)return false;[rr.steps[i],rr.steps[j]]=[rr.steps[j],rr.steps[i]]});N().closeModal();const j=i+d;if(j>=0&&j<((N().data('routes',rid)||{}).steps||[]).length)stepMenu(rid,j)});
   $('#smDel',md).onclick=async()=>{if(!await N().confirmBox('이 단계를 뺄까요?','빼기'))return;await N().patch('routes',rid,rr=>{rr.steps.splice(i,1)});N().closeModal()};
-  const mp=$('#smMap',md);if(mp)mp.onclick=()=>{N().closeModal();N().go('map');setTimeout(()=>{NT_MAP.select(s.spot);N().render()},0)}}
+  const mp=$('#smMap',md);if(mp)mp.onclick=()=>{N().closeModal();N().go('map');setTimeout(()=>{NT_MAP.select(s.spot);N().render()},0)}
+  const sd=$('#smSend',md);if(sd)sd.onclick=async()=>{sd.disabled=true;await sendStep(rid,i,{spot:$('#smSpot',md).value,title:$('#smTitle',md).value.trim(),read:$('#smRead',md).value.trim()});sd.disabled=false}}
+ /* ---- 11-03 감우: 단계를 웹툴로 (낭독문 · 장소 배경 · 등장 인물 스탠딩 · 씬 프리셋) — 보내는 길은 phone.js sendScene ---- */
+ const omOn=()=>!!(N().gm()&&window.NT_PHONE&&NT_PHONE.sendScene&&NT_PHONE.omRoom());
+ async function sendStep(rid,i,ov){const r=N().data('routes',rid);const s=r&&(r.steps||[])[i];if(!s)return;const st=Object.assign({},s,ov||{});const sp=st.spot&&N().data('spots',st.spot);
+  const ids=[...new Set((st.ents||[]).concat(sp?N().list('ents').filter(e=>(e.at||[]).includes(st.spot)).map(e=>e.id):[]))];const ents=ids.map(id=>N().data('ents',id)).filter(e=>e&&(e.type==='인물'||!e.type));
+  await NT_PHONE.sendScene({id:rid+'_'+i,title:stepTitle(st),read:st.read||'',bg:(sp&&sp.img)||'',bgName:sp?sp.name:'',ents})}
  /* ---- 10-29 「쓰기」 화면: 왼쪽 루트 목록, 오른쪽에서 루트 한 장을 창 없이 바로 고친다 ----
     칸을 벗어나면(change) 저장, Ctrl+S 는 지금 칸을 바로 저장. 저장은 한 줄로 세워 차례로 한다(앞 저장이 끝나기 전에 다음 것이 옛 값을 덮지 않게).
     다른 사람이 고쳐 다시 그려져도 쓰고 있던 칸의 글은 그대로 둔다(app.js keepState 의 data-live). */
@@ -135,7 +141,7 @@
  function editor(r){const p=prog(r);const sec=N().data('sec','route:'+r.id)||{};const spots=spotList();const E=entList();const others=routes().filter(x=>x.id!==r.id);
   const ta=(id,v,ph,rows,live)=>`<textarea id="${id}" ${live===false?'':'data-live'} data-g rows="${rows||1}" placeholder="${esc(ph)}">${esc(v||'')}</textarea>`;
   return `<section class="swed" data-route="${esc(r.id)}" style="--c:${esc(r.color||'#888')}">
-   <div class="swhead"><input id="wName" data-live class="swname" type="text" value="${esc(r.name||'')}" placeholder="루트 이름">${N().visBadge(r._vis,'routes',r.id)}</div>
+   <div class="swhead"><input id="wName" data-live class="swname" type="text" value="${esc(r.name||'')}" placeholder="루트 이름">${N().visBadge(r._vis,'routes',r.id)}${window.NT_HIST?NT_HIST.btn('routes',r.id):''}</div>
    <div class="swmeta"><label>분류<input id="wGroup" data-live type="text" list="wGL" value="${esc(r.group||'')}" placeholder="예: 1부"></label><datalist id="wGL">${groups().map(g=>`<option value="${esc(g)}">`).join('')}</datalist>
     <label>색<input id="wColor" type="color" value="${esc(r.color||'#1e88e5')}"></label>
     <label class="chk"><input type="checkbox" id="wVisible" ${r.visible!==false?'checked':''}> 지도에 선</label>
@@ -161,7 +167,7 @@
     ${showRead?`<label class="swread"><span>❝ 낭독 · 묘사</span><textarea id="ws${i}r" data-live data-g rows="2" placeholder="PL에게 읽어 줄 글">${esc(s.read||'')}</textarea></label>`:''}
     <div class="swfoot">${ents.map(x=>`<span class="swent" style="--c:${esc(entColor(x.e))}"><button type="button" data-wgoent="${esc(x.id)}" title="항목 탭에서 보기">${esc(x.e.title)}</button><button type="button" data-wdelent="${esc(x.id)}" title="빼기">×</button></span>`).join('')}
      ${E.length?`<select class="swentadd" data-waddent="${i}" title="이 단계에 나오는 인물 · 아이템 · 설정"><option value="">＋ 등장 항목</option>${E.filter(e=>!(s.ents||[]).includes(e.id)).map(e=>`<option value="${esc(e.id)}">${esc(e.type||'')} · ${esc(e.title||'')}</option>`).join('')}</select>`:''}
-     ${showRead?'':'<button type="button" class="btn xs ghost" data-wread>＋ 낭독문</button>'}
+     ${showRead?'':'<button type="button" class="btn xs ghost" data-wread>＋ 낭독문</button>'}${omOn()?'<button type="button" class="btn xs" data-wsend title="낭독문을 나레이션으로 · 장소 그림을 배경으로 · 등장 인물 스탠딩을 무대로 — 이어 둔 웹툴 방에 한 번에">▶ 웹툴로</button>':''}
      <span class="sp"></span>
      <button type="button" class="btn xs ghost" data-wmv="-1" ${i===0?'disabled':''} title="위로">↑</button><button type="button" class="btn xs ghost" data-wmv="1" ${i>=(r.steps||[]).length-1?'disabled':''} title="아래로">↓</button><button type="button" class="btn xs ghost" data-wins title="바로 아래에 빈 단계 끼우기">＋ 아래에</button><button type="button" class="btn xs ghost danger" data-wdel title="단계 빼기">빼기</button></div>
    </div></li>`}
@@ -196,6 +202,7 @@
   if(b.hasAttribute('data-wins')&&i>=0){U2.focus='ws'+(i+1)+'t';q(()=>N().patch('routes',rid,r=>{r.steps.splice(i+1,0,{spot:'',title:'',note:'',st:''})}));return true}
   if(b.hasAttribute('data-wdel')&&i>=0){(async()=>{const s=(N().data('routes',rid).steps||[])[i];if(!s)return;if((s.note||s.read)&&!await N().confirmBox(`「${stepTitle(s)}」 단계를 뺄까요? 적어 둔 글도 사라져요.`,'빼기'))return;q(()=>N().patch('routes',rid,r=>{r.steps.splice(i,1)}))})();return true}
   if(b.hasAttribute('data-wread')&&i>=0){U2.open[rid+':'+i]=1;U2.focus='ws'+i+'r';N().render();return true}
+  if(b.hasAttribute('data-wsend')&&i>=0){const rd=document.getElementById('ws'+i+'r');b.disabled=true;WQ.then(()=>sendStep(rid,i,rd?{read:rd.value.trim()}:null)).finally(()=>{b.disabled=false});return true}
   if(b.dataset.wgoent){const id=b.dataset.wgoent;N().go('ents');setTimeout(()=>window.NT_ENTS&&NT_ENTS.select(id),0);return true}
   if(b.dataset.wdelent&&i>=0){const id=b.dataset.wdelent;q(()=>N().patch('routes',rid,r=>{const s=r.steps[i];if(!s)return false;s.ents=(s.ents||[]).filter(x=>x!==id)}));return true}
   if(b.dataset.wnext){const id=b.dataset.wnext;q(()=>N().patch('routes',rid,r=>{const n=new Set(r.next||[]);n.has(id)?n.delete(id):n.add(id);r.next=[...n]}));return true}
