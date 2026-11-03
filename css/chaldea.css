@@ -3,11 +3,11 @@
    어두운 색을 박아 둔 곳만 아래에서 따로 덮는다. 큰 제목은 Cinzel. 문장 그림 img/chaldea_emblem(남색) · _w(흰색) · chaldea_mark(워터마크) — 원본은 망령이 준 칼데아 문장.
    테마 키 om_vt 는 웹툴(오레마스)과 같이 쓰지만 웹툴에는 cd 가 없어서 웹툴은 기본(P4)으로 보인다. */
 html[data-vt="cd"]{color-scheme:light;
-  --bg:#edf2f8;--bg2:#e3ebf5;--panel:#ffffff;--panel2:#f3f7fc;--line:#cbd8ea;--line2:#9db3d1;
-  --fg:#10223c;--fg2:#30476a;--mute:#5d7391;--red:#1c63d6;--red2:#2f7cf0;--ok:#11834d;--yel:#b77d00;--yel2:#9a6a00;--blue:#1c63d6;
-  --cd:#1c63d6;--cd2:#0f3f8f;--cdl:#e8f1fd;--gold:#a8862f}
-html[data-vt="cd"] body{background:url("../img/chaldea_mark.png") no-repeat right 3% bottom 4%/min(420px,46vw) auto fixed,linear-gradient(180deg,#f6f9fd,#e9f0f8) fixed!important;background-color:#edf2f8!important;color:var(--fg)!important}
-html[data-vt="cd"] ::selection{background:rgba(28,99,214,.22);color:#0b1a30}
+  --bg:#eef5fa;--bg2:#e2eef6;--panel:#ffffff;--panel2:#f2f8fc;--line:#c5dbe8;--line2:#8fb7cc;
+  --fg:#0b1a2e;--fg2:#2b4560;--mute:#5a7590;--red:#0a78ad;--red2:#1aa7e0;--ok:#11834d;--yel:#b77d00;--yel2:#9a6a00;--blue:#0a78ad;
+  --cd:#0a78ad;--cd2:#075a83;--cdl:#e3f4fb;--gold:#a8862f}
+html[data-vt="cd"] body{background:url("../img/chaldea_mark.png") no-repeat right 3% bottom 4%/min(420px,46vw) auto fixed,linear-gradient(180deg,#f7fbfe,#e8f2f8) fixed!important;background-color:#eef5fa!important;color:var(--fg)!important}
+html[data-vt="cd"] ::selection{background:rgba(10,120,173,.22);color:#0b1a2e}
 
 
 /* ===== 자동 덮개 (tools: 밝은 테마용 — 어두운 바탕을 박아 둔 규칙을 흰 판으로, 흰 바탕+검은 글씨 강조를 칼데아 블루로) ===== */
@@ -76,37 +76,120 @@ html[data-vt="cd"] .pv-map{background:var(--panel)!important}
 /* ===== 자동 덮개 끝 — 아래 손으로 고친 규칙이 이긴다 ===== */
 
 /* 테마 고르기 단추 */
-html[data-vt="cd"] .vtsw{border-color:#9db3d1}
-html[data-vt="cd"] .vtsw button.on{background:#1c63d6;color:#fff}
+html[data-vt="cd"] .vtsw{border-color:#8fb7cc}
+html[data-vt="cd"] .vtsw button.on{background:#5fd2ff;color:#06121f}
 
-/* 위 띠 */
-html[data-vt="cd"] .top{background:#ffffff!important;color:#10223c!important;border-bottom:2px solid #1c63d6!important;box-shadow:0 2px 10px rgba(16,34,60,.08)!important}
-html[data-vt="cd"] .top .name{font-family:Cinzel,'Noto Serif KR',serif!important;font-weight:700!important;letter-spacing:.1em;color:#0f3f8f!important;text-shadow:none!important}
-html[data-vt="cd"] .top .name::before{content:"";display:inline-block;width:1.25em;height:1.25em;margin-right:.45em;vertical-align:-.22em;background:url("../img/chaldea_emblem.png") center/contain no-repeat}
-html[data-vt="cd"] .top .name small,html[data-vt="cd"] .top .small,html[data-vt="cd"] .top #conn,html[data-vt="cd"] .top .presence{color:#5d7391!important}
-html[data-vt="cd"] .top .back{color:#30476a}html[data-vt="cd"] .top .back:hover{color:#1c63d6}
-html[data-vt="cd"] .top .badge.gm{background:#1c63d6!important;color:#fff!important;border:0!important;border-radius:3px!important}
-html[data-vt="cd"] #sceneTabs button,html[data-vt="cd"] .top nav button,html[data-vt="cd"] .tabs button{font-family:'Noto Sans KR','Gothic A1',sans-serif!important;font-weight:800!important;background:transparent!important;color:#30476a!important;border:0!important;border-bottom:3px solid transparent!important;border-radius:0!important;box-shadow:none!important;text-shadow:none!important;transform:none!important}
-html[data-vt="cd"] #sceneTabs button.on,html[data-vt="cd"] .top nav button.on,html[data-vt="cd"] .tabs button.on{color:#1c63d6!important;border-bottom-color:#1c63d6!important;background:linear-gradient(transparent 55%,rgba(28,99,214,.08))!important}
+/* 위 띠 — 지구본(칼데아스 관측실)과 같은 남흑 · 시안 (11-04 망령 「지구본이랑 너무 동떨어졌잖아 · 이 부근의 색으로」) */
+html[data-vt="cd"] .top{background:linear-gradient(#071223,#0b1d36)!important;color:#e4efff!important;border-bottom:2px solid #5fd2ff!important;box-shadow:0 0 18px rgba(95,210,255,.22)!important}
+html[data-vt="cd"] .top .name{font-family:Cinzel,'Noto Serif KR',serif!important;font-weight:700!important;letter-spacing:.1em;color:#f2f8ff!important;text-shadow:0 0 10px rgba(95,210,255,.45)!important}
+html[data-vt="cd"] .top .name::before{content:"";display:inline-block;width:1.25em;height:1.25em;margin-right:.45em;vertical-align:-.22em;background:url("../img/chaldea_emblem_w.png") center/contain no-repeat;filter:drop-shadow(0 0 6px rgba(95,210,255,.5))}
+html[data-vt="cd"] .top .name small,html[data-vt="cd"] .top .small,html[data-vt="cd"] .top #conn,html[data-vt="cd"] .top .presence{color:#9fb8d2!important}
+html[data-vt="cd"] .top .back{color:#9fb8d2}html[data-vt="cd"] .top .back:hover{color:#5fd2ff}
+html[data-vt="cd"] .top .badge.gm{background:#5fd2ff!important;color:#06121f!important;border:0!important;border-radius:3px!important}
+html[data-vt="cd"] .top .btn{background:rgba(9,19,36,.7)!important;color:#e4efff!important;border-color:rgba(95,210,255,.35)!important}
+html[data-vt="cd"] .top .btn:hover{background:rgba(95,210,255,.16)!important;border-color:#5fd2ff!important}
+html[data-vt="cd"] .top .vtsw{border-color:rgba(95,210,255,.35)}html[data-vt="cd"] .top .vtsw button{color:#e4efff}
+html[data-vt="cd"] #sceneTabs button,html[data-vt="cd"] .top nav button{font-family:'Noto Sans KR','Gothic A1',sans-serif!important;font-weight:800!important;background:transparent!important;color:#a9c4dc!important;border:0!important;border-bottom:3px solid transparent!important;border-radius:0!important;box-shadow:none!important;text-shadow:none!important;transform:none!important}
+html[data-vt="cd"] #sceneTabs button.on,html[data-vt="cd"] .top nav button.on{color:#fff!important;border-bottom-color:#5fd2ff!important;background:linear-gradient(transparent 50%,rgba(95,210,255,.16))!important;text-shadow:0 0 8px rgba(95,210,255,.7)!important}
+html[data-vt="cd"] .tabs button{font-weight:800!important;background:transparent!important;color:#2b4560!important;border:0!important;border-bottom:3px solid transparent!important;border-radius:0!important}
+html[data-vt="cd"] .tabs button.on{color:#0a78ad!important;border-bottom-color:#0a78ad!important}
 
 /* 단추 · 입력 */
-html[data-vt="cd"] .btn{font-family:'Noto Sans KR','Gothic A1',sans-serif!important;font-weight:700!important;background:#ffffff!important;color:#0f3f8f!important;border:1px solid #9db3d1!important;border-radius:4px!important;box-shadow:0 1px 0 rgba(16,34,60,.06)!important;text-shadow:none!important;transform:none!important}
-html[data-vt="cd"] .btn:hover{background:#e8f1fd!important;border-color:#1c63d6!important}
-html[data-vt="cd"] .btn.ghost{background:#f7faff!important;color:#30476a!important}
-html[data-vt="cd"] .btn.pri,html[data-vt="cd"] #rpsend{background:#1c63d6!important;color:#fff!important;border-color:#1c63d6!important;box-shadow:0 2px 6px rgba(28,99,214,.3)!important}
-html[data-vt="cd"] .btn.pri:hover{background:#0f3f8f!important}
+html[data-vt="cd"] .btn{font-family:'Noto Sans KR','Gothic A1',sans-serif!important;font-weight:700!important;background:#ffffff!important;color:#075a83!important;border:1px solid #8fb7cc!important;border-radius:4px!important;box-shadow:0 1px 0 rgba(16,34,60,.06)!important;text-shadow:none!important;transform:none!important}
+html[data-vt="cd"] .btn:hover{background:#e3f4fb!important;border-color:#0a78ad!important}
+html[data-vt="cd"] .btn.ghost{background:#f5fbfe!important;color:#2b4560!important}
+html[data-vt="cd"] .btn.pri,html[data-vt="cd"] #rpsend{background:#0a78ad!important;color:#fff!important;border-color:#0a78ad!important;box-shadow:0 2px 6px rgba(10,120,173,.3)!important}
+html[data-vt="cd"] .btn.pri:hover{background:#075a83!important}
 html[data-vt="cd"] .btn.danger{color:#c0283a!important;border-color:#e3a3ab!important}
-html[data-vt="cd"] input,html[data-vt="cd"] select,html[data-vt="cd"] textarea{background:#ffffff!important;color:#10223c!important;border:1px solid #9db3d1!important;border-radius:4px!important}
-html[data-vt="cd"] input:focus,html[data-vt="cd"] select:focus,html[data-vt="cd"] textarea:focus{outline:2px solid rgba(28,99,214,.35);border-color:#1c63d6!important}
-html[data-vt="cd"] ::placeholder{color:#8a9bb3}
+html[data-vt="cd"] input,html[data-vt="cd"] select,html[data-vt="cd"] textarea{background:#ffffff!important;color:#0b1a2e!important;border:1px solid #8fb7cc!important;border-radius:4px!important}
+html[data-vt="cd"] input:focus,html[data-vt="cd"] select:focus,html[data-vt="cd"] textarea:focus{outline:2px solid rgba(10,120,173,.35);border-color:#0a78ad!important}
+html[data-vt="cd"] ::placeholder{color:#86a0b6}
 
 /* 판 · 창 · 제목 */
-html[data-vt="cd"] .modal{background:#ffffff!important;color:#10223c!important;border:1px solid #9db3d1!important;box-shadow:0 18px 40px rgba(16,34,60,.25)!important}
+html[data-vt="cd"] .modal{background:#ffffff!important;color:#0b1a2e!important;border:1px solid #8fb7cc!important;box-shadow:0 18px 40px rgba(16,34,60,.25)!important}
 html[data-vt="cd"] .modalbg{background:rgba(16,34,60,.45)!important}
-html[data-vt="cd"] .mhead h2,html[data-vt="cd"] .toolbar h2,html[data-vt="cd"] h2{color:#0f3f8f}
+html[data-vt="cd"] .mhead h2,html[data-vt="cd"] .toolbar h2,html[data-vt="cd"] h2{color:#075a83}
 html[data-vt="cd"] .toolbar h2,html[data-vt="cd"] .mhead h2{font-family:Cinzel,'Noto Serif KR',serif!important;letter-spacing:.06em}
-html[data-vt="cd"] .sheet h3,html[data-vt="cd"] .sheet h4{font-family:Cinzel,'Noto Serif KR',serif!important;color:#0f3f8f!important;letter-spacing:.06em}
-html[data-vt="cd"] .tile{background:#ffffff!important;border:1px solid #cbd8ea!important;border-top:3px solid #1c63d6!important;border-radius:6px!important}
-html[data-vt="cd"] .tile b{color:#0f3f8f!important}
-html[data-vt="cd"] .tile span{color:#5d7391!important}
-html[data-vt="cd"] #toast{background:#0f3f8f!important;color:#fff!important}
+html[data-vt="cd"] .sheet h3,html[data-vt="cd"] .sheet h4{font-family:Cinzel,'Noto Serif KR',serif!important;color:#075a83!important;letter-spacing:.06em}
+html[data-vt="cd"] .tile{background:#ffffff!important;border:1px solid #c5dbe8!important;border-top:3px solid #0a78ad!important;border-radius:6px!important}
+html[data-vt="cd"] .tile b{color:#075a83!important}
+html[data-vt="cd"] .tile span{color:#5a7590!important}
+html[data-vt="cd"] #toast{background:#075a83!important;color:#fff!important}
+
+
+/* ======================================================================
+   칼데아 (밤) — cdn. 11-04 망령 「칼데아 아카이브처럼 어두운 모드로 전환할 수 있는 다크모드」 · 「지구본 부근의 색으로」 · 「하얀 테는 살리게」
+   지구본(관측실) 바탕 남흑 #050b16 · 시안 #5fd2ff, 판 · 단추 · 창은 하얀 테두리(칼데아 단말 화면처럼). P3 자리를 따라 덮는다.
+   ====================================================================== */
+html[data-vt="cdn"]{--bg:#050b16;--bg2:#08111f;--panel:rgba(9,19,36,.92);--panel2:#0c1a2e;--line:rgba(235,244,255,.3);--line2:rgba(235,244,255,.62);--fg:#e4efff;--fg2:#bcd0e6;--mute:#8aa3bf;--red:#5fd2ff;--red2:#7fe0ff;--blue:#5fd2ff;--cd:#5fd2ff;--gold:#c9a862}
+html[data-vt="cdn"] .vtsw button.on{background:#5fd2ff;color:#06121f}
+html[data-vt="cdn"] .vtsw button.on{background:#5fd2ff;color:#06121f}
+html[data-vt="cdn"]{--bg:#050b16;--panel:rgba(9,19,36,.82);--line:rgba(235,244,255,.62);--red:#5fd2ff;--fg:#e4efff;--mute:#8aa3bf}
+html[data-vt="cdn"] body{background:#050b16 radial-gradient(1200px 700px at 70% -10%,#0c2340 0,#050b16 70%)!important;color:#e4efff!important;font-family:'Noto Sans KR','Gothic A1',sans-serif!important}
+html[data-vt="cdn"] .top{background:linear-gradient(#040915,#0a1a31)!important;border-bottom:1px solid rgba(235,244,255,.8)!important;box-shadow:0 0 24px rgba(95,210,255,.18)}
+html[data-vt="cdn"] .top .name{font-family:Cinzel,'Noto Serif KR',serif!important;font-weight:700!important;font-size:24px!important;letter-spacing:.12em;color:#f2f8ff!important;text-shadow:0 0 10px rgba(127,224,255,.7)!important}
+html[data-vt="cdn"] .top .badge.gm{background:#5fd2ff!important;color:#06121f!important;border:0!important;border-radius:3px!important}
+html[data-vt="cdn"] #sceneTabs button{font-family:Rajdhani,'Gothic A1',sans-serif!important;font-weight:700!important;font-size:15px!important;letter-spacing:.08em;background:transparent!important;color:#a9c4dc!important;border:0!important;border-bottom:2px solid transparent!important;border-radius:0!important;box-shadow:none!important;transform:none!important}
+html[data-vt="cdn"] #sceneTabs button.on{color:#fff!important;text-shadow:0 0 8px rgba(127,224,255,.9),0 1px 2px #001;border-bottom-color:#5fd2ff!important;background:linear-gradient(transparent,rgba(95,210,255,.18))!important}
+html[data-vt="cdn"] .btn{font-family:'Noto Sans KR','Gothic A1'!important;font-weight:700!important;background:rgba(4,10,22,.65)!important;color:#e4efff!important;border:1px solid rgba(235,244,255,.62)!important;border-radius:4px!important;box-shadow:none!important;transform:none!important}
+html[data-vt="cdn"] .btn.ghost{background:rgba(4,10,22,.88)!important}
+html[data-vt="cdn"] .btn.pri,html[data-vt="cdn"] #rpsend{background:#5fd2ff!important;color:#06121f!important;border-color:#5fd2ff!important;box-shadow:0 0 13px 1px rgba(95,210,255,.42)!important}
+html[data-vt="cdn"] .top .btn{background:rgba(9,19,36,.82)!important}
+html[data-vt="cdn"] .rpstage{border:1px solid rgba(235,244,255,.8)!important;outline:0!important;background:radial-gradient(at 50% 55%,#12305a 0,#081a33 60%,#030812 100%)!important;clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,22px 100%,0 calc(100% - 22px));box-shadow:inset 0 0 60px rgba(0,0,0,.5)!important}
+html[data-vt="cdn"] .daytag{background:transparent!important;border:0!important;box-shadow:none!important}
+html[data-vt="cdn"] .daytag b{font-family:Rajdhani,'Gothic A1'!important;font-weight:700!important;font-size:46px!important;color:#fff!important;letter-spacing:.02em;text-shadow:0 0 14px rgba(127,224,255,.8)!important}
+html[data-vt="cdn"] .daytag .phase{background:#5fd2ff!important;color:#06121f!important;border-radius:3px!important;font-family:'Gothic A1'!important;font-weight:800!important;white-space:nowrap}
+html[data-vt="cdn"] .bgname{background:rgba(9,19,36,.82)!important;border:1px solid rgba(235,244,255,.8)!important;border-radius:3px!important;color:#e4efff!important;font-family:'Gothic A1'!important;font-weight:800!important;box-shadow:none!important}
+html[data-vt="cdn"] .spkbar{background:linear-gradient(#0a1a31,#050b16)!important;border-top:1px solid rgba(235,244,255,.8)!important}
+html[data-vt="cdn"] .spk{background:rgba(9,19,36,.82)!important;border:1px solid rgba(235,244,255,.62)!important;border-radius:6px!important}
+html[data-vt="cdn"] .spk.on{border-color:#5fd2ff!important;box-shadow:0 0 12px rgba(95,210,255,.5)!important}
+html[data-vt="cdn"] .rpinput select,html[data-vt="cdn"] .rpinput input,html[data-vt="cdn"] #rpline{background:rgba(4,10,22,.8)!important;border:1px solid rgba(235,244,255,.62)!important;border-radius:4px!important;color:#e4efff!important}
+html[data-vt="cdn"] .mebar{background:linear-gradient(#0a1a31,#050b16)!important;border:0!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 -3px 0 #5fd2ff,0 -4px 0 #000!important;border-radius:0!important}
+html[data-vt="cdn"] .mebar .meid b{font-family:Rajdhani,'Gothic A1'!important;font-weight:700;font-size:20px!important;letter-spacing:.08em}
+html[data-vt="cdn"] .mebtns [data-rp="roll"]{background:#5fd2ff!important;color:#06121f!important;border-color:#5fd2ff!important}
+html[data-vt="cdn"] .phone{background:linear-gradient(160deg,rgba(14,36,66,.75),rgba(6,14,28,.92))!important;border:1px solid rgba(235,244,255,.8)!important;border-radius:14px!important;box-shadow:0 0 30px rgba(95,210,255,.2)!important}
+html[data-vt="cdn"] .phone .pbar,html[data-vt="cdn"] .phone .ptitle{background:transparent!important}
+html[data-vt="cdn"] .phone .ptitle{font-family:Rajdhani,'Gothic A1'!important;font-weight:700;letter-spacing:.1em;color:#f2f8ff!important;border-bottom:1px solid rgba(235,244,255,.62)}
+html[data-vt="cdn"] .ctabs{background:transparent!important}
+html[data-vt="cdn"] .ctabs button{background:transparent!important;color:#a9c4dc!important;border:0!important;border-bottom:2px solid transparent!important;border-radius:0!important}
+html[data-vt="cdn"] .ctabs button.on{color:#fff!important;border-bottom-color:#5fd2ff!important}
+html[data-vt="cdn"] .phone .log{background:transparent!important;background-image:none!important}
+html[data-vt="cdn"] .inbox{background:rgba(4,10,22,.65)!important;border-top:1px solid rgba(235,244,255,.62)!important}
+html[data-vt="cdn"] .inbox input,html[data-vt="cdn"] .inbox select{background:rgba(4,10,22,.8)!important;color:#e4efff!important;border:1px solid rgba(235,244,255,.62)!important}
+html[data-vt="cdn"] .ttab{background:transparent!important;color:#a9c4dc!important;border:1px solid rgba(235,244,255,.62)!important;border-radius:4px!important;font-family:Rajdhani,'Gothic A1'!important;font-weight:700!important}
+html[data-vt="cdn"] .ttab.on{background:#5fd2ff!important;color:#06121f!important}
+html[data-vt="cdn"] .sheet .hero{background:linear-gradient(160deg,rgba(14,36,66,.75),rgba(6,14,28,.85))!important;border:1px solid rgba(235,244,255,.62)!important;border-radius:0!important;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px))}
+html[data-vt="cdn"] .hpic{border:1px solid #ffffff!important;border-radius:0!important;box-shadow:0 0 16px rgba(95,210,255,.35)!important}
+html[data-vt="cdn"] .hname .qe,html[data-vt="cdn"] .hname{font-family:Cinzel,'Noto Serif KR',serif!important;font-weight:700!important;font-size:36px!important;letter-spacing:.1em;color:#e4efff!important;text-shadow:0 0 12px rgba(127,224,255,.6)!important}
+html[data-vt="cdn"] .hb{background:rgba(95,210,255,.14)!important;border:1px solid rgba(235,244,255,.62)!important;border-radius:999px!important;color:#e4efff!important}
+html[data-vt="cdn"] .tile{background:rgba(9,19,36,.82)!important;border:1px solid rgba(235,244,255,.62)!important;border-radius:6px!important}
+html[data-vt="cdn"] .tile b{font-family:Rajdhani!important;font-size:26px!important;font-weight:700!important;color:#fff!important}
+html[data-vt="cdn"] .tile span{color:#8aa3bf!important;font-weight:800}
+html[data-vt="cdn"] .stabs{border-bottom:1px solid rgba(235,244,255,.62)!important;background:transparent!important}
+html[data-vt="cdn"] .stab{font-family:Rajdhani,'Gothic A1'!important;font-weight:700!important;font-size:15px!important;letter-spacing:.08em;background:transparent!important;color:#a9c4dc!important;border:0!important;border-radius:0!important}
+html[data-vt="cdn"] .stab.on{color:#fff!important;text-shadow:0 0 8px rgba(127,224,255,.9);border-bottom:2px solid #5fd2ff!important}
+html[data-vt="cdn"] .sheet h3,html[data-vt="cdn"] .sheet h4{font-family:Rajdhani,'Gothic A1'!important;font-weight:700!important;font-size:19px!important;letter-spacing:.12em;color:#f2f8ff!important}
+html[data-vt="cdn"] input,html[data-vt="cdn"] select,html[data-vt="cdn"] textarea{border-radius:4px!important}
+@media(max-width:760px){html[data-vt="cdn"] .daytag b{font-size:34px!important}html[data-vt="cdn"] .top .name{font-size:20px!important}}
+html[data-vt="cdn"] .bstat .turn .tlab{color:#fff!important}
+html[data-vt="cdn"] .hpm,html[data-vt="cdn"] .hpmn{color:#fff!important}
+html[data-vt="cdn"] .top .name small{color:#a9c4dc!important}
+
+/* 칼데아 (밤) 덧칠 — 하얀 테 · 문장 */
+html[data-vt="cdn"] body{background:url("../img/chaldea_mark_n.png") no-repeat right 3% bottom 4%/min(420px,46vw) auto fixed,radial-gradient(70vmax 50vmax at 30% 20%,rgba(60,170,255,.16),transparent 70%) fixed,linear-gradient(rgba(95,210,255,.06) 1px,transparent 1px) 0 0/44px 44px,linear-gradient(90deg,rgba(95,210,255,.06) 1px,transparent 1px) 0 0/44px 44px,#050b16!important}
+html[data-vt="cdn"] .top{border-bottom:1px solid #fff!important;box-shadow:0 1px 0 rgba(95,210,255,.6),0 0 22px rgba(95,210,255,.2)!important}
+html[data-vt="cdn"] .top .name::before{content:"";display:inline-block;width:1.25em;height:1.25em;margin-right:.45em;vertical-align:-.22em;background:url("../img/chaldea_emblem_w.png") center/contain no-repeat;filter:drop-shadow(0 0 6px rgba(95,210,255,.55))}
+html[data-vt="cdn"] .top .badge.gm{background:#fff!important;color:#06121f!important}
+html[data-vt="cdn"] .btn{border:1px solid rgba(235,244,255,.75)!important}
+html[data-vt="cdn"] .btn:hover{border-color:#fff!important;box-shadow:0 0 10px rgba(95,210,255,.35)!important}
+html[data-vt="cdn"] .btn.pri,html[data-vt="cdn"] #rpsend{border-color:#fff!important}
+html[data-vt="cdn"] input,html[data-vt="cdn"] select,html[data-vt="cdn"] textarea{background:rgba(4,10,22,.85)!important;color:#e4efff!important;border:1px solid rgba(235,244,255,.6)!important}
+html[data-vt="cdn"] input:focus,html[data-vt="cdn"] select:focus,html[data-vt="cdn"] textarea:focus{border-color:#fff!important;outline:1px solid rgba(95,210,255,.6)}
+html[data-vt="cdn"] .modal{background:rgba(6,14,28,.97)!important;border:1px solid #fff!important;box-shadow:0 0 0 1px rgba(95,210,255,.35),0 0 28px rgba(95,210,255,.18),0 20px 40px rgba(0,0,0,.6)!important}
+html[data-vt="cdn"] .modalbg{background:rgba(2,6,14,.6)!important}
+html[data-vt="cdn"] .toolbar h2,html[data-vt="cdn"] .mhead h2,html[data-vt="cdn"] .sheet h3,html[data-vt="cdn"] .sheet h4{font-family:Cinzel,'Noto Serif KR',serif!important;letter-spacing:.06em}
+html[data-vt="cdn"] .seg{background:rgba(4,10,22,.85)!important;border-color:rgba(235,244,255,.6)!important}
+html[data-vt="cdn"] .seg button.on{background:#fff!important;color:#06121f!important}
+html[data-vt="cdn"] .chip{background:rgba(4,10,22,.85)!important;border-color:rgba(235,244,255,.5)!important}
+html[data-vt="cdn"] .globeview{border-color:rgba(235,244,255,.6)}
+html[data-vt="cdn"] ::selection{background:rgba(95,210,255,.35);color:#fff}
