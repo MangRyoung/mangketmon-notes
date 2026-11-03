@@ -1,235 +1,121 @@
-/* ---------- 칼데아(cd) 테마 — 11-04 망령 「이걸(칼데아 문장) 사용해서 칼데아 테마를 추가하고 싶어서」 · 「흰색 + 푸른색 · 가시성이 좋아야」 ----------
-   밝은 테마: 흰 판 · 옅은 청회색 바탕 · 남색 글씨 · 칼데아 블루 강조. 대부분 app.css 변수(--bg · --panel · --line · --fg · --red …)를 바꿔서 덮고,
-   어두운 색을 박아 둔 곳만 아래에서 따로 덮는다. 큰 제목은 Cinzel. 문장 그림 img/chaldea_emblem(남색) · _w(흰색) · chaldea_mark(워터마크) — 원본은 망령이 준 칼데아 문장.
-   테마 키 om_vt 는 웹툴(오레마스)과 같이 쓰지만 웹툴에는 cd 가 없어서 웹툴은 기본(P4)으로 보인다. */
-html[data-vt="cd"]{color-scheme:light;
-  --bg:#eef5fa;--bg2:#e2eef6;--panel:#ffffff;--panel2:#f2f8fc;--line:#c5dbe8;--line2:#8fb7cc;
-  --fg:#0b1a2e;--fg2:#2b4560;--mute:#5a7590;--red:#0a78ad;--red2:#1aa7e0;--ok:#11834d;--yel:#b77d00;--yel2:#9a6a00;--blue:#0a78ad;
-  --cd:#0a78ad;--cd2:#075a83;--cdl:#e3f4fb;--gold:#a8862f}
-html[data-vt="cd"] body{background:url("../img/chaldea_mark.png") no-repeat right 3% bottom 4%/min(420px,46vw) auto fixed,linear-gradient(180deg,#f7fbfe,#e8f2f8) fixed!important;background-color:#eef5fa!important;color:var(--fg)!important}
-html[data-vt="cd"] ::selection{background:rgba(10,120,173,.22);color:#0b1a2e}
-
-
-/* ===== 자동 덮개 (tools: 밝은 테마용 — 어두운 바탕을 박아 둔 규칙을 흰 판으로, 흰 바탕+검은 글씨 강조를 칼데아 블루로) ===== */
-html[data-vt="cd"] .btn{background:var(--cd)!important;color:#fff!important;border:2px solid var(--line)!important}
-html[data-vt="cd"] .btn.ghost:hover{background:var(--cd)!important;color:#fff!important}
-html[data-vt="cd"] input[type=text],html[data-vt="cd"] input[type=number],html[data-vt="cd"] input[type=search],html[data-vt="cd"] input[type=color],html[data-vt="cd"] select,html[data-vt="cd"] textarea{background:var(--panel)!important}
-html[data-vt="cd"] .badge,html[data-vt="cd"] .tag{background:var(--panel)!important;color:var(--fg)!important}
-html[data-vt="cd"] .badge.seat,html[data-vt="cd"] .tag.ok{background:var(--cd)!important;color:#fff!important}
-html[data-vt="cd"] #toast{background:var(--cd)!important;color:#fff!important}
-html[data-vt="cd"] .stgrid button{background:var(--panel)!important}
-html[data-vt="cd"] .stgrid button.on{background:var(--cd)!important;color:#fff!important}
-html[data-vt="cd"] .spcard{background:var(--panel)!important}
-html[data-vt="cd"] .updz{background:var(--panel)!important}
-html[data-vt="cd"] .updz.over{background:var(--panel)!important}
-html[data-vt="cd"] .newcamp code,html[data-vt="cd"] .modal code{background:var(--panel)!important}
-html[data-vt="cd"] .top{background:var(--panel)!important}
-html[data-vt="cd"] #sceneTabs button.on{background:var(--cd)!important;color:#fff!important}
-html[data-vt="cd"] .vtsw.compact .vtmenu{background:var(--panel)!important}
-html[data-vt="cd"] .seg{background:var(--panel)!important}
-html[data-vt="cd"] .seg button.on{background:var(--cd)!important;color:#fff!important}
-html[data-vt="cd"] .chip{background:var(--panel)!important}
-html[data-vt="cd"] table.t th{background:var(--panel)!important}
-html[data-vt="cd"] #ntNotices .ntn{background:var(--panel)!important;color:var(--fg)!important}
-html[data-vt="cd"] .mapwrap{background:var(--panel)!important}
-html[data-vt="cd"] .mapimg.blank{background:var(--panel)!important}
-html[data-vt="cd"] .pin.on span{background:var(--cd)!important;color:#fff!important}
-html[data-vt="cd"] .sprow:hover{background:var(--panel)!important}
-html[data-vt="cd"] .etags em{background:var(--panel)!important}
-html[data-vt="cd"] .graphwrap{background:var(--panel)!important}
-html[data-vt="cd"] .fcard .bar{background:var(--panel)!important}
-html[data-vt="cd"] .fstep i{background:var(--panel)!important}
-html[data-vt="cd"] .laneh .bar{background:var(--panel)!important}
-html[data-vt="cd"] .step{background:var(--panel)!important}
-html[data-vt="cd"] .cday.today .dn{background:var(--cd)!important;color:#fff!important}
-html[data-vt="cd"] .seatrow code{background:var(--panel)!important}
-html[data-vt="cd"] .pcsheet .party .mon i.noimg,html[data-vt="cd"] .pmh i.noimg{background:var(--panel)!important}
-html[data-vt="cd"] .pmst span{background:var(--panel)!important}
-html[data-vt="cd"] .pmst .tot{background:var(--panel)!important}
-html[data-vt="cd"] .pmm{background:var(--panel)!important}
-html[data-vt="cd"] .mnst{background:var(--cd)!important;color:#fff!important}
-@media (max-width:760px){html[data-vt="cd"] .mnpc:has(>.mnst):not(.peek)::after{border:2px solid var(--line)!important}}
-html[data-vt="cd"] .cb-vp{background:var(--panel)!important}
-html[data-vt="cd"] .cb-frame::before,html[data-vt="cd"] .cb-frame::after,html[data-vt="cd"] .cb-frame>.cap1,html[data-vt="cd"] .cb-frame>.cap2{background:var(--panel)!important}
-html[data-vt="cd"] .cb-tag{background:var(--cd)!important;color:#fff!important}
-html[data-vt="cd"] .cb-tag.secret{background:var(--panel)!important;color:var(--fg)!important}
-html[data-vt="cd"] .cb-dossier .bar{background:var(--panel)!important}
-html[data-vt="cd"] .pin u.pdg{background:var(--panel)!important}
-html[data-vt="cd"] .dgcard{background:var(--panel)!important;color:var(--fg)!important}
-html[data-vt="cd"] .dgcard .visb{background:var(--panel)!important}
-html[data-vt="cd"] .dgc{background:var(--panel)!important;color:var(--fg)!important;border:1px solid var(--line)!important}
-html[data-vt="cd"] .dgn{background:var(--panel)!important;color:var(--fg)!important;border:1px solid color-mix(in srgb,var(--c) 50%,var(--line))!important}
-html[data-vt="cd"] .dgn.k-boss{background:var(--panel)!important}
-html[data-vt="cd"] .dgn.k-entry{background:var(--panel)!important}
-html[data-vt="cd"] .dgn .dgport{background:var(--panel)!important}
-html[data-vt="cd"] .dgc.iso{background:var(--panel)!important;border:2px solid var(--line)!important}
-html[data-vt="cd"] .dgloc{background:var(--panel)!important;color:var(--fg)!important}
-html[data-vt="cd"] .dgtype{background:var(--panel)!important;color:var(--fg)!important}
-html[data-vt="cd"] .awbprev{background:var(--panel)!important}
-html[data-vt="cd"] html:not(#_) .awspec select.awsp-type option{background:var(--panel)!important;color:var(--fg)!important}
-html[data-vt="cd"] html:not(#_) .awcostbar{border-left:3px solid var(--line)!important}
-html[data-vt="cd"] html:not(#_) .awspk-calc.over{border-color:color-mix(in srgb,var(--red,var(--line)) 45%,transparent)!important}
-html[data-vt="cd"] .tag.acpl{background:var(--cd)!important;color:#fff!important}
-html[data-vt="cd"] .aclg input[type=text],html[data-vt="cd"] .aclg input[type=password]{background:var(--panel)!important}
-html[data-vt="cd"] #toast .tundo{background:var(--panel)!important;color:var(--fg)!important}
-html[data-vt="cd"] .pv-map{background:var(--panel)!important}
-/* ===== 자동 덮개 끝 — 아래 손으로 고친 규칙이 이긴다 ===== */
-
-/* 테마 고르기 단추 */
-html[data-vt="cd"] .vtsw{border-color:#8fb7cc}
-html[data-vt="cd"] .vtsw button.on{background:#5fd2ff;color:#06121f}
-
-/* 위 띠 — 지구본(칼데아스 관측실)과 같은 남흑 · 시안 (11-04 망령 「지구본이랑 너무 동떨어졌잖아 · 이 부근의 색으로」) */
-html[data-vt="cd"] .top{background:linear-gradient(#071223,#0b1d36)!important;color:#e4efff!important;border-bottom:2px solid #5fd2ff!important;box-shadow:0 0 18px rgba(95,210,255,.22)!important}
-html[data-vt="cd"] .top .name{font-family:Cinzel,'Noto Serif KR',serif!important;font-weight:700!important;letter-spacing:.1em;color:#f2f8ff!important;text-shadow:0 0 10px rgba(95,210,255,.45)!important}
-html[data-vt="cd"] .top .name::before{content:"";display:inline-block;width:1.25em;height:1.25em;margin-right:.45em;vertical-align:-.22em;background:url("../img/chaldea_emblem_w.png") center/contain no-repeat;filter:drop-shadow(0 0 6px rgba(95,210,255,.5))}
-html[data-vt="cd"] .top .name small,html[data-vt="cd"] .top .small,html[data-vt="cd"] .top #conn,html[data-vt="cd"] .top .presence{color:#9fb8d2!important}
-html[data-vt="cd"] .top .back{color:#9fb8d2}html[data-vt="cd"] .top .back:hover{color:#5fd2ff}
-html[data-vt="cd"] .top .badge.gm{background:#5fd2ff!important;color:#06121f!important;border:0!important;border-radius:3px!important}
-html[data-vt="cd"] .top .btn{background:rgba(9,19,36,.7)!important;color:#e4efff!important;border-color:rgba(95,210,255,.35)!important}
-html[data-vt="cd"] .top .btn:hover{background:rgba(95,210,255,.16)!important;border-color:#5fd2ff!important}
-html[data-vt="cd"] .top .vtsw{border-color:rgba(95,210,255,.35)}html[data-vt="cd"] .top .vtsw button{color:#e4efff}
-html[data-vt="cd"] #sceneTabs button,html[data-vt="cd"] .top nav button{font-family:'Noto Sans KR','Gothic A1',sans-serif!important;font-weight:800!important;background:transparent!important;color:#a9c4dc!important;border:0!important;border-bottom:3px solid transparent!important;border-radius:0!important;box-shadow:none!important;text-shadow:none!important;transform:none!important}
-html[data-vt="cd"] #sceneTabs button.on,html[data-vt="cd"] .top nav button.on{color:#fff!important;border-bottom-color:#5fd2ff!important;background:linear-gradient(transparent 50%,rgba(95,210,255,.16))!important;text-shadow:0 0 8px rgba(95,210,255,.7)!important}
-html[data-vt="cd"] .tabs button{font-weight:800!important;background:transparent!important;color:#2b4560!important;border:0!important;border-bottom:3px solid transparent!important;border-radius:0!important}
-html[data-vt="cd"] .tabs button.on{color:#0a78ad!important;border-bottom-color:#0a78ad!important}
-
-/* 단추 · 입력 */
-html[data-vt="cd"] .btn{font-family:'Noto Sans KR','Gothic A1',sans-serif!important;font-weight:700!important;background:#ffffff!important;color:#075a83!important;border:1px solid #8fb7cc!important;border-radius:4px!important;box-shadow:0 1px 0 rgba(16,34,60,.06)!important;text-shadow:none!important;transform:none!important}
-html[data-vt="cd"] .btn:hover{background:#e3f4fb!important;border-color:#0a78ad!important}
-html[data-vt="cd"] .btn.ghost{background:#f5fbfe!important;color:#2b4560!important}
-html[data-vt="cd"] .btn.pri,html[data-vt="cd"] #rpsend{background:#0a78ad!important;color:#fff!important;border-color:#0a78ad!important;box-shadow:0 2px 6px rgba(10,120,173,.3)!important}
-html[data-vt="cd"] .btn.pri:hover{background:#075a83!important}
-html[data-vt="cd"] .btn.danger{color:#c0283a!important;border-color:#e3a3ab!important}
-html[data-vt="cd"] input,html[data-vt="cd"] select,html[data-vt="cd"] textarea{background:#ffffff!important;color:#0b1a2e!important;border:1px solid #8fb7cc!important;border-radius:4px!important}
-html[data-vt="cd"] input:focus,html[data-vt="cd"] select:focus,html[data-vt="cd"] textarea:focus{outline:2px solid rgba(10,120,173,.35);border-color:#0a78ad!important}
-html[data-vt="cd"] ::placeholder{color:#86a0b6}
-
-/* 판 · 창 · 제목 */
-html[data-vt="cd"] .modal{background:#ffffff!important;color:#0b1a2e!important;border:1px solid #8fb7cc!important;box-shadow:0 18px 40px rgba(16,34,60,.25)!important}
-html[data-vt="cd"] .modalbg{background:rgba(16,34,60,.45)!important}
-html[data-vt="cd"] .mhead h2,html[data-vt="cd"] .toolbar h2,html[data-vt="cd"] h2{color:#075a83}
-html[data-vt="cd"] .toolbar h2,html[data-vt="cd"] .mhead h2{font-family:Cinzel,'Noto Serif KR',serif!important;letter-spacing:.06em}
-html[data-vt="cd"] .sheet h3,html[data-vt="cd"] .sheet h4{font-family:Cinzel,'Noto Serif KR',serif!important;color:#075a83!important;letter-spacing:.06em}
-html[data-vt="cd"] .tile{background:#ffffff!important;border:1px solid #c5dbe8!important;border-top:3px solid #0a78ad!important;border-radius:6px!important}
-html[data-vt="cd"] .tile b{color:#075a83!important}
-html[data-vt="cd"] .tile span{color:#5a7590!important}
-html[data-vt="cd"] #toast{background:#075a83!important;color:#fff!important}
-
-
+/* ---------- 칼데아(cd) 테마 — 11-04 망령 「이걸(칼데아 문장) 사용해서 칼데아 테마를 추가하고 싶어서」 ----------
+   11-04 망령 「칼데아 밤을 칼데아로 덮어쓰고 기존 칼데아는 지워도 좋아」: 흰 판 낮 테마는 지우고, 밤(지구본 남흑 · 시안 · 하얀 테)을 칼데아 하나로.
+   예전에 「칼데아 밤」(cdn)을 골라 둔 브라우저는 js/app.js vtMine 이 cd 로 바꿔 읽는다.
+   문장 그림 img/chaldea_emblem_w.png(흰 문장 — 위 띠 · 카드키) · chaldea_mark_n.png(워터마크) — 원본은 망령이 준 칼데아 문장.
+   테마 키 om_vt 는 웹툴(오레마스)과 같이 쓰고, 웹툴에도 같은 칼데아(cd)가 있다. */
 /* ======================================================================
-   칼데아 (밤) — cdn. 11-04 망령 「칼데아 아카이브처럼 어두운 모드로 전환할 수 있는 다크모드」 · 「지구본 부근의 색으로」 · 「하얀 테는 살리게」
+   칼데아 — cd. 11-04 망령 「칼데아 아카이브처럼 어두운 모드로 전환할 수 있는 다크모드」 · 「지구본 부근의 색으로」 · 「하얀 테는 살리게」
    지구본(관측실) 바탕 남흑 #050b16 · 시안 #5fd2ff, 판 · 단추 · 창은 하얀 테두리(칼데아 단말 화면처럼). P3 자리를 따라 덮는다.
    ====================================================================== */
-html[data-vt="cdn"]{--bg:#050b16;--bg2:#08111f;--panel:rgba(9,19,36,.92);--panel2:#0c1a2e;--line:rgba(235,244,255,.3);--line2:rgba(235,244,255,.62);--fg:#e4efff;--fg2:#bcd0e6;--mute:#8aa3bf;--red:#5fd2ff;--red2:#7fe0ff;--blue:#5fd2ff;--cd:#5fd2ff;--gold:#c9a862}
-html[data-vt="cdn"] .vtsw button.on{background:#5fd2ff;color:#06121f}
-html[data-vt="cdn"] .vtsw button.on{background:#5fd2ff;color:#06121f}
-html[data-vt="cdn"]{--bg:#050b16;--panel:rgba(9,19,36,.82);--line:rgba(235,244,255,.62);--red:#5fd2ff;--fg:#e4efff;--mute:#8aa3bf}
-html[data-vt="cdn"] body{background:#050b16 radial-gradient(1200px 700px at 70% -10%,#0c2340 0,#050b16 70%)!important;color:#e4efff!important;font-family:'Noto Sans KR','Gothic A1',sans-serif!important}
-html[data-vt="cdn"] .top{background:linear-gradient(#040915,#0a1a31)!important;border-bottom:1px solid rgba(235,244,255,.8)!important;box-shadow:0 0 24px rgba(95,210,255,.18)}
-html[data-vt="cdn"] .top .name{font-family:Cinzel,'Noto Serif KR',serif!important;font-weight:700!important;font-size:24px!important;letter-spacing:.12em;color:#f2f8ff!important;text-shadow:0 0 10px rgba(127,224,255,.7)!important}
-html[data-vt="cdn"] .top .badge.gm{background:#5fd2ff!important;color:#06121f!important;border:0!important;border-radius:3px!important}
-html[data-vt="cdn"] #sceneTabs button{font-family:Rajdhani,'Gothic A1',sans-serif!important;font-weight:700!important;font-size:15px!important;letter-spacing:.08em;background:transparent!important;color:#a9c4dc!important;border:0!important;border-bottom:2px solid transparent!important;border-radius:0!important;box-shadow:none!important;transform:none!important}
-html[data-vt="cdn"] #sceneTabs button.on{color:#fff!important;text-shadow:0 0 8px rgba(127,224,255,.9),0 1px 2px #001;border-bottom-color:#5fd2ff!important;background:linear-gradient(transparent,rgba(95,210,255,.18))!important}
-html[data-vt="cdn"] .btn{font-family:'Noto Sans KR','Gothic A1'!important;font-weight:700!important;background:rgba(4,10,22,.65)!important;color:#e4efff!important;border:1px solid rgba(235,244,255,.62)!important;border-radius:4px!important;box-shadow:none!important;transform:none!important}
-html[data-vt="cdn"] .btn.ghost{background:rgba(4,10,22,.88)!important}
-html[data-vt="cdn"] .btn.pri,html[data-vt="cdn"] #rpsend{background:#5fd2ff!important;color:#06121f!important;border-color:#5fd2ff!important;box-shadow:0 0 13px 1px rgba(95,210,255,.42)!important}
-html[data-vt="cdn"] .top .btn{background:rgba(9,19,36,.82)!important}
-html[data-vt="cdn"] .rpstage{border:1px solid rgba(235,244,255,.8)!important;outline:0!important;background:radial-gradient(at 50% 55%,#12305a 0,#081a33 60%,#030812 100%)!important;clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,22px 100%,0 calc(100% - 22px));box-shadow:inset 0 0 60px rgba(0,0,0,.5)!important}
-html[data-vt="cdn"] .daytag{background:transparent!important;border:0!important;box-shadow:none!important}
-html[data-vt="cdn"] .daytag b{font-family:Rajdhani,'Gothic A1'!important;font-weight:700!important;font-size:46px!important;color:#fff!important;letter-spacing:.02em;text-shadow:0 0 14px rgba(127,224,255,.8)!important}
-html[data-vt="cdn"] .daytag .phase{background:#5fd2ff!important;color:#06121f!important;border-radius:3px!important;font-family:'Gothic A1'!important;font-weight:800!important;white-space:nowrap}
-html[data-vt="cdn"] .bgname{background:rgba(9,19,36,.82)!important;border:1px solid rgba(235,244,255,.8)!important;border-radius:3px!important;color:#e4efff!important;font-family:'Gothic A1'!important;font-weight:800!important;box-shadow:none!important}
-html[data-vt="cdn"] .spkbar{background:linear-gradient(#0a1a31,#050b16)!important;border-top:1px solid rgba(235,244,255,.8)!important}
-html[data-vt="cdn"] .spk{background:rgba(9,19,36,.82)!important;border:1px solid rgba(235,244,255,.62)!important;border-radius:6px!important}
-html[data-vt="cdn"] .spk.on{border-color:#5fd2ff!important;box-shadow:0 0 12px rgba(95,210,255,.5)!important}
-html[data-vt="cdn"] .rpinput select,html[data-vt="cdn"] .rpinput input,html[data-vt="cdn"] #rpline{background:rgba(4,10,22,.8)!important;border:1px solid rgba(235,244,255,.62)!important;border-radius:4px!important;color:#e4efff!important}
-html[data-vt="cdn"] .mebar{background:linear-gradient(#0a1a31,#050b16)!important;border:0!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 -3px 0 #5fd2ff,0 -4px 0 #000!important;border-radius:0!important}
-html[data-vt="cdn"] .mebar .meid b{font-family:Rajdhani,'Gothic A1'!important;font-weight:700;font-size:20px!important;letter-spacing:.08em}
-html[data-vt="cdn"] .mebtns [data-rp="roll"]{background:#5fd2ff!important;color:#06121f!important;border-color:#5fd2ff!important}
-html[data-vt="cdn"] .phone{background:linear-gradient(160deg,rgba(14,36,66,.75),rgba(6,14,28,.92))!important;border:1px solid rgba(235,244,255,.8)!important;border-radius:14px!important;box-shadow:0 0 30px rgba(95,210,255,.2)!important}
-html[data-vt="cdn"] .phone .pbar,html[data-vt="cdn"] .phone .ptitle{background:transparent!important}
-html[data-vt="cdn"] .phone .ptitle{font-family:Rajdhani,'Gothic A1'!important;font-weight:700;letter-spacing:.1em;color:#f2f8ff!important;border-bottom:1px solid rgba(235,244,255,.62)}
-html[data-vt="cdn"] .ctabs{background:transparent!important}
-html[data-vt="cdn"] .ctabs button{background:transparent!important;color:#a9c4dc!important;border:0!important;border-bottom:2px solid transparent!important;border-radius:0!important}
-html[data-vt="cdn"] .ctabs button.on{color:#fff!important;border-bottom-color:#5fd2ff!important}
-html[data-vt="cdn"] .phone .log{background:transparent!important;background-image:none!important}
-html[data-vt="cdn"] .inbox{background:rgba(4,10,22,.65)!important;border-top:1px solid rgba(235,244,255,.62)!important}
-html[data-vt="cdn"] .inbox input,html[data-vt="cdn"] .inbox select{background:rgba(4,10,22,.8)!important;color:#e4efff!important;border:1px solid rgba(235,244,255,.62)!important}
-html[data-vt="cdn"] .ttab{background:transparent!important;color:#a9c4dc!important;border:1px solid rgba(235,244,255,.62)!important;border-radius:4px!important;font-family:Rajdhani,'Gothic A1'!important;font-weight:700!important}
-html[data-vt="cdn"] .ttab.on{background:#5fd2ff!important;color:#06121f!important}
-html[data-vt="cdn"] .sheet .hero{background:linear-gradient(160deg,rgba(14,36,66,.75),rgba(6,14,28,.85))!important;border:1px solid rgba(235,244,255,.62)!important;border-radius:0!important;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px))}
-html[data-vt="cdn"] .hpic{border:1px solid #ffffff!important;border-radius:0!important;box-shadow:0 0 16px rgba(95,210,255,.35)!important}
-html[data-vt="cdn"] .hname .qe,html[data-vt="cdn"] .hname{font-family:Cinzel,'Noto Serif KR',serif!important;font-weight:700!important;font-size:36px!important;letter-spacing:.1em;color:#e4efff!important;text-shadow:0 0 12px rgba(127,224,255,.6)!important}
-html[data-vt="cdn"] .hb{background:rgba(95,210,255,.14)!important;border:1px solid rgba(235,244,255,.62)!important;border-radius:999px!important;color:#e4efff!important}
-html[data-vt="cdn"] .tile{background:rgba(9,19,36,.82)!important;border:1px solid rgba(235,244,255,.62)!important;border-radius:6px!important}
-html[data-vt="cdn"] .tile b{font-family:Rajdhani!important;font-size:26px!important;font-weight:700!important;color:#fff!important}
-html[data-vt="cdn"] .tile span{color:#8aa3bf!important;font-weight:800}
-html[data-vt="cdn"] .stabs{border-bottom:1px solid rgba(235,244,255,.62)!important;background:transparent!important}
-html[data-vt="cdn"] .stab{font-family:Rajdhani,'Gothic A1'!important;font-weight:700!important;font-size:15px!important;letter-spacing:.08em;background:transparent!important;color:#a9c4dc!important;border:0!important;border-radius:0!important}
-html[data-vt="cdn"] .stab.on{color:#fff!important;text-shadow:0 0 8px rgba(127,224,255,.9);border-bottom:2px solid #5fd2ff!important}
-html[data-vt="cdn"] .sheet h3,html[data-vt="cdn"] .sheet h4{font-family:Rajdhani,'Gothic A1'!important;font-weight:700!important;font-size:19px!important;letter-spacing:.12em;color:#f2f8ff!important}
-html[data-vt="cdn"] input,html[data-vt="cdn"] select,html[data-vt="cdn"] textarea{border-radius:4px!important}
-@media(max-width:760px){html[data-vt="cdn"] .daytag b{font-size:34px!important}html[data-vt="cdn"] .top .name{font-size:20px!important}}
-html[data-vt="cdn"] .bstat .turn .tlab{color:#fff!important}
-html[data-vt="cdn"] .hpm,html[data-vt="cdn"] .hpmn{color:#fff!important}
-html[data-vt="cdn"] .top .name small{color:#a9c4dc!important}
+html[data-vt="cd"]{--bg:#050b16;--bg2:#08111f;--panel:rgba(9,19,36,.92);--panel2:#0c1a2e;--line:rgba(235,244,255,.3);--line2:rgba(235,244,255,.62);--fg:#e4efff;--fg2:#bcd0e6;--mute:#8aa3bf;--red:#5fd2ff;--red2:#7fe0ff;--blue:#5fd2ff;--cd:#5fd2ff;--gold:#c9a862}
+html[data-vt="cd"] .vtsw button.on{background:#5fd2ff;color:#06121f}
+html[data-vt="cd"] .vtsw button.on{background:#5fd2ff;color:#06121f}
+html[data-vt="cd"]{--bg:#050b16;--panel:rgba(9,19,36,.82);--line:rgba(235,244,255,.62);--red:#5fd2ff;--fg:#e4efff;--mute:#8aa3bf}
+html[data-vt="cd"] body{background:#050b16 radial-gradient(1200px 700px at 70% -10%,#0c2340 0,#050b16 70%)!important;color:#e4efff!important;font-family:'Noto Sans KR','Gothic A1',sans-serif!important}
+html[data-vt="cd"] .top{background:linear-gradient(#040915,#0a1a31)!important;border-bottom:1px solid rgba(235,244,255,.8)!important;box-shadow:0 0 24px rgba(95,210,255,.18)}
+html[data-vt="cd"] .top .name{font-family:Cinzel,'Noto Serif KR',serif!important;font-weight:700!important;font-size:24px!important;letter-spacing:.12em;color:#f2f8ff!important;text-shadow:0 0 10px rgba(127,224,255,.7)!important}
+html[data-vt="cd"] .top .badge.gm{background:#5fd2ff!important;color:#06121f!important;border:0!important;border-radius:3px!important}
+html[data-vt="cd"] #sceneTabs button{font-family:Rajdhani,'Gothic A1',sans-serif!important;font-weight:700!important;font-size:15px!important;letter-spacing:.08em;background:transparent!important;color:#a9c4dc!important;border:0!important;border-bottom:2px solid transparent!important;border-radius:0!important;box-shadow:none!important;transform:none!important}
+html[data-vt="cd"] #sceneTabs button.on{color:#fff!important;text-shadow:0 0 8px rgba(127,224,255,.9),0 1px 2px #001;border-bottom-color:#5fd2ff!important;background:linear-gradient(transparent,rgba(95,210,255,.18))!important}
+html[data-vt="cd"] .btn{font-family:'Noto Sans KR','Gothic A1'!important;font-weight:700!important;background:rgba(4,10,22,.65)!important;color:#e4efff!important;border:1px solid rgba(235,244,255,.62)!important;border-radius:4px!important;box-shadow:none!important;transform:none!important}
+html[data-vt="cd"] .btn.ghost{background:rgba(4,10,22,.88)!important}
+html[data-vt="cd"] .btn.pri,html[data-vt="cd"] #rpsend{background:#5fd2ff!important;color:#06121f!important;border-color:#5fd2ff!important;box-shadow:0 0 13px 1px rgba(95,210,255,.42)!important}
+html[data-vt="cd"] .top .btn{background:rgba(9,19,36,.82)!important}
+html[data-vt="cd"] .rpstage{border:1px solid rgba(235,244,255,.8)!important;outline:0!important;background:radial-gradient(at 50% 55%,#12305a 0,#081a33 60%,#030812 100%)!important;clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,22px 100%,0 calc(100% - 22px));box-shadow:inset 0 0 60px rgba(0,0,0,.5)!important}
+html[data-vt="cd"] .daytag{background:transparent!important;border:0!important;box-shadow:none!important}
+html[data-vt="cd"] .daytag b{font-family:Rajdhani,'Gothic A1'!important;font-weight:700!important;font-size:46px!important;color:#fff!important;letter-spacing:.02em;text-shadow:0 0 14px rgba(127,224,255,.8)!important}
+html[data-vt="cd"] .daytag .phase{background:#5fd2ff!important;color:#06121f!important;border-radius:3px!important;font-family:'Gothic A1'!important;font-weight:800!important;white-space:nowrap}
+html[data-vt="cd"] .bgname{background:rgba(9,19,36,.82)!important;border:1px solid rgba(235,244,255,.8)!important;border-radius:3px!important;color:#e4efff!important;font-family:'Gothic A1'!important;font-weight:800!important;box-shadow:none!important}
+html[data-vt="cd"] .spkbar{background:linear-gradient(#0a1a31,#050b16)!important;border-top:1px solid rgba(235,244,255,.8)!important}
+html[data-vt="cd"] .spk{background:rgba(9,19,36,.82)!important;border:1px solid rgba(235,244,255,.62)!important;border-radius:6px!important}
+html[data-vt="cd"] .spk.on{border-color:#5fd2ff!important;box-shadow:0 0 12px rgba(95,210,255,.5)!important}
+html[data-vt="cd"] .rpinput select,html[data-vt="cd"] .rpinput input,html[data-vt="cd"] #rpline{background:rgba(4,10,22,.8)!important;border:1px solid rgba(235,244,255,.62)!important;border-radius:4px!important;color:#e4efff!important}
+html[data-vt="cd"] .mebar{background:linear-gradient(#0a1a31,#050b16)!important;border:0!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 -3px 0 #5fd2ff,0 -4px 0 #000!important;border-radius:0!important}
+html[data-vt="cd"] .mebar .meid b{font-family:Rajdhani,'Gothic A1'!important;font-weight:700;font-size:20px!important;letter-spacing:.08em}
+html[data-vt="cd"] .mebtns [data-rp="roll"]{background:#5fd2ff!important;color:#06121f!important;border-color:#5fd2ff!important}
+html[data-vt="cd"] .phone{background:linear-gradient(160deg,rgba(14,36,66,.75),rgba(6,14,28,.92))!important;border:1px solid rgba(235,244,255,.8)!important;border-radius:14px!important;box-shadow:0 0 30px rgba(95,210,255,.2)!important}
+html[data-vt="cd"] .phone .pbar,html[data-vt="cd"] .phone .ptitle{background:transparent!important}
+html[data-vt="cd"] .phone .ptitle{font-family:Rajdhani,'Gothic A1'!important;font-weight:700;letter-spacing:.1em;color:#f2f8ff!important;border-bottom:1px solid rgba(235,244,255,.62)}
+html[data-vt="cd"] .ctabs{background:transparent!important}
+html[data-vt="cd"] .ctabs button{background:transparent!important;color:#a9c4dc!important;border:0!important;border-bottom:2px solid transparent!important;border-radius:0!important}
+html[data-vt="cd"] .ctabs button.on{color:#fff!important;border-bottom-color:#5fd2ff!important}
+html[data-vt="cd"] .phone .log{background:transparent!important;background-image:none!important}
+html[data-vt="cd"] .inbox{background:rgba(4,10,22,.65)!important;border-top:1px solid rgba(235,244,255,.62)!important}
+html[data-vt="cd"] .inbox input,html[data-vt="cd"] .inbox select{background:rgba(4,10,22,.8)!important;color:#e4efff!important;border:1px solid rgba(235,244,255,.62)!important}
+html[data-vt="cd"] .ttab{background:transparent!important;color:#a9c4dc!important;border:1px solid rgba(235,244,255,.62)!important;border-radius:4px!important;font-family:Rajdhani,'Gothic A1'!important;font-weight:700!important}
+html[data-vt="cd"] .ttab.on{background:#5fd2ff!important;color:#06121f!important}
+html[data-vt="cd"] .sheet .hero{background:linear-gradient(160deg,rgba(14,36,66,.75),rgba(6,14,28,.85))!important;border:1px solid rgba(235,244,255,.62)!important;border-radius:0!important;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px))}
+html[data-vt="cd"] .hpic{border:1px solid #ffffff!important;border-radius:0!important;box-shadow:0 0 16px rgba(95,210,255,.35)!important}
+html[data-vt="cd"] .hname .qe,html[data-vt="cd"] .hname{font-family:Cinzel,'Noto Serif KR',serif!important;font-weight:700!important;font-size:36px!important;letter-spacing:.1em;color:#e4efff!important;text-shadow:0 0 12px rgba(127,224,255,.6)!important}
+html[data-vt="cd"] .hb{background:rgba(95,210,255,.14)!important;border:1px solid rgba(235,244,255,.62)!important;border-radius:999px!important;color:#e4efff!important}
+html[data-vt="cd"] .tile{background:rgba(9,19,36,.82)!important;border:1px solid rgba(235,244,255,.62)!important;border-radius:6px!important}
+html[data-vt="cd"] .tile b{font-family:Rajdhani!important;font-size:26px!important;font-weight:700!important;color:#fff!important}
+html[data-vt="cd"] .tile span{color:#8aa3bf!important;font-weight:800}
+html[data-vt="cd"] .stabs{border-bottom:1px solid rgba(235,244,255,.62)!important;background:transparent!important}
+html[data-vt="cd"] .stab{font-family:Rajdhani,'Gothic A1'!important;font-weight:700!important;font-size:15px!important;letter-spacing:.08em;background:transparent!important;color:#a9c4dc!important;border:0!important;border-radius:0!important}
+html[data-vt="cd"] .stab.on{color:#fff!important;text-shadow:0 0 8px rgba(127,224,255,.9);border-bottom:2px solid #5fd2ff!important}
+html[data-vt="cd"] .sheet h3,html[data-vt="cd"] .sheet h4{font-family:Rajdhani,'Gothic A1'!important;font-weight:700!important;font-size:19px!important;letter-spacing:.12em;color:#f2f8ff!important}
+html[data-vt="cd"] input,html[data-vt="cd"] select,html[data-vt="cd"] textarea{border-radius:4px!important}
+@media(max-width:760px){html[data-vt="cd"] .daytag b{font-size:34px!important}html[data-vt="cd"] .top .name{font-size:20px!important}}
+html[data-vt="cd"] .bstat .turn .tlab{color:#fff!important}
+html[data-vt="cd"] .hpm,html[data-vt="cd"] .hpmn{color:#fff!important}
+html[data-vt="cd"] .top .name small{color:#a9c4dc!important}
 
 /* 칼데아 (밤) 덧칠 — 하얀 테 · 문장 */
-html[data-vt="cdn"] body{background:url("../img/chaldea_mark_n.png") no-repeat right 3% bottom 4%/min(420px,46vw) auto fixed,radial-gradient(70vmax 50vmax at 30% 20%,rgba(60,170,255,.16),transparent 70%) fixed,linear-gradient(rgba(95,210,255,.06) 1px,transparent 1px) 0 0/44px 44px,linear-gradient(90deg,rgba(95,210,255,.06) 1px,transparent 1px) 0 0/44px 44px,#050b16!important}
-html[data-vt="cdn"] .top{border-bottom:1px solid #fff!important;box-shadow:0 1px 0 rgba(95,210,255,.6),0 0 22px rgba(95,210,255,.2)!important}
-html[data-vt="cdn"] .top .name::before{content:"";display:inline-block;width:1.25em;height:1.25em;margin-right:.45em;vertical-align:-.22em;background:url("../img/chaldea_emblem_w.png") center/contain no-repeat;filter:drop-shadow(0 0 6px rgba(95,210,255,.55))}
-html[data-vt="cdn"] .top .badge.gm{background:#fff!important;color:#06121f!important}
-html[data-vt="cdn"] .btn{border:1px solid rgba(235,244,255,.75)!important}
-html[data-vt="cdn"] .btn:hover{border-color:#fff!important;box-shadow:0 0 10px rgba(95,210,255,.35)!important}
-html[data-vt="cdn"] .btn.pri,html[data-vt="cdn"] #rpsend{border-color:#fff!important}
-html[data-vt="cdn"] input,html[data-vt="cdn"] select,html[data-vt="cdn"] textarea{background:rgba(4,10,22,.85)!important;color:#e4efff!important;border:1px solid rgba(235,244,255,.6)!important}
-html[data-vt="cdn"] input:focus,html[data-vt="cdn"] select:focus,html[data-vt="cdn"] textarea:focus{border-color:#fff!important;outline:1px solid rgba(95,210,255,.6)}
-html[data-vt="cdn"] .modal{background:rgba(6,14,28,.97)!important;border:1px solid #fff!important;box-shadow:0 0 0 1px rgba(95,210,255,.35),0 0 28px rgba(95,210,255,.18),0 20px 40px rgba(0,0,0,.6)!important}
-html[data-vt="cdn"] .modalbg{background:rgba(2,6,14,.6)!important}
-html[data-vt="cdn"] .toolbar h2,html[data-vt="cdn"] .mhead h2,html[data-vt="cdn"] .sheet h3,html[data-vt="cdn"] .sheet h4{font-family:Cinzel,'Noto Serif KR',serif!important;letter-spacing:.06em}
-html[data-vt="cdn"] .seg{background:rgba(4,10,22,.85)!important;border-color:rgba(235,244,255,.6)!important}
-html[data-vt="cdn"] .seg button.on{background:#fff!important;color:#06121f!important}
-html[data-vt="cdn"] .chip{background:rgba(4,10,22,.85)!important;border-color:rgba(235,244,255,.5)!important}
-html[data-vt="cdn"] .globeview{border-color:rgba(235,244,255,.6)}
-html[data-vt="cdn"] ::selection{background:rgba(95,210,255,.35);color:#fff}
+html[data-vt="cd"] body{background:url("../img/chaldea_mark_n.png") no-repeat right 3% bottom 4%/min(420px,46vw) auto fixed,radial-gradient(70vmax 50vmax at 30% 20%,rgba(60,170,255,.16),transparent 70%) fixed,linear-gradient(rgba(95,210,255,.06) 1px,transparent 1px) 0 0/44px 44px,linear-gradient(90deg,rgba(95,210,255,.06) 1px,transparent 1px) 0 0/44px 44px,#050b16!important}
+html[data-vt="cd"] .top{border-bottom:1px solid #fff!important;box-shadow:0 1px 0 rgba(95,210,255,.6),0 0 22px rgba(95,210,255,.2)!important}
+html[data-vt="cd"] .top .name::before{content:"";display:inline-block;width:1.25em;height:1.25em;margin-right:.45em;vertical-align:-.22em;background:url("../img/chaldea_emblem_w.png") center/contain no-repeat;filter:drop-shadow(0 0 6px rgba(95,210,255,.55))}
+html[data-vt="cd"] .top .badge.gm{background:#fff!important;color:#06121f!important}
+html[data-vt="cd"] .btn{border:1px solid rgba(235,244,255,.75)!important}
+html[data-vt="cd"] .btn:hover{border-color:#fff!important;box-shadow:0 0 10px rgba(95,210,255,.35)!important}
+html[data-vt="cd"] .btn.pri,html[data-vt="cd"] #rpsend{border-color:#fff!important}
+html[data-vt="cd"] input,html[data-vt="cd"] select,html[data-vt="cd"] textarea{background:rgba(4,10,22,.85)!important;color:#e4efff!important;border:1px solid rgba(235,244,255,.6)!important}
+html[data-vt="cd"] input:focus,html[data-vt="cd"] select:focus,html[data-vt="cd"] textarea:focus{border-color:#fff!important;outline:1px solid rgba(95,210,255,.6)}
+html[data-vt="cd"] .modal{background:rgba(6,14,28,.97)!important;border:1px solid #fff!important;box-shadow:0 0 0 1px rgba(95,210,255,.35),0 0 28px rgba(95,210,255,.18),0 20px 40px rgba(0,0,0,.6)!important}
+html[data-vt="cd"] .modalbg{background:rgba(2,6,14,.6)!important}
+html[data-vt="cd"] .toolbar h2,html[data-vt="cd"] .mhead h2,html[data-vt="cd"] .sheet h3,html[data-vt="cd"] .sheet h4{font-family:Cinzel,'Noto Serif KR',serif!important;letter-spacing:.06em}
+html[data-vt="cd"] .seg{background:rgba(4,10,22,.85)!important;border-color:rgba(235,244,255,.6)!important}
+html[data-vt="cd"] .seg button.on{background:#fff!important;color:#06121f!important}
+html[data-vt="cd"] .chip{background:rgba(4,10,22,.85)!important;border-color:rgba(235,244,255,.5)!important}
+html[data-vt="cd"] .globeview{border-color:rgba(235,244,255,.6)}
+html[data-vt="cd"] ::selection{background:rgba(95,210,255,.35);color:#fff}
 
 /* ======================================================================
    칼데아 카드키 신분증 — 11-04 망령 「신분증을 바코드를 빼고 위에 칼데아 문양 · 회사에서 쓰는 가로 카드키 느낌 · 아까 빼두었던 하얗고 파란 테마색을 여기에」
-   자료 탭 인물 카드(.enti.eid · js/ents_ui.js cardId)를 칼데아 두 테마(cd · cdn)에서만 덮는다 — 다른 테마 · 미사그 학생증은 그대로.
+   자료 탭 인물 카드(.enti.eid · js/ents_ui.js cardId)를 칼데아 테마(cd)에서만 덮는다 — 다른 테마 · 미사그 학생증은 그대로.
    흰 카드 · 로열 블루 머리 띠 · 끈 구멍 · IC 칩 · 아래 파란 줄. 바코드는 숨기고 방패 문장 대신 칼데아 문장.
    ====================================================================== */
-html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid{--ink:#0b1a2e;--ink2:#30476a;--ink3:#6b7f99;--hd1:#1c63d6;--hd2:#0f3f8f;--gold:#cfe3ff;--seal:#1c63d6;position:relative;border-radius:14px;
+html[data-vt="cd"] .enti.eid{--ink:#0b1a2e;--ink2:#30476a;--ink3:#6b7f99;--hd1:#1c63d6;--hd2:#0f3f8f;--gold:#cfe3ff;--seal:#1c63d6;position:relative;border-radius:14px;
   background:repeating-linear-gradient(118deg,rgba(28,99,214,.035) 0 1px,transparent 1px 9px),linear-gradient(160deg,#ffffff,#f1f6fd);
   box-shadow:0 0 0 1px #c9d6ea,0 6px 16px rgba(10,30,70,.18);font-family:'IBM Plex Sans KR','Noto Sans KR',sans-serif}
-html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid.eid-staff,html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid.eid-gen,html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid.eid-stu{--hd1:#1c63d6;--hd2:#0f3f8f}
-html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid::before{content:"";position:absolute;top:6px;left:50%;width:36px;height:6px;margin-left:-18px;border-radius:4px;background:rgba(255,255,255,.55);box-shadow:inset 0 1px 2px rgba(0,0,0,.35);z-index:2;pointer-events:none}
-html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:linear-gradient(90deg,#1c63d6,#5fd2ff);pointer-events:none}
-html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid:hover{box-shadow:0 0 0 1px #1c63d6,0 10px 22px rgba(10,30,70,.28)}
-html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid.on{box-shadow:0 0 0 2px #1c63d6,0 0 0 5px rgba(95,210,255,.55),0 10px 22px rgba(10,30,70,.28)}
-html:is([data-vt="cd"],[data-vt="cdn"]) .eid-h{padding:16px 12px 8px;background:linear-gradient(90deg,#1c63d6,#0f3f8f);color:#fff;border-bottom:0}
-html:is([data-vt="cd"],[data-vt="cdn"]) .eid-cr{width:22px;height:22px;background:url("../img/chaldea_emblem_w.png") center/contain no-repeat}
-html:is([data-vt="cd"],[data-vt="cdn"]) .eid-cr svg{display:none}
-html:is([data-vt="cd"],[data-vt="cdn"]) .eid-o b{font-family:'IBM Plex Sans KR','Noto Sans KR',sans-serif;font-weight:700;letter-spacing:.1em;color:#fff}
-html:is([data-vt="cd"],[data-vt="cdn"]) .eid-o small{font-family:'IBM Plex Sans KR','Noto Sans KR',sans-serif;letter-spacing:.14em;color:rgba(255,255,255,.78)}
-html:is([data-vt="cd"],[data-vt="cdn"]) .eid-k{font-family:'IBM Plex Sans KR','Noto Sans KR',sans-serif;font-weight:800;color:#fff}
-html:is([data-vt="cd"],[data-vt="cdn"]) .eid-k small{font-family:'IBM Plex Mono',monospace;font-weight:500;letter-spacing:.18em;color:#cfe3ff}
-html:is([data-vt="cd"],[data-vt="cdn"]) .eid-b{padding:12px 12px 6px}
-html:is([data-vt="cd"],[data-vt="cdn"]) .eid-p{border:2px solid #fff;outline:0;border-radius:6px;box-shadow:0 0 0 1px #c9d6ea,0 2px 6px rgba(10,30,70,.15);filter:none;background-color:#e8eef7}
-html:is([data-vt="cd"],[data-vt="cdn"]) .eid-p.noimg{color:#1c63d6;font-family:'IBM Plex Sans KR','Noto Sans KR',sans-serif;background:repeating-linear-gradient(135deg,#eef3fa 0 7px,#e3ebf6 7px 14px)}
-html:is([data-vt="cd"],[data-vt="cdn"]) .eid-l{font-family:'IBM Plex Sans KR','Noto Sans KR',sans-serif;color:#6b7f99;letter-spacing:.08em}
-html:is([data-vt="cd"],[data-vt="cdn"]) .eid-n{font-family:'IBM Plex Sans KR','Noto Sans KR',sans-serif;font-weight:800;color:#0b1a2e;letter-spacing:.01em}
-html:is([data-vt="cd"],[data-vt="cdn"]) .eid-v{color:#1d2f4a;border-bottom:1px solid #e1e9f4}
-html:is([data-vt="cd"],[data-vt="cdn"]) .eid-no{font-family:'IBM Plex Mono',monospace;color:#1c63d6;letter-spacing:.12em}
-html:is([data-vt="cd"],[data-vt="cdn"]) .eid-ft{border-top:1px solid #e3eaf4;padding:6px 0 10px}
-html:is([data-vt="cd"],[data-vt="cdn"]) .eid-bar{display:none}
-html:is([data-vt="cd"],[data-vt="cdn"]) .eid-ft::before{content:"";flex:none;width:30px;height:22px;border-radius:4px;border:1px solid #b89a4e;
+html[data-vt="cd"] .enti.eid.eid-staff,html[data-vt="cd"] .enti.eid.eid-gen,html[data-vt="cd"] .enti.eid.eid-stu{--hd1:#1c63d6;--hd2:#0f3f8f}
+html[data-vt="cd"] .enti.eid::before{content:"";position:absolute;top:6px;left:50%;width:36px;height:6px;margin-left:-18px;border-radius:4px;background:rgba(255,255,255,.55);box-shadow:inset 0 1px 2px rgba(0,0,0,.35);z-index:2;pointer-events:none}
+html[data-vt="cd"] .enti.eid::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:linear-gradient(90deg,#1c63d6,#5fd2ff);pointer-events:none}
+html[data-vt="cd"] .enti.eid:hover{box-shadow:0 0 0 1px #1c63d6,0 10px 22px rgba(10,30,70,.28)}
+html[data-vt="cd"] .enti.eid.on{box-shadow:0 0 0 2px #1c63d6,0 0 0 5px rgba(95,210,255,.55),0 10px 22px rgba(10,30,70,.28)}
+html[data-vt="cd"] .eid-h{padding:16px 12px 8px;background:linear-gradient(90deg,#1c63d6,#0f3f8f);color:#fff;border-bottom:0}
+html[data-vt="cd"] .eid-cr{width:22px;height:22px;background:url("../img/chaldea_emblem_w.png") center/contain no-repeat}
+html[data-vt="cd"] .eid-cr svg{display:none}
+html[data-vt="cd"] .eid-o b{font-family:'IBM Plex Sans KR','Noto Sans KR',sans-serif;font-weight:700;letter-spacing:.1em;color:#fff}
+html[data-vt="cd"] .eid-o small{font-family:'IBM Plex Sans KR','Noto Sans KR',sans-serif;letter-spacing:.14em;color:rgba(255,255,255,.78)}
+html[data-vt="cd"] .eid-k{font-family:'IBM Plex Sans KR','Noto Sans KR',sans-serif;font-weight:800;color:#fff}
+html[data-vt="cd"] .eid-k small{font-family:'IBM Plex Mono',monospace;font-weight:500;letter-spacing:.18em;color:#cfe3ff}
+html[data-vt="cd"] .eid-b{padding:12px 12px 6px}
+html[data-vt="cd"] .eid-p{border:2px solid #fff;outline:0;border-radius:6px;box-shadow:0 0 0 1px #c9d6ea,0 2px 6px rgba(10,30,70,.15);filter:none;background-color:#e8eef7}
+html[data-vt="cd"] .eid-p.noimg{color:#1c63d6;font-family:'IBM Plex Sans KR','Noto Sans KR',sans-serif;background:repeating-linear-gradient(135deg,#eef3fa 0 7px,#e3ebf6 7px 14px)}
+html[data-vt="cd"] .eid-l{font-family:'IBM Plex Sans KR','Noto Sans KR',sans-serif;color:#6b7f99;letter-spacing:.08em}
+html[data-vt="cd"] .eid-n{font-family:'IBM Plex Sans KR','Noto Sans KR',sans-serif;font-weight:800;color:#0b1a2e;letter-spacing:.01em}
+html[data-vt="cd"] .eid-v{color:#1d2f4a;border-bottom:1px solid #e1e9f4}
+html[data-vt="cd"] .eid-no{font-family:'IBM Plex Mono',monospace;color:#1c63d6;letter-spacing:.12em}
+html[data-vt="cd"] .eid-ft{border-top:1px solid #e3eaf4;padding:6px 0 10px}
+html[data-vt="cd"] .eid-bar{display:none}
+html[data-vt="cd"] .eid-ft::before{content:"";flex:none;width:30px;height:22px;border-radius:4px;border:1px solid #b89a4e;
   background:linear-gradient(90deg,transparent 30%,rgba(120,90,30,.45) 30% 33%,transparent 33% 67%,rgba(120,90,30,.45) 67% 70%,transparent 70%),linear-gradient(transparent 45%,rgba(120,90,30,.45) 45% 55%,transparent 55%),linear-gradient(135deg,#f3dd9a,#c9a352 55%,#ead08a)}
-html:is([data-vt="cd"],[data-vt="cdn"]) .eid-tg em{border-color:#c9d6ea;color:#30476a;background:#f2f6fc}
-html:is([data-vt="cd"],[data-vt="cdn"]) .eid-ft .lki{color:#30476a}
-html:is([data-vt="cd"],[data-vt="cdn"]) .eid-seal{width:auto;height:auto;padding:2px 7px;border:1.5px solid #1c63d6;border-radius:4px;transform:none;opacity:1;color:#1c63d6;font:700 10px/1.3 'IBM Plex Sans KR','Noto Sans KR',sans-serif;letter-spacing:.12em}
-html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid.big .eid-h{padding:20px 16px 10px}
-html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid.big .eid-cr{width:32px;height:32px}
-html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid.big::before{width:46px;margin-left:-23px;height:7px;top:7px}
-html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid.big .eid-ft::before{width:40px;height:30px}
-html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid.big .eid-seal{font-size:12px;padding:3px 9px}
+html[data-vt="cd"] .eid-tg em{border-color:#c9d6ea;color:#30476a;background:#f2f6fc}
+html[data-vt="cd"] .eid-ft .lki{color:#30476a}
+html[data-vt="cd"] .eid-seal{width:auto;height:auto;padding:2px 7px;border:1.5px solid #1c63d6;border-radius:4px;transform:none;opacity:1;color:#1c63d6;font:700 10px/1.3 'IBM Plex Sans KR','Noto Sans KR',sans-serif;letter-spacing:.12em}
+html[data-vt="cd"] .enti.eid.big .eid-h{padding:20px 16px 10px}
+html[data-vt="cd"] .enti.eid.big .eid-cr{width:32px;height:32px}
+html[data-vt="cd"] .enti.eid.big::before{width:46px;margin-left:-23px;height:7px;top:7px}
+html[data-vt="cd"] .enti.eid.big .eid-ft::before{width:40px;height:30px}
+html[data-vt="cd"] .enti.eid.big .eid-seal{font-size:12px;padding:3px 9px}
