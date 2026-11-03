@@ -9,15 +9,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Chakra+Petch:wght@500;600&family=Gowun+Batang:wght@400;700&family=Nanum+Pen+Script&family=Special+Elite&family=Noto+Serif+KR:wght@500;700;900&family=Cinzel:wght@500;700;900&display=swap">
 <link rel="stylesheet" href="css/app.css?v=15">
-<link rel="stylesheet" href="css/notes.css?v=25">
+<link rel="stylesheet" href="css/notes.css?v=26">
 <link rel="stylesheet" href="css/globe.css?v=16">
-<link rel="stylesheet" href="css/board.css?v=15">
+<link rel="stylesheet" href="css/board.css?v=16">
 <link rel="stylesheet" href="css/write.css?v=2">
 <link rel="stylesheet" href="css/link.css?v=2">
-<link rel="stylesheet" href="css/flowmap.css?v=1">
+<link rel="stylesheet" href="css/flowmap.css?v=2">
 <link rel="stylesheet" href="css/dungeon.css?v=3">
 <link rel="stylesheet" href="css/polish.css?v=2"><!-- 10-29 다듬기 (모든 테마) -->
-<link rel="stylesheet" href="css/vtheme.css?v=17"><!-- VELVET 테마 P5 · P3 · P4 · 망각 (오레마스 파일 + 노트 전용 망각 규칙) -->
+<link rel="stylesheet" href="css/vtheme.css?v=18"><!-- VELVET 테마 P5 · P3 · P4 · 망각 (오레마스 파일 + 노트 전용 망각 규칙) -->
 <link rel="stylesheet" href="css/awaken.css?v=27"><!-- 10-29 각성체 추천 -->
 <link rel="stylesheet" href="css/skin.css?v=5"><!-- 10-29 캠페인 꾸밈 (대학 = 미사그) -->
 <link rel="stylesheet" href="css/univ.css?v=21"><!-- 10-29 PC 시트 고유 · 덱 · 소지품 · 휴대폰 -->
@@ -25,6 +25,7 @@
 <link rel="stylesheet" href="css/acct.css?v=2"><!-- 10-29 계정 · 접속자 · 권한 -->
 <link rel="stylesheet" href="css/mvpot.css?v=2"><!-- 10-31 기술 · 포텐셜 카드 -->
 <link rel="stylesheet" href="css/shelf.css?v=2"><!-- 10-31 룰북 서가 (자료 탭 · 꾸밈 「대학」) · 고치기 -->
+<link rel="stylesheet" href="css/ux.css?v=1"><!-- 11-03 편의성 · 연출: 발표 모드 · ⋯ 메뉴 · 필터 접기 · 시작 안내 · 진행 뷰 · 실행 취소 -->
 </head>
 <body>
 <div id="app"><div class="lobby dim">불러오는 중…</div></div>
@@ -32,7 +33,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
 <script src="js/config.js?v=16"></script>
 <script src="js/store.js?v=23"></script>
-<script src="js/app.js?v=30"></script>
+<script src="js/app.js?v=31"></script>
 <script src="js/cls.js?v=1"></script><!-- 10-30 시트 분류 PC · 객원 · NPC (시트 폴더 · 지도 · 관계도 거르기) -->
 <script src="js/acct_ui.js?v=3"></script><!-- 10-29 웹툴과 같은 계정 로그인 · 접속자 · 권한 -->
 <script src="js/fav_ui.js?v=16"></script>
@@ -43,12 +44,12 @@
 <script src="js/rulebook.js?v=3"></script><!-- 제작기 룰북 읽기 -->
 <script src="js/globe_land.js?v=15"></script>
 <script src="js/globe_ui.js?v=16"></script>
-<script src="js/map_ui.js?v=27"></script>
+<script src="js/map_ui.js?v=28"></script>
 <script src="js/dungeon.js?v=3"></script><!-- 10-29 지도 장소의 던전 (시뮬레이터 · 웹툴과 오감) -->
 <script src="js/shelf.js?v=7"></script><!-- 10-31 룰북 서가 · 2체 룰 · 스킬 체크 · 던전 탐사 · 자질 보너스표 · GM 고치기 -->
-<script src="js/ents_ui.js?v=24"></script>
-<script src="js/board.js?v=16"></script>
-<script src="js/graph_ui.js?v=17"></script>
+<script src="js/ents_ui.js?v=25"></script>
+<script src="js/board.js?v=17"></script>
+<script src="js/graph_ui.js?v=18"></script>
 <script src="js/wordhelp.js?v=2"></script><!-- 11-01 워딩 점검 · 구문 추천 (제작기 potlint · fx 를 불러다 씀) -->
 <script src="js/univ_ui.js?v=4"></script><!-- 10-29 PC 시트 고유 · 덱 · 소지품 (제작기에 바로) -->
 <script src="js/phone.js?v=14"></script><!-- 10-29 PC 시트 휴대폰 (웹툴 방의 파티 · 문자 · 알림) -->
@@ -56,11 +57,11 @@
 <script src="js/fields_ui.js?v=1"></script><!-- 11-01 필드 전개 (제작기 fields 와 같은 자료) -->
 <script src="js/pc_ui.js?v=53"></script>
 <script src="js/awaken.js?v=38"></script><!-- 10-29 각성체 추천 (시트 탭 · GM만) -->
-<script src="js/scen_ui.js?v=18"></script>
-<script src="js/flowmap.js?v=1"></script>
-<script src="js/plan_ui.js?v=17"></script>
-<script src="js/logs_ui.js?v=16"></script>
-<script src="js/set_ui.js?v=19"></script>
+<script src="js/scen_ui.js?v=19"></script>
+<script src="js/flowmap.js?v=2"></script>
+<script src="js/plan_ui.js?v=18"></script>
+<script src="js/logs_ui.js?v=17"></script>
+<script src="js/set_ui.js?v=20"></script>
 <script src="js/verbar.js?v=1"></script><!-- 10-30 새 버전 알림 (제작기와 같은 방식) -->
 </body>
 </html>
