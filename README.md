@@ -9,10 +9,17 @@
 - 일정: 세션 날짜 · 달력 · 후보 날짜 투표 · 평소 되는 요일 · Google 캘린더 추가 링크 · .ics 내려받기.
 - 오레마스에서 「📓 세션 노트에서 가져오기」로 지도(장소 · 루트)와 관계도(인물 · 조직 · 관계)를 방으로 가져갈 수 있다.
 - 휴대폰에서도 쓸 수 있게 짰다 (탭 가로 스크롤 · 지도 꼬집어 확대 · 표는 가로 스크롤).
+- 전체 검색(위 띠 🔍 · 단축키 `/`): 항목 · 장소 · 루트 단계 · 시트 · 기록 · 세션 · 설계 메모 · 던전을 한꺼번에. PL 은 자기가 볼 수 있는 것만.
+- GM 「👁 PL 눈」: 모든 탭을 구경(또는 고른 좌석)의 눈으로 본다. 켜 둔 동안은 저장하지 않는다.
+- 변경 이력(항목 · 장소 · 루트 · 시트의 「🕘 이력」 → 옛 판으로 되돌리기) · 휴지통(설정 탭 「🗑 최근 지운 것」, 30일). `supabase/patch_2026-11-03_노트.sql` 이 필요하다.
+- 세션(일정 탭)마다 GM 만 보는 준비 체크리스트 · 쓸 것(루트 · 장면 · 인물 · 지도 링크) · 끝난 뒤 회고.
+- 시나리오 단계의 「▶ 웹툴로」: 낭독문을 나레이션으로, 장소 그림을 배경으로, 등장 인물 스탠딩을 무대로 이어 둔 웹툴 방에 한 번에 (씬 프리셋 `rp.scenes.<id>` 로도 남긴다).
+- 계정 PL 의 자리 앉기는 「모두」 공개된 PC 시트만. 캠페인 설정 「PL 자리 앉기」를 「GM 승인 뒤」로 두면 요청이 설정 탭에 떠서 승인 · 거절한다.
 
 ## 처음 켜기
 
-1. Supabase SQL Editor 에서 `supabase/schema.sql` 을 한 번 돌린다 (nt_camp · nt_auth · nt_docs 표, nt_* 함수, 정책). 다시 돌려도 된다.
+1. Supabase SQL Editor 에서 `supabase/schema.sql` 을 한 번 돌린다 (nt_camp · nt_auth · nt_docs 표, nt_* 함수, 정책). 다시 돌려도 된다. 그 뒤 `supabase/patch_2026-10-29_계정.sql` → `patch_2026-10-29_PL기본.sql` → `patch_2026-11-03_노트.sql` 차례로 (여러 번 돌려도 된다).
+   - 11-03 패치: 캠페인 설정 칸 단위 합치기(`nt_camp_patch`) · 자리 앉기 공개 시트 · GM 승인(`nt_claim2` · `nt_claim_decide`) · 변경 이력 · 휴지통(`nt_docs_history` · `nt_history` · `nt_deleted`) · 그림 저장소 정책(anon 목록 읽기 · 덮어쓰기 제거 — **웹툴 · 제작기와 같이 쓰는 버킷이라 셋 다 영향**, 공개 주소로 보는 것은 그대로). 패치 전이면 클라이언트는 예전 방식으로 돌아간다(이력 · 휴지통은 「함수가 없다」고 알린다).
 2. 저장소 설정 → Pages → Branch `main` / root. 주소: `https://mangryoung.github.io/mangketmon-notes/`
 3. 첫 화면에서 캠페인 이름과 GM 비밀구를 적고 「만들기」. 비밀구는 그 브라우저에 저장된다.
 4. 다른 기기에서는 설정 탭의 GM 링크(`?gm=…`)를 한 번 연다. PL 에게는 설정 탭 → PL 좌석 → 「초대 링크」(`?pl=…`).
@@ -29,8 +36,15 @@
 - `js/app.js` 뼈대 (문서 캐시 · 공개 범위 · 올리기 · 탭 · 로비 · 테마)
 - `js/maker.js` 제작기 트레이너 · 포켓몬 읽기
 - `js/map_ui.js` `ents_ui.js` `graph_ui.js` `pc_ui.js` `scen_ui.js` `plan_ui.js` `set_ui.js` 탭들
+- `js/search_ui.js` 전체 검색 · `js/hist_ui.js` 변경 이력 · 휴지통 (11-03)
+- `js/phone.js` PC 시트 휴대폰 · 웹툴 게시판(웹툴 `js/bbs_ui.js` 를 한 시간 단위 주소로 불러온다) · 시나리오 단계를 웹툴로 보내기(`sendScene`)
 - `js/awaken.js` `css/awaken.css` `data/awaken_db.json` 각성체 추천 (시트 탭 · GM만). 포트 읽기는 `supabase/functions/awaken-read` (올리는법.txt)
-- `supabase/schema.sql` 표 · 함수 · 정책
+- `supabase/schema.sql` 표 · 함수 · 정책 · `supabase/patch_*.sql` 날짜별 패치 (차례로 돌린다)
+
+## 같이 저장할 때 (11-03)
+
+- 문서 한 장 저장(`put`)과 여러 장 저장(`putMany` — 순서 바꾸기 · 한꺼번에 공개 · 관계도 배치)은 저장 직전에 DB 의 최신 판을 읽어 내가 고친 칸만 바꾼다. 가져오기(JSON 올리기 · 되살리기)만 통째로 쓴다.
+- 캠페인 설정(`nt_camp.data`)은 `NT.campPatch({칸:값})` 로 칸 단위로 합친다(null = 그 칸 지움). 받아 둔 옛 설정으로 통째 덮지 않는다. 웹툴 `notes_link.js` 도 같은 함수(`nt_camp_patch`)를 쓰도록 diff 를 남겼다.
 
 ## Supabase 사용량 (무료 티어 기준)
 
