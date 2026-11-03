@@ -14,13 +14,15 @@
  /* 10-29 망령 「시나리오가 쓰기 불편하다」: 「쓰기」 화면 추가(GM 기본). 고른 보기는 기억한다 */
  const VKEY='nt_scen_view';const vGet=()=>{try{return localStorage.getItem(VKEY)||''}catch(e){return ''}};const vSet=v=>{try{localStorage.setItem(VKEY,v)}catch(e){}};
  const U2={view:vGet(),wsel:'',open:{},focus:''};
+ /* 11-03 감우 「진행 뷰」: 현재 단계 하나를 크게(낭독문 · 등장 인물 · 미니맵 · ▶ 웹툴로 · 끝 → 다음). 흐름도 구석의 「지금」 카드가 하던 일을 여기로 */
  function render(el){const G=N().gm();const all=routes();const gs=groups();if(U.group&&!gs.includes(U.group))U.group='';
-  if(!['write','flow','list'].includes(U2.view))U2.view=G?'write':'flow';if(U2.view==='write'&&!G)U2.view='flow';
-  const tot=all.reduce((a,r)=>a+(r.steps||[]).length,0),dn=all.reduce((a,r)=>a+prog(r).done,0);
-  el.innerHTML=`<div class="toolbar"><h2>시나리오</h2><span class="note">${all.length}개 루트 · 단계 ${dn} / ${tot}</span><div class="seg">${G?`<button data-sv="write" class="${U2.view==='write'?'on':''}" title="루트 한 장을 창 없이 바로 써요">쓰기</button>`:''}<button data-sv="flow" class="${U2.view==='flow'?'on':''}">흐름도</button><button data-sv="list" class="${U2.view==='list'?'on':''}">목록</button></div>${gs.length>1&&U2.view==='list'?`<div class="seg"><button data-sg="" class="${!U.group?'on':''}">전체</button>${gs.map(g=>`<button data-sg="${esc(g)}" class="${U.group===g?'on':''}">${esc(g||'분류 없음')}</button>`).join('')}</div>`:''}<span class="sp"></span>${N().bulkBtns('routes',null,'루트')}${G?'<button class="btn sm pri" data-s="new">＋ 루트</button>':''}</div>
-   ${U2.view==='write'?'':nowStrip(all)}
-   ${!all.length?`<div class="empty">시나리오 루트가 없어요.${G?' 「＋ 루트」로 만들고 단계(장소)를 차례로 넣어요.':''}</div>`:U2.view==='write'?writeHtml(all,gs):U2.view==='flow'?(window.NT_FLOWMAP?NT_FLOWMAP.html():flowHtml(all,gs)):gs.filter(g=>!U.group||U.group===g).map(g=>`<section class="sgroup"><div class="sgh"><span>${esc(g||'분류 없음')}</span><span class="small dim">${all.filter(r=>(r.group||'').trim()===g).length}개 루트</span></div>${all.filter(r=>(r.group||'').trim()===g).map(lane).join('')}</section>`).join('')}`;
-  el.addEventListener('click',e=>{const t=e.target;const sv=t.closest('[data-sv]');if(sv){U2.view=sv.dataset.sv;vSet(U2.view);N().render();return}
+  if(!['run','write','flow','list'].includes(U2.view))U2.view=G?'write':'flow';if(U2.view==='write'&&!G)U2.view='flow';
+  const tot=all.reduce((a,r)=>a+(r.steps||[]).length,0),dn=all.reduce((a,r)=>a+prog(r).done,0);const cur=all.find(r=>(r.steps||[]).some(x=>x.st==='now'));
+  el.innerHTML=`<div class="toolbar"><h2>시나리오</h2><span class="note">${all.length}개 루트 · 단계 ${dn} / ${tot}</span><div class="seg"><button data-sv="run" class="${U2.view==='run'?'on':''}" title="지금 단계 하나를 크게 — 낭독문 · 등장 인물 · 미니맵 (N 다음 · P 이전)">▶ 진행${cur?' ·':''}</button>${G?`<button data-sv="write" class="${U2.view==='write'?'on':''}" title="루트 한 장을 창 없이 바로 써요">쓰기</button>`:''}<button data-sv="flow" class="${U2.view==='flow'?'on':''}">흐름도</button><button data-sv="list" class="${U2.view==='list'?'on':''}">목록</button></div>${gs.length>1&&U2.view==='list'?`<div class="seg"><button data-sg="" class="${!U.group?'on':''}">전체</button>${gs.map(g=>`<button data-sg="${esc(g)}" class="${U.group===g?'on':''}">${esc(g||'분류 없음')}</button>`).join('')}</div>`:''}<span class="sp"></span>${(U2.view==='flow'||U2.view==='run')&&all.length?N().presentBtn():''}${N().bulkBtns('routes',null,'루트')}${G?'<button class="btn sm pri" data-s="new">＋ 루트</button>':''}</div>
+   ${U2.view==='write'||U2.view==='run'?'':nowStrip(all)}
+   ${!all.length?`<div class="empty">시나리오 루트가 없어요.${G?' 「＋ 루트」로 만들고 단계(장소)를 차례로 넣어요.':''}</div>`:U2.view==='run'?runHtml(all):U2.view==='write'?writeHtml(all,gs):U2.view==='flow'?(window.NT_FLOWMAP?NT_FLOWMAP.html():flowHtml(all,gs)):gs.filter(g=>!U.group||U.group===g).map(g=>`<section class="sgroup"><div class="sgh"><span>${esc(g||'분류 없음')}</span><span class="small dim">${all.filter(r=>(r.group||'').trim()===g).length}개 루트</span></div>${all.filter(r=>(r.group||'').trim()===g).map(lane).join('')}</section>`).join('')}`;
+  el.addEventListener('click',e=>{const t=e.target;const sv=t.closest('[data-sv]');if(sv){U2.view=sv.dataset.sv;vSet(U2.view);if(window.NT_FLOWMAP&&NT_FLOWMAP.markFresh)NT_FLOWMAP.markFresh();N().render();return}
+   if(U2.view==='run'&&runClick(e,t))return;
    if(U2.view==='write'&&wClick(e,t))return;
    const sg=t.closest('[data-sg]');if(sg){U.group=sg.dataset.sg;N().render();return}
    const nx=t.closest('[data-gonext]');if(nx){const c=el.querySelector(`.fcard[data-route="${CSS.escape(nx.dataset.gonext)}"]`);if(c){c.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});c.classList.add('flash');setTimeout(()=>c.classList.remove('flash'),1200)}return}
@@ -38,7 +40,7 @@
  const STL={'':'예정',now:'진행 중',done:'끝',skip:'건너뜀',fail:'실패'};
  async function setStep(rid,i,v){const r=N().data('routes',rid);const s=r&&(r.steps||[])[i];if(!s)return;await N().patch('routes',rid,rr=>{const st=rr.steps[i];if(!st)return false;if(v==='now')rr.steps.forEach(x=>{if(x.st==='now')x.st=''});st.st=v});N().toast(`「${stepTitle(s)}」 → ${STL[v]||v}`)}
  function cycleStep(rid,i){const r=N().data('routes',rid);const s=r&&(r.steps||[])[i];if(!s)return;const cur=s.st||'';return setStep(rid,i,cur==='now'?'done':cur==='done'?'':'now')}
- async function delRoute(id){const r=N().data('routes',id);if(!r)return false;if(!await N().confirmBox(`「${r.name||'루트'}」 루트를 지울까요? 단계도 함께 사라져요. (설정 탭 「🗑 최근 지운 것」에서 되살릴 수 있어요)`,'지우기'))return false;await N().del('routes',id);if(N().doc('sec','route:'+id))await N().del('sec','route:'+id);N().toast('루트를 지웠어요');return true}
+ async function delRoute(id){const r=N().data('routes',id);if(!r)return false;if(!await N().confirmBox(`「${r.name||'루트'}」 루트를 지울까요? 단계도 함께 사라져요. (설정 탭 「🗑 최근 지운 것」에서 되살릴 수 있어요)`,'지우기'))return false;await N().del('routes',id);if(N().doc('sec','route:'+id))await N().del('sec','route:'+id);N().toastUndo('루트를 지웠어요');return true}
  /* 한 묶음(열 · 분류) 안에서 바뀐 순서를 전체 순서에 끼워 넣는다 — 다른 묶음의 자리 번호는 그대로 */
  function orderRoutes(ids){const set=new Set(ids);let k=0;const merged=routes().map(r=>set.has(r.id)?ids[k++]:r.id);return N().reorder('routes',merged)}
  function orderSteps(rid,ids){return N().patch('routes',rid,r=>{const S=r.steps||[];const idx=ids.map(Number).filter(i=>S[i]);if(idx.length!==S.length)return false;r.steps=idx.map(i=>S[i])})}
@@ -80,7 +82,7 @@
  function nowStrip(all){const G=N().gm();const cur=all.map(r=>({r,i:(r.steps||[]).findIndex(x=>x.st==='now')})).filter(x=>x.i>=0);
   const nx=all.filter(r=>(r.steps||[]).length&&!(r.steps||[]).some(x=>x.st==='now')&&(r.steps||[]).some(x=>!x.st)&&(r.visible!==false||G));
   if(!cur.length&&!nx.length)return '';
-  return `<div class="nowstrip">${cur.map(({r,i})=>{const st=r.steps[i];const sp=st.spot?N().data('spots',st.spot):null;const after=r.steps.slice(i+1).find(x=>!x.st);return `<div class="nowcard" style="--c:${r.color||'#888'}"><small>지금 · ${esc(r.name||'')} ${i+1}/${r.steps.length}</small><b>${esc(stepTitle(st))}</b>${sp&&st.title?`<span>📍 ${esc(spotName(st.spot))}</span>`:''}${st.note?`<span class="clamp">${esc(st.note)}</span>`:''}${G&&st.read?`<q class="clamp">${esc(st.read)}</q>`:''}${(st.ents||[]).length?`<span class="fmeta">${st.ents.map(id=>N().data('ents',id)).filter(Boolean).map(x=>`<span>${esc(x.title)}</span>`).join('')}</span>`:''}${after?`<span class="dim">다음 → ${esc(stepTitle(after))}</span>`:'<span class="dim">마지막 단계</span>'}<div class="row" style="gap:4px;margin-top:6px">${st.spot?`<button class="btn xs ghost" data-s="gomap" data-id="${esc(st.spot)}">지도</button>`:''}${G?`<button class="btn xs ghost" data-s="wstep" data-id="${esc(r.id)}" data-i="${i}">쓰기</button><button class="btn xs pri" data-s="adv" data-id="${esc(r.id)}">끝 → 다음</button>`:''}</div></div>`}).join('')}${!cur.length?`<div class="nowcard idle"><small>진행 중인 단계가 없어요</small><b>${nx.slice(0,3).map(r=>esc(r.name)).join(' · ')}${nx.length>3?' …':''}</b>${G?'<span class="dim">루트의 단계를 눌러 「진행 중」으로 두면 여기 보여요</span>':''}</div>`:''}</div>`}
+  return `<div class="nowstrip">${cur.map(({r,i})=>{const st=r.steps[i];const sp=st.spot?N().data('spots',st.spot):null;const after=r.steps.slice(i+1).find(x=>!x.st);return `<div class="nowcard" style="--c:${r.color||'#888'}"><small>지금 · ${esc(r.name||'')} ${i+1}/${r.steps.length}</small><b>${esc(stepTitle(st))}</b>${sp&&st.title?`<span>📍 ${esc(spotName(st.spot))}</span>`:''}${st.note?`<span class="clamp">${esc(st.note)}</span>`:''}${G&&st.read?`<q class="clamp">${esc(st.read)}</q>`:''}${(st.ents||[]).length?`<span class="fmeta">${st.ents.map(id=>N().data('ents',id)).filter(Boolean).map(x=>`<span>${esc(x.title)}</span>`).join('')}</span>`:''}${after?`<span class="dim">다음 → ${esc(stepTitle(after))}</span>`:'<span class="dim">마지막 단계</span>'}<div class="row" style="gap:4px;margin-top:6px"><button class="btn xs pri" data-s="run" data-id="${esc(r.id)}" data-i="${i}" title="진행 뷰에서 크게 — 낭독문 · 등장 인물 · 끝 → 다음">▶ 진행 뷰</button>${st.spot?`<button class="btn xs ghost" data-s="gomap" data-id="${esc(st.spot)}">지도</button>`:''}${G?`<button class="btn xs ghost" data-s="wstep" data-id="${esc(r.id)}" data-i="${i}">쓰기</button>`:''}</div></div>`}).join('')}${!cur.length?`<div class="nowcard idle"><small>진행 중인 단계가 없어요</small><b>${nx.slice(0,3).map(r=>esc(r.name)).join(' · ')}${nx.length>3?' …':''}</b>${G?'<span class="dim">루트의 단계를 눌러 「진행 중」으로 두면 여기 보여요</span>':''}</div>`:''}</div>`}
  function lane(r){const G=N().gm();const p=prog(r);const c=r.color||'#888';const nx=(r.next||[]).map(id=>N().data('routes',id)).filter(Boolean);
   return `<div class="lane ${r.visible===false?'hidden-route':''}" data-route="${esc(r.id)}" data-id="${esc(r.id)}" style="--c:${c}"><div class="laneh ${G?'dragh':''}"><h3>${esc(r.name||'루트')}</h3>${window.NT_FAV?NT_FAV.btn('routes',r.id,r.name):''}${N().visBadge(r._vis,'routes',r.id)}${r.visible===false?'<span class="visb gm">지도에 선 숨김</span>':''}<span class="bar"><i style="width:${p.pct}%"></i></span><span class="prog">${p.done}/${p.n}</span>${G?`<button class="btn xs" data-s="edit" data-id="${esc(r.id)}">쓰기</button><button class="btn xs ghost danger rdel" data-s="del" data-id="${esc(r.id)}" title="루트 지우기">🗑</button>`:''}</div>
    ${r.entry?`<div class="entry">들어오는 조건 · ${esc(r.entry)}</div>`:''}${r.goal?`<div class="goal">${esc(r.goal)}</div>`:''}
@@ -90,6 +92,7 @@
    ${G&&N().data('sec','route:'+r.id)?`<div class="gmnote"><b>GM 메모</b><div class="pre">${esc(N().data('sec','route:'+r.id).t||'')}</div></div>`:''}</div>`}
  async function act(k,b){const id=b.dataset.id;
   if(k==='gomap'){N().go('map');setTimeout(()=>{NT_MAP.select(id);N().render()},0);return}
+  if(k==='run'){U3.r=id;U3.i=b.dataset.i!=null?+b.dataset.i:-1;U2.view='run';vSet('run');N().render();return}
   if(k==='adv'){await N().patch('routes',id,r=>{const i=(r.steps||[]).findIndex(x=>x.st==='now');if(i<0)return;r.steps[i].st='done';const j=r.steps.findIndex((x,ix)=>ix>i&&!x.st);if(j>=0)r.steps[j].st='now'});return}
   if(k==='new'){const nid=N().uid('r');const cur=U2.wsel&&N().data('routes',U2.wsel);U2.wsel=nid;U2.view='write';vSet('write');U2.focus='wName';await N().put('routes',nid,{name:'새 루트',group:U.group||(cur&&cur.group)||'',color:PAL[routes().length%PAL.length],entry:'',goal:'',note:'',next:[],order:routes().length,visible:true,steps:[]},'gm');return}
   if(k==='edit')return write(id);
@@ -207,6 +210,51 @@
   if(b.dataset.wdelent&&i>=0){const id=b.dataset.wdelent;q(()=>N().patch('routes',rid,r=>{const s=r.steps[i];if(!s)return false;s.ents=(s.ents||[]).filter(x=>x!==id)}));return true}
   if(b.dataset.wnext){const id=b.dataset.wnext;q(()=>N().patch('routes',rid,r=>{const n=new Set(r.next||[]);n.has(id)?n.delete(id):n.add(id);r.next=[...n]}));return true}
   return false}
+ /* ---- 11-03 감우 「진행 뷰」 ----
+    보는 단계 = U3.r / U3.i. 비어 있으면 st==='now' 인 단계, 없으면 첫 미완 단계. 「끝 → 다음」은 지금 단계를 끝내고 다음 예정을 진행 중으로(보는 자리도 따라간다).
+    N / P 는 보는 자리만 옮긴다(상태는 그대로) — 다음 단계를 미리 읽어 두는 용도. GM 메모(sec) 는 GM 에게만. PL 은 공개된 루트만 본다(list 가 걸러 준다) */
+ const U3={r:'',i:-1};
+ function runPick(all){let r=U3.r&&all.find(x=>x.id===U3.r);if(!r||!(r.steps||[]).length){r=all.find(x=>(x.steps||[]).some(s=>s.st==='now'))||all.find(x=>(x.steps||[]).some(s=>!s.st))||all.find(x=>(x.steps||[]).length);U3.r=r?r.id:'';U3.i=-1}
+  if(!r)return null;const S=r.steps||[];let i=U3.i;if(i<0||i>=S.length){i=S.findIndex(s=>s.st==='now');if(i<0)i=S.findIndex(s=>!s.st);if(i<0)i=S.length-1;U3.i=i}return {r,i,s:S[i]}}
+ const castOf=(st)=>{const ids=new Set(st.ents||[]);const out=[];const push=(k,id,name,img,sub,color)=>{if(out.some(x=>x.k===k&&x.id===id))return;out.push({k,id,name,img,sub,color})};
+  for(const id of ids){const e=N().data('ents',id);if(e)push('ents',id,e.title||'',e.face||'',[e.type,e.sub].filter(Boolean).join(' · '),e.color||(window.NT_ENTS?NT_ENTS.tc(e.type)[2]:'#888'))}
+  if(st.spot){for(const e of N().list('ents'))if((e.at||[]).includes(st.spot)&&(e.type==='인물'||e.face))push('ents',e.id,e.title||'',e.face||'',[e.type,e.sub].filter(Boolean).join(' · '),e.color||(window.NT_ENTS?NT_ENTS.tc(e.type)[2]:'#888'));
+   const MK=window.NT_MAKER;for(const k of ['pc','npc'])for(const p of N().list(k))if((p.at||[]).includes(st.spot)){const t=MK&&MK.trainer(p.id);push(k,p.id,(t&&t.name)||p.name||'',(t&&t.image)||p.image||'',k==='pc'?'PC'+(p.player?' · '+p.player:''):'NPC',k==='pc'?'#d22a2a':'#2f6fd0')}}
+  return out};
+ function runHtml(all){const G=N().gm();const P=runPick(all);if(!P)return `<div class="pv-empty"><b>진행할 단계가 없어요</b>${G?'「쓰기」에서 루트에 단계를 넣고, 단계의 ▶ 로 「진행 중」을 두면 여기 크게 보여요.':'GM 이 단계를 넣으면 여기 보여요.'}</div>`;
+  const {r,i,s}=P;const S=r.steps||[];const sp=s.spot?N().data('spots',s.spot):null;const m=sp?N().data('maps',sp.map):null;const cast=castOf(s);const prev=S[i-1],next=S[i+1];const sec=G?N().data('sec','route:'+r.id):null;const nowI=S.findIndex(x=>x.st==='now');
+  const others=all.filter(x=>(x.steps||[]).length);
+  return `<section class="pv" style="--c:${esc(r.color||'#888')}" data-route="${esc(r.id)}">
+   <div class="pv-head"><span class="pv-r">${esc(r.name||'루트')}<b>${i+1} / ${S.length}</b></span><span class="pv-st ${s.st||''}">${STL[s.st||'']}</span>${nowI>=0&&nowI!==i?`<span class="small dim">진행 중은 ${nowI+1}단계 「${esc(stepTitle(S[nowI]))}」</span>`:''}<span class="sp"></span>${others.length>1?`<select class="pv-route" data-pvr title="다른 루트 보기">${others.map(x=>`<option value="${esc(x.id)}" ${x.id===r.id?'selected':''}>${esc(x.name||'루트')}${(x.steps||[]).some(y=>y.st==='now')?' ▶':''}</option>`).join('')}</select>`:''}${G?`<button class="btn xs ghost" data-s="wstep" data-id="${esc(r.id)}" data-i="${i}" title="쓰기 화면에서 이 단계 고치기">✎ 쓰기</button>`:''}</div>
+   <h3 class="pv-title">${esc(stepTitle(s))}${sp&&s.title?`<small>📍 ${esc(spotName(s.spot))}</small>`:''}</h3>
+   <div class="pv-body"><div class="pv-main">
+    ${s.read?`<blockquote class="pv-read">${esc(s.read)}</blockquote>`:`<blockquote class="pv-read empty">낭독문이 없어요${G?' — 「✎ 쓰기」에서 「＋ 낭독문」':''}</blockquote>`}
+    ${s.note?`<div class="pv-note" style="margin-top:12px"><b>${G?'메모':'안내'}</b>${esc(s.note)}</div>`:''}
+    ${sec&&sec.t?`<div class="gmnote pv-gm" style="margin-top:12px"><b>GM 메모 · 루트</b><div class="pre">${esc(sec.t)}</div></div>`:''}
+    ${cast.length?`<div style="margin-top:14px"><div class="pv-sec">등장 ${cast.length}</div><div class="pv-cast">${cast.map(c=>`<button type="button" class="pc" data-pvc="${esc(c.k)}|${esc(c.id)}" style="--pc:${esc(c.color||'#888')}"><i style="${c.img?`background-image:url('${N().cssu(c.img)}')`:''}">${c.img?'':esc([...(c.name||'?')][0]||'?')}</i><span><b>${esc(c.name)}</b><small>${esc(c.sub||'')}</small></span></button>`).join('')}</div></div>`:''}
+   </div><div class="pv-side">
+    ${sp&&m&&m.img?`<figure class="pv-map zoom" data-pvmap="${esc(s.spot)}" style="--ar:${m.w&&m.h?(m.w/m.h).toFixed(3):1.5};--px:${+sp.x}%;--py:${+sp.y}%" title="지도에서 보기 (누르면 전체 · 다시 누르면 확대)"><img src="${esc(m.img)}" alt="${esc(m.name||'지도')}"><i class="pv-pin"></i><figcaption>📍 ${esc((sp.num?sp.num+'. ':'')+sp.name)}${sp.area?' · '+esc(sp.area):''}</figcaption></figure>`:sp?`<div class="small dim">📍 ${esc(spotName(s.spot))}</div>`:''}
+    ${sp&&sp.summary?`<div class="pv-note"><b>장소</b>${esc(sp.summary)}</div>`:''}
+    <div class="row" style="gap:6px;flex-wrap:wrap">${omOn()?`<button class="btn sm" data-s="send" data-id="${esc(r.id)}" data-i="${i}" title="낭독문을 나레이션으로 · 장소 그림을 배경으로 · 등장 인물 스탠딩을 무대로 — 이어 둔 웹툴 방에 한 번에">▶ 웹툴로</button>`:''}${sp?`<button class="btn sm ghost" data-s="gomap" data-id="${esc(s.spot)}">지도에서</button>`:''}</div>
+   </div></div>
+   <div class="pv-nav"><button class="btn xs ghost" data-s="pvmv" data-d="-1" ${i===0?'disabled':''} title="이전 단계 보기 (P)">◀ 이전<kbd>P</kbd></button><div class="pv-pn">${prev?`<span><em>${i}</em>${esc(stepTitle(prev))} <small class="dim">${STL[prev.st||'']}</small></span>`:'<span class="dim">첫 단계</span>'}${next?`<span><em>${i+2}</em>${esc(stepTitle(next))} <small class="dim">${STL[next.st||'']}</small></span>`:`<span class="dim">마지막 단계${(r.next||[]).length?' → '+esc((r.next||[]).map(id=>(N().data('routes',id)||{}).name).filter(Boolean).join(' · ')):''}</span>`}</div>
+    ${G?`${s.st!=='now'?`<button class="btn xs" data-s="pvnow" title="이 단계를 「진행 중」으로">▶ 여기부터</button>`:''}${s.st==='now'?`<button class="btn sm pri" data-s="pvadv" title="이 단계를 끝내고 다음 예정 단계를 진행 중으로">끝 → 다음</button>`:''}`:''}<button class="btn xs ghost" data-s="pvmv" data-d="1" ${i>=S.length-1?'disabled':''} title="다음 단계 보기 (N)">다음 ▶<kbd>N</kbd></button></div>
+  </section>`}
+ function runClick(e,t){const sel=t.closest('[data-pvr]');if(sel)return false;
+  const mp=t.closest('[data-pvmap]');if(mp){mp.classList.toggle('zoom');return true}
+  const c=t.closest('[data-pvc]');if(c){const [k,id]=c.dataset.pvc.split('|');if(k==='ents'){N().go('ents');setTimeout(()=>window.NT_ENTS&&NT_ENTS.select(id),0)}else if(window.NT_PC&&NT_PC.select)NT_PC.select(k,id);else N().go('pc');return true}
+  const b=t.closest('[data-s]');if(!b)return false;const k=b.dataset.s;const P=runPick(routes());if(!P)return false;
+  if(k==='pvmv'){runMove(+b.dataset.d);return true}
+  if(k==='pvnow'){setStep(P.r.id,P.i,'now');return true}
+  if(k==='pvadv'){runAdv();return true}
+  if(k==='send'){b.disabled=true;sendStep(P.r.id,P.i).finally(()=>{b.disabled=false});return true}
+  return false}
+ function runMove(d){const P=runPick(routes());if(!P)return;const j=P.i+d;if(j<0||j>=(P.r.steps||[]).length)return;U3.i=j;N().render()}
+ async function runAdv(){const P=runPick(routes());if(!P||!N().gm())return;const S=P.r.steps||[];const i=S.findIndex(x=>x.st==='now');if(i<0)return N().toast('「▶ 여기부터」로 진행 중인 단계를 먼저 두어요');
+  let j=-1;await N().patch('routes',P.r.id,r=>{r.steps[i].st='done';j=r.steps.findIndex((x,ix)=>ix>i&&!x.st);if(j>=0)r.steps[j].st='now'});U3.i=j>=0?j:i;N().toast(j>=0?`「${stepTitle(S[j])}」 진행 중`:'루트의 마지막 단계를 끝냈어요');N().render()}
+ /* app.js 단축키: 진행 뷰에서 N 다음 · P 이전 (보는 자리만). 처리했으면 true */
+ function runKey(k){if(U2.view!=='run'||N().ST.view!=='scen')return false;if(k==='n'||k==='N'){runMove(1);return true}if(k==='p'||k==='P'){runMove(-1);return true}return false}
+ document.addEventListener('change',e=>{const s=e.target.closest&&e.target.closest('[data-pvr]');if(!s)return;U3.r=s.value;U3.i=-1;N().render()});
  /* PL(또는 구경)이 단계를 누르면: 읽기 창 */
  function stepRead(rid,i){const r=N().data('routes',rid);const s=r&&(r.steps||[])[i];if(!s)return;const sp=s.spot&&N().data('spots',s.spot);const ents=(s.ents||[]).map(id=>({id,e:N().data('ents',id)})).filter(x=>x.e);
   const md=N().openModal(`<div class="mhead" style="border-color:${esc(r.color||'#888')}"><h2><small class="dim" style="font-size:12px;letter-spacing:.1em;display:block">${esc(r.name||'')} · ${i+1}/${r.steps.length} · ${STL[s.st||'']}</small>${esc(stepTitle(s))}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
@@ -216,5 +264,5 @@
   $$('[data-goent]',md).forEach(b=>b.onclick=()=>{N().closeModal(true);N().go('ents');setTimeout(()=>window.NT_ENTS&&NT_ENTS.select(b.dataset.goent),0)});
   const mp=$('#srMap',md);if(mp)mp.onclick=()=>{N().closeModal(true);N().go('map');setTimeout(()=>{NT_MAP.select(s.spot);N().render()},0)}}
  N().MOD.scen={render};
- window.NT_SCEN={routes,prog,write,stepMenu,stepRead,cycleStep};
+ window.NT_SCEN={routes,prog,write,stepMenu,stepRead,cycleStep,runKey,canPresent:()=>U2.view==='run'||U2.view==='flow',run:(rid,i)=>{U3.r=rid||'';U3.i=i!=null?i:-1;U2.view='run';vSet('run');if(N().ST.view!=='scen')N().go('scen');else N().render()}};
 })();
