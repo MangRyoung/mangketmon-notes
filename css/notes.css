@@ -493,3 +493,10 @@ body.plview::after{content:'👁 PL 눈으로 보는 중 — 저장하지 않아
 .claimcard .seatrow{align-items:center}
 .flash{animation:ntflash 1.2s ease-out}@keyframes ntflash{0%{box-shadow:0 0 0 3px rgba(255,210,63,.9)}100%{box-shadow:0 0 0 0 rgba(255,210,63,0)}}
 @media(max-width:640px){body.plview::after{top:auto;bottom:64px;font-size:11px;white-space:nowrap}}
+/* 11-04 03:44 망령 「모바일 지도는 코멘트 안 보였다가 터치하면 뜨게」: 휴대폰은 얼굴 위 말풍선을 접어 두고(작은 점으로 표시) 누른 얼굴만 보인다 */
+@media(max-width:760px){
+ .mnpc>.mnst{display:none}
+ .mnpc.peek>.mnst{display:flex;z-index:6}
+ .mnpc.peek{z-index:5}
+ .mnpc:has(>.mnst):not(.peek)::after{content:'';position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:#fff;border:2px solid #1a1a1a;box-shadow:0 1px 3px rgba(0,0,0,.5);pointer-events:none}
+}

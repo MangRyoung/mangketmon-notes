@@ -75,8 +75,8 @@
  /* 10-30 망령 「배치된 인물 아이콘 좀 더 커도 될듯」: 30 → 42px (휴대폰 22 → 30). 간격은 CSS --mnS */
  function npcLayer(m,sp){const P=people().filter(x=>x.at.length&&(x.img||x.k!=='ents')&&clsShown(x));const out=[];
   for(const s of sp){const all=P.filter(x=>x.at.includes(s.id));const fr=all.filter(x=>x.pos[s.id]),es=all.filter(x=>!x.pos[s.id]);const MAX=4;
-   fr.forEach(e=>{const q=e.pos[s.id];out.push(`<button type="button" class="mnpc free ${e.vis&&e.vis!=='pub'?'hid':''} ${e.img?'':'noimg'} ${e.k!=='ents'?'pcf':''} cls-${e.cls}" ${e.k==='ents'?`data-ent="${esc(e.id)}"`:''} data-pkey="${esc(pKey(e))}" data-at="${esc(s.id)}" style="left:${+q.x}%;top:${+q.y}%;${e.img?`background-image:url('${cssu(e.img)}')`:''}" title="${esc(e.name)} · ${esc(s.name||'')}">${e.img?'':esc([...(e.name||'?')][0]||'?')}<i>${esc(e.name)}</i>${stBub(e)}</button>`)});
-   es.slice(0,MAX).forEach((e,i)=>out.push(`<button type="button" class="mnpc ${e.vis&&e.vis!=='pub'?'hid':''} ${e.img?'':'noimg'} ${e.k!=='ents'?'pcf':''} cls-${e.cls}" ${e.k==='ents'?`data-ent="${esc(e.id)}"`:''} data-pkey="${esc(pKey(e))}" data-at="${esc(s.id)}" style="left:calc(${s.x}% + 16px + ${i} * var(--mnS,46px));top:${s.y}%;${e.img?`background-image:url('${cssu(e.img)}')`:''}" title="${esc(e.name)}">${e.img?'':esc([...(e.name||'?')][0]||'?')}<i>${esc(e.name)}</i>${stBub(e)}</button>`));
+   fr.forEach(e=>{const q=e.pos[s.id];out.push(`<button type="button" class="mnpc free ${U.peek===pKey(e)?'peek':''} ${e.vis&&e.vis!=='pub'?'hid':''} ${e.img?'':'noimg'} ${e.k!=='ents'?'pcf':''} cls-${e.cls}" ${e.k==='ents'?`data-ent="${esc(e.id)}"`:''} data-pkey="${esc(pKey(e))}" data-at="${esc(s.id)}" style="left:${+q.x}%;top:${+q.y}%;${e.img?`background-image:url('${cssu(e.img)}')`:''}" title="${esc(e.name)} · ${esc(s.name||'')}">${e.img?'':esc([...(e.name||'?')][0]||'?')}<i>${esc(e.name)}</i>${stBub(e)}</button>`)});
+   es.slice(0,MAX).forEach((e,i)=>out.push(`<button type="button" class="mnpc ${U.peek===pKey(e)?'peek':''} ${e.vis&&e.vis!=='pub'?'hid':''} ${e.img?'':'noimg'} ${e.k!=='ents'?'pcf':''} cls-${e.cls}" ${e.k==='ents'?`data-ent="${esc(e.id)}"`:''} data-pkey="${esc(pKey(e))}" data-at="${esc(s.id)}" style="left:calc(${s.x}% + 16px + ${i} * var(--mnS,46px));top:${s.y}%;${e.img?`background-image:url('${cssu(e.img)}')`:''}" title="${esc(e.name)}">${e.img?'':esc([...(e.name||'?')][0]||'?')}<i>${esc(e.name)}</i>${stBub(e)}</button>`));
    if(es.length>MAX)out.push(`<button type="button" class="mnpc more" data-pmore="${esc(s.id)}" style="left:calc(${s.x}% + 16px + ${MAX} * var(--mnS,46px));top:${s.y}%" title="${es.slice(MAX).map(x=>esc(x.name)).join(' · ')}">+${es.length-MAX}</button>`)}
   return out.join('')}
 
@@ -185,7 +185,7 @@
    /* 10-26 망령: 누른 곳 기준으로 판정 (포인터 캡처 뒤에는 e.target 이 지도 전체가 돼서 핀 · 얼굴 클릭이 먹지 않았다) */
    if(p.downPin&&U.linkFrom){return finishLink(p.downPin.dataset.pin)}
    if(p.downFace&&p.downFace.dataset.pmore){const id=p.downFace.dataset.pmore;U.sel=id;U.pop={k:'spot',id};N().render();return}
-   if(p.downFace){const sp0=p.downFace.dataset.at||'';U.pop=p.downFace.dataset.ent?{k:'ent',id:p.downFace.dataset.ent,at:sp0}:{k:'pcx',id:p.downFace.dataset.pkey,at:sp0};showPop(el);return}
+   if(p.downFace){const sp0=p.downFace.dataset.at||'';{/* 11-04 03:44 망령 「모바일 지도는 코멘트 안 보였다가 터치하면 뜨게」: 누른 얼굴의 말풍선만 보인다 (다시 누르면 접힘) */const pk=p.downFace.dataset.pkey||'';U.peek=U.peek===pk?'':pk;$$('.mnpc.peek',w).forEach(x=>{if(x!==p.downFace)x.classList.remove('peek')});p.downFace.classList.toggle('peek',!!U.peek)}U.pop=p.downFace.dataset.ent?{k:'ent',id:p.downFace.dataset.ent,at:sp0}:{k:'pcx',id:p.downFace.dataset.pkey,at:sp0};showPop(el);return}
    if(p.downPin){const id=p.downPin.dataset.pin;U.sel=id;U.pop={k:'spot',id};N().render();return}
    if(U.linkFrom){cancelLink();return}
    if(U.pop&&!(N().gm()&&U.mode==='add')){U.pop=null;showPop(el);return}
