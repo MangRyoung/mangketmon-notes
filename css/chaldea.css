@@ -9,6 +9,72 @@ html[data-vt="cd"]{color-scheme:light;
 html[data-vt="cd"] body{background:url("../img/chaldea_mark.png") no-repeat right 3% bottom 4%/min(420px,46vw) auto fixed,linear-gradient(180deg,#f6f9fd,#e9f0f8) fixed!important;background-color:#edf2f8!important;color:var(--fg)!important}
 html[data-vt="cd"] ::selection{background:rgba(28,99,214,.22);color:#0b1a30}
 
+
+/* ===== 자동 덮개 (tools: 밝은 테마용 — 어두운 바탕을 박아 둔 규칙을 흰 판으로, 흰 바탕+검은 글씨 강조를 칼데아 블루로) ===== */
+html[data-vt="cd"] .btn{background:var(--cd)!important;color:#fff!important;border:2px solid var(--line)!important}
+html[data-vt="cd"] .btn.ghost:hover{background:var(--cd)!important;color:#fff!important}
+html[data-vt="cd"] input[type=text],html[data-vt="cd"] input[type=number],html[data-vt="cd"] input[type=search],html[data-vt="cd"] input[type=color],html[data-vt="cd"] select,html[data-vt="cd"] textarea{background:var(--panel)!important}
+html[data-vt="cd"] .badge,html[data-vt="cd"] .tag{background:var(--panel)!important;color:var(--fg)!important}
+html[data-vt="cd"] .badge.seat,html[data-vt="cd"] .tag.ok{background:var(--cd)!important;color:#fff!important}
+html[data-vt="cd"] #toast{background:var(--cd)!important;color:#fff!important}
+html[data-vt="cd"] .stgrid button{background:var(--panel)!important}
+html[data-vt="cd"] .stgrid button.on{background:var(--cd)!important;color:#fff!important}
+html[data-vt="cd"] .spcard{background:var(--panel)!important}
+html[data-vt="cd"] .updz{background:var(--panel)!important}
+html[data-vt="cd"] .updz.over{background:var(--panel)!important}
+html[data-vt="cd"] .newcamp code,html[data-vt="cd"] .modal code{background:var(--panel)!important}
+html[data-vt="cd"] .top{background:var(--panel)!important}
+html[data-vt="cd"] #sceneTabs button.on{background:var(--cd)!important;color:#fff!important}
+html[data-vt="cd"] .vtsw.compact .vtmenu{background:var(--panel)!important}
+html[data-vt="cd"] .seg{background:var(--panel)!important}
+html[data-vt="cd"] .seg button.on{background:var(--cd)!important;color:#fff!important}
+html[data-vt="cd"] .chip{background:var(--panel)!important}
+html[data-vt="cd"] table.t th{background:var(--panel)!important}
+html[data-vt="cd"] #ntNotices .ntn{background:var(--panel)!important;color:var(--fg)!important}
+html[data-vt="cd"] .mapwrap{background:var(--panel)!important}
+html[data-vt="cd"] .mapimg.blank{background:var(--panel)!important}
+html[data-vt="cd"] .pin.on span{background:var(--cd)!important;color:#fff!important}
+html[data-vt="cd"] .sprow:hover{background:var(--panel)!important}
+html[data-vt="cd"] .etags em{background:var(--panel)!important}
+html[data-vt="cd"] .graphwrap{background:var(--panel)!important}
+html[data-vt="cd"] .fcard .bar{background:var(--panel)!important}
+html[data-vt="cd"] .fstep i{background:var(--panel)!important}
+html[data-vt="cd"] .laneh .bar{background:var(--panel)!important}
+html[data-vt="cd"] .step{background:var(--panel)!important}
+html[data-vt="cd"] .cday.today .dn{background:var(--cd)!important;color:#fff!important}
+html[data-vt="cd"] .seatrow code{background:var(--panel)!important}
+html[data-vt="cd"] .pcsheet .party .mon i.noimg,html[data-vt="cd"] .pmh i.noimg{background:var(--panel)!important}
+html[data-vt="cd"] .pmst span{background:var(--panel)!important}
+html[data-vt="cd"] .pmst .tot{background:var(--panel)!important}
+html[data-vt="cd"] .pmm{background:var(--panel)!important}
+html[data-vt="cd"] .mnst{background:var(--cd)!important;color:#fff!important}
+@media (max-width:760px){html[data-vt="cd"] .mnpc:has(>.mnst):not(.peek)::after{border:2px solid var(--line)!important}}
+html[data-vt="cd"] .cb-vp{background:var(--panel)!important}
+html[data-vt="cd"] .cb-frame::before,html[data-vt="cd"] .cb-frame::after,html[data-vt="cd"] .cb-frame>.cap1,html[data-vt="cd"] .cb-frame>.cap2{background:var(--panel)!important}
+html[data-vt="cd"] .cb-tag{background:var(--cd)!important;color:#fff!important}
+html[data-vt="cd"] .cb-tag.secret{background:var(--panel)!important;color:var(--fg)!important}
+html[data-vt="cd"] .cb-dossier .bar{background:var(--panel)!important}
+html[data-vt="cd"] .pin u.pdg{background:var(--panel)!important}
+html[data-vt="cd"] .dgcard{background:var(--panel)!important;color:var(--fg)!important}
+html[data-vt="cd"] .dgcard .visb{background:var(--panel)!important}
+html[data-vt="cd"] .dgc{background:var(--panel)!important;color:var(--fg)!important;border:1px solid var(--line)!important}
+html[data-vt="cd"] .dgn{background:var(--panel)!important;color:var(--fg)!important;border:1px solid color-mix(in srgb,var(--c) 50%,var(--line))!important}
+html[data-vt="cd"] .dgn.k-boss{background:var(--panel)!important}
+html[data-vt="cd"] .dgn.k-entry{background:var(--panel)!important}
+html[data-vt="cd"] .dgn .dgport{background:var(--panel)!important}
+html[data-vt="cd"] .dgc.iso{background:var(--panel)!important;border:2px solid var(--line)!important}
+html[data-vt="cd"] .dgloc{background:var(--panel)!important;color:var(--fg)!important}
+html[data-vt="cd"] .dgtype{background:var(--panel)!important;color:var(--fg)!important}
+html[data-vt="cd"] .awbprev{background:var(--panel)!important}
+html[data-vt="cd"] html:not(#_) .awspec select.awsp-type option{background:var(--panel)!important;color:var(--fg)!important}
+html[data-vt="cd"] html:not(#_) .awcostbar{border-left:3px solid var(--line)!important}
+html[data-vt="cd"] html:not(#_) .awspk-calc.over{border-color:color-mix(in srgb,var(--red,var(--line)) 45%,transparent)!important}
+html[data-vt="cd"] .tag.acpl{background:var(--cd)!important;color:#fff!important}
+html[data-vt="cd"] .aclg input[type=text],html[data-vt="cd"] .aclg input[type=password]{background:var(--panel)!important}
+html[data-vt="cd"] #toast .tundo{background:var(--panel)!important;color:var(--fg)!important}
+html[data-vt="cd"] .pv-map{background:var(--panel)!important}
+/* ===== 자동 덮개 끝 — 아래 손으로 고친 규칙이 이긴다 ===== */
+
 /* 테마 고르기 단추 */
 html[data-vt="cd"] .vtsw{border-color:#9db3d1}
 html[data-vt="cd"] .vtsw button.on{background:#1c63d6;color:#fff}
