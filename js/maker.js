@@ -57,7 +57,7 @@ window.NT_MAKER=(()=>{
  const abil=n=>(n&&DBX.abil.get(n))||null;const pot=n=>(n&&DBX.pots.get(String(n).replace(/[『』]/g,'').trim()))||null;const abilList=()=>[...DBX.abil.values()];const potList=()=>[...DBX.pots.values()];const moveList=()=>DBX.moves?[...DBX.moves.values()]:[];
  const itemList=()=>[...DBX.items.values()];const cardList=()=>[...DBX.cards.values()];const dbSet=(k,key,row)=>{const m=DBX[k];if(m&&m.set)m.set(key,row)};
  /* 10-29 망령: 노트에서 제작기 문서 한 장 고치기 (트레이너 · 포켓몬). fn(안쪽 data) 를 부르고 올린 뒤, 이 브라우저의 사본도 바로 바꾼다 */
- async function edit(kind,id,fn){const DB=N().DBS();if(!DB.makerPut||!DB.makerGet)throw new Error('이 화면에서는 제작기에 쓸 수 없어요');const cur=await DB.makerGet(kind,id);if(!cur)throw new Error('제작기 문서를 찾지 못했어요');
+ async function edit(kind,id,fn){const DB=N().DBS();if(!DB.makerPut||!DB.makerGet)throw new Error('이 화면에서는 제작기에 쓸 수 없어요');if(N().ST.plView)throw new Error('「PL 눈으로 보기」 중에는 저장하지 않아요');const cur=await DB.makerGet(kind,id);if(!cur)throw new Error('제작기 문서를 찾지 못했어요');
   const doc=JSON.parse(JSON.stringify(cur.data||{}));const d=doc.data||doc;const r=await fn(d,doc);if(r===false)return false;await DB.makerPut(kind,id,doc);
   const L=kind==='trainers'?M.trainers:kind==='pokemon'?M.pokemon:null;if(L){const i=L.findIndex(x=>x.id===id);const o=unwrap({id,data:doc});if(i>=0)L[i]=o;else L.push(o)}
   try{const c=JSON.parse(localStorage.getItem(MKC)||'null');if(c&&c.docs&&c.docs[kind]){c.docs[kind][id]={id,data:doc};localStorage.setItem(MKC,JSON.stringify(c))}}catch(e){}
@@ -79,7 +79,7 @@ window.NT_MAKER=(()=>{
  const npcFolders=()=>{const S=under(linked());return under(M.folders.filter(f=>S.has(f.id)&&(f.id==='misag-npc'||/npc/i.test(f.name||''))).map(f=>f.id))};
  const isNpc=t=>!!t&&(t.kind==='npc'||(!!t.folder&&npcFolders().has(t.folder)));
  const missing=()=>linkedTrainers().filter(t=>!N().data('pc',t.id)&&!N().data('npc',t.id));
- async function saveLinked(ids){const S=N().ST;const c=S.campInfo||{};const d=Object.assign({},c.data||{});d.mk=Object.assign({},d.mk||{},{folders:ids});await N().DBS().campUpdate(S.camp,S.secret,null,d);if(S.campInfo)S.campInfo.data=d;await N().refreshCamp()}
+ async function saveLinked(ids){await N().campPatch({mk:{folders:ids}})}   /* 11-03: 칸 단위 patch */
  /* 폴더 고르기 — 위 폴더를 고르면 아래 폴더도 같이 이어진다 */
  async function pickLinked(){await load(true);const cur=new Set(linked());const roots=M.folders.filter(f=>!f.parent||!M.folders.some(x=>x.id===f.parent)).sort((a,b)=>(a.ord||0)-(b.ord||0));
   const cnt=id=>{const S=under([id]);return M.trainers.filter(t=>t.folder&&S.has(t.folder)).length};

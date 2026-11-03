@@ -47,7 +47,8 @@
   const qi=$('#lgQ',el);if(qi)qi.oncompositionend=()=>qi.oninput({isComposing:false});qi.oninput=e=>{if(e.isComposing)return;U.q=qi.value;const v=qi.value;N().render();const q2=$('#lgQ');if(q2){q2.focus();q2.setSelectionRange(v.length,v.length)}};
   const fsel=$('#lgF',el);if(fsel)fsel.onchange=()=>{U.folder=fsel.value;N().render()};
   if(!el._lgBound){el._lgBound=1;el.addEventListener('click',e=>{if(N().ST.view!=='logs')return;const b=e.target.closest('[data-lg]');if(b){if(b.tagName==='A'&&b.dataset.lg==='read')e.preventDefault();act(b.dataset.lg,b)}})}}
- async function saveCamp(patch){const S=N().ST;const d=Object.assign({},camp(),patch);try{await N().DBS().campUpdate(S.camp,S.secret,null,d);S.campInfo.data=d;N().render()}catch(e){N().toast('저장 실패: '+e.message)}}
+ /* 11-03: 바꾼 칸만(campPatch). logPin 처럼 객체 칸은 안쪽까지 합쳐지므로, 빼는 키는 null 로 보낸다 */
+ async function saveCamp(patch){try{await N().campPatch(patch);N().render()}catch(e){N().toast('저장 실패: '+e.message)}}
  async function act(k,b){const id=b.dataset.id;const d=camp();
   if(k==='reload'){await load(true);N().render();return}
   if(k==='more'){U.open[id]=!U.open[id];N().render();return}
@@ -55,9 +56,9 @@
   if(!N().gm())return;
   if(k==='new'||k==='edit')return edit(k==='new'?'':id);
   if(k==='del'){const own=!!N().doc('logs',id)&&!String(id).startsWith('mt_');
-   if(own){const x=N().data('logs',id)||{};if(!await N().confirmBox(`「${x.title||'기록'}」 을(를) 지울까요? 되돌릴 수 없어요.`))return;await N().del('logs',id);N().toast('지웠어요');return}
+   if(own){const x=N().data('logs',id)||{};if(!await N().confirmBox(`「${x.title||'기록'}」 을(를) 지울까요? 바로 지워져요 (설정 탭 「🗑 최근 지운 것」에서 30일 안에 되살릴 수 있어요).`))return;await N().del('logs',id);N().toast('지웠어요');return}
    const r=C.rows.find(x=>x.id===id);if(!await N().confirmBox(`「${(ovOf(id)||{}).title||(r&&r.title)||id}」 을(를) 이 캠페인 기록 목록에서 뺄까요?\n보관소 원본은 그대로 남아요 (정말 지우려면 제작기 로그 정리기에서). 「🗑 뺀 것」에서 되살릴 수 있어요.`))return;
-   const L=new Set(d.logDel||[]);L.add(id);const pin=Object.assign({},d.logPin||{});delete pin[id];await saveCamp({logDel:[...L],logPin:pin});return}
+   const L=new Set(d.logDel||[]);L.add(id);await saveCamp({logDel:[...L],logPin:{[id]:null}});return}
   if(k==='undel'){const L=(d.logDel||[]);const md=N().openModal(`<div class="mhead"><h2>목록에서 뺀 보관소 로그</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div class="col" style="gap:6px">${L.map(x=>{const r=C.rows.find(y=>y.id===x);return `<div class="row" style="gap:8px"><span style="flex:1">${esc((r&&r.title)||x)}</span><button class="btn xs" data-ud="${esc(x)}">되살리기</button></div>`}).join('')}</div>`);
    md.querySelectorAll('[data-ud]').forEach(b2=>b2.onclick=async()=>{N().closeModal();await saveCamp({logDel:(camp().logDel||[]).filter(y=>y!==b2.dataset.ud)})});return}
   if(k==='folders'){const cur=new Set(d.logFolders||[]);const all=[...new Set(C.rows.map(r=>r.folder||''))];
@@ -68,7 +69,7 @@
   if(k==='pin'){const sess=N().list('plan').filter(x=>x.t==='sess').sort((a,b)=>(a.order||0)-(b.order||0));const pin=Object.assign({},d.logPin||{});
    if(N().doc('logs',id)&&!String(id).startsWith('mt_'))pin[id]=(N().data('logs',id)||{}).sess||'';
    const md=N().openModal(`<div class="mhead"><h2>세션에 잇기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><label class="lbl">세션<select id="lpS"><option value="">— 없음 —</option>${sess.map(s=>`<option value="${esc(s.id)}" ${pin[id]===s.id?'selected':''}>${esc(s.label||'')} ${esc(s.date||'')} ${esc(s.what||'')}</option>`).join('')}</select></label><div class="mfoot"><span class="sp"></span><button class="btn pri" id="lpOk">저장</button></div>`);
-   $('#lpOk',md).onclick=async()=>{const v=$('#lpS',md).value;N().closeModal();if(N().doc('logs',id)&&!String(id).startsWith('mt_'))return N().patch('logs',id,x=>{x.sess=v});if(v)pin[id]=v;else delete pin[id];await saveCamp({logPin:pin})}}}
+   $('#lpOk',md).onclick=async()=>{const v=$('#lpS',md).value;N().closeModal();if(N().doc('logs',id)&&!String(id).startsWith('mt_'))return N().patch('logs',id,x=>{x.sess=v});await saveCamp({logPin:{[id]:v||null}})}}}
  /* 직접 쓴 기록 읽기 */
  function read(id){const x=N().data('logs',id);if(!x)return;const G=N().gm();const s=x.sess&&N().data('plan',x.sess);
   const md=N().openModal(`<div class="mhead"><h2>${esc(x.ep?x.ep+' ':'')}${esc(x.title||'기록')}</h2><span class="sp"></span>${G?`<button class="btn sm" data-lr="edit">고치기</button>`:''}<button class="btn ghost" data-x>닫기</button></div>

@@ -4,7 +4,7 @@
    데이터: D[kind][id] = {data, vis, updated_at}. 처음엔 nt_all 로 전부, 그 뒤엔 실시간(pub) + 알림(broadcast)으로 바뀐 것만 nt_get. */
 "use strict";
 window.NT=(()=>{
- const ST={camp:'',secret:'',role:null,camps:[],campInfo:null,view:'map',online:false,since:null,seats:[]};
+ const ST={camp:'',secret:'',role:null,camps:[],campInfo:null,view:'map',online:false,since:null,seats:[],plView:false,plAs:''};
  const D={};
  const $=(s,r)=>(r||document).querySelector(s),$$=(s,r)=>[...(r||document).querySelectorAll(s)];
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -12,8 +12,12 @@ window.NT=(()=>{
  const clone=o=>JSON.parse(JSON.stringify(o));
  const cssu=s=>String(s??'').replace(/[\s"'()\\<>]/g,c=>'%'+c.charCodeAt(0).toString(16).padStart(2,'0').toUpperCase());
  const DBS=()=>window.NT_STORE;
- const gm=()=>ST.role==='gm';
- const me=()=>ST.role&&ST.role!=='gm'?ST.role:'';
+ /* 11-03 감우 「PL 눈으로 보기」: 진짜 GM 이 켜면 모든 탭이 구경(또는 고른 좌석) 눈으로 그려진다(gm() = false · me() = 고른 좌석). 저장은 막는다. realGm() 은 켜도 참 */
+ const realGm=()=>ST.role==='gm';
+ const gm=()=>ST.role==='gm'&&!ST.plView;
+ const me=()=>ST.plView?(ST.plAs||''):(ST.role&&ST.role!=='gm'?ST.role:'');
+ function plViewSet(on,as){if(!realGm())return;ST.plView=!!on;ST.plAs=on?(as||''):'';document.body.classList.toggle('plview',ST.plView);closeModal(true);if(ST.plView&&!subOk(ST.view))ST.view=tabOf(ST.view)[2][0];render()}
+ const PLV_BLOCK='「PL 눈으로 보기」 중에는 저장하지 않아요 — 위 띠에서 끄고 다시';
  const VIEWS=[['map','지도'],['graph','관계도'],['ents','항목'],['pc','PC 시트'],['npc','NPC 시트'],['awk','각성체'],['awdb','각성체 DB'],['scen','시나리오'],['plan','일정'],['logs','기록'],['set','설정']];
  /* 10-29 망령: 위 탭은 6개 — 자료(항목 · 관계도) · 지도 · 시트 · 일정(일정 · 기록) · 시나리오 · 설정. 화면(VIEWS)과 주소는 그대로라 예전 링크 · 알림도 그대로 간다 */
  const TABS=[['ents','자료',['ents']],['map','지도',['map']],['pc','시트',['pc','npc','awk','awdb']],['graph','관계도',['graph']],['plan','일정',['plan','logs']],['scen','시나리오',['scen']],['set','설정',['set']]];   /* 10-30 망령 「관계도도 시트 옆에」: 자료에서 꺼내 시트 바로 옆 탭으로 (웹툴처럼) */
@@ -38,6 +42,7 @@ window.NT=(()=>{
   document.body.classList.add('modal-open');return bg.firstElementChild}
  function closeOne(bg,how){if(!bg||!bg.isConnected)return;bg.dispatchEvent(new CustomEvent('nt:close',{detail:{how}}));bg.remove();if(!$('.modalbg'))document.body.classList.remove('modal-open')}
  function closeModal(all){const L=$$('.modalbg');if(!L.length)return;if(all)L.forEach(b=>closeOne(b,'all'));else closeOne(L[L.length-1],'code')}
+ document.addEventListener('keydown',e=>{if(e.key!=='/'||e.isComposing||e.ctrlKey||e.metaKey||e.altKey)return;const a=document.activeElement;if(a&&(a.matches('input,textarea,select,[contenteditable]')))return;if(!ST.camp||!window.NT_SEARCH)return;e.preventDefault();NT_SEARCH.open()});
  document.addEventListener('keydown',e=>{if(e.key!=='Escape'||e.isComposing)return;const vq=$('.visqm');if(vq){vq.remove();return}if(document.body.classList.contains('favopen')){document.body.classList.remove('favopen');return}const L=$$('.modalbg');if(!L.length)return;const bg=L[L.length-1];if(bg._dirty){toast('고친 내용이 있어요 — 「닫기」나 저장을 눌러 주세요');return}closeOne(bg,'esc')});
  /* 새로 만든 문서의 편집 창을 저장 없이 닫으면(닫기 · 바깥 · Esc) 손대지 않은 문서는 도로 지운다 */
  function armDraft(kind,id){const snap=JSON.stringify(data(kind,id)||null);setTimeout(()=>{const L=$$('.modalbg');const bg=L[L.length-1];if(!bg)return;bg.addEventListener('nt:close',async e=>{const how=(e.detail||{}).how;if(how==='code'||how==='ok'||how==='all')return;if(JSON.stringify(data(kind,id)||null)!==snap)return;if(!doc(kind,id))return;await del(kind,id);toast('저장하지 않아 새 문서를 지웠어요')})},0)}
@@ -48,9 +53,9 @@ window.NT=(()=>{
 
  /* ----- 데이터 ----- */
  const col=k=>D[k]||(D[k]={});
- const doc=(k,id)=>(D[k]||{})[id]||null;
+ const doc=(k,id)=>{const d=(D[k]||{})[id]||null;return d&&ST.plView&&!canSee(d.vis)?null:d};   /* PL 눈으로 보기: 그 눈에 안 보이는 문서는 없는 것으로 */
  const data=(k,id)=>{const d=doc(k,id);return d?d.data:null};
- const list=k=>Object.entries(col(k)).map(([id,d])=>Object.assign({id,_vis:d.vis,_at:d.updated_at},d.data));
+ const list=k=>Object.entries(col(k)).filter(([id,d])=>!ST.plView||canSee(d.vis)).map(([id,d])=>Object.assign({id,_vis:d.vis,_at:d.updated_at},d.data));
  const canSee=vis=>vis==='pub'||gm()||(me()&&vis==='pl:'+me());
  const canEdit=(k,id)=>gm()||!!(me()&&(((k==='pc'||k==='pcp')&&id===me())||(k==='avail'&&String(id).endsWith('_'+me()))));
  const VISL={pub:'모두',gm:'GM만'};
@@ -93,19 +98,24 @@ window.NT=(()=>{
    if(cur&&cur.updated_at&&r.updated_at&&r.updated_at<=cur.updated_at&&jeq(r.data,cur.data))return obj;   /* 내가 본 판이 최신 → 그대로 */
    const P=(HIST.get(hkey(kind,id))||[]).map(j=>{try{return JSON.parse(j)}catch(e){return null}}).filter(Boolean);if(cur&&cur.data&&!jeq(cur.data,r.data))P.push(cur.data);
    if(!P.length)return obj;const m=mergeVal(obj,r.data,P);if(!jeq(m,obj))console.info('[노트] 남이 고친 칸을 살려서 합쳤어요',kind,id);return m}catch(e){return obj}}
- async function put(kind,id,obj,vis,opt){if(!ST.camp)return false;mark(kind,id);const cur=doc(kind,id);const v=vis||(cur?cur.vis:'pub');
+ async function put(kind,id,obj,vis,opt){if(!ST.camp)return false;if(ST.plView){toast(PLV_BLOCK);return false}mark(kind,id);const cur=doc(kind,id);const v=vis||(cur?cur.vis:'pub');
   try{if(cur&&!(opt&&opt.force))obj=await fresh3(kind,id,obj);histPush(kind,id);const t=await DBS().put(ST.camp,ST.secret,kind,id,obj,v);col(kind)[id]={data:clone(obj),vis:v,updated_at:typeof t==='string'?t:new Date().toISOString()};
    if(v!=='pub')DBS().ping(ST.camp,{t:'doc',kind,id});render();return true}
   catch(e){toast('저장 실패: '+e.message);return false}}
  async function patch(kind,id,fn,vis){const cur=data(kind,id);if(!cur)return false;const n=clone(cur);const r=fn(n);if(r===false)return false;return put(kind,id,n,vis)}
- async function del(kind,id){if(!ST.camp)return false;mark(kind,id);try{await DBS().del(ST.camp,ST.secret,kind,id);const had=doc(kind,id);delete col(kind)[id];if(had&&had.vis!=='pub')DBS().ping(ST.camp,{t:'del',kind,id});render();return true}catch(e){toast('지우기 실패: '+e.message);return false}}
+ async function del(kind,id){if(!ST.camp)return false;if(ST.plView){toast(PLV_BLOCK);return false}mark(kind,id);try{await DBS().del(ST.camp,ST.secret,kind,id);const had=doc(kind,id);delete col(kind)[id];if(had&&had.vis!=='pub')DBS().ping(ST.camp,{t:'del',kind,id});render();return true}catch(e){toast('지우기 실패: '+e.message);return false}}
  /* GM: 여러 문서의 공개 범위를 한 번에 (vis 'pub'|'gm'). filter(id,doc) 로 고른다 */
  async function bulkVis(kind,vis,filter,label){if(!gm())return;const rows=[];for(const [id,d] of Object.entries(col(kind))){if(filter&&!filter(id,d))continue;if(d.vis===vis)continue;rows.push({kind,id,data:d.data,vis})}
   if(!rows.length)return toast('바꿀 게 없어요');if(!await confirmBox(`${label||kind} ${rows.length}개를 ${vis==='pub'?'「모두」에게 공개':'「GM만」으로'} 할까요?`,vis==='pub'?'공개':'비공개'))return;await putMany(rows);toast(`${rows.length}개를 바꿨어요`)}
  const bulkBtns=(kind,filter,label)=>gm()?`<span class="seg bulk" title="이 탭의 문서 공개 범위를 한 번에"><button type="button" data-bulk="${kind}|gm" data-bl="${esc(label||'')}">🔒 전부 GM만</button><button type="button" data-bulk="${kind}|pub" data-bl="${esc(label||'')}">👁 전부 공개</button></span>`:'';
  document.addEventListener('click',e=>{const b=e.target.closest('[data-bulk]');if(!b)return;const [kind,vis]=b.dataset.bulk.split('|');const f=BULKF[kind];bulkVis(kind,vis,f&&f(),b.dataset.bl)});
  const BULKF={};
- async function putMany(rows){for(const r of rows)mark(r.kind,r.id);try{const n=await DBS().putMany(ST.camp,ST.secret,rows);for(const r of rows)col(r.kind)[r.id]={data:clone(r.data),vis:r.vis||'pub',updated_at:new Date().toISOString()};DBS().ping(ST.camp,{t:'all'});render();return n}catch(e){toast('가져오기 실패: '+e.message);return 0}}
+ /* 11-03 감우: 여러 장 저장도 한 장 저장처럼 칸 합치기(fresh3)를 거친다 — 순서 바꾸기 · 한꺼번에 공개 · 관계도 배치가 로컬 사본 전체를 다시 써서 남이 고친 칸을 되돌리던 것. opt.force(가져오기)면 그대로 */
+ async function putMany(rows,opt){if(!ST.camp)return 0;if(ST.plView){toast(PLV_BLOCK);return 0}for(const r of rows)mark(r.kind,r.id);
+  try{if(!(opt&&opt.force)){const L=rows.filter(r=>doc(r.kind,r.id));let i=0;const run=async()=>{for(;;){const r=L[i++];if(!r)return;r.data=await fresh3(r.kind,r.id,r.data)}};await Promise.all([run(),run(),run(),run()]);for(const r of rows)histPush(r.kind,r.id)}
+   const n=await DBS().putMany(ST.camp,ST.secret,rows);for(const r of rows)col(r.kind)[r.id]={data:clone(r.data),vis:r.vis||'pub',updated_at:new Date().toISOString()};DBS().ping(ST.camp,{t:'all'});render();return n}catch(e){toast('저장 실패: '+e.message);return 0}}
+ /* 11-03 감우: 캠페인 설정(camp.data)은 칸 단위로 합쳐 쓴다 (store.campPatch → nt_camp_patch). null 이면 그 칸을 지운다. 받아 둔 옛 사본으로 통째 덮지 않는다 */
+ async function campPatch(patch,name){if(!ST.camp)return null;if(ST.plView){toast(PLV_BLOCK);return null}const d=await DBS().campPatch(ST.camp,ST.secret,patch,name==null?null:name);if(ST.campInfo){if(d)ST.campInfo.data=d;if(name!=null)ST.campInfo.name=name}await refreshCamp();return d}
 
  /* 10-29 망령 「변동 사항만 주고받게」: 받은 문서를 이 브라우저에 사본으로 두고(캠페인 · 역할마다), 다음에 열 때는 그 뒤에 바뀐 것만 받는다.
     지워진 것 · 볼 수 없게 바뀐 것은 id 목록(nt_ids · 내용 없음)으로 걸러 낸다. 사본이 7일 넘었거나 3MB 를 넘으면 전부 새로 받는다 */
@@ -129,7 +139,8 @@ window.NT=(()=>{
  function listen(){if(unsub)unsub();unsub=DBS().subscribe(ST.camp,{
   onDoc(kind,id,dat,vis,at){if(!canSee(vis)){if(doc(kind,id))delete col(kind)[id];render();return}const cur=doc(kind,id);if(cur&&cur.updated_at>=at)return;histPush(kind,id);col(kind)[id]={data:dat||{},vis,updated_at:at};if(at>(ST.since||''))ST.since=at;if(window.NT_NOTICE&&!recent(kind,id))NT_NOTICE.push(kind,id,cur?'edit':'new',dat);render()},
   onDel(kind,id){const had=doc(kind,id);if(had){if(window.NT_NOTICE&&!recent(kind,id))NT_NOTICE.push(kind,id,'del',had.data);delete col(kind)[id];render()}},
-  async onPing(p){if(!p)return;if(p.t==='all')return resync();if(p.t==='mk'){if(window.NT_MAKER)try{await NT_MAKER.load(true);render()}catch(e){}return}   /* 10-31: 남이 노트에서 제작기 문서를 고쳤다 → 제작기 사본 다시 받기 */if(p.t==='del'){const had=doc(p.kind,p.id);if(had){if(window.NT_NOTICE&&!recent(p.kind,p.id))NT_NOTICE.push(p.kind,p.id,'del',had.data);delete col(p.kind)[p.id];render()}return}
+  async onPing(p){if(!p)return;if(p.t==='all')return resync();
+   if(p.t==='claim'){/* 11-03: 자리 앉기 요청 · 승인 */await refreshCamp();if(realGm()&&p.seat)toast(`🪑 ${p.name||p.uid||'PL'} 님이 「${seatName(p.seat)||p.seat}」 자리를 요청했어요 — 설정 탭에서 승인`);else if(!realGm()&&window.NT_ACCT&&p.uid&&p.uid===((NT_ACCT.get()||{}).uid)&&p.ok!=null){toast(p.ok?'GM 이 자리를 승인했어요':'GM 이 자리 요청을 거절했어요');if(p.ok)open(ST.camp,ST.view)}return}if(p.t==='mk'){if(window.NT_MAKER)try{await NT_MAKER.load(true);render()}catch(e){}return}   /* 10-31: 남이 노트에서 제작기 문서를 고쳤다 → 제작기 사본 다시 받기 */if(p.t==='del'){const had=doc(p.kind,p.id);if(had){if(window.NT_NOTICE&&!recent(p.kind,p.id))NT_NOTICE.push(p.kind,p.id,'del',had.data);delete col(p.kind)[p.id];render()}return}
    if(p.t==='doc'){try{const had=doc(p.kind,p.id);const r=await DBS().get(ST.camp,ST.secret,p.kind,p.id);if(r){if(had&&had.updated_at>=r.updated_at)return;histPush(p.kind,p.id);col(p.kind)[p.id]={data:r.data||{},vis:r.vis,updated_at:r.updated_at};if(window.NT_NOTICE&&!recent(p.kind,p.id))NT_NOTICE.push(p.kind,p.id,had?'edit':'new',r.data)}else delete col(p.kind)[p.id];render()}catch(e){}}},
   onStatus(st){ST.online=st==='SUBSCRIBED';const b=$('#ntLive');if(b){b.classList.toggle('on',ST.online);b.title=ST.online?'실시간 연결됨':'실시간 끊김 — 새로고침'}if(ST.online&&ST.since)resync()}})}
 
@@ -207,12 +218,15 @@ window.NT=(()=>{
   renderTop($('.top',sh));const fs=$('#ntFavSlot',sh);if(fs&&window.NT_FAV)fs.innerHTML=NT_FAV.rail();const old=$('#ntMain',sh);const keep=keepState(old);const main=old.cloneNode(false);old.replaceWith(main);main.dataset.view=ST.view;/* 탭 모듈이 render 마다 el.addEventListener 를 붙이므로, 매번 새 요소로 바꿔 처리기가 쌓이거나 다른 탭 것과 섞이지 않게 한다 */const M=MOD[ST.view];
   try{if(M)M.render(main);else main.innerHTML='<div class="empty">준비 중</div>';subTabs(main);restoreState(main,keep)}catch(e){console.error(e);main.innerHTML=`<div class="empty vfail"><b>「${esc((VIEWS.find(v=>v[0]===ST.view)||[])[1]||ST.view)}」 화면을 그리지 못했어요.</b><div class="small dim" style="margin-top:6px;word-break:break-all">${esc(e&&e.message||e)}</div><button class="btn sm" onclick="NT.go('map')">지도로</button></div>`}}
  function renderTop(top){const c=ST.campInfo||{};const role=gm()?'<span class="badge gm">GM</span>':me()?`<span class="badge seat">${esc(seatName(me())||me())}</span>`:'<span class="badge">구경</span>';
+  const plv=realGm()?`<span class="plvsw ${ST.plView?'on':''}" title="PL 눈으로 보기 — 모든 탭을 구경(또는 고른 좌석)의 눈으로 그려요. 켜 둔 동안은 저장하지 않아요"><button type="button" class="btn xs ${ST.plView?'pri':'ghost'}" data-plv="${ST.plView?'off':'on'}">👁 ${ST.plView?'PL 눈 끄기':'PL 눈'}</button>${ST.plView?`<select data-plvas title="누구의 눈으로"><option value="">구경 (링크만)</option>${ST.seats.map(x=>`<option value="${esc(x.seat)}" ${x.seat===ST.plAs?'selected':''}>${esc(seatName(x.seat)||x.seat)}</option>`).join('')}</select>`:''}</span>`:'';
   const cur=tabOf(ST.view)[0];const tabs=TABS.filter(([k])=>k!=='set'||gm()||me()).map(t=>`<button data-v="${t[0]===cur?ST.view:subGet(t)}" data-tab="${t[0]}" class="${t[0]===cur?'on':''}">${t[1]}</button>`).join('');
-  top.innerHTML=`<a class="back" href="#" data-lobby>← 캠페인</a><h1 class="camp name"><b>${esc(c.name||'…')}</b>${c.data&&c.data.sub?`<small>${esc(c.data.sub)}</small>`:''}</h1>${role}<nav class="tabs" id="sceneTabs">${tabs}</nav><span class="sp"></span>
+  top.innerHTML=`<a class="back" href="#" data-lobby>← 캠페인</a><h1 class="camp name"><b>${esc(c.name||'…')}</b>${c.data&&c.data.sub?`<small>${esc(c.data.sub)}</small>`:''}</h1>${role}<nav class="tabs" id="sceneTabs">${tabs}</nav><span class="sp"></span>${plv}<button type="button" class="btn xs ghost srchbtn" data-search title="전체 검색 (/)">🔍</button>
    ${(()=>{const r=((c.data||{}).om||{}).room;return r&&window.NT_LINK?`<a class="btn xs omgo" href="${esc(NT_LINK.omUrl(r))}" target="oremas" rel="noopener" title="이 캠페인과 이어진 웹툴 방 열기">🎲 웹툴</a>${gm()&&window.NT_PHONE&&NT_PHONE.openDc?'<button type="button" class="btn xs omgo" data-dcset title="이어 둔 웹툴 방의 디스코드 연동 — 학교 게시판 · 시트 카드가 가는 스레드 (GM)">🔗 디스코드</button>':''}`:''})()}${window.NT_NOTICE?NT_NOTICE.bellHtml():''}<button type="button" class="favtop" data-favdrawer title="즐겨찾기">★</button><span id="ntLive" class="live ${ST.online?'on':''}" title="${ST.online?'실시간 연결됨':'연결 중…'}"></span>${!ST.role&&ST.acct==='pl'&&window.NT_ACCT?'<button class="btn xs pri" data-seatpick title="빈 PC 시트를 골라 앉아요">🪑 자리 앉기</button>':''}${!ST.role?`<button class="btn xs" data-login>${window.NT_ACCT&&NT_ACCT.tok()?'비밀구':'로그인'}</button>`:String(ST.secret).startsWith('u:')&&window.NT_ACCT?`<button class="btn xs ghost acmebtn" data-acme title="웹툴과 같은 계정 · 로그아웃">${esc(NT_ACCT.myName()||'계정')}</button>`:'<button class="btn xs ghost" data-logout title="이 브라우저에서 비밀구 지우기">나가기</button>'}
    <span class="vtsw compact"><button type="button" class="vtcur">${(VT.find(x=>x[0]===vtGet())||[])[1]}<i>▾</i></button><span class="vtmenu">${VT.map(([k,l])=>`<button type="button" data-vt="${k}" class="${k===vtGet()?'on':''}">${l}</button>`).join('')}</span></span>`;
   top.onclick=e=>{const t=e.target;const b=t.closest('button[data-v]');if(b){go(b.dataset.v);return}
    if(t.closest('[data-lobby]')){e.preventDefault();leave();return}
+   if(t.closest('[data-search]')){if(window.NT_SEARCH)NT_SEARCH.open();return}
+   const pv=t.closest('[data-plv]');if(pv){plViewSet(pv.dataset.plv==='on',ST.plAs);return}
    if(t.closest('[data-dcset]')){if(window.NT_PHONE&&NT_PHONE.openDc)NT_PHONE.openDc();return}
    if(t.closest('[data-login]'))return window.NT_ACCT&&!NT_ACCT.tok()?NT_ACCT.loginModal():loginBox();   /* 10-29: 로그인 안 했으면 계정 로그인(비밀구는 그 창 아래), 계정은 있는데 권한이 없으면 비밀구 */
    if(t.closest('[data-acme]'))return NT_ACCT.meMenu();
@@ -220,6 +234,7 @@ window.NT=(()=>{
    if(t.closest('[data-logout]')){try{localStorage.removeItem(SK(ST.camp))}catch(x){}ST.secret='';ST.role=null;open(ST.camp);return}
    const v=t.closest('button[data-vt]');if(v){vtSet(v.dataset.vt);return}
    if(t.closest('.vtcur')){const s=t.closest('.vtsw');s.classList.toggle('open');return}};
+  const pas=$('[data-plvas]',top);if(pas)pas.onchange=()=>plViewSet(true,pas.value);
   if(!window._vtswBound){window._vtswBound=1;document.addEventListener('pointerdown',ev=>{if(!ev.target.closest('.vtsw'))$$('.vtsw.open').forEach(x=>x.classList.remove('open'))},{capture:true})}}
  function go(v){ST.view=VIEWS.some(x=>x[0]===v)?v:'map';setHash();render();try{localStorage.setItem('nt_view',ST.view)}catch(e){}}
 
@@ -247,7 +262,7 @@ window.NT=(()=>{
 
  async function open(camp,view){const q=readHash();ST.camp=camp;let sec='';try{sec=localStorage.getItem(SK(camp))||''}catch(e){}
   const given=q.gm||q.pl;if(given){sec=given;try{localStorage.setItem(SK(camp),sec)}catch(e){}cleanQuery()}
-  ST.secret=sec;ST.role=null;ST.view=view||q.view||(()=>{try{return localStorage.getItem('nt_view')}catch(e){return ''}})()||'map';if(!VIEWS.some(x=>x[0]===ST.view))ST.view='map';
+  ST.secret=sec;ST.role=null;ST.plView=false;ST.plAs='';document.body.classList.remove('plview');ST.view=view||q.view||(()=>{try{return localStorage.getItem('nt_view')}catch(e){return ''}})()||'map';if(!VIEWS.some(x=>x[0]===ST.view))ST.view='map';
   const app=$('#app');app.innerHTML='<div class="lobby dim">캠페인을 여는 중…</div>';
   try{if(!ST.camps.length)ST.camps=await DBS().camps();ST.campInfo=ST.camps.find(c=>c.id===camp)||null;if(!ST.campInfo){toast('없는 캠페인이에요');ST.camp='';setHash();return render()}campLook(ST.campInfo);
    /* 10-29 계정: 링크로 받은 비밀구가 없으면 계정(웹툴과 같은 로그인) 권한을 먼저 — 권한이 없으면 저장된 비밀구 */
@@ -259,12 +274,12 @@ window.NT=(()=>{
    await loadAll();if(window.NT_MAKER)NT_MAKER.load().then(()=>render()).catch(()=>{});
    setHash();app.innerHTML='';render();listen();if(window.NT_ACCT)NT_ACCT.afterOpen()}
   catch(e){app.innerHTML=`<div class="empty">열지 못했어요: ${esc(e.message)} <button class="btn sm" onclick="NT.leave()">캠페인 목록</button></div>`}}
- function leave(){clearTimeout(cacheT);if(unsub){unsub();unsub=null}ST.camp='';ST.role=null;ST.campInfo=null;campLook(null);for(const k in D)delete D[k];setHash();render()}
+ function leave(){clearTimeout(cacheT);if(unsub){unsub();unsub=null}ST.camp='';ST.role=null;ST.plView=false;ST.plAs='';document.body.classList.remove('plview');ST.campInfo=null;campLook(null);for(const k in D)delete D[k];setHash();render()}
  async function refreshCamp(){try{ST.camps=await DBS().camps();ST.campInfo=ST.camps.find(c=>c.id===ST.camp)||ST.campInfo;campLook(ST.campInfo)}catch(e){}try{ST.seats=await DBS().seats(ST.camp)||[]}catch(e){}render()}
 
  window.addEventListener('hashchange',()=>{const q=readHash();if(q.camp!==ST.camp){if(q.camp)open(q.camp,q.view);else leave()}else if(q.view&&q.view!==ST.view)go(q.view)});
  window.addEventListener('DOMContentLoaded',()=>{const q=readHash();if(q.camp)open(q.camp,q.view);else render()});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&ST.camp)resync()});
 
- return {loginBox,ST,D,SYNC,$,$$,esc,uid,clone,cssu,gm,me,canSee,canEdit,toast,openModal,closeModal,confirmBox,promptBox,armDraft,sortable,reorder,ctxMenu,bindCtx,pinch,doc,data,list,put,patch,del,putMany,bulkVis,bulkBtns,BULKF,upload,shrink,bindDrop,visSelect,visBadge,visLabel,seatName,render,go,open,leave,refreshCamp,resync,MOD,VIEWS,TABS,DBS,VT,SKINS,skin};
+ return {loginBox,ST,D,SYNC,$,$$,esc,uid,clone,cssu,gm,me,realGm,plViewSet,canSee,canEdit,toast,openModal,closeModal,confirmBox,promptBox,armDraft,sortable,reorder,ctxMenu,bindCtx,pinch,doc,data,list,put,patch,del,putMany,campPatch,bulkVis,bulkBtns,BULKF,upload,shrink,bindDrop,visSelect,visBadge,visLabel,seatName,render,go,open,leave,refreshCamp,resync,MOD,VIEWS,TABS,DBS,VT,SKINS,skin};
 })();
