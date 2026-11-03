@@ -203,10 +203,10 @@ window.NT=(()=>{
  /* ----- 테마 (오레마스 vtheme.js 와 같은 키 om_vt 를 써서 두 툴이 같은 테마) ----- */
  /* 10-29 망령: 망각(mm) 테마 추가. 캠페인 설정의 「기본 테마」(data.theme)가 있으면 그 캠페인을 여는 동안 그 테마로 보여 준다 — 위 띠에서 다른 테마를 고르면 그걸 따른다(이 브라우저에 남는 내 테마는 그대로).
     「꾸밈」(data.skin)은 캠페인 분위기 장식: univ = 대학(학생증 PC 시트 · 도서 목록 카드 항목 · 도면 지도). html[data-skin] 으로 css/skin.css 가 덮는다 */
- const VT=[['p5','P5'],['p3','P3'],['p4','P4'],['mm','망각'],['cd','칼데아'],['cdn','칼데아 밤']];   /* 11-04 망령: 칼데아(cd · 낮) · 칼데아 밤(cdn) 테마 — css/chaldea.css (웹툴에는 없어서 웹툴은 P4 로 보임) */
+ const VT=[['p5','P5'],['p3','P3'],['p4','P4'],['mm','망각'],['cd','칼데아']];   /* 11-04 망령: 칼데아(cd) 테마 — css/chaldea.css · 「칼데아 밤을 칼데아로」 — 예전 cdn 은 cd 로 읽는다 (웹툴에는 없어서 웹툴은 P4 로 보임) */
  const SKINS=[['','없음'],['univ','대학 (학생증 · 도서 목록 카드 · 도면)']];
  let vtCamp='';
- const vtMine=()=>{try{const v=localStorage.getItem('om_vt');return VT.some(x=>x[0]===v)?v:'p4'}catch(e){return 'p4'}};
+ const vtMine=()=>{try{let v=localStorage.getItem('om_vt');if(v==='cdn')v='cd';return VT.some(x=>x[0]===v)?v:'p4'}catch(e){return 'p4'}};
  const vtGet=()=>vtCamp||vtMine();
  const vtApply=()=>document.documentElement.setAttribute('data-vt',vtGet());
  const vtSet=v=>{vtCamp='';try{localStorage.setItem('om_vt',v)}catch(e){}vtApply();render()};
