@@ -26,6 +26,7 @@
 .fm-n.st-now{box-shadow:0 0 0 2px var(--c),0 4px 18px rgba(0,0,0,.4)}
 .fm-n.st-now .fm-m em{border-color:var(--c);color:var(--fg)}
 .fm-n.st-done,.fm-n.st-skip{opacity:.62}
+.fm-n.hid{border-style:dashed;border-top-style:solid}   /* 11-03: 비공개 루트의 단계 (발표 모드에선 숨김) */
 .fm-n.st-fail .fm-m em{border-color:var(--red);color:var(--red2)}
 .fm-port{position:absolute;right:-8px;top:50%;width:14px;height:14px;margin-top:-7px;border-radius:50%;background:var(--bg);border:2px solid var(--yel2);cursor:crosshair;opacity:.55}
 .fm-n:hover .fm-port,.fm.linking .fm-port{opacity:1}

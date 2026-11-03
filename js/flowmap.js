@@ -18,6 +18,8 @@ window.NT_FLOWMAP=(()=>{
   for(const r of R){(r.steps||[]).forEach((s,i)=>{const fx=Number.isFinite(+s.fx)&&s.fx!==''&&s.fx!=null,fy=Number.isFinite(+s.fy)&&s.fy!==''&&s.fy!=null;
     out.push({k:keyOf(r,s,i),r,s,i,x:fx?+s.fx:X0+i*GX,y:fy?+s.fy:Y0+row*GY,auto:!(fx&&fy)})});if((r.steps||[]).length)row++}
   return out}
+ /* 11-03 감우 「흐름도 열 때 자동 맞춤」: 탭 · 보기를 바꿔 새로 열 때(FRESH) 한 번 맞춘다. 같은 화면 안의 다시 그리기(카드 옮김 · 실시간)에는 판 위치를 그대로 */
+ let FRESH=true;const markFresh=()=>{FRESH=true};
  const ensuring=new Set();
  async function ensureSids(R){if(!N().gm())return;for(const r of R){if(!(r.steps||[]).some(s=>!s.sid)||ensuring.has(r.id))continue;ensuring.add(r.id);
   try{await N().patch('routes',r.id,x=>{(x.steps||[]).forEach(s=>{if(!s.sid)s.sid=N().uid('s')})})}finally{ensuring.delete(r.id)}}}
@@ -26,7 +28,7 @@ window.NT_FLOWMAP=(()=>{
   <div class="fm-tools"><button type="button" class="btn xs" data-fm="out" title="작게">−</button><button type="button" class="btn xs" data-fm="fit" title="한눈에">맞춤</button><button type="button" class="btn xs" data-fm="in" title="크게">＋</button>${N().gm()?'<button type="button" class="btn xs ghost" data-fm="auto" title="모든 카드를 루트마다 한 줄로 다시 놓아요">다시 줄 세우기</button>':''}</div>
   <div class="fm-help small dim">${N().gm()?'카드 끌기 = 옮기기 · 카드 오른쪽 점을 끌어 다른 카드에 놓기 = 갈림길 선 · 선 누르기 = 이름 · 지우기 · 빈 곳 끌기 = 판 옮기기 · 휠 = 확대':'빈 곳 끌기 = 판 옮기기 · 휠 = 확대 · 카드 누르기 = 읽기'}</div></div>`}
  function nodeHtml(n,G){const r=n.r,s=n.s,c=r.color||'#888';const sp=s.spot?spotName(s.spot):'';const ne=(s.ents||[]).length;
-  return `<div class="fm-n st-${s.st||'none'}" data-k="${esc(n.k)}" style="left:${n.x}px;top:${n.y}px;--c:${esc(c)}"><div class="fm-h"><i></i><span>${esc(r.name||'루트')}</span><b>${n.i+1}</b></div>
+  return `<div class="fm-n st-${s.st||'none'} ${r._vis&&r._vis!=='pub'?'hid':''}" data-k="${esc(n.k)}" style="left:${n.x}px;top:${n.y}px;--c:${esc(c)}"><div class="fm-h"><i></i><span>${esc(r.name||'루트')}</span><b>${n.i+1}</b></div>
    <div class="fm-t">${esc(s.title||sp||'(단계)')}</div>
    <div class="fm-m">${sp&&s.title?`<span>📍 ${esc(sp)}</span>`:''}${s.read?'<span title="낭독 · 묘사가 있어요">❝</span>':''}${ne?`<span title="등장 항목">👤${ne}</span>`:''}${s.st?`<em>${STL[s.st]||''}</em>`:''}</div>
    ${G?'<span class="fm-port" title="끌어서 다른 카드에 놓으면 선이 이어져요"></span>':''}</div>`}
@@ -53,7 +55,7 @@ window.NT_FLOWMAP=(()=>{
   function fit(){if(!fm.isConnected||!fm.clientWidth)return;const B=NS.map(box);if(!B.length){v.x=20;v.y=20;v.z=1;apply();return}const x0=Math.min(...B.map(b=>b.x))-40,y0=Math.min(...B.map(b=>b.y))-40,x1=Math.max(...B.map(b=>b.x+b.w))+40,y1=Math.max(...B.map(b=>b.y+b.h))+40;
    const z=Math.max(.25,Math.min(1.2,fm.clientWidth/(x1-x0),fm.clientHeight/(y1-y0)));v.z=z;v.x=(fm.clientWidth-(x1-x0)*z)/2-x0*z;v.y=Math.max(10,(fm.clientHeight-(y1-y0)*z)/2)-y0*z;v.fit=0;apply();saveV()}
   const zoomAt=(z,cx,cy)=>{const z2=Math.max(.25,Math.min(2,z));v.x=cx-(cx-v.x)*z2/v.z;v.y=cy-(cy-v.y)*z2/v.z;v.z=z2;v.fit=0;apply();saveV()};
-  apply();requestAnimationFrame(()=>{if(!fm.isConnected)return;draw();if(v.fit)fit()});
+  apply();requestAnimationFrame(()=>{if(!fm.isConnected)return;draw();if(v.fit||FRESH){fit();FRESH=false}});
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(fm.isConnected)draw()}).catch(()=>{});
   fm.addEventListener('wheel',e=>{e.preventDefault();const r=fm.getBoundingClientRect();zoomAt(v.z*(e.deltaY<0?1.12:1/1.12),e.clientX-r.left,e.clientY-r.top)},{passive:false});
   fm.querySelector('.fm-tools').addEventListener('click',async e=>{const b=e.target.closest('[data-fm]');if(!b)return;e.stopPropagation();const k=b.dataset.fm;const c=[fm.clientWidth/2,fm.clientHeight/2];
@@ -91,5 +93,5 @@ window.NT_FLOWMAP=(()=>{
    md.querySelector('#fmOk').onclick=async()=>{const v2=md.querySelector('#fmL').value.trim();N().closeModal();await N().patch('routes',rid,x=>{const y=(x.links||[]).find(z=>z.a===L.a&&z.b===L.b);if(y)y.label=v2})};
    md.querySelector('#fmDel').onclick=async()=>{N().closeModal();await N().patch('routes',rid,x=>{x.links=(x.links||[]).filter(z=>!(z.a===L.a&&z.b===L.b))})};
    setTimeout(()=>{const i=md.querySelector('#fmL');if(i)i.focus()},30)})}
- return {html,mount};
+ return {html,mount,markFresh};
 })();
