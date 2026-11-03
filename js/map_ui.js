@@ -65,10 +65,11 @@
   const seg=segs(m.id).map(g=>`<line x1="${g.a.x/100*W}" y1="${g.a.y/100*H}" x2="${g.b.x/100*W}" y2="${g.b.y/100*H}" stroke="${esc(g.color)}" stroke-width="${4*k}" stroke-dasharray="${8*k} ${8*k}" opacity=".7"/>`).join('');
   const rp=routePaths(m).map(({r,pts,hidden})=>{const c=esc(r.color||'#e4002b');const d=pts.map((p,i)=>(i?'L':'M')+p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' ');
    const nowI=pts.findIndex(p=>p.st==='now');
-   const lab=pts.length>1?{x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2}:{x:pts[0].x,y:pts[0].y-30*k};
+   /* 11-03 감우: 루트 이름은 선 가운데(건물 위에 겹치던 것) 대신 첫 단계 핀 오른쪽 위 배지로 */
+   const lab={x:pts[0].x,y:pts[0].y};const name=(r.name||'')+(nowI>=0?' ▶':'');const bw=([...name].reduce((a,ch)=>a+(/[\u1100-\u11ff\u3130-\u318f\uac00-\ud7af\u4e00-\u9fff]/.test(ch)?14:8),0)+16)*k;
    return `<g class="rt ${hidden?'hid':''}" data-rid="${esc(r.id)}">${pts.length>1?`<path d="${d}" stroke="#000" stroke-width="${11*k}" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".5"/><path d="${d}" stroke="${c}" stroke-width="${7*k}" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="${hidden?.5:.9}" ${hidden?`stroke-dasharray="${18*k} ${14*k}"`:''}/>`:''}
     ${pts.map((p,i)=>`<circle cx="${p.x}" cy="${p.y}" r="${(p.st==='now'?15:11)*k}" fill="${['done','skip','fail'].includes(p.st)?'#222':c}" stroke="${p.st==='now'?'#fff':'#fff'}" stroke-width="${3*k}" opacity="${['done','skip','fail'].includes(p.st)?.9:1}"/><text x="${p.x}" y="${p.y+4.5*k}" font-size="${12*k}" text-anchor="middle" fill="#fff" font-weight="bold" paint-order="stroke" stroke="#000" stroke-width="${2*k}">${p.i+1}</text>`).join('')}
-    <text x="${lab.x+14*k}" y="${lab.y-10*k}" font-size="${15*k}" fill="${c}" stroke="#000" stroke-width="${4*k}" paint-order="stroke" font-weight="bold">${esc(r.name||'')}${nowI>=0?' ▶':''}</text></g>`}).join('');
+    <g class="rbadge"><rect x="${lab.x+18*k}" y="${lab.y-11*k}" width="${bw}" height="${22*k}" rx="${3*k}" fill="#000" fill-opacity=".78" stroke="${c}" stroke-width="${1.5*k}"/><text x="${lab.x+26*k}" y="${lab.y+5*k}" font-size="${14*k}" fill="${c}" ${hidden?'font-style="italic"':''}>${esc(name)}</text></g></g>`}).join('');
   return `<svg class="maplinks" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${seg}${rp}</svg>`}
  /* 장소에 있는 인물(얼굴 있는 항목)을 핀 옆에 둥근 초상으로 */
  /* 10-30 망령 「배치된 인물 아이콘 좀 더 커도 될듯」: 30 → 42px (휴대폰 22 → 30). 간격은 CSS --mnS */
@@ -90,7 +91,7 @@
    <div class="seg" id="mapKinds"><button data-k="" class="${!U.filter?'on':''}">전체</button>${KINDS.map(([k,,c])=>`<button data-k="${k}" class="${U.filter===k?'on':''}" style="--c:${c}"><i class="kdot"></i>${k}</button>`).join('')}</div>
    ${CL()?CL().chips('map',clsCount(m)):''}
    ${G?`<div class="seg"><button data-mode="sel" class="${U.mode==='sel'?'on':''}">고르기 · 끌기</button><button data-mode="add" class="${U.mode==='add'?'on':''}">＋ 장소 찍기</button>${U.mode==='add'?`<button data-multi class="${U.multi?'on':''}" title="켜 두면 편집 창 없이 계속 찍어요 (Shift+클릭과 같아요)">연속 찍기</button>`:''}</div>`:''}
-   <span class="sp"></span>${G&&omRoom()&&window.NT_LINK&&NT_LINK.omUrl?`<a class="btn sm" href="${esc(NT_LINK.omUrl(omRoom())+'&map='+encodeURIComponent(m.id))}" target="oremas" rel="noopener" title="이어 둔 웹툴 방으로 이 지도를 한 번에 보내고 연동을 켜요 — 그 뒤로 장소 핀 · 루트 · 인물 배치 · PC 위치가 서로 따라가요 (웹툴 GM 이 방을 열어 둔 동안)">🗺 웹툴로 · 연동</a>`:''}${N().bulkBtns('spots',null,'이 지도의 장소')}${U.linkFrom&&N().data('spots',U.linkFrom)?`<span class="note linking">🔗 「${esc(spotNm(U.linkFrom))}」 에서 이을 장소를 누르세요 <button type="button" class="btn xs ghost" data-m="linkcancel">취소 (Esc)</button></span>`:`<span class="note">${sp.length}곳${G?' · Ctrl+휠 확대 · 빈 곳 끌어 이동':' · Ctrl+휠 확대'}</span>`}
+   <span class="sp"></span>${N().presentBtn()}${G&&omRoom()&&window.NT_LINK&&NT_LINK.omUrl?`<a class="btn sm" href="${esc(NT_LINK.omUrl(omRoom())+'&map='+encodeURIComponent(m.id))}" target="oremas" rel="noopener" title="이어 둔 웹툴 방으로 이 지도를 한 번에 보내고 연동을 켜요 — 그 뒤로 장소 핀 · 루트 · 인물 배치 · PC 위치가 서로 따라가요 (웹툴 GM 이 방을 열어 둔 동안)">🗺 웹툴로 · 연동</a>`:''}${N().bulkBtns('spots',null,'이 지도의 장소')}${U.linkFrom&&N().data('spots',U.linkFrom)?`<span class="note linking">🔗 「${esc(spotNm(U.linkFrom))}」 에서 이을 장소를 누르세요 <button type="button" class="btn xs ghost" data-m="linkcancel">취소 (Esc)</button></span>`:`<span class="note">${sp.length}곳${G?' · Ctrl+휠 확대 · 빈 곳 끌어 이동':' · Ctrl+휠 확대'}</span>`}
    ${G?`${maps().length>1?'<button class="btn xs ghost" data-m="maporder" title="지도 순서 바꾸기">지도 순서</button>':''}<button class="btn xs" data-m="mapedit">지도 설정</button><button class="btn xs ghost" data-m="newmap">＋ 지도</button>`:''}</div>
    <div class="split">
     <div class="mapwrap ${U.linkFrom?'linking':''}" id="mapWrap" data-mode="${U.mode}" style="--ar:${m.w&&m.h?(m.h/m.w).toFixed(4):0.66}"><div class="mapinner" id="mapInner" style="transform:translate(${U.px}px,${U.py}px) scale(${U.zoom});${m.w?`aspect-ratio:${m.w}/${m.h}`:''}">
@@ -131,7 +132,14 @@
    ${G&&N().data('sec','spot:'+s.id)?`<div class="gmnote"><b>GM 메모</b><div class="pre">${esc(N().data('sec','spot:'+s.id).t||'')}</div></div>`:''}</div>`;
   return head+body}
 
- function fit(el,m){const w=$('#mapWrap',el);if(!w)return;if(!U.fitDone||U.fitMap!==m.id){U.zoom=1;U.px=0;U.py=0;U.fitDone=true;U.fitMap=m.id;const inner=$('#mapInner',el);inner.style.transform=`translate(0px,0px) scale(1)`}}
+ /* 11-03 감우 「지도 높이가 100dvh-190 고정」: 틀 높이를 그림 비율로(너비 × 세로/가로), 화면보다 길면 화면 높이까지만. 발표 모드는 100dvh 에 그림이 꽉 차게(cover) */
+ function sizeWrap(el,m){const w=$('#mapWrap',el);if(!w||!m)return;const ar=m.w&&m.h?m.h/m.w:.66;const present=document.body.classList.contains('present');const W=w.clientWidth||w.getBoundingClientRect().width;if(!W)return;
+  if(present){w.style.height='';return}const maxH=Math.max(260,innerHeight-(innerWidth<=760?150:190));w.style.height=Math.round(Math.max(innerWidth<=760?220:320,Math.min(W*ar,maxH)))+'px'}
+ function fit(el,m,force){const w=$('#mapWrap',el);if(!w)return;sizeWrap(el,m);if(force||!U.fitDone||U.fitMap!==m.id){const ar=m.w&&m.h?m.h/m.w:.66;const W=w.clientWidth,H=w.clientHeight;const present=document.body.classList.contains('present');
+   /* 기본: 너비 맞춤(zoom 1 · 그림이 틀보다 길면 아래가 잘려 끌어 본다). 발표 모드: 틀을 꽉 채우고 가운데 */
+   let z=1,px=0,py=0;if(present&&W&&H){z=Math.max(1,H/(W*ar));px=(W-W*z)/2;py=(H-W*ar*z)/2}else if(W&&H&&W*ar<H){py=(H-W*ar)/2}
+   U.zoom=z;U.px=px;U.py=py;U.fitDone=true;U.fitMap=m.id;apply(el)}}
+ window.addEventListener('resize',()=>{if(N().ST.view!=='map')return;const el=document.getElementById('ntMain');const m=curMap();if(!el||!m||m.kind==='globe')return;const w=$('#mapWrap',el);if(!w)return;sizeWrap(el,m);if(document.body.classList.contains('present')||U.zoom===1)fit(el,m,true)});
  function apply(el){const inner=$('#mapInner',el);if(inner)inner.style.transform=`translate(${U.px}px,${U.py}px) scale(${U.zoom})`;const w=$('#mapWrap',el);if(w)w.classList.toggle('lbl',U.zoom>=1.8);placePop(el)}
  function bind(el){
   const sel=$('#mapSel',el);if(sel)sel.onchange=()=>{U.map=sel.value;U.sel='';U.fitDone=false;N().render()};
@@ -248,7 +256,7 @@
  async function finishLink(to){const from=U.linkFrom;U.linkFrom='';if(!from||to===from){N().toast('잇기를 그만뒀어요');N().render();return}
   if(linkBetween(from,to)){N().toast('이미 이어져 있어요');N().render();return}
   const ok=await N().put('links',N().uid('l'),{a:from,b:to,note:''},'gm');if(ok)N().toast(`이었어요: ${spotNm(from)} ↔ ${spotNm(to)}`)}
- async function delLink(lid){const l=N().data('links',lid);if(!l)return;if(!await N().confirmBox(`「${spotNm(l.a)||'?'}」 ↔ 「${spotNm(l.b)||'?'}」 연결을 지울까요?`,'지우기'))return;await N().del('links',lid);N().toast('연결을 지웠어요')}
+ async function delLink(lid){const l=N().data('links',lid);if(!l)return;if(!await N().confirmBox(`「${spotNm(l.a)||'?'}」 ↔ 「${spotNm(l.b)||'?'}」 연결을 지울까요?`,'지우기'))return;await N().del('links',lid);N().toastUndo('연결을 지웠어요')}
  /* ---- 우클릭 · 길게 누르기 메뉴 (핀 · 얼굴) ---- */
  function visItems(kind,id){const d=N().doc(kind,id);if(!d)return [];const cur=d.vis||'pub';const o=[['pub','👥 모두에게'],['gm','🔒 GM만']].concat(N().ST.seats.map(x=>['pl:'+x.seat,'👤 '+(N().seatName(x.seat)||x.seat)+' 에게만']));
   return o.map(([v,l])=>({t:'공개 범위: '+l+(v===cur?' ✓':''),on:async()=>{if(v===cur)return;await N().put(kind,id,N().clone(d.data),v);N().toast('공개 범위: '+N().visLabel(v))}}))}
@@ -403,9 +411,9 @@
    for(const cb of $$('#spLinks input[type=checkbox]',md)){const o=cb.value;const had=linkBetween(id,o);if(cb.checked&&!had)await N().put('links',N().uid('l'),{a:id,b:o,note:''},'gm');else if(!cb.checked&&had)for(const l of links().filter(l=>(l.a===id&&l.b===o)||(l.a===o&&l.b===id)))await N().del('links',l.id)}
    N().closeModal()};
   $('#spDel',md).onclick=()=>delSpot(id,true)}
- async function delSpot(id,inModal){const s=N().data('spots',id);if(!s)return;if(!await N().confirmBox(`「${s.name}」 를 지울까요? 이어진 선도 같이 지워져요. (설정 탭 「🗑 최근 지운 것」에서 되살릴 수 있어요)`,'지우기'))return;for(const l of links().filter(l=>l.a===id||l.b===id))await N().del('links',l.id);await N().del('spots',id);if(N().doc('sec','spot:'+id))await N().del('sec','spot:'+id);U.sel='';U.pop=null;if(inModal)N().closeModal();N().toast('지웠어요')}
+ async function delSpot(id,inModal){const s=N().data('spots',id);if(!s)return;if(!await N().confirmBox(`「${s.name}」 를 지울까요? 이어진 선도 같이 지워져요. (설정 탭 「🗑 최근 지운 것」에서 되살릴 수 있어요)`,'지우기'))return;for(const l of links().filter(l=>l.a===id||l.b===id))await N().del('links',l.id);await N().del('spots',id);if(N().doc('sec','spot:'+id))await N().del('sec','spot:'+id);U.sel='';U.pop=null;if(inModal)N().closeModal();N().toastUndo('지웠어요')}
 
  N().MOD.map={render};
- window.NT_MAP={KINDS,selectMap:id=>{U.map=id;U.sel='';U.fitDone=false},select:id=>{const s=N().data('spots',id);if(s){U.map=s.map;U.sel=id;U.fitDone=false;const mm=N().data('maps',s.map);if(mm&&mm.kind==='globe'&&window.NT_GLOBE&&NT_GLOBE.pick)NT_GLOBE.pick(id)}},curMap,spots};
+ window.NT_MAP={fit:()=>{const el=document.getElementById('ntMain');const m=curMap();if(el&&m)fit(el,m,true)},KINDS,selectMap:id=>{U.map=id;U.sel='';U.fitDone=false},select:id=>{const s=N().data('spots',id);if(s){U.map=s.map;U.sel=id;U.fitDone=false;const mm=N().data('maps',s.map);if(mm&&mm.kind==='globe'&&window.NT_GLOBE&&NT_GLOBE.pick)NT_GLOBE.pick(id)}},curMap,spots};
  N().MOD.map=Object.assign(N().MOD.map||{},{editSpot,editMap,curMap,mapSelHtml});
 })();
