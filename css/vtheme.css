@@ -136,12 +136,14 @@ html[data-vt="p4"] .top .name{font-family:'Do Hyeon','Black Han Sans'!important;
 html[data-vt="p4"] .top .badge.gm{background:#111!important;color:#ffe100!important;border:0!important;border-radius:4px!important}
 html[data-vt="p4"] .top .badge:not(.gm):not(.seat){background:#111!important;color:#fff!important;border:0!important;border-radius:4px!important}
 html[data-vt="p4"] .top .small,html[data-vt="p4"] .top #conn,html[data-vt="p4"] .top .presence{color:#111!important}
+html[data-vt="p4"] .top .back{color:#3d3600}html[data-vt="p4"] .top .back:hover{color:#111}   /* 11-03: 「← 캠페인」이 노란 띠에서 안 보이던 것 */
 html[data-vt="p4"] #sceneTabs button{font-family:'Do Hyeon','Black Han Sans'!important;font-size:18px!important;font-weight:400!important;background:transparent!important;color:#5a4f12!important;border:0!important;border-radius:4px 4px 0 0!important;box-shadow:none!important;transform:none!important}
 html[data-vt="p4"] #sceneTabs button.on{background:#111!important;color:#ffe100!important}
 html[data-vt="p4"] .btn{font-family:'Noto Sans KR'!important;font-weight:800!important;background:#111!important;color:#ffe100!important;border:2px solid #ffe100!important;border-radius:4px!important;box-shadow:none!important;transform:none!important}
 html[data-vt="p4"] .btn.ghost{background:#1d1d1d!important;color:#fffbe6!important;border-color:#555!important}
 html[data-vt="p4"] .btn.pri,html[data-vt="p4"] #rpsend{background:#ffe100!important;color:#111!important;border-color:#111!important;box-shadow:3px 3px 0 #ff9a00!important}
 html[data-vt="p4"] .top .btn{background:#111!important;color:#ffe100!important;border-color:#111!important}
+html[data-vt="p4"] .top .morebtn{background:#111!important;color:#ffe100!important}
 html[data-vt="p4"] .top a.btn.ghost{background:transparent!important;color:#111!important;border-color:#111!important}
 html[data-vt="p4"] .rpstage{border:2px solid #ffe100!important;border-radius:4px!important;outline:0!important;background:radial-gradient(at 50% 55%,#3a3410 0,#1a1806 60%,#0b0a03 100%)!important;box-shadow:6px 6px 0 #000!important}
 html[data-vt="p4"] .daytag{background:#ffe100!important;border:0!important;border-radius:4px!important;box-shadow:4px 4px 0 #000!important;padding:2px 12px!important;color:#111!important}
@@ -439,7 +441,7 @@ html[data-vt="mm"] .campcard .cvr{opacity:.22;filter:sepia(.5)}
 html[data-vt="mm"] .campcard b{font-family:'Noto Serif KR',serif;font-weight:900;letter-spacing:.04em}
 html[data-vt="mm"] .newcamp{background:rgba(13,11,9,.85);border:1px solid #2e271d;border-top:1px solid #8f7b52}
 /* 위 띠 */
-html[data-vt="mm"] .top .back{color:#9c8f76;font-family:'Noto Serif KR',serif}
+html[data-vt="mm"] .top .back{color:#cfae6e;font-family:'Noto Serif KR',serif}   /* 11-03: 더 밝게 */
 html[data-vt="mm"] .top .back:hover{color:#f3eadb}
 html[data-vt="mm"] .top .name small{color:#9c8f76!important;font-family:'Noto Sans KR',sans-serif!important;font-weight:400!important;font-size:12px!important;text-shadow:none!important;letter-spacing:0}
 html[data-vt="mm"] .top .badge{background:#0f0d0b;color:#b0a38a;border-color:#3e3426;transform:none}
