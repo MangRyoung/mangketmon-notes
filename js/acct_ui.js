@@ -67,17 +67,23 @@ window.NT_ACCT=(()=>{
     계정으로 캠페인을 열면 서버(nt_join)가 PL 권한(자리 없음)을 준다. 빈 PC 시트를 골라 앉으면(nt_claim 'u:') 그 시트를 고칠 수 있다 */
  function seatPicker(){const S=N().ST;if(!S.camp||!A.tok())return;const mine=S.role&&S.role!=='gm'?S.role:'';
   const taken={};(S.seats||[]).forEach(x=>{if(x.seat!==mine)taken[x.seat]=x.name||'누군가'});
+  /* 11-03: 「모두」 공개된 시트만 앉을 수 있다 · 캠페인 설정이 「GM 승인」이면 요청만 남긴다 (camp.data.claims) */
+  const cd=((S.campInfo||{}).data)||{};const approve=cd.claimMode==='approve';const myUid=(A.get()||{}).uid||'';const pend=(cd.claims||{})[myUid];
   const pcs=N().list('pc').filter(p=>p&&p.id);
   const m=N().openModal(`<div class="mhead"><h2>자리 앉기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
-   <p class="small dim">내 PC 시트를 골라 앉으면 그 시트를 고칠 수 있어요. 다른 사람이 앉은 시트는 고를 수 없어요. 자리를 잘못 골랐으면 위 띠의 내 이름 단추에서 바꿔요.</p>
-   <div class="seatpick">${pcs.map(p=>{const t=taken[p.id];const img=p.image||p.img||'';return `<button type="button" class="seatcard ${p.id===mine?'on':''}" data-st="${esc(p.id)}" ${t?'disabled':''}><span class="sface" style="${img?`background-image:url('${N().cssu(img)}')`:''}"></span><b>${esc(N().seatName(p.id)||p.name||p.id)}</b><small>${p.id===mine?'지금 내 자리':t?esc(t)+' 님이 앉음':'비어 있음'}</small></button>`}).join('')||'<div class="empty">아직 PC 시트가 없어요 — GM 이 시트 탭에 PC 를 넣으면 앉을 수 있어요</div>'}</div>`,'acmodal seatmodal');
-  $$('[data-st]',m).forEach(b=>b.onclick=async()=>{const id=b.dataset.st;if(id===mine)return N().closeModal(true);b.disabled=true;
-   try{const ok=await DB().claim(S.camp,id,'u:'+A.tok(),myName());if(!ok){N().toast('방금 다른 사람이 앉았어요');b.disabled=false;return}
-    N().closeModal(true);N().toast(`「${N().seatName(id)||id}」 자리에 앉았어요`);if(PR)PR.send({uid:(A.get()||{}).uid,camp:S.camp,seat:id});N().open(S.camp,S.view)}
+   <p class="small dim">내 PC 시트를 골라 앉으면 그 시트를 고칠 수 있어요. 다른 사람이 앉은 시트나 아직 공개되지 않은 시트는 고를 수 없어요. 자리를 잘못 골랐으면 위 띠의 내 이름 단추에서 바꿔요.${approve?' <b>이 캠페인은 GM 이 승인한 뒤에 앉아요.</b>':''}</p>
+   ${pend?`<div class="card" style="margin-bottom:8px"><b>⏳ 승인 기다리는 중</b> — <b>${esc(N().seatName(pend.seat)||pend.seat)}</b> 자리를 요청했어요. GM 이 설정 탭에서 승인하면 앉아져요. <button type="button" class="btn xs ghost" data-st="">요청 거두기</button></div>`:''}
+   <div class="seatpick">${pcs.map(p=>{const t=taken[p.id];const img=p.image||p.img||'';const np=p._vis!=='pub';return `<button type="button" class="seatcard ${p.id===mine?'on':''}" data-st="${esc(p.id)}" ${t||np?'disabled':''}><span class="sface" style="${img?`background-image:url('${N().cssu(img)}')`:''}"></span><b>${esc(N().seatName(p.id)||p.name||p.id)}</b><small>${p.id===mine?'지금 내 자리':t?esc(t)+' 님이 앉음':np?'아직 비공개':pend&&pend.seat===p.id?'승인 기다리는 중':'비어 있음'}</small></button>`}).join('')||'<div class="empty">아직 PC 시트가 없어요 — GM 이 시트 탭에 PC 를 넣으면 앉을 수 있어요</div>'}</div>`,'acmodal seatmodal');
+  $$('[data-st]',m).forEach(b=>b.onclick=async()=>{const id=b.dataset.st;if(id&&id===mine)return N().closeModal(true);b.disabled=true;
+   try{const r=await DB().claim2(S.camp,id,'u:'+A.tok(),myName());if(r==='taken'){N().toast('방금 다른 사람이 앉았어요');b.disabled=false;return}
+    N().closeModal(true);
+    if(r==='pending'){N().toast(`「${N().seatName(id)||id}」 자리를 요청했어요 — GM 이 승인하면 앉아져요`);DB().ping(S.camp,{t:'claim',uid:myUid,seat:id,name:myName()});await N().refreshCamp();return}
+    if(r==='up'){N().toast('요청을 거뒀어요');await N().refreshCamp();return}
+    N().toast(`「${N().seatName(id)||id}」 자리에 앉았어요`);if(PR)PR.send({uid:(A.get()||{}).uid,camp:S.camp,seat:id});N().open(S.camp,S.view)}
    catch(e){b.disabled=false;N().toast(errMsg(e))}})}
  /* 캠페인을 연 뒤: 계정 PL 인데 자리가 없고 빈 시트가 있으면, 이 탭에서 캠페인마다 한 번 자리 고르기를 띄운다 */
  function afterOpen(){const S=N().ST;if(S.role||S.acct!=='pl'||!A.tok())return;const k='nt_seatask_'+S.camp;try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(e){}
-  const taken=new Set((S.seats||[]).map(x=>x.seat));if(N().list('pc').some(p=>p&&p.id&&!taken.has(p.id)))seatPicker()}
+  const taken=new Set((S.seats||[]).map(x=>x.seat));const cd=((S.campInfo||{}).data)||{};if((cd.claims||{})[(A.get()||{}).uid||''])return;if(N().list('pc').some(p=>p&&p.id&&p._vis==='pub'&&!taken.has(p.id)))seatPicker()}
 
  /* ----- 대기실 막대 · 캠페인 카드 표시 ----- */
  function lobbyBar(){if(!on())return '';const a=A.get();
