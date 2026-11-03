@@ -193,3 +193,43 @@ html[data-vt="cdn"] .seg button.on{background:#fff!important;color:#06121f!impor
 html[data-vt="cdn"] .chip{background:rgba(4,10,22,.85)!important;border-color:rgba(235,244,255,.5)!important}
 html[data-vt="cdn"] .globeview{border-color:rgba(235,244,255,.6)}
 html[data-vt="cdn"] ::selection{background:rgba(95,210,255,.35);color:#fff}
+
+/* ======================================================================
+   칼데아 카드키 신분증 — 11-04 망령 「신분증을 바코드를 빼고 위에 칼데아 문양 · 회사에서 쓰는 가로 카드키 느낌 · 아까 빼두었던 하얗고 파란 테마색을 여기에」
+   자료 탭 인물 카드(.enti.eid · js/ents_ui.js cardId)를 칼데아 두 테마(cd · cdn)에서만 덮는다 — 다른 테마 · 미사그 학생증은 그대로.
+   흰 카드 · 로열 블루 머리 띠 · 끈 구멍 · IC 칩 · 아래 파란 줄. 바코드는 숨기고 방패 문장 대신 칼데아 문장.
+   ====================================================================== */
+html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid{--ink:#0b1a2e;--ink2:#30476a;--ink3:#6b7f99;--hd1:#1c63d6;--hd2:#0f3f8f;--gold:#cfe3ff;--seal:#1c63d6;position:relative;border-radius:14px;
+  background:repeating-linear-gradient(118deg,rgba(28,99,214,.035) 0 1px,transparent 1px 9px),linear-gradient(160deg,#ffffff,#f1f6fd);
+  box-shadow:0 0 0 1px #c9d6ea,0 6px 16px rgba(10,30,70,.18);font-family:'IBM Plex Sans KR','Noto Sans KR',sans-serif}
+html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid.eid-staff,html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid.eid-gen,html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid.eid-stu{--hd1:#1c63d6;--hd2:#0f3f8f}
+html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid::before{content:"";position:absolute;top:6px;left:50%;width:36px;height:6px;margin-left:-18px;border-radius:4px;background:rgba(255,255,255,.55);box-shadow:inset 0 1px 2px rgba(0,0,0,.35);z-index:2;pointer-events:none}
+html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:linear-gradient(90deg,#1c63d6,#5fd2ff);pointer-events:none}
+html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid:hover{box-shadow:0 0 0 1px #1c63d6,0 10px 22px rgba(10,30,70,.28)}
+html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid.on{box-shadow:0 0 0 2px #1c63d6,0 0 0 5px rgba(95,210,255,.55),0 10px 22px rgba(10,30,70,.28)}
+html:is([data-vt="cd"],[data-vt="cdn"]) .eid-h{padding:16px 12px 8px;background:linear-gradient(90deg,#1c63d6,#0f3f8f);color:#fff;border-bottom:0}
+html:is([data-vt="cd"],[data-vt="cdn"]) .eid-cr{width:22px;height:22px;background:url("../img/chaldea_emblem_w.png") center/contain no-repeat}
+html:is([data-vt="cd"],[data-vt="cdn"]) .eid-cr svg{display:none}
+html:is([data-vt="cd"],[data-vt="cdn"]) .eid-o b{font-family:'IBM Plex Sans KR','Noto Sans KR',sans-serif;font-weight:700;letter-spacing:.1em;color:#fff}
+html:is([data-vt="cd"],[data-vt="cdn"]) .eid-o small{font-family:'IBM Plex Sans KR','Noto Sans KR',sans-serif;letter-spacing:.14em;color:rgba(255,255,255,.78)}
+html:is([data-vt="cd"],[data-vt="cdn"]) .eid-k{font-family:'IBM Plex Sans KR','Noto Sans KR',sans-serif;font-weight:800;color:#fff}
+html:is([data-vt="cd"],[data-vt="cdn"]) .eid-k small{font-family:'IBM Plex Mono',monospace;font-weight:500;letter-spacing:.18em;color:#cfe3ff}
+html:is([data-vt="cd"],[data-vt="cdn"]) .eid-b{padding:12px 12px 6px}
+html:is([data-vt="cd"],[data-vt="cdn"]) .eid-p{border:2px solid #fff;outline:0;border-radius:6px;box-shadow:0 0 0 1px #c9d6ea,0 2px 6px rgba(10,30,70,.15);filter:none;background-color:#e8eef7}
+html:is([data-vt="cd"],[data-vt="cdn"]) .eid-p.noimg{color:#1c63d6;font-family:'IBM Plex Sans KR','Noto Sans KR',sans-serif;background:repeating-linear-gradient(135deg,#eef3fa 0 7px,#e3ebf6 7px 14px)}
+html:is([data-vt="cd"],[data-vt="cdn"]) .eid-l{font-family:'IBM Plex Sans KR','Noto Sans KR',sans-serif;color:#6b7f99;letter-spacing:.08em}
+html:is([data-vt="cd"],[data-vt="cdn"]) .eid-n{font-family:'IBM Plex Sans KR','Noto Sans KR',sans-serif;font-weight:800;color:#0b1a2e;letter-spacing:.01em}
+html:is([data-vt="cd"],[data-vt="cdn"]) .eid-v{color:#1d2f4a;border-bottom:1px solid #e1e9f4}
+html:is([data-vt="cd"],[data-vt="cdn"]) .eid-no{font-family:'IBM Plex Mono',monospace;color:#1c63d6;letter-spacing:.12em}
+html:is([data-vt="cd"],[data-vt="cdn"]) .eid-ft{border-top:1px solid #e3eaf4;padding:6px 0 10px}
+html:is([data-vt="cd"],[data-vt="cdn"]) .eid-bar{display:none}
+html:is([data-vt="cd"],[data-vt="cdn"]) .eid-ft::before{content:"";flex:none;width:30px;height:22px;border-radius:4px;border:1px solid #b89a4e;
+  background:linear-gradient(90deg,transparent 30%,rgba(120,90,30,.45) 30% 33%,transparent 33% 67%,rgba(120,90,30,.45) 67% 70%,transparent 70%),linear-gradient(transparent 45%,rgba(120,90,30,.45) 45% 55%,transparent 55%),linear-gradient(135deg,#f3dd9a,#c9a352 55%,#ead08a)}
+html:is([data-vt="cd"],[data-vt="cdn"]) .eid-tg em{border-color:#c9d6ea;color:#30476a;background:#f2f6fc}
+html:is([data-vt="cd"],[data-vt="cdn"]) .eid-ft .lki{color:#30476a}
+html:is([data-vt="cd"],[data-vt="cdn"]) .eid-seal{width:auto;height:auto;padding:2px 7px;border:1.5px solid #1c63d6;border-radius:4px;transform:none;opacity:1;color:#1c63d6;font:700 10px/1.3 'IBM Plex Sans KR','Noto Sans KR',sans-serif;letter-spacing:.12em}
+html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid.big .eid-h{padding:20px 16px 10px}
+html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid.big .eid-cr{width:32px;height:32px}
+html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid.big::before{width:46px;margin-left:-23px;height:7px;top:7px}
+html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid.big .eid-ft::before{width:40px;height:30px}
+html:is([data-vt="cd"],[data-vt="cdn"]) .enti.eid.big .eid-seal{font-size:12px;padding:3px 9px}
