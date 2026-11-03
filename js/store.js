@@ -6,7 +6,8 @@
      put(camp,secret,kind,id,data,vis) → updated_at · del · putMany(camp,secret,rows)
      uploadImage(path,blob) → 공개 주소 · subscribe(camp,{onDoc,onDel,onPing}) → 해제 함수 · ping(camp,msg)
      makerDocs(kind) → 제작기 문서 [{id,data}]
-     acct.{login,signup,logout,me,campNew,adminList,adminMember} · online(key,info,{onSync,onRole}) — 10-29 계정 · 접속자 (공유 DB 일 때만) */
+     acct.{login,signup,logout,me,campNew,adminList,adminMember} · online(key,info,{onSync,onRole}) — 10-29 계정 · 접속자 (공유 DB 일 때만)
+     campPatch(camp,secret,patch,name) · claim2 · claimDecide · history(camp,secret,kind,id,limit) · deleted(camp,secret,since) · omBroadcast — 11-03 (patch_2026-11-03_노트.sql · 없으면 예전 방식) */
 "use strict";
 window.NT_STORE=(()=>{
  const cfg=()=>window.NT_CONFIG||{};
@@ -15,6 +16,10 @@ window.NT_STORE=(()=>{
  const sb=()=>{if(!client)client=window.supabase.createClient(cfg().supabaseUrl,cfg().supabaseKey,{realtime:{params:{eventsPerSecond:5}}});return client};
  const err=e=>{const m=(e&&(e.message||e.details))||String(e);const x=new Error(m.replace(/^.*?:\s*/,''));x.raw=e;return x};
  async function rpc(fn,args){const r=await sb().rpc(fn,args);if(r.error)throw err(r.error);return r.data}
+ const noFn=e=>/PGRST202|Could not find the function|does not exist|schema cache/i.test(String((e&&(e.message||e.code))||''));
+ const isObj=x=>x&&typeof x==='object'&&!Array.isArray(x);
+ /* nt_camp_patch 와 같은 규칙: 객체는 안쪽까지 합치고, null 은 그 칸을 지우고, 배열은 통째로 */
+ function deepMerge(a,b){if(!isObj(b))return b;const r=Object.assign({},isObj(a)?a:{});for(const k in b){const v=b[k];if(v===null)delete r[k];else if(isObj(v)&&isObj(r[k]))r[k]=deepMerge(r[k],v);else r[k]=v}return r}
 
  /* ===== Supabase ===== */
  const S={
@@ -24,10 +29,19 @@ window.NT_STORE=(()=>{
   whoami:(camp,secret)=>secret?rpc('nt_whoami',{p_camp:camp,p_secret:secret}):Promise.resolve(null),
   campUpdate:(camp,secret,name,data)=>rpc('nt_camp_update',{p_camp:camp,p_secret:secret,p_name:name==null?null:name,p_data:data==null?null:data}),
   campDel:(camp,secret)=>rpc('nt_camp_del',{p_camp:camp,p_secret:secret}),
+  /* 11-03 감우: 캠페인 설정을 칸 단위로 합친다 (nt_camp_patch · 깊은 합치기 · null 이면 그 칸 지움). 함수가 없으면 지금 DB 값을 받아 여기서 합친 뒤 통째 쓰기 */
+  async campPatch(camp,secret,patch,name){const r=await sb().rpc('nt_camp_patch',{p_camp:camp,p_secret:secret,p_patch:patch||{},p_name:name==null?null:name});if(!r.error)return r.data;if(!noFn(r.error))throw err(r.error);
+   const c=await sb().from('nt_camp').select('data').eq('id',camp).maybeSingle();if(c.error)throw err(c.error);const d=deepMerge((c.data&&c.data.data)||{},patch||{});await this.campUpdate(camp,secret,name==null?null:name,d);return d},
   gmSecret:(camp,secret,nw)=>rpc('nt_gm_secret',{p_camp:camp,p_secret:secret,p_new:nw}),
   seats:camp=>rpc('nt_seats',{p_camp:camp}),
   seatSet:(camp,secret,seat,pl,name)=>rpc('nt_seat_set',{p_camp:camp,p_secret:secret,p_seat:seat,p_pl_secret:pl,p_name:name||''}),
   claim:(camp,seat,secret,name)=>rpc('nt_claim',{p_camp:camp,p_seat:seat,p_secret:secret,p_name:name||''}),
+  /* 11-03: 자리 앉기 2 — 'ok' | 'taken' | 'pending'(GM 승인 대기) | 'up'. 함수가 없으면 예전 nt_claim (true → ok · false → taken) */
+  async claim2(camp,seat,secret,name){const r=await sb().rpc('nt_claim2',{p_camp:camp,p_seat:seat,p_secret:secret,p_name:name||''});if(!r.error)return r.data;if(!noFn(r.error))throw err(r.error);const ok=await this.claim(camp,seat,secret,name);return ok?(seat?'ok':'up'):'taken'},
+  claimDecide:(camp,secret,uid,ok)=>rpc('nt_claim_decide',{p_camp:camp,p_secret:secret,p_uid:uid,p_ok:!!ok}),
+  /* 11-03: 변경 이력 · 휴지통 (patch_2026-11-03_노트.sql). 함수가 없으면 null */
+  async history(camp,secret,kind,id,limit){const r=await sb().rpc('nt_history',{p_camp:camp,p_secret:secret,p_kind:kind,p_id:id,p_limit:limit||20});if(!r.error)return r.data||[];if(noFn(r.error))return null;throw err(r.error)},
+  async deleted(camp,secret,since){const r=await sb().rpc('nt_deleted',{p_camp:camp,p_secret:secret,p_since:since||null});if(!r.error)return r.data||[];if(noFn(r.error))return null;throw err(r.error)},
   all:(camp,secret,since)=>rpc('nt_all',{p_camp:camp,p_secret:secret||'',p_since:since||null}),
   ids:(camp,secret)=>rpc('nt_ids',{p_camp:camp,p_secret:secret||''}),
   async get(camp,secret,kind,id){const r=await rpc('nt_get',{p_camp:camp,p_secret:secret||'',p_kind:kind,p_id:id});return (r||[])[0]||null},
@@ -62,7 +76,10 @@ window.NT_STORE=(()=>{
   omLogAdd:(room,secret,kind,who,data)=>rpc('om_log_add',{p_room:room,p_secret:secret,p_kind:kind,p_who:who,p_data:data||{}}),
   omRpc:(fn,args)=>rpc(fn,args),   /* 11-02 망령: 학교 게시판(om_bbs_*) — 웹툴 bbs_ui 가 이 함수로 부른다 */
   async omPut(room,secret,path,value){const args={p_room:room,p_secret:secret,p_path:path,p_value:value===undefined?null:value};const r=await sb().rpc('om_put',args);if(!r.error)return r.data;if(/PGRST202|Could not find the function|does not exist/i.test(String(r.error.message||r.error.code||'')))return rpc('om_set_state',args);throw err(r.error)},
-  omSub(room,onLog){const ch=sb().channel('ntom:'+room).on('postgres_changes',{event:'INSERT',schema:'public',table:'om_log',filter:'room=eq.'+room},p=>{try{if(p.new)onLog(p.new)}catch(e){}}).subscribe();return ()=>{try{sb().removeChannel(ch)}catch(e){}}},
+  /* 11-03: 웹툴과 같은 채널('om:'+방)에 붙어 문자 줄(om_log)과 웹툴의 신호(broadcast 'ev' — 게시판 새 글 등)를 같이 받고, 거꾸로 신호도 보낸다(omBroadcast) */
+  omSub(room,onLog,onEvent){const ch=sb().channel('om:'+room,{config:{broadcast:{self:false}}}).on('postgres_changes',{event:'INSERT',schema:'public',table:'om_log',filter:'room=eq.'+room},p=>{try{if(p.new)onLog(p.new)}catch(e){}})
+   .on('broadcast',{event:'ev'},p=>{try{if(onEvent&&p.payload)onEvent(p.payload)}catch(e){}}).subscribe();S._om=S._om||{};S._om[room]=ch;return ()=>{try{if(S._om&&S._om[room]===ch)delete S._om[room];sb().removeChannel(ch)}catch(e){}}},
+  omBroadcast(room,payload){try{const ch=S._om&&S._om[room];if(ch)ch.send({type:'broadcast',event:'ev',payload})}catch(e){}},
   /* 로그 정리기 보관소 (kind mtlog): 목록은 제목 · 폴더 · 줄 수 · 날짜 · 세션 정보만 (본문은 안 받는다) */
   async mtlogIndex(){const r=await sb().from(cfg().makerTable||'docs').select('id,title:data->>title,folder:data->>folder,count:data->>count,created:data->>created,updated:data->>updated,meta:data->meta').eq('kind','mtlog').order('id');if(r.error)throw err(r.error);return r.data||[]},
   async mtlogMeta(){const r=await sb().from(cfg().makerTable||'docs').select('id,data').eq('kind','mtlogmeta');if(r.error)throw err(r.error);return r.data||[]},
@@ -91,6 +108,12 @@ window.NT_STORE=(()=>{
   async whoami(camp,secret){return this._who(camp,secret)},
   async campUpdate(camp,secret,name,data){const c=this._load().camps[camp];if(!c)throw new Error('없는 캠페인');if(name!=null)c.name=name;if(data!=null)c.data=data;c.updated_at=new Date().toISOString();this._save();return true},
   async campDel(camp){const d=this._load();delete d.camps[camp];delete d.auth[camp];delete d.docs[camp];this._save();return true},
+  async campPatch(camp,secret,patch,name){const c=this._load().camps[camp];if(!c)throw new Error('없는 캠페인');c.data=deepMerge(c.data||{},patch||{});if(name!=null)c.name=name;c.updated_at=new Date().toISOString();this._save();return c.data},
+  async claim2(camp,seat,secret,name){const ok=await this.claim(camp,seat,secret,name);return ok?(seat?'ok':'up'):'taken'},
+  async claimDecide(){return true},
+  async history(camp,secret,kind,id){const L=(this._hist||{})[camp+'/'+kind+'/'+id]||[];return L.slice().reverse()},
+  async deleted(camp){const out=[];const D=this._load().docs[camp]||{};for(const [k,L] of Object.entries(this._hist||{})){const [c,kind,id]=k.split('/');if(c!==camp||D[kind+'/'+id])continue;const last=L[L.length-1];if(last&&last.op==='DELETE')out.push({hid:L.length,kind,id,at:last.at,vis:last.vis,data:last.data})}return out},
+  _histPush(camp,kind,id,x,op){if(!x)return;this._hist=this._hist||{};const k=camp+'/'+kind+'/'+id;(this._hist[k]=this._hist[k]||[]).push({op,at:new Date().toISOString(),vis:x.vis,data:x.data})},
   async gmSecret(camp,secret,nw){this._load().auth[camp].gm=nw;this._save();return true},
   async seats(camp){const a=this._load().auth[camp]||{};return Object.entries(a.pl||{}).map(([seat,v])=>({seat,name:v.name||''}))},
   async seatSet(camp,secret,seat,pl,name){const a=this._load().auth[camp];a.pl=a.pl||{};if(pl==null)delete a.pl[seat];else a.pl[seat]={secret:pl,name:name||''};this._save();return true},
@@ -98,8 +121,8 @@ window.NT_STORE=(()=>{
   async all(camp,secret,since){const w=this._who(camp,secret);return Object.values(this._load().docs[camp]||{}).filter(x=>this._see(w,x.vis)&&(!since||x.updated_at>since))},
   async ids(camp,secret){return (await this.all(camp,secret)).map(x=>({kind:x.kind,id:x.id}))},
   async get(camp,secret,kind,id){const w=this._who(camp,secret);const x=(this._load().docs[camp]||{})[kind+'/'+id];return x&&this._see(w,x.vis)?x:null},
-  async put(camp,secret,kind,id,data,vis){const w=this._who(camp,secret);if(!w)throw new Error('비밀구가 맞지 않습니다');const D=this._load().docs[camp]=this._load().docs[camp]||{};const cur=D[kind+'/'+id];const v=vis||(cur?cur.vis:'pub');const t=new Date().toISOString();D[kind+'/'+id]={kind,id,data:JSON.parse(JSON.stringify(data)),vis:v,updated_at:t};this._save();setTimeout(()=>L._h&&L._h.onDoc&&L._h.onDoc(kind,id,data,v,t),0);return t},
-  async del(camp,secret,kind,id){const D=this._load().docs[camp]||{};delete D[kind+'/'+id];this._save();setTimeout(()=>L._h&&L._h.onDel&&L._h.onDel(kind,id),0);return true},
+  async put(camp,secret,kind,id,data,vis){const w=this._who(camp,secret);if(!w)throw new Error('비밀구가 맞지 않습니다');const D=this._load().docs[camp]=this._load().docs[camp]||{};const cur=D[kind+'/'+id];const v=vis||(cur?cur.vis:'pub');const t=new Date().toISOString();if(cur)this._histPush(camp,kind,id,cur,'UPDATE');D[kind+'/'+id]={kind,id,data:JSON.parse(JSON.stringify(data)),vis:v,updated_at:t};this._save();setTimeout(()=>L._h&&L._h.onDoc&&L._h.onDoc(kind,id,data,v,t),0);return t},
+  async del(camp,secret,kind,id){const D=this._load().docs[camp]||{};this._histPush(camp,kind,id,D[kind+'/'+id],'DELETE');delete D[kind+'/'+id];this._save();setTimeout(()=>L._h&&L._h.onDel&&L._h.onDel(kind,id),0);return true},
   async putMany(camp,secret,rows){for(const r of rows)await this.put(camp,secret,r.kind,r.id,r.data,r.vis);return rows.length},
   async uploadImage(path,blob){return await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(blob)})},
   subscribe(camp,h){this._h=h;setTimeout(()=>h.onStatus&&h.onStatus('SUBSCRIBED'),10);return ()=>{this._h=null}},
@@ -115,6 +138,7 @@ window.NT_STORE=(()=>{
   async omLogAdd(room,secret,kind,who,data){this._omLog=this._omLog||[];const r={id:(this._omLog.length?this._omLog[this._omLog.length-1].id:0)+1,at:new Date().toISOString(),who,kind,data};this._omLog.push(r);setTimeout(()=>(this._omSubs||[]).forEach(f=>f(r)),20);return r.id},
   async omPut(room,secret,path,value){this._om=this._om||{};let o=this._om;const P=path[0]==='pub'?['pub',...path.slice(1)]:path;for(let i=0;i<P.length-1;i++){o[P[i]]=o[P[i]]||{};o=o[P[i]]}o[P[P.length-1]]=value;return true},
   omSub(room,f){this._omSubs=(this._omSubs||[]).concat(f);return ()=>{this._omSubs=(this._omSubs||[]).filter(x=>x!==f)}},
+  omBroadcast(){},
   async omRpc(fn){return /feed|boards/.test(fn)?[]:true},
   acct:null,online:null,
   async mtlogMeta(){return [{id:'tree',data:{folders:[{id:'f1',name:'무진'}],order:[['lg1','f1'],['lg2','f1']]}}]}
