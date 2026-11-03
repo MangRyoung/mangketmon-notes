@@ -1,0 +1,46 @@
+/* ---------- 칼데아(cd) 테마 — 11-04 망령 「이걸(칼데아 문장) 사용해서 칼데아 테마를 추가하고 싶어서」 · 「흰색 + 푸른색 · 가시성이 좋아야」 ----------
+   밝은 테마: 흰 판 · 옅은 청회색 바탕 · 남색 글씨 · 칼데아 블루 강조. 대부분 app.css 변수(--bg · --panel · --line · --fg · --red …)를 바꿔서 덮고,
+   어두운 색을 박아 둔 곳만 아래에서 따로 덮는다. 큰 제목은 Cinzel. 문장 그림 img/chaldea_emblem(남색) · _w(흰색) · chaldea_mark(워터마크) — 원본은 망령이 준 칼데아 문장.
+   테마 키 om_vt 는 웹툴(오레마스)과 같이 쓰지만 웹툴에는 cd 가 없어서 웹툴은 기본(P4)으로 보인다. */
+html[data-vt="cd"]{color-scheme:light;
+  --bg:#edf2f8;--bg2:#e3ebf5;--panel:#ffffff;--panel2:#f3f7fc;--line:#cbd8ea;--line2:#9db3d1;
+  --fg:#10223c;--fg2:#30476a;--mute:#5d7391;--red:#1c63d6;--red2:#2f7cf0;--ok:#11834d;--yel:#b77d00;--yel2:#9a6a00;--blue:#1c63d6;
+  --cd:#1c63d6;--cd2:#0f3f8f;--cdl:#e8f1fd;--gold:#a8862f}
+html[data-vt="cd"] body{background:url("../img/chaldea_mark.png") no-repeat right 3% bottom 4%/min(420px,46vw) auto fixed,linear-gradient(180deg,#f6f9fd,#e9f0f8) fixed!important;background-color:#edf2f8!important;color:var(--fg)!important}
+html[data-vt="cd"] ::selection{background:rgba(28,99,214,.22);color:#0b1a30}
+
+/* 테마 고르기 단추 */
+html[data-vt="cd"] .vtsw{border-color:#9db3d1}
+html[data-vt="cd"] .vtsw button.on{background:#1c63d6;color:#fff}
+
+/* 위 띠 */
+html[data-vt="cd"] .top{background:#ffffff!important;color:#10223c!important;border-bottom:2px solid #1c63d6!important;box-shadow:0 2px 10px rgba(16,34,60,.08)!important}
+html[data-vt="cd"] .top .name{font-family:Cinzel,'Noto Serif KR',serif!important;font-weight:700!important;letter-spacing:.1em;color:#0f3f8f!important;text-shadow:none!important}
+html[data-vt="cd"] .top .name::before{content:"";display:inline-block;width:1.25em;height:1.25em;margin-right:.45em;vertical-align:-.22em;background:url("../img/chaldea_emblem.png") center/contain no-repeat}
+html[data-vt="cd"] .top .name small,html[data-vt="cd"] .top .small,html[data-vt="cd"] .top #conn,html[data-vt="cd"] .top .presence{color:#5d7391!important}
+html[data-vt="cd"] .top .back{color:#30476a}html[data-vt="cd"] .top .back:hover{color:#1c63d6}
+html[data-vt="cd"] .top .badge.gm{background:#1c63d6!important;color:#fff!important;border:0!important;border-radius:3px!important}
+html[data-vt="cd"] #sceneTabs button,html[data-vt="cd"] .top nav button,html[data-vt="cd"] .tabs button{font-family:'Noto Sans KR','Gothic A1',sans-serif!important;font-weight:800!important;background:transparent!important;color:#30476a!important;border:0!important;border-bottom:3px solid transparent!important;border-radius:0!important;box-shadow:none!important;text-shadow:none!important;transform:none!important}
+html[data-vt="cd"] #sceneTabs button.on,html[data-vt="cd"] .top nav button.on,html[data-vt="cd"] .tabs button.on{color:#1c63d6!important;border-bottom-color:#1c63d6!important;background:linear-gradient(transparent 55%,rgba(28,99,214,.08))!important}
+
+/* 단추 · 입력 */
+html[data-vt="cd"] .btn{font-family:'Noto Sans KR','Gothic A1',sans-serif!important;font-weight:700!important;background:#ffffff!important;color:#0f3f8f!important;border:1px solid #9db3d1!important;border-radius:4px!important;box-shadow:0 1px 0 rgba(16,34,60,.06)!important;text-shadow:none!important;transform:none!important}
+html[data-vt="cd"] .btn:hover{background:#e8f1fd!important;border-color:#1c63d6!important}
+html[data-vt="cd"] .btn.ghost{background:#f7faff!important;color:#30476a!important}
+html[data-vt="cd"] .btn.pri,html[data-vt="cd"] #rpsend{background:#1c63d6!important;color:#fff!important;border-color:#1c63d6!important;box-shadow:0 2px 6px rgba(28,99,214,.3)!important}
+html[data-vt="cd"] .btn.pri:hover{background:#0f3f8f!important}
+html[data-vt="cd"] .btn.danger{color:#c0283a!important;border-color:#e3a3ab!important}
+html[data-vt="cd"] input,html[data-vt="cd"] select,html[data-vt="cd"] textarea{background:#ffffff!important;color:#10223c!important;border:1px solid #9db3d1!important;border-radius:4px!important}
+html[data-vt="cd"] input:focus,html[data-vt="cd"] select:focus,html[data-vt="cd"] textarea:focus{outline:2px solid rgba(28,99,214,.35);border-color:#1c63d6!important}
+html[data-vt="cd"] ::placeholder{color:#8a9bb3}
+
+/* 판 · 창 · 제목 */
+html[data-vt="cd"] .modal{background:#ffffff!important;color:#10223c!important;border:1px solid #9db3d1!important;box-shadow:0 18px 40px rgba(16,34,60,.25)!important}
+html[data-vt="cd"] .modalbg{background:rgba(16,34,60,.45)!important}
+html[data-vt="cd"] .mhead h2,html[data-vt="cd"] .toolbar h2,html[data-vt="cd"] h2{color:#0f3f8f}
+html[data-vt="cd"] .toolbar h2,html[data-vt="cd"] .mhead h2{font-family:Cinzel,'Noto Serif KR',serif!important;letter-spacing:.06em}
+html[data-vt="cd"] .sheet h3,html[data-vt="cd"] .sheet h4{font-family:Cinzel,'Noto Serif KR',serif!important;color:#0f3f8f!important;letter-spacing:.06em}
+html[data-vt="cd"] .tile{background:#ffffff!important;border:1px solid #cbd8ea!important;border-top:3px solid #1c63d6!important;border-radius:6px!important}
+html[data-vt="cd"] .tile b{color:#0f3f8f!important}
+html[data-vt="cd"] .tile span{color:#5d7391!important}
+html[data-vt="cd"] #toast{background:#0f3f8f!important;color:#fff!important}
