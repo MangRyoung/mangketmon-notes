@@ -517,7 +517,7 @@ window.NT_SHELF=(()=>{
 
  /* ----- 서가 (자료 탭 맨 위) ----- */
  function bar(){if(!on())return '';const G=N().gm();const L=books();if(!L.length&&!G)return '';const T=LB();
-  return `<section class="shelf${dig()?' dig':''}" aria-label="${T.aria}"><div class="shelf-h"><span class="shelf-crest">${T.ico}</span><b>${esc(T.head)}</b><small>${esc(T.en)}</small><span class="sp"></span>${G?`<button type="button" class="shelf-btn" data-shnew title="${T.addT}">${T.add}</button>`:''}<a class="shelf-all" href="${esc(window.NT_RB?NT_RB.link(''):'#')}" target="_blank" rel="noopener">룰북 전체 ↗</a></div>
+  return `<section class="shelf${dig()?' dig':''}" aria-label="${T.aria}"><div class="shelf-h"><span class="shelf-crest">${T.ico}</span><b>${esc(T.head)}</b><small>${esc(T.en)}</small><span class="sp"></span>${G?`<button type="button" class="shelf-btn" data-shnew title="${T.addT}">${T.add}</button>`:''}${dig()?`<a class="shelf-all" href="${esc(window.NT_RB?NT_RB.link(''):'#')}" target="_blank" rel="noopener">룰북 전체 ↗</a>`:'<a class="shelf-all" href="#" data-rbtab title="위 「룰북」 탭에서 전권 읽기">룰북 전권 →</a>'}</div>
    <div class="shelf-row">${L.map(b=>`<button type="button" class="shb c-${esc(b.c||'crim')}" data-shelf="${esc(b.id)}" data-id="${esc(b.id)}" ${G?'data-drag':''} title="${esc(b.t)} ${T.open}${G?' · 끌어서 순서 바꾸기':''}">${cover(b)}${G&&b._vis&&b._vis!=='pub'?`<span class="shb-vis">${esc(N().visLabel(b._vis))}</span>`:''}</button>`).join('')||`<div class="shelf-empty">${T.empty}</div>`}</div><div class="shelf-plank" aria-hidden="true"></div></section>`}
  /* 자료 탭이 그린 뒤: 「＋ 책」 · GM 끌어서 순서 바꾸기 */
  function bind(el){const sec=el&&el.querySelector('.shelf');if(!sec)return;
@@ -603,5 +603,5 @@ window.NT_SHELF=(()=>{
     if(!await seed())return;if(isNew)out.order=books().length;
     if(await N().put(K,out.id,out,vis)){N().closeModal(true);N().toast(isNew?T.tAdd:T.tEd);open(out.id)}}});
  }
- return {bar,bind,open,edit,SEED,books,on};
+ return {bar,bind,open,edit,SEED,books,on,CREST};
 })();

@@ -18,12 +18,15 @@ window.NT=(()=>{
  const me=()=>ST.plView?(ST.plAs||''):(ST.role&&ST.role!=='gm'?ST.role:'');
  function plViewSet(on,as){if(!realGm())return;ST.plView=!!on;ST.plAs=on?(as||''):'';document.body.classList.toggle('plview',ST.plView);closeModal(true);if(ST.plView&&!subOk(ST.view))ST.view=tabOf(ST.view)[2][0];render()}
  const PLV_BLOCK='「PL 눈으로 보기」 중에는 저장하지 않아요 — 위 띠에서 끄고 다시';
- const VIEWS=[['map','지도'],['graph','관계도'],['ents','항목'],['pc','PC 시트'],['npc','NPC 시트'],['awk','각성체'],['awdb','각성체 DB'],['scen','시나리오'],['plan','일정'],['logs','기록'],['set','설정']];
+ const VIEWS=[['rb','룰북'],['map','지도'],['graph','관계도'],['ents','항목'],['pc','PC 시트'],['npc','NPC 시트'],['awk','각성체'],['awdb','각성체 DB'],['scen','시나리오'],['plan','일정'],['logs','기록'],['set','설정']];
  /* 10-29 망령: 위 탭은 6개 — 자료(항목 · 관계도) · 지도 · 시트 · 일정(일정 · 기록) · 시나리오 · 설정. 화면(VIEWS)과 주소는 그대로라 예전 링크 · 알림도 그대로 간다 */
- const TABS=[['ents','자료',['ents']],['map','지도',['map']],['pc','시트',['pc','npc','awk','awdb']],['graph','관계도',['graph']],['plan','일정',['plan','logs']],['scen','시나리오',['scen']],['set','설정',['set']]];   /* 10-30 망령 「관계도도 시트 옆에」: 자료에서 꺼내 시트 바로 옆 탭으로 (웹툴처럼) */
- const tabOf=v=>TABS.find(t=>t[2].includes(v))||TABS[0];
+ const TABS=[['rb','룰북',['rb']],['ents','자료',['ents']],['map','지도',['map']],['pc','시트',['pc','npc','awk','awdb']],['graph','관계도',['graph']],['plan','일정',['plan','logs']],['scen','시나리오',['scen']],['set','설정',['set']]];   /* 10-30 망령 「관계도도 시트 옆에」: 자료에서 꺼내 시트 바로 옆 탭으로 (웹툴처럼) */
+ const tabOf=v=>TABS.find(t=>t[2].includes(v))||TABS[1];
+ /* 11-04 21:52 망령 「미사그 대학에 전체 룰북 탭 옮겨 달래 — 자료 왼쪽에 · 테마에 맞게」: 룰북 탭은 꾸밈 「대학」 캠페인에만 (js/rb_ui.js) */
+ const rbOn=()=>skin()==='univ';
+ const tabOk=([k])=>k==='rb'?rbOn():(k!=='set'||gm()||me());
  /* 10-29: 각성체 DB 는 GM만. 10-30 망령 「PC 시트 옆에 NPC 시트」: NPC 시트는 GM, 또는 공개된 NPC 가 있을 때만 */
- const subOk=v=>v==='awdb'?gm():v==='npc'?(gm()||list('npc').length>0):true;
+ const subOk=v=>v==='rb'?rbOn():v==='awdb'?gm():v==='npc'?(gm()||list('npc').length>0):true;
  const subGet=t=>{try{const v=localStorage.getItem('nt_sub_'+t[0]);return t[2].includes(v)&&subOk(v)?v:t[2][0]}catch(e){return t[2][0]}};
  /* 묶인 화면은 머리글(h2) 자리에 「항목 · 관계도」 같은 작은 탭을 둔다 */
  function subTabs(main){const t0=tabOf(ST.view);const t=[t0[0],t0[1],t0[2].filter(v=>subOk(v)||v===ST.view)];if(t[2].length<2)return;try{localStorage.setItem('nt_sub_'+t[0],ST.view)}catch(e){}
@@ -54,7 +57,7 @@ window.NT=(()=>{
   const k=e.key;
   if(k==='F'&&e.shiftKey){e.preventDefault();presentSet(!document.body.classList.contains('present'));return}
   if(e.shiftKey)return;
-  if(/^[1-7]$/.test(k)){const t=TABS.filter(([id])=>id!=='set'||gm()||me())[+k-1];if(!t)return;e.preventDefault();const cur=tabOf(ST.view)[0];go(t[0]===cur?ST.view:subGet(t));return}
+  if(/^[1-8]$/.test(k)){const t=TABS.filter(tabOk)[+k-1];if(!t)return;e.preventDefault();const cur=tabOf(ST.view)[0];go(t[0]===cur?ST.view:subGet(t));return}
   if(k==='f'||k==='F'){if(fitView()){e.preventDefault()}return}
   if(ST.view==='scen'&&window.NT_SCEN&&NT_SCEN.runKey&&NT_SCEN.runKey(k)){e.preventDefault();return}
   if((k==='n'||k==='N')&&ST.view==='ents'&&gm()){const b=$('#ntMain .toolbar [data-e="new"]');if(b){e.preventDefault();b.click()}}});
@@ -254,13 +257,13 @@ window.NT=(()=>{
  function keepState(root){if(!root)return null;const sc=[];root.querySelectorAll(KEEPSEL).forEach((e,i)=>{if(e.scrollTop||e.scrollLeft)sc.push([e.className,i,e.scrollLeft,e.scrollTop])});const a=document.activeElement;const f=a&&root.contains(a)&&a.id?{id:a.id,s:a.selectionStart,e:a.selectionEnd,v:a.matches&&a.matches('[data-live]')?a.value:null}:null;const dt=new Map();try{for(const [k,d] of dKeys(root))dt.set(k,d.open)}catch(e){}return {sc,f,view:ST.view,y:window.scrollY,dt}}
  function restoreState(root,k){if(!k||k.view!==ST.view)return;if(k.dt&&k.dt.size)try{for(const [kk,d] of dKeys(root))if(k.dt.has(kk)&&d.open!==k.dt.get(kk))d.open=k.dt.get(kk)}catch(e){}const L=root.querySelectorAll(KEEPSEL);k.sc.forEach(([cls,i,l,t])=>{const e=L[i];if(e&&e.className===cls){e.scrollLeft=l;e.scrollTop=t}});if(k.f){const e=root.querySelector('#'+CSS.escape(k.f.id));if(e&&e!==document.activeElement){try{if(k.f.v!=null&&e.matches('[data-live]')&&e.value!==k.f.v){e.value=k.f.v;e.dispatchEvent(new Event('input'))}/* 10-29: 쓰고 있던 칸은 다시 그려져도 글을 지킨다 */e.focus({preventScroll:true});if(k.f.s!=null&&e.setSelectionRange)e.setSelectionRange(k.f.s,k.f.e)}catch(x){}}}}
 
- function render(){const app=$('#app');if(!app)return;if(window.NT_ACCT)NT_ACCT.track();/* 10-29 접속자 */if(!ST.camp)return renderLobby(app);cacheSave();
+ function render(){const app=$('#app');if(!app)return;if(window.NT_ACCT)NT_ACCT.track();/* 10-29 접속자 */if(!ST.camp)return renderLobby(app);cacheSave();if(ST.view==='rb'&&ST.campInfo&&!rbOn())ST.view='ents';
   let sh=$('#ntShell',app);if(!sh){app.innerHTML=`<div id="ntShell"><header class="top"></header><div id="ntBody"><div id="ntFavSlot"></div><main id="ntMain"></main></div></div>`;sh=$('#ntShell',app)}
   renderTop($('.top',sh));const fs=$('#ntFavSlot',sh);if(fs&&window.NT_FAV)fs.innerHTML=NT_FAV.rail();const old=$('#ntMain',sh);const keep=keepState(old);const main=old.cloneNode(false);old.replaceWith(main);main.dataset.view=ST.view;/* 탭 모듈이 render 마다 el.addEventListener 를 붙이므로, 매번 새 요소로 바꿔 처리기가 쌓이거나 다른 탭 것과 섞이지 않게 한다 */const M=MOD[ST.view];
   try{if(M)M.render(main);else main.innerHTML='<div class="empty">준비 중</div>';subTabs(main);foldToolbar(main);const gh=guideHtml();if(gh)main.insertAdjacentHTML('afterbegin',gh);restoreState(main,keep)}catch(e){console.error(e);main.innerHTML=`<div class="empty vfail"><b>「${esc((VIEWS.find(v=>v[0]===ST.view)||[])[1]||ST.view)}」 화면을 그리지 못했어요.</b><div class="small dim" style="margin-top:6px;word-break:break-all">${esc(e&&e.message||e)}</div><button class="btn sm" onclick="NT.go('map')">지도로</button></div>`}}
  function renderTop(top){const c=ST.campInfo||{};const role=gm()?'<span class="badge gm">GM</span>':me()?`<span class="badge seat">${esc(seatName(me())||me())}</span>`:'<span class="badge">구경</span>';
   const plv=realGm()?`<span class="plvsw ${ST.plView?'on':''}" title="PL 눈으로 보기 — 모든 탭을 구경(또는 고른 좌석)의 눈으로 그려요. 켜 둔 동안은 저장하지 않아요"><button type="button" class="btn xs ${ST.plView?'pri':'ghost'}" data-plv="${ST.plView?'off':'on'}">👁 ${ST.plView?'PL 눈 끄기':'PL 눈'}</button>${ST.plView?`<select data-plvas title="누구의 눈으로"><option value="">구경 (링크만)</option>${ST.seats.map(x=>`<option value="${esc(x.seat)}" ${x.seat===ST.plAs?'selected':''}>${esc(seatName(x.seat)||x.seat)}</option>`).join('')}</select>`:''}</span>`:'';
-  const cur=tabOf(ST.view)[0];const tabs=TABS.filter(([k])=>k!=='set'||gm()||me()).map(t=>`<button data-v="${t[0]===cur?ST.view:subGet(t)}" data-tab="${t[0]}" class="${t[0]===cur?'on':''}">${t[1]}</button>`).join('');
+  const cur=tabOf(ST.view)[0];const tabs=TABS.filter(tabOk).map(t=>`<button data-v="${t[0]===cur?ST.view:subGet(t)}" data-tab="${t[0]}" class="${t[0]===cur?'on':''}">${t[1]}</button>`).join('');
   /* 11-03 감우: 휴대폰(640px 이하)에서는 PL 눈 · 🔍 · 🔔 · 웹툴 · 로그인 · 나가기를 「⋯」 메뉴(.topx) 뒤로 — 위 띠가 두 줄 넘게 늘어나던 것 */
   top.innerHTML=`<a class="back" href="#" data-lobby>← 캠페인</a><h1 class="camp name"><b>${esc(c.name||'…')}</b>${c.data&&c.data.sub?`<small>${esc(c.data.sub)}</small>`:''}</h1>${role}<nav class="tabs" id="sceneTabs">${tabs}</nav><span class="sp"></span><button type="button" class="favtop" data-favdrawer title="즐겨찾기">★</button><span id="ntLive" class="live ${ST.online?'on':''}" title="${ST.online?'실시간 연결됨':'연결 중…'}"></span><button type="button" class="btn xs ghost morebtn" data-topmore title="더 보기" aria-expanded="${document.body.classList.contains('topmore')}">⋯</button><div class="topx">${plv}<button type="button" class="btn xs ghost srchbtn" data-search title="전체 검색 (/)">🔍<span class="xl"> 검색</span></button>
    ${(()=>{const r=window.NT_LINK&&NT_LINK.cur?NT_LINK.cur():((c.data||{}).om||{}).room;const RL=window.NT_LINK&&NT_LINK.rooms?NT_LINK.rooms():[];/* 11-03 여러 방: 고른 방(이 브라우저)으로 열고, 둘 이상이면 옆에 방 고르기 */return r&&window.NT_LINK?`<a class="btn xs omgo" href="${esc(NT_LINK.omUrl(r))}" target="oremas" rel="noopener" title="이 캠페인과 이어진 웹툴 방 열기${RL.length>1?' — '+esc(NT_LINK.roomName(r)):''}">🎲 웹툴</a>${RL.length>1?`<select class="omsel" data-omsel title="이 브라우저에서 쓰는 웹툴 방 — 휴대폰 · 게시판 · ⚔ 웹툴로 · 장면 보내기가 이 방으로">${RL.map(x=>`<option value="${esc(x.id)}" ${x.id===r?'selected':''}>${esc(x.name||x.id)}${x.main?' ★':''}</option>`).join('')}</select>`:''}${gm()&&window.NT_PHONE&&NT_PHONE.openDc?'<button type="button" class="btn xs omgo" data-dcset title="이어 둔 웹툴 방의 디스코드 연동 — 학교 게시판 · 시트 카드가 가는 스레드 (GM)">🔗 디스코드</button>':''}`:''})()}${window.NT_NOTICE?NT_NOTICE.bellHtml():''}${!ST.role&&ST.acct==='pl'&&window.NT_ACCT?'<button class="btn xs pri" data-seatpick title="빈 PC 시트를 골라 앉아요">🪑 자리 앉기</button>':''}${!ST.role?`<button class="btn xs" data-login>${window.NT_ACCT&&NT_ACCT.tok()?'비밀구':'로그인'}</button>`:String(ST.secret).startsWith('u:')&&window.NT_ACCT?`<button class="btn xs ghost acmebtn" data-acme title="웹툴과 같은 계정 · 로그아웃">${esc(NT_ACCT.myName()||'계정')}</button>`:'<button class="btn xs ghost" data-logout title="이 브라우저에서 비밀구 지우기">나가기</button>'}
@@ -281,7 +284,7 @@ window.NT=(()=>{
    if(t.closest('.vtcur')){const s=t.closest('.vtsw');s.classList.toggle('open');return}};
   const pas=$('[data-plvas]',top);if(pas)pas.onchange=()=>plViewSet(true,pas.value);
   if(!window._vtswBound){window._vtswBound=1;document.addEventListener('pointerdown',ev=>{if(!ev.target.closest('.vtsw'))$$('.vtsw.open').forEach(x=>x.classList.remove('open'))},{capture:true})}}
- function go(v){v=VIEWS.some(x=>x[0]===v)?v:'map';if(v!==ST.view&&window.NT_FLOWMAP&&NT_FLOWMAP.markFresh)NT_FLOWMAP.markFresh();if(v!==ST.view){document.body.classList.remove('topmore');if(document.body.classList.contains('present'))presentSet(false)}ST.view=v;setHash();render();try{localStorage.setItem('nt_view',ST.view)}catch(e){}}
+ function go(v){v=VIEWS.some(x=>x[0]===v)?v:'map';if(v==='rb'&&!rbOn())v='ents';if(v!==ST.view&&window.NT_FLOWMAP&&NT_FLOWMAP.markFresh)NT_FLOWMAP.markFresh();if(v!==ST.view){document.body.classList.remove('topmore');if(document.body.classList.contains('present'))presentSet(false)}ST.view=v;setHash();render();try{localStorage.setItem('nt_view',ST.view)}catch(e){}}
 
  /* ----- 로비 ----- */
  async function renderLobby(app){if(window.NT_ACCT)await NT_ACCT.me();const AC=window.NT_ACCT&&NT_ACCT.tok()&&DBS().acct;
