@@ -127,8 +127,8 @@ html[data-skin="univ"] .enti.el{background:linear-gradient(160deg,#efe6d2,#e4d8b
 .enti.eid.dead .eid-p{filter:grayscale(1) contrast(1.05) brightness(.92)!important}
 .enti.eid.dead .eid-n{text-decoration:line-through;text-decoration-color:rgba(125,10,18,.75);text-decoration-thickness:2px}
 .eid-dead{position:absolute;inset:0;pointer-events:none;z-index:2}
-.eid-splat{position:absolute;right:-6px;top:22px;width:78%;height:auto;mix-blend-mode:multiply}
-.eid-dstamp{position:absolute;right:18px;bottom:46px;display:flex;flex-direction:column;align-items:center;padding:3px 12px 2px;border:3px double #a3121c;color:#a3121c;font:900 22px/1 'Noto Serif KR',serif;letter-spacing:.3em;transform:rotate(-13deg);opacity:.88;background:rgba(255,255,255,.18);mix-blend-mode:multiply}
+.eid-splat{position:absolute;right:-30px;top:6px;width:70%;height:auto;mix-blend-mode:multiply}
+.eid-dstamp{position:absolute;left:34%;bottom:44px;display:flex;flex-direction:column;align-items:center;padding:3px 12px 2px;border:3px double #a3121c;color:#a3121c;font:900 22px/1 'Noto Serif KR',serif;letter-spacing:.3em;transform:rotate(-13deg);opacity:.88;background:rgba(255,255,255,.18);mix-blend-mode:multiply}
 .eid-dstamp small{font:700 8.5px/1.4 'IBM Plex Mono',monospace;letter-spacing:.32em}
 .enti.eid.dead .eid-seal{border-color:#a3121c!important;color:#a3121c!important}
-.enti.eid.big .eid-dstamp{font-size:30px;right:26px;bottom:60px}
+.enti.eid.big .eid-dstamp{font-size:30px;left:36%;bottom:62px}
