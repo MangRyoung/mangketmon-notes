@@ -13,7 +13,7 @@
  const WTAG=['세계관','지역','지리','역사','장소','세계'];
  /* 11-04 망령 「칼데아 인물 · 휘하 서번트 / 그 밖 따로 한눈에」: 캠페인 설정 entGroups = 묶음 태그 목록. 그 태그를 단 항목은 종류 칸 안에서 묶음별로 나뉘어 보이고, 카드에는 그 태그를 띄우지 않는다 */
  const grpT=()=>(((N().ST.campInfo||{}).data||{}).entGroups)||[];
- const vt=e=>{const G=grpT();return (e.tags||[]).filter(x=>!G.includes(x)&&x!=='사망')};
+ const vt=e=>{const G=grpT();return (e.tags||[]).filter(x=>!G.includes(x)&&!['사망','신분증','신분증 없음'].includes(x))};
  const gIdx=(e,G)=>{const i=G.findIndex(x=>(e.tags||[]).includes(x));return i<0?G.length:i};
  /* 11-04 망령 「서번트는 마스터 카드를 누르면 펼쳐 보이게, 인물 칸엔 출입증만」: 캠페인 설정 entNest. 팀 「서번트」 + 한 줄의 (마스터 이름) 으로 마스터를 찾는다. 출입증이 아닌 인물은 「외부 인물 기록」 칸으로 따로 */
  const nestOn=()=>!!(((N().ST.campInfo||{}).data||{}).entNest);
