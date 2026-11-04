@@ -60,8 +60,8 @@ window.NT_UNIV=(()=>{
 
  /* 11-04 망령 「여긴 왜 안 고쳐」: 은열쇠 세 칸 (노트 27 · 제작기 sk3Html 과 같은 데이터)
     t.sk3 = {c 체크, d 던전, b 배틀, r 예비} 카드 이름 · t.vault = [{n, src, at}] 카드 보관소. 칸을 누르면 그 종류의 공통 카드 + 보관소 카드에서 고른다. 코스트 없음 */
- const SK3=[['c','체크'],['d','던전'],['b','배틀'],['r','예비']],SK3N={c:'체크',d:'던전',b:'배틀',r:'예비'};
- const skK=r=>{const t=String((r&&r[2])||'');const o=[];if(/체크/.test(t))o.push('c');if(/던전/.test(t))o.push('d');if(/배틀/.test(t))o.push('b');return o};
+ const SK3=[['c','스킬'],['d','던전'],['b','배틀'],['r','예비']],SK3N={c:'스킬',d:'던전',b:'배틀',r:'예비'};
+ const skK=r=>{const t=String((r&&r[2])||'');const o=[];if(/체크|스킬/.test(t))o.push('c');if(/던전/.test(t))o.push('d');if(/배틀/.test(t))o.push('b');return o};
  const skCommon=()=>{const L=MK().cardList().filter(r=>r&&r[0]==='은열쇠 · 공통'&&r[1]&&skK(r).length);const st=L.filter(r=>String(r[12]||'').trim()==='시작');return st.length?st:L};
  function skChoices(t,k){const ok=r=>{const ks=skK(r);return k==='r'?ks.length>0:ks.includes(k)};const out=[];for(const r of skCommon())if(ok(r))out.push({n:r[1],v:false});
   for(const v of (Array.isArray(t.vault)?t.vault:[]))if(v&&v.n){const r=MK().card(v.n);if(r&&ok(r)&&!out.some(x=>x.n===v.n))out.push({n:v.n,v:true})}return out}
