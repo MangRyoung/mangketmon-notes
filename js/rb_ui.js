@@ -25,9 +25,11 @@
   const book=R.R.book;const all=R.chapters();const q=norm(U.q.trim());
   const L=q?all.filter(c=>hits(c,q)>0):all;
   let id=cur();if(!all.some(c=>c.id===id))id=(all[0]||{}).id||'';if(q&&L.length&&!L.some(c=>c.id===id))id=L[0].id;
-  const c=all.find(x=>x.id===id);const ix=all.indexOf(c);const prev=all[ix-1],next=all[ix+1];
+  const c=all.find(x=>x.id===id);
   const groups=[];for(const x of L){const g=x.group||'기타';let G=groups.find(y=>y.g===g);if(!G)groups.push(G={g,L:[]});G.L.push(x)}
-  const no=x=>String(all.indexOf(x)+1).padStart(2,'0');
+  const ord=[];{const G0=[];for(const x of all){const g=x.group||'기타';let G=G0.find(y=>y.g===g);if(!G)G0.push(G={g,L:[]});G.L.push(x)}for(const G of G0)ord.push(...G.L)}   /* 차례 번호 = 묶음으로 모은 순서 */
+  const no=x=>String(ord.indexOf(x)+1).padStart(2,'0');
+  const ix=ord.indexOf(c);const prev=ord[ix-1],next=ord[ix+1];   /* 앞뒤 장도 차례 순서로 */
   const secs=c?R.sections(c).filter(s=>s.h):[];
   el.innerHTML=`<section class="rbtab shelfm c-crim" aria-label="룰북">
    <header class="shr-cover rbt-cover"><span class="shr-crest">${crest()}</span><div class="shr-ct"><span class="shr-no">MISAG LIB · RULEBOOK · ${all.length} CHAPTERS</span><h2>${esc(book.title||'망켓몬 룰북')}</h2><p>${esc(book.subtitle||'')}${book.updated?` <span class="rbt-up">· ${esc(book.updated)} 판</span>`:''}</p></div>
