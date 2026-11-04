@@ -93,7 +93,11 @@
  const linkIcons=e=>(e.rb&&e.rb.ch?'<i class="lki" title="룰북과 이어져 있어요">📖</i>':'')+(e.mk?'<i class="lki" title="제작기 트레이너와 이어져 있어요">🎴</i>':'')+((e.files||[]).length?`<i class="lki" title="첨부 ${e.files.length}개">📎${e.files.length}</i>`:'');
  /* ----- 11-02 카드 모양: 세계관 = 지도첩 카드(넓게), 설정 = 규칙 카드, 인물 = 학생증 · 교원증 · 신분증, 나머지 = 예전 카드. 「목록」 보기는 모두 예전 한 줄 ----- */
  const gridCls=t=>U.dense?'dense':t==='세계관'?'eg-w':t==='인물'?'eg-id':t==='설정'?'eg-l':'';
- function cardOf(e){if(U.dense)return card(e);const t=ety(e);return t==='세계관'?cardWorld(e):t==='인물'?cardId(e,false):t==='설정'?cardLore(e):card(e)}
+ /* 11-04 망령 「칼데아 소속 인물(서번트 제외)에게만 신분증」: 캠페인 설정 「신분증 줄 팀」(data.idTeams)이 있으면 그 팀 인물만 신분증,
+    소속(sub)에 클래스 이름이 있으면 서번트로 보고 뺀다. 태그 「신분증」은 늘 주고 「신분증 없음」은 늘 뺀다. 설정이 없으면 예전처럼 인물 모두(미사그 그대로) */
+ const SVT=/(세이버|아처|랜서|라이더|캐스터|어쌔신|버서커|룰러|어벤저|문캔서|포리너|얼터 ?에고|프리텐더|실더|서번트)/;
+ function idOk(e){const tg=e.tags||[];if(tg.includes('신분증 없음'))return false;if(tg.includes('신분증'))return true;const T=(((N().ST.campInfo||{}).data||{}).idTeams)||[];if(!T.length)return true;return (e.teams||[]).some(t=>T.includes(t))&&!SVT.test(e.sub||'')}
+ function cardOf(e){if(U.dense)return card(e);const t=ety(e);return t==='세계관'?cardWorld(e):t==='인물'?(idOk(e)?cardId(e,false):card(e)):t==='설정'?cardLore(e):card(e)}
  const rowsV=e=>(e.rows||[]).filter(r=>r&&r.k);
  const clip=(s,n)=>{s=String(s||'').replace(/\s+/g,' ').trim();return s.length>n?s.slice(0,n)+'…':s};
  function cardWorld(e){const R=rowsV(e);return `<button type="button" class="enti ew ${e.id===U.sel?'on':''}" data-sel="${esc(e.id)}" data-id="${esc(e.id)}" data-drag style="--c:${e.color||tc('세계관')[2]}">
@@ -127,7 +131,7 @@
    <span class="eid-ft"><span class="eid-bar" aria-hidden="true"></span>${(e.tags||[]).length?`<span class="eid-tg">${e.tags.slice(0,big?6:2).map(x=>`<em>${esc(x)}</em>`).join('')}</span>`:'<span class="sp"></span>'}${big?'':N().visBadge(e._vis,'ents',e.id)+linkIcons(e)}<span class="eid-seal" aria-hidden="true">${k==='staff'?'교무':k==='stu'?'총장':'확인'}</span></span></${tag}>`}
  function detail(e){const G=N().gm(),ty=ety(e),t=tc(ty);const sec=N().data('sec','ent:'+e.id);const rels=N().list('rels').filter(r=>r.a===e.id||r.b===e.id);
   return `<div class="card entd" style="--c:${e.color||t[2]}"><div class="row" style="gap:6px"><span class="chip static" style="border-color:var(--c);color:var(--c)">${esc(tl(ty))}</span>${window.NT_FAV?NT_FAV.btn('ents',e.id,e.title):''}${N().visBadge(e._vis,'ents',e.id)}${window.NT_HIST?NT_HIST.btn('ents',e.id):''}<span class="sp"></span>${U.ids.length>1&&U.ids.includes(e.id)?`<span class="entnav"><button class="btn xs ghost" data-enav="-1" ${U.ids[0]===e.id?'disabled':''} title="앞 항목">◀</button><button class="btn xs ghost" data-enav="1" ${U.ids[U.ids.length-1]===e.id?'disabled':''} title="다음 항목">▶</button></span>`:''}${G?`<button class="btn xs" data-e="edit" data-id="${esc(e.id)}">고치기</button><button class="btn xs ghost danger" data-e="del" data-id="${esc(e.id)}">지우기</button>`:''}</div>
-   ${ty==='인물'?`<div class="eidwrap">${cardId(e,true)}</div>`:`<div class="enthead ${ty==='세계관'?'ewh':''}">${e.face?`<img class="face" src="${esc(e.face)}" alt="" data-big="${esc(e.face)}">`:''}<div><h3>${esc(e.title||'')}</h3>${e.sub?`<div class="dim">${esc(e.sub)}</div>`:''}${(e.tags||[]).length?`<div class="etags">${e.tags.map(x=>`<em>${esc(x)}</em>`).join('')}</div>`:''}</div></div>`}
+   ${ty==='인물'&&idOk(e)?`<div class="eidwrap">${cardId(e,true)}</div>`:`<div class="enthead ${ty==='세계관'?'ewh':''}">${e.face?`<img class="face" src="${esc(e.face)}" alt="" data-big="${esc(e.face)}">`:''}<div><h3>${esc(e.title||'')}</h3>${e.sub?`<div class="dim">${esc(e.sub)}</div>`:''}${(e.tags||[]).length?`<div class="etags">${e.tags.map(x=>`<em>${esc(x)}</em>`).join('')}</div>`:''}</div></div>`}
    ${e.photo&&!(ty==='인물'&&!e.face)?`<img class="photo" src="${esc(e.photo)}" alt="" data-big="${esc(e.photo)}" loading="lazy">`:''}
    ${e.body?`<p class="pre">${esc(e.body)}</p>`:''}
    ${e.mk?mkBox(e.mk):''}${e.rb&&e.rb.ch&&window.NT_RB?NT_RB.box(e.rb):''}${(e.files||[]).length?filesBox(e):''}
