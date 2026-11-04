@@ -135,7 +135,7 @@ window.NT_AWK=(()=>{
       <button class="btn sm pri" data-aw="read" ${U.busy||!subImg(id)?'disabled':''} title="${subImg(id)?(fn?'각성체 그림을 Claude 가 읽어 어울리는 원전 인물을 골라요 (한 번에 100~300원쯤, GM만)':'Edge Function 주소가 없어요 — 설정 안내를 봐 주세요'):'각성체 그림을 먼저 넣어 주세요 (각성체 탭 · 제작기 각성체 포켓몬 그림)'}">${U.busy?'읽는 중…':'🔍 포트 읽기'}</button>
       <button class="btn sm" data-aw="paste" title="대화에서 감우가 읽어 준 결과(JSON)를 붙여 넣어요">📋 감우 결과 넣기</button></div>
       <div class="awgrade small">✦ ${esc(gradeLine(id))}</div>
-      <div class="awsend"><div class="awsnote"><small class="dim">코멘트</small><div class="pre small">${esc(subNote(id))||'<span class="dim">— 아직 없어요</span>'}</div></div><button type="button" class="linkbtn small" data-aw="sendedit" data-v="${esc(sidPc(id))}">그림 · 코멘트 고치기</button></div>
+      <div class="awsend"><div class="awsnote"><small class="dim">코멘트</small><div class="pre small">${esc(subNote(id))||'<span class="dim">— 아직 없어요</span>'}</div></div><button type="button" class="linkbtn small" data-aw="sendedit" data-v="${esc(id)}">그림 · 코멘트 고치기</button></div>
     ${rd?`<div class="awread"><b>${rd.by==='fn'?'포트 읽기':'감우 결과'}</b> <small class="dim">${esc(String(rd.at||'').slice(0,16).replace('T',' '))}</small><div class="pre">${esc(rd.sum||'')}</div>${(rd.extra||[]).length?`<div class="small dim" style="margin-top:4px">DB 밖 후보 ${rd.extra.length}명은 아래 목록 맨 앞에 「DB 밖」으로 떠요 · 마음에 들면 「DB 에 넣기」</div>`:''}</div>`:`<p class="small dim" style="margin:6px 0 0">각성체 그림을 읽으면 외형 · 분위기 태그가 채워지고 어울리는 원전 인물이 앞으로 와요. 태그를 직접 골라도 돼요.</p>`}
     </div></div>
    ${tagPicker(tags)}
@@ -428,7 +428,7 @@ window.NT_AWK=(()=>{
 
  /* ----- 「각성체」 화면 (모두): PL = 제 PC 의 각성체 그림 · 코멘트, GM = 전원 + 묶음 ----- */
  function slotHtml(x,G){const r=G?rec(x.sid):{};const pk=r.pick&&DB.base&&byId(r.pick);const E=canSend(x.pc);const fx=x.fixed;
-  return `<div class="aweslot ${fx?'fixed':''}" ${E?`data-sedit="${esc(x.pc)}" title="눌러서 각성체 고치기"`:''}><div class="awepor ${E?'edit':''}" ${E?`data-aimg="${esc(x.sid)}" title="눌러서 (또는 끌어다 놓아) 각성체 ${x.n} 그림 바꾸기"`:''} style="${x.img?`background-image:url('${cssu(x.img)}')`:''}">${x.img?'':E?'그림 넣기':'그림 없음'}</div>
+  return `<div class="aweslot ${fx?'fixed':''}" ${E?`data-sedit="${esc(x.sid)}" title="눌러서 각성체 고치기"`:''}><div class="awepor ${E?'edit':''}" ${E?`data-aimg="${esc(x.sid)}" title="눌러서 (또는 끌어다 놓아) 각성체 ${x.n} 그림 바꾸기"`:''} style="${x.img?`background-image:url('${cssu(x.img)}')`:''}">${x.img?'':E?'그림 넣기':'그림 없음'}</div>
    <div class="awes"><div class="row" style="gap:6px"><b>각성체 ${x.n}</b>${fx?`<span class="awfix">✦ 확정 · ${esc(fx.n)}</span>`:''}</div>
     <small>${x.mname?`제작기 「${esc(x.mname)}」${x.own?' · 올린 그림':''} · `:x.own?'올린 그림 · ':''}${x.kind==='c'?'보조':x.kind==='free'?'대가':''}${x.pride?' · 프라이드 '+esc(x.pride):''}${x.kind!=='c'&&x.cost?' · 대가 '+esc(x.cost):''}</small>
     <div class="pre small awenote clamp" ${x.note?`title="${esc(x.note)}"`:''}>${x.note?esc(x.note):''}</div>
@@ -661,12 +661,13 @@ window.NT_AWK=(()=>{
    if(k==='drop'){const kk=+b.dataset.k;await save(sid,r=>{const q=(r.nps||[])[kk];r.nps=(r.nps||[]).filter((_,j)=>j!==kk);if(q&&r.np&&r.np.n===q.n)delete r.np});redraw(i);return}
    if(k==='pick'){const q=(rec(sid).nps||[])[+b.dataset.k];if(!q)return;await save(sid,r=>{if(r.np&&r.np.n===q.n)delete r.np;else r.np={n:q.n,eff:q.eff||''}});redraw(i);return}
    if(k==='apply'){await npApply(sid);redraw(i)}})}
- function sendBox(id){const pc=sidPc(id);if(!canSend(pc))return;const G=N().gm();const S=[1,2].map(n=>slot(sidOf(pc,n)));const own=S.map(x=>x.own?slotRaw(pc,x.n).img:'');
-  const md=N().openModal(`<div class="mhead"><h2>✦ 각성체 · ${esc(pcName(pc))}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
+ /* 11-04 망령 「각성체 이 칸은 이제 1, 2 각각 따로따로 창 — 한 창에 담기엔 길어졌네」: 칸 하나만 연다(sid 의 ~n, pc 만 오면 1). 머리의 「각성체 1 · 2」로 저장하고 다른 칸 창으로 */
+ function sendBox(id){const pc=sidPc(id);if(!canSend(pc))return;const one=String(id).includes('~')?sidN(id):1;const oi=one-1;const G=N().gm();const S=[1,2].map(n=>slot(sidOf(pc,n)));const own=S.map(x=>x.own?slotRaw(pc,x.n).img:'');
+  const md=N().openModal(`<div class="mhead"><h2>✦ 각성체 ${one} · ${esc(pcName(pc))}</h2><span class="awswt">${[1,2].map(n=>`<button type="button" class="btn sm ${n===one?'pri':'ghost'}" data-swt="${n}" ${n===one?'disabled':''}>각성체 ${n}${S[n-1].img||S[n-1].note?'':' <small class="dim">(빈 칸)</small>'}</button>`).join('')}</span><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
    <p class="small" style="margin-top:0">각성체는 은열쇠로 부르는 간이 영령 — 역사 · 설화 속 인물이 마이너하거나 열화된 모습으로 와요. 각성체 그림을 넣으면 그 모습에 어울리는 원전 인물을 골라 드려요. 제작기에서 각성체로 표시한 포켓몬 그림이 있으면 그걸 써요(여기 올린 그림이 먼저).</p>
-   ${S.map((x,i)=>`<div class="awsend awslot"><div class="awsimg ${x.img?'on':''}" data-si="${i}" style="${x.img?`background-image:url('${cssu(x.img)}')`:''}">${x.img?'':'각성체 '+x.n+' 그림<br><small>끌어다 놓기 · 누르기</small>'}</div>
+   ${S.map((x,i)=>i!==oi?'':`<div class="awsend awslot"><div class="awsimg ${x.img?'on':''}" data-si="${i}" style="${x.img?`background-image:url('${cssu(x.img)}')`:''}">${x.img?'':'각성체 '+x.n+' 그림<br><small>끌어다 놓기 · 누르기</small>'}</div>
     <label class="lbl awsnote">각성체 ${x.n}${x.mname?` <small class="dim">제작기 「${esc(x.mname)}」</small>`:''}<textarea data-sn="${i}" rows="4" placeholder="예: 그림의 소품(거울 · 부채)이나 분위기 설명, 바라는 지역 · 시대, 피하고 싶은 인물">${esc(x.note)}</textarea>${own[i]?`<button type="button" class="linkbtn small" data-sx="${i}">올린 그림 빼기</button>`:''}
-    ${(()=>{const P=pref(pc,x.n);const opts=PRIDES.includes(P.pride)||!P.pride?PRIDES:[P.pride].concat(PRIDES);return `<div class="awsprefs"><label class="awemain ${P.main?'on':''}"><input type="radio" name="awsm" data-sm="${i}" ${P.main?'checked':''}> 메인 (대가)</label>
+    ${(()=>{const P=pref(pc,x.n);const opts=PRIDES.includes(P.pride)||!P.pride?PRIDES:[P.pride].concat(PRIDES);return `<div class="awsprefs"><label class="awemain ${P.main?'on':''}"><input type="checkbox" data-sm="${i}" ${P.main?'checked':''}> 메인 (대가)</label>
      <label class="awepr">프라이드<select data-sp="${i}"><option value="">${P.mk?'자동':'미정'}</option>${opts.map(v=>`<option ${v===P.pride?'selected':''}>${esc(v)}</option>`).join('')}</select></label>
      <label class="awepr awcost" ${P.main?'':'hidden'}>대가 분류<select data-sc="${i}"><option value="">감우가 추천</option>${CPICK.map(v=>`<option ${v===x.cost?'selected':''} title="${esc(COSTT[v])}">${esc(v)}</option>`).join('')}</select></label>
      <small class="dim awcostt" ${P.main?'':'hidden'}>${x.cost?esc(COSTT[x.cost]||''):'정해 두면 그 대가가 어울리는 인물로 골라 드려요'}</small>${P.mk?'<small class="dim">⇄ 제작기 값</small>':''}</div>`})()}${G?srcRow(x,i)+specRow(x,i)+npRow(x,i):''}</label></div>`).join('')}${G?'<datalist id="awAbList"></datalist>':''}
@@ -702,17 +703,19 @@ window.NT_AWK=(()=>{
   if(G&&!DB.base)load().then(()=>[0,1].forEach(gridUp)).catch(()=>{});
   md.addEventListener('change',e=>{if(e.target.matches('[data-sm]'))syncMain();if(e.target.matches('[data-sq]')&&e.target.value)fillFrom(+e.target.dataset.sq,e.target.value);if(e.target.matches('[data-sp],[data-sm]')){[0,1].forEach(sbt);[0,1].forEach(abInfo)}if(e.target.matches('[data-st]'))tcol(e.target);if(e.target.matches('[data-sab]'))abInfo(+e.target.dataset.sab);if(e.target.matches('[data-sso]')){const i=+e.target.dataset.sso;const a=$(`[data-sab="${i}"]`,md);const r=a&&a.value.trim()&&MK().dbReady()?MK().abil(a.value.trim()):null;if(r&&String(parseFloat(r[0]))!==e.target.value){a.value=''}abInfo(i);sbt(i)}if(e.target.matches('[data-sf]'))e.target.parentElement.classList.toggle('on',e.target.checked);if(e.target.matches('[data-sc]')){const w=e.target.closest('.awsprefs');const t=$('.awcostt',w);if(t)t.textContent=e.target.value?COSTT[e.target.value]||'':'정해 두면 그 대가가 어울리는 인물로 골라 드려요'}});
   const doSave=async close=>{const cur=Object.assign({},pcp(pc));const P0=[1,2].map(n=>pref(pc,n));const picks=[undefined,undefined];
-   cur.awk=[0,1].map(i=>{const o=Object.assign({},slotRaw(pc,i+1),{img:own[i]||'',note:$(`[data-sn="${i}"]`,md).value.trim()});o.main=$(`[data-sm="${i}"]`,md).checked;o.pride=$(`[data-sp="${i}"]`,md).value;const c=$(`[data-sc="${i}"]`,md).value;if(c&&o.main)o.cost=c;else delete o.cost;
+   const mOn=$(`[data-sm="${oi}"]`,md).checked;
+   cur.awk=[0,1].map(i=>{if(i!==oi){const o=Object.assign({},slotRaw(pc,i+1));if(mOn)o.main=false;return o}const o=Object.assign({},slotRaw(pc,i+1),{img:own[i]||'',note:$(`[data-sn="${i}"]`,md).value.trim()});o.main=$(`[data-sm="${i}"]`,md).checked;o.pride=$(`[data-sp="${i}"]`,md).value;const c=$(`[data-sc="${i}"]`,md).value;if(c&&o.main)o.cost=c;else delete o.cost;
     if(G&&$(`[data-sw="${i}"]`,md)){const nm=$(`[data-sw="${i}"]`,md).value.trim();const fx=$(`[data-sf="${i}"]`,md).checked&&!!nm;const L=DB.base?all():[];const hit=nm&&(L.find(q=>q.n===nm)||L.find(q=>(q.n||'').replace(/\s/g,'')===nm.replace(/\s/g,'')));
      if(fx){o.fixed=o.fixed&&o.fixed.n===nm?o.fixed:{id:hit?hit.id:'',n:hit?hit.n:nm,at:new Date().toISOString()}}else delete o.fixed;
      if(nm&&!hit)o.src=nm;else delete o.src;picks[i]=hit?hit.id:''}
     return o});delete cur.awk_img;delete cur.awk_note;
-   try{await N().put('pcp',pc,cur,pvis(pc));for(const i of [0,1]){const v=picks[i];if(v===undefined)continue;const sid=sidOf(pc,i+1);const was=rec(sid).pick||'';const nv=v;if(nv!==was)await save(sid,r=>{if(nv)r.pick=nv;else delete r.pick})}
-    if(G)for(const i of [0,1]){const sid=sidOf(pc,i+1);let nv=specGet(i);if(MK0[i]!=null&&JSON.stringify(nv)===MK0[i])nv=null;const was=rec(sid).spec||null;if(JSON.stringify(nv)!==JSON.stringify(was))await save(sid,r=>{if(nv)r.spec=nv;else delete r.spec})}}catch(e){N().toast('저장하지 못했어요: '+(e.message||e));return false}if(close)N().closeModal();
+   try{await N().put('pcp',pc,cur,pvis(pc));for(const i of [0,1]){if(i!==oi)continue;const v=picks[i];if(v===undefined)continue;const sid=sidOf(pc,i+1);const was=rec(sid).pick||'';const nv=v;if(nv!==was)await save(sid,r=>{if(nv)r.pick=nv;else delete r.pick})}
+    if(G)for(const i of [0,1]){if(i!==oi)continue;const sid=sidOf(pc,i+1);let nv=specGet(i);if(MK0[i]!=null&&JSON.stringify(nv)===MK0[i])nv=null;const was=rec(sid).spec||null;if(JSON.stringify(nv)!==JSON.stringify(was))await save(sid,r=>{if(nv)r.spec=nv;else delete r.spec})}}catch(e){N().toast('저장하지 못했어요: '+(e.message||e));return false}if(close)N().closeModal();
    const main=cur.awk.some((s,i)=>s.main!==P0[i].main);const prN=[1,2].filter(n=>cur.awk[n-1].pride&&cur.awk[n-1].pride!==P0[n-1].pride);
    if(main||prN.length)await mkSync(pc,cur.awk,main,prN);else if(close)N().toast('저장했어요');return true};
   if(G)npBind(md,S);
   $('#awSOk',md).onclick=()=>doSave(true);
+  $$('[data-swt]',md).forEach(b=>b.onclick=async()=>{const n=+b.dataset.swt;if(n===one)return;b.disabled=true;if(!await doSave(false)){b.disabled=false;return}N().closeModal();sendBox(sidOf(pc,n))});
   $$('[data-smk]',md).forEach(b=>b.onclick=async()=>{const i=+b.dataset.smk;const lab=b.textContent;b.disabled=true;b.textContent='저장하는 중…';if(!await doSave(false)){b.disabled=false;b.textContent=lab;return}b.textContent='만드는 중…';if(!await makeMon(S[i].sid)){b.disabled=false;b.textContent=lab}})}
  /* 10-31 망령 「포트랑 조건 설정해서 곧바로 해당 트레이너 쪽에 각성체로 추가하고 그쪽으로 이동」: 저장된 값(원전 · 메인/프라이드 · 제작 줄 · 그림)으로 제작기 각성체 시트를 만들거나 고친다 */
  async function makeMon(sid){const pc=sidPc(sid);const DBS=N().DBS();if(!DBS.makerPut||!DBS.makerGet){N().toast('이 화면에서는 제작기에 쓸 수 없어요');return false}

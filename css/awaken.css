@@ -370,3 +370,8 @@ html:not(#_) .awspk-calc.over span{color:var(--red,#e4002b)}
 .npsel.on::after{content:"✓";position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--accent,#c33);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
 .npsel:not(.on){opacity:.45;filter:grayscale(.7)}
 .npsel:not(.on):hover{opacity:.75}
+
+/* 11-04 각성체 고치기 창 — 칸 하나씩, 머리에 각성체 1 · 2 바꾸기 */
+.awswt{display:inline-flex;gap:6px;flex-wrap:wrap;margin-left:8px}
+.awswt .btn[disabled]{opacity:1;cursor:default}
+@media(max-width:600px){.modal .mhead:has(.awswt){flex-wrap:wrap}.awswt{order:3;flex-basis:100%;margin:6px 0 0}}
