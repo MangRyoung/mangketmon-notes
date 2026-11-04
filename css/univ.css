@@ -610,3 +610,15 @@ html[data-skin="univ"] .idrkc input{font-family:'Cinzel','Noto Serif KR',serif;c
 .ux-ske{width:100%;height:92px;border:2px dashed color-mix(in srgb,var(--kc) 55%,transparent);border-radius:7px;background:transparent;color:var(--kc);font:inherit;font-size:12px;cursor:pointer}.ux-ske:disabled{cursor:default;opacity:.6}
 .ux-skoff{opacity:.4}.ux-skon .ux-cti{outline:3px solid var(--kc,#b8932a);outline-offset:1px}
 .ux-ctq{position:absolute;right:4px;top:4px;font-size:10px;padding:1px 5px;border-radius:6px;background:rgba(0,0,0,.65);color:#fff}
+/* 11-04 18:56 망령 「오른쪽 여백이 너무 넓다 — 보관소를 저기로 · 카드 정보가 하나도 안 나온다」: 네 칸 옆에 보관소 · 카드는 skcard(이름 · 종류 · 효과) */
+.ux-skrow{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.ux-skrow .ux-skg{flex:none;grid-template-columns:repeat(4,116px)}
+.ux-skv{flex:1;min-width:220px;border-left:1px solid var(--line,rgba(0,0,0,.15));padding-left:14px}
+.ux-skvh{font-weight:700;font-size:13px;margin-bottom:6px}.ux-skvh small{opacity:.6;font-weight:400}
+.ux-skvl{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}.ux-skvi{display:flex;flex-direction:column;gap:2px;min-width:0}.ux-skvi small{font-size:11px;opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ux-skc{all:unset;box-sizing:border-box;display:block;width:100%;cursor:pointer;border-radius:8px}.ux-skc .skc{width:100%}.ux-skc:hover .skc{transform:translateY(-2px)}.ux-skc .skc{transition:transform .15s}.ux-skc:disabled{cursor:not-allowed}
+.ux-skc:focus-visible{outline:2px solid #b8932a;outline-offset:2px}
+.ux-skp{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px 10px;max-height:66vh;overflow:auto;padding:4px}
+.ux-skon .ux-skc{outline:3px solid #b8932a;outline-offset:2px}
+.ux-skbig{width:260px}.ux-skbig .skc{width:100%}
+@media(max-width:640px){.ux-skrow .ux-skg{grid-template-columns:repeat(4,minmax(0,1fr));width:100%}.ux-skv{border-left:0;padding-left:0}.ux-skp{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}}
