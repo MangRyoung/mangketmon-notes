@@ -95,7 +95,7 @@
  const gridCls=t=>U.dense?'dense':t==='세계관'?'eg-w':t==='인물'?'eg-id':t==='설정'?'eg-l':'';
  /* 11-04 망령 「칼데아 소속 인물(서번트 제외)에게만 신분증」: 캠페인 설정 「신분증 줄 팀」(data.idTeams)이 있으면 그 팀 인물만 신분증,
     소속(sub)에 클래스 이름이 있으면 서번트로 보고 뺀다. 태그 「신분증」은 늘 주고 「신분증 없음」은 늘 뺀다. 설정이 없으면 예전처럼 인물 모두(미사그 그대로) */
- const SVT=/(세이버|아처|랜서|라이더|캐스터|어쌔신|버서커|룰러|어벤저|문캔서|포리너|얼터 ?에고|프리텐더|실더|서번트)/;
+ const SVT=/(^|[\s·(/,])(세이버|아처|랜서|라이더|캐스터|어쌔신|버서커|룰러|어벤저|문캔서|포리너|얼터 ?에고|프리텐더|실더|서번트|그림 ?리퍼)(?=$|[\s·()/,])/;
  function idOk(e){const tg=e.tags||[];if(tg.includes('신분증 없음'))return false;if(tg.includes('신분증'))return true;const T=(((N().ST.campInfo||{}).data||{}).idTeams)||[];if(!T.length)return true;return (e.teams||[]).some(t=>T.includes(t))&&!SVT.test(e.sub||'')}
  function cardOf(e){if(U.dense)return card(e);const t=ety(e);return t==='세계관'?cardWorld(e):t==='인물'?(idOk(e)?cardId(e,false):card(e)):t==='설정'?cardLore(e):card(e)}
  const rowsV=e=>(e.rows||[]).filter(r=>r&&r.k);
