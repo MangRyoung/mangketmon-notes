@@ -58,10 +58,35 @@ window.NT_UNIV=(()=>{
   return [`<section class="ux-sec ux-ord o">${head(`지시 ${esc(S.rk||'-')} · ${esc(S.presetName||'')}`)}${blk('o','ORDER','명령 (4식)',S.oName)}</section>`,
    `<section class="ux-sec ux-ord c"><h4 class="ux-h"><span>지시 체계</span><small>COMMAND</small></h4>${blk('c','COMMAND','지령 (6령)',S.cName)}</section>`]}
 
- function deckSec(id,t,E){if(!t)return '';const L=t.deck||[];if(!L.length&&!(E&&univ()))return '';if(!MK().dbReady())MK().db().then(()=>N().render());
+ /* 11-04 망령 「여긴 왜 안 고쳐」: 은열쇠 세 칸 (노트 27 · 제작기 sk3Html 과 같은 데이터)
+    t.sk3 = {c 체크, d 던전, b 배틀, r 예비} 카드 이름 · t.vault = [{n, src, at}] 카드 보관소. 칸을 누르면 그 종류의 공통 카드 + 보관소 카드에서 고른다. 코스트 없음 */
+ const SK3=[['c','체크'],['d','던전'],['b','배틀'],['r','예비']],SK3N={c:'체크',d:'던전',b:'배틀',r:'예비'};
+ const skK=r=>{const t=String((r&&r[2])||'');const o=[];if(/체크/.test(t))o.push('c');if(/던전/.test(t))o.push('d');if(/배틀/.test(t))o.push('b');return o};
+ const skCommon=()=>{const L=MK().cardList().filter(r=>r&&r[0]==='은열쇠 · 공통'&&r[1]&&skK(r).length);const st=L.filter(r=>String(r[12]||'').trim()==='시작');return st.length?st:L};
+ function skChoices(t,k){const ok=r=>{const ks=skK(r);return k==='r'?ks.length>0:ks.includes(k)};const out=[];for(const r of skCommon())if(ok(r))out.push({n:r[1],v:false});
+  for(const v of (Array.isArray(t.vault)?t.vault:[]))if(v&&v.n){const r=MK().card(v.n);if(r&&ok(r)&&!out.some(x=>x.n===v.n))out.push({n:v.n,v:true})}return out}
+ function skTile(n,attrs,badge){const r=n?MK().card(n):null;const img=r?cimg(r[6]):'';const col=r?ccol(r[5]):'#6b7286';
+  return `<div class="ux-ct ${n&&!r?'miss':''}" style="--cc:${col}"><button type="button" class="ux-cti" ${attrs} style="${img?`background-image:url('${cssu(img)}')`:''}" title="${esc(n||'')}">${img?'':`<span class="ux-ctl">${esc([...(n||'?')][0]||'?')}</span>${r&&r[4]?`<span class="ux-ctx">${esc(brN(r[4]).slice(0,54))}</span>`:''}`}${badge?`<b class="ux-ctq">${esc(badge)}</b>`:''}</button><div class="ux-ctn">${esc(n||'')}</div></div>`}
+ function deckSec(id,t,E){if(!t)return '';const s3=t.sk3&&typeof t.sk3==='object'?t.sk3:{};const V=(Array.isArray(t.vault)?t.vault:[]).filter(v=>v&&v.n);
+  if(!Object.keys(s3).length&&!V.length&&!(E&&univ())&&!(t.deck||[]).length)return '';if(!MK().dbReady())MK().db().then(()=>N().render());
+  const used=new Set(Object.values(s3));
+  const slot=([k,lab])=>{const n=s3[k];return `<div class="ux-sk k-${k}"><div class="ux-skh">${lab}</div>${n?skTile(n,`data-ux="${E?'skpick':'skv'}" data-id="${esc(id)}" data-k="${k}"`):`<button type="button" class="ux-ske" ${E?`data-ux="skpick" data-id="${esc(id)}" data-k="${k}"`:'disabled'}>${E?'＋':''}<br>${lab} 카드</button>`}</div>`};
+  return `<section class="ux-sec ux-deck"><h4 class="ux-h"><span>은열쇠 카드</span><small>체크 · 던전 · 배틀 · 예비</small><span class="sp"></span>${E?'<small class="dim">칸을 누르면 그 종류 카드에서 고른다</small>':''}</h4>
+   <div class="ux-skg">${SK3.map(slot).join('')}</div>
+   <h4 class="ux-h" style="margin-top:10px"><span>카드 보관소</span><small>${V.length}</small></h4>
+   ${V.length?`<div class="ux-cg">${V.map(v=>skTile(v.n,`data-ux="skv" data-id="${esc(id)}" data-n="${esc(v.n)}"`,used.has(v.n)?'칸':'')).join('')}</div><div class="small dim">${V.map(v=>`「${esc(v.n)}」 ${esc(v.src||'')}`).join(' · ')}</div>`:'<p class="small dim" style="margin:2px 0 0">시나리오 · 호감도 보상으로 얻은 카드가 여기 들어와요 (웹툴 GM 「카드 건네주기」 · 제작기 「카드 받기」).</p>'}
+   ${(t.deck||[]).length?`<p class="small dim" style="margin:6px 0 0">예전 덱 ${(t.deck||[]).length}종은 제작기 「예전 덱 관리」에 남아 있어요.</p>`:''}</section>`}
+ function skPick(id,k){const t=MK().trainer(id);if(!t)return;const L=skChoices(t,k);const s3=t.sk3||{};const other=n=>Object.entries(s3).find(([kk,v])=>kk!==k&&v===n);
+  const md=N().openModal(`<div class="mhead"><h2>${esc(t.name||'')} · ${SK3N[k]} 칸</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
+   <div class="ux-cg ux-skp">${L.map(x=>{const o=other(x.n);return `<div class="${o?'ux-skoff':''}${s3[k]===x.n?' ux-skon':''}">${skTile(x.n,o?'disabled':`data-skn="${esc(x.n)}"`,x.v?'보관소':o?SK3N[o[0]]+' 칸':'')}</div>`}).join('')||'<p class="small dim">고를 카드가 없어요 — 제작기 카드 DB 의 「은열쇠 · 공통」을 확인해요.</p>'}</div>
+   <div class="row" style="margin-top:10px">${s3[k]?'<button class="btn sm danger" data-skclr>칸 비우기</button>':''}<span class="sp"></span><button class="btn sm" data-x>닫기</button></div>`,'wide');
+  md.addEventListener('click',e=>{const b=e.target.closest('[data-skn]');const c=e.target.closest('[data-skclr]');if(!b&&!c)return;const n=b?b.dataset.skn:'';N().closeModal();
+   run('trainers',id,d=>{d.sk3=Object.assign({},d.sk3&&typeof d.sk3==='object'?d.sk3:{});if(n)d.sk3[k]=n;else delete d.sk3[k]},n?`${SK3N[k]} 칸 — 「${n}」`:'칸을 비웠어요')})}
+ function skView(n){const r=MK().card(n);const img=r?cimg(r[6]):'';N().openModal(`<div class="mhead"><h2>${esc(n)}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div class="ux-cv" style="--cc:${r?ccol(r[5]):'#6b7286'}"><div class="ux-cvi" style="${img?`background-image:url('${cssu(img)}')`:''}">${img?'':`<span>${esc([...n][0]||'?')}</span>`}</div><div class="ux-cvb"><div class="row" style="gap:6px;flex-wrap:wrap">${r?`<span class="chip static">${esc(r[2]||'카드')}</span>${r[10]?`<span class="chip static">${esc(r[10])}</span>`:''}`:'<span class="warn small">제작기 카드 DB 에 없는 이름이에요</span>'}</div>${r&&r[4]?`<div class="ux-ue" style="margin-top:8px">${fx(r[4])}</div>`:''}</div></div>`)}
+ function oldDeckSec(id,t,E){if(!t)return '';const L=t.deck||[];if(!L.length&&!(E&&univ()))return '';if(!MK().dbReady())MK().db().then(()=>N().render());
   const tot=L.reduce((a,x)=>a+(+x.q||0),0);
   const tile=(x,k)=>{const r=MK().card(x.n);const img=r?cimg(r[6]):'';const col=r?ccol(r[5]):'#6b7286';const cost=r&&r[3]!==''&&r[3]!=null?String(r[3]):'';
-   return `<div class="ux-ct ${r?'':'miss'}" style="--cc:${col}"><button type="button" class="ux-cti" data-ux="card" data-id="${esc(id)}" data-k="${k}" style="${img?`background-image:url('${cssu(img)}')`:''}" title="${esc(x.n)} — 눌러서 보기">${img?'':`<span class="ux-ctl">${esc([...x.n][0]||'?')}</span>${r&&r[4]?`<span class="ux-ctx">${esc(brN(r[4]).slice(0,54))}</span>`:''}`}${cost?`<b class="ux-ctc">${esc(cost)}</b>`:''}<b class="ux-ctq">×${+x.q||0}</b></button>
+   return `<div class="ux-ct ${r?'':'miss'}" style="--cc:${col}"><button type="button" class="ux-cti" data-ux="card" data-id="${esc(id)}" data-k="${k}" style="${img?`background-image:url('${cssu(img)}')`:''}" title="${esc(x.n)} — 눌러서 보기">${img?'':`<span class="ux-ctl">${esc([...x.n][0]||'?')}</span>${r&&r[4]?`<span class="ux-ctx">${esc(brN(r[4]).slice(0,54))}</span>`:''}`}<b class="ux-ctq">×${+x.q||0}</b></button>
     <div class="ux-ctn">${esc(x.n)}</div><div class="ux-ctk">${r?esc(r[2]||'카드'):'<span class="warn">카드 DB 에 없음</span>'}</div>
     ${E?`<div class="ux-ctb"><button type="button" data-ux="dq" data-id="${esc(id)}" data-k="${k}" data-d="-1" aria-label="한 장 빼기">−</button><button type="button" data-ux="dq" data-id="${esc(id)}" data-k="${k}" data-d="1" aria-label="한 장 더">+</button><button type="button" class="danger" data-ux="ddel" data-id="${esc(id)}" data-k="${k}" aria-label="덱에서 빼기">✕</button></div>`:''}</div>`};
   return `<section class="ux-sec ux-deck"><h4 class="ux-h"><span>덱</span>${t.deckName?`<b class="ux-dn">${esc(t.deckName)}</b>`:''}<small>${L.length}종 · ${tot}장</small><span class="sp"></span>${E?`<button type="button" class="btn xs ghost" data-ux="dname" data-id="${esc(id)}">덱 이름</button><button type="button" class="btn xs" data-ux="dadd" data-id="${esc(id)}">＋ 카드</button>`:''}</h4>
@@ -69,7 +94,7 @@ window.NT_UNIV=(()=>{
  function cardView(id,k){const t=MK().trainer(id);const x=t&&(t.deck||[])[k];if(!x)return;const r=MK().card(x.n);const img=r?cimg(r[6]):'';
   N().openModal(`<div class="mhead"><h2>${esc(x.n)}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
    <div class="ux-cv" style="--cc:${r?ccol(r[5]):'#6b7286'}"><div class="ux-cvi" style="${img?`background-image:url('${cssu(img)}')`:''}">${img?'':`<span>${esc([...x.n][0]||'?')}</span>`}</div>
-   <div class="ux-cvb"><div class="row" style="gap:6px;flex-wrap:wrap">${r?`<span class="chip static">${esc(r[2]||'카드')}</span>${r[3]!==''&&r[3]!=null?`<span class="chip static">비용 ${esc(r[3])}</span>`:''}${r[0]?`<span class="chip static">${esc(r[0])}</span>`:''}`:'<span class="warn small">제작기 카드 DB 에 없는 이름이에요</span>'}<span class="chip static">덱에 ×${+x.q||0}</span></div>
+   <div class="ux-cvb"><div class="row" style="gap:6px;flex-wrap:wrap">${r?`<span class="chip static">${esc(r[2]||'카드')}</span>${r[0]?`<span class="chip static">${esc(r[0])}</span>`:''}`:'<span class="warn small">제작기 카드 DB 에 없는 이름이에요</span>'}<span class="chip static">덱에 ×${+x.q||0}</span></div>
     ${r&&r[4]?`<div class="ux-ue" style="margin-top:8px">${fx(r[4])}</div>`:''}${r&&r[8]?`<p class="small dim pre">${esc(r[8])}</p>`:''}${r&&String(r[9]||'').trim()?'<p class="small dim">⚙ 웹툴 배틀에서 도는 구문이 있어요</p>':''}</div></div>`)}
  function cardPick(id){const t=MK().trainer(id);if(!t)return;let q='';
   const md=N().openModal(`<div class="mhead"><h2>덱에 넣을 카드</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
@@ -77,7 +102,7 @@ window.NT_UNIV=(()=>{
    <div class="ux-cpl" id="cpL"></div>`,'wide');
   const draw=()=>{const T=MK().trainer(id)||t;const inDeck=new Set((T.deck||[]).map(x=>x.n));const s=q.trim().toLowerCase();
    const L=MK().cardList().filter(r=>!s||[r[1],r[2],r[4],r[0]].some(v=>String(v||'').toLowerCase().includes(s))).slice(0,120);
-   $('#cpL',md).innerHTML=(L.length?L.map(r=>{const img=cimg(r[6]);return `<button type="button" class="ux-cpr ${inDeck.has(r[1])?'on':''}" data-cpk="${esc(r[1])}" style="--cc:${ccol(r[5])}"><i style="${img?`background-image:url('${cssu(img)}')`:''}">${img?'':esc([...r[1]][0]||'?')}</i><span><b>${esc(r[1])}</b><small>${esc(r[2]||'카드')}${r[3]!==''&&r[3]!=null?' · 비용 '+esc(r[3]):''}</small><em>${esc(brN(r[4]).slice(0,90))}</em></span><u>${inDeck.has(r[1])?'✓ 덱에 있음':'넣기'}</u></button>`}).join(''):`<div class="small dim" style="padding:10px 2px">${MK().cardList().length?'찾는 카드가 없어요.':'제작기 카드 DB 가 비어 있어요. 「＋ 새 카드 만들기」로 첫 카드를 만들어요.'}</div>`)
+   $('#cpL',md).innerHTML=(L.length?L.map(r=>{const img=cimg(r[6]);return `<button type="button" class="ux-cpr ${inDeck.has(r[1])?'on':''}" data-cpk="${esc(r[1])}" style="--cc:${ccol(r[5])}"><i style="${img?`background-image:url('${cssu(img)}')`:''}">${img?'':esc([...r[1]][0]||'?')}</i><span><b>${esc(r[1])}</b><small>${esc(r[2]||'카드')}</small><em>${esc(brN(r[4]).slice(0,90))}</em></span><u>${inDeck.has(r[1])?'✓ 덱에 있음':'넣기'}</u></button>`}).join(''):`<div class="small dim" style="padding:10px 2px">${MK().cardList().length?'찾는 카드가 없어요.':'제작기 카드 DB 가 비어 있어요. 「＋ 새 카드 만들기」로 첫 카드를 만들어요.'}</div>`)
     +(s&&!MK().card(q.trim())?`<button type="button" class="btn xs ghost" data-cpfree style="margin-top:8px">「${esc(q.trim())}」 이름만 넣기 (카드 DB 에 없는 카드)</button>`:'')};
   MK().db().then(draw);draw();
   $('#cpQ',md).addEventListener('input',e=>{q=e.target.value;draw()});
@@ -142,9 +167,11 @@ window.NT_UNIV=(()=>{
  /* 단추 — 어느 탭에서 그려도 되게 문서에 한 번만 */
  document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-ux]');if(!b)return;const a=b.dataset.ux,id=b.dataset.id||'';
   if(a==='card'){e.preventDefault();return cardView(id,+b.dataset.k)}
+  if(a==='skv'){e.preventDefault();const t=MK().trainer(id)||{};return skView(b.dataset.n||((t.sk3||{})[b.dataset.k])||'')}
   if(!canEd(id))return N().toast('이 시트는 고칠 수 없어요');e.preventDefault();
   if(a==='uqadd')return uqEdit(id,-1);if(a==='uqed')return uqEdit(id,+b.dataset.i);
   if(a==='dadd')return cardPick(id);
+  if(a==='skpick')return skPick(id,b.dataset.k);
   if(a==='dq'){const k=+b.dataset.k,dd=+b.dataset.d;return run('trainers',id,d=>{const x=(d.deck||[])[k];if(!x)return false;x.q=Math.max(0,Math.min(99,(+x.q||0)+dd))})}
   if(a==='ddel'){const k=+b.dataset.k;return run('trainers',id,d=>{if(!(d.deck||[])[k])return false;d.deck.splice(k,1)})}
   if(a==='dname'){const t=MK().trainer(id)||{};return N().promptBox('덱 이름',t.deckName||'',(t.name||'트레이너')+'의 덱').then(v=>{if(v==null)return;run('trainers',id,d=>{d.deckName=v.trim()})})}

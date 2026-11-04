@@ -602,3 +602,11 @@ html[data-skin="univ"] .idrkc input{font-family:'Cinzel','Noto Serif KR',serif;c
 .modal.ntbbs-modal{width:min(1240px,97vw)}
 .modal.ntdc-modal{width:min(760px,96vw)}   /* 11-02 두 칸 (웹툴 bbs.css .bbs-split) */
 .ntbbs-box{min-height:200px}
+/* 11-04 은열쇠 세 칸 · 카드 보관소 */
+.ux-skg{display:grid;grid-template-columns:repeat(4,minmax(0,120px));gap:8px}
+@media(max-width:640px){.ux-skg{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.ux-sk{--kc:#8a93a6;display:flex;flex-direction:column;gap:3px;min-width:0}.ux-sk.k-c{--kc:#4573c4}.ux-sk.k-d{--kc:#4f9a5a}.ux-sk.k-b{--kc:#c8504a}.ux-sk.k-r{--kc:#b8932a}
+.ux-skh{font-size:12px;font-weight:700;color:var(--kc)}
+.ux-ske{width:100%;height:92px;border:2px dashed color-mix(in srgb,var(--kc) 55%,transparent);border-radius:7px;background:transparent;color:var(--kc);font:inherit;font-size:12px;cursor:pointer}.ux-ske:disabled{cursor:default;opacity:.6}
+.ux-skoff{opacity:.4}.ux-skon .ux-cti{outline:3px solid var(--kc,#b8932a);outline-offset:1px}
+.ux-ctq{position:absolute;right:4px;top:4px;font-size:10px;padding:1px 5px;border-radius:6px;background:rgba(0,0,0,.65);color:#fff}
