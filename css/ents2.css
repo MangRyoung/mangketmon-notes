@@ -107,3 +107,28 @@ html[data-skin="univ"] .enti.el{background:linear-gradient(160deg,#efe6d2,#e4d8b
 .entsubh{display:flex;align-items:center;gap:10px;margin:4px 0 10px;padding:7px 12px;font-family:var(--lab);font-weight:400;font-size:15px;letter-spacing:.08em;color:var(--fg);background:color-mix(in srgb,var(--c,#888) 16%,transparent);border-left:4px solid var(--c,#888);border-radius:2px}
 .entsubh::before{content:"";width:8px;height:8px;background:var(--c,#888);transform:rotate(45deg);flex:none}
 .entsubh small{margin-left:auto;font-family:var(--mono);color:var(--mute);font-size:12px}
+/* 11-04 망령: 출입증 / 외부 인물 기록 칸 나누기 · 휘하 서번트 펼치기 · 사망 판정 */
+.eptabs{display:flex;gap:6px;margin:0 0 12px}
+.eptabs button{display:flex;align-items:center;gap:8px;padding:6px 14px;border:1px solid var(--line);background:transparent;color:var(--mute);font-family:var(--lab);font-size:14px;letter-spacing:.06em;cursor:pointer;border-radius:3px}
+.eptabs button small{font-family:var(--mono);font-size:11px;opacity:.8}
+.eptabs button.on{color:var(--fg);border-color:var(--c,#1e88e5);background:color-mix(in srgb,var(--c,#1e88e5) 20%,transparent)}
+.eid-svn{flex:none;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:3px;background:var(--hd1);color:#fff;letter-spacing:.04em;white-space:nowrap}
+.svlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px;margin:4px 0 10px}
+.svm{display:flex;align-items:center;gap:9px;padding:6px 8px;border:1px solid var(--line);border-left:3px solid var(--c,#1e88e5);background:color-mix(in srgb,var(--c,#1e88e5) 8%,transparent);color:var(--fg);text-align:left;cursor:pointer;border-radius:3px;font:inherit;min-width:0}
+.svm:hover{background:color-mix(in srgb,var(--c,#1e88e5) 20%,transparent)}
+.svf{flex:none;width:38px;height:38px;border-radius:50%;background:#223 center/cover no-repeat;display:grid;place-items:center;font-weight:900;color:var(--c,#1e88e5);border:1px solid var(--line)}
+.svt{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.svt b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.svt small{font-size:11.5px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.svm em{margin-left:auto;font-style:normal;font-size:11px;color:var(--mute);border:1px solid var(--line);padding:0 5px;border-radius:3px;flex:none}
+.svm.gone{opacity:.6}.svm.gone .svf{filter:grayscale(1)}
+.svmaster{display:flex;align-items:center;gap:8px;margin:6px 0 8px}.svmaster .svm{flex:1}
+.enti.eid{position:relative}
+.enti.eid.dead .eid-p{filter:grayscale(1) contrast(1.05) brightness(.92)!important}
+.enti.eid.dead .eid-n{text-decoration:line-through;text-decoration-color:rgba(125,10,18,.75);text-decoration-thickness:2px}
+.eid-dead{position:absolute;inset:0;pointer-events:none;z-index:2}
+.eid-splat{position:absolute;right:-6px;top:22px;width:78%;height:auto;mix-blend-mode:multiply}
+.eid-dstamp{position:absolute;right:18px;bottom:46px;display:flex;flex-direction:column;align-items:center;padding:3px 12px 2px;border:3px double #a3121c;color:#a3121c;font:900 22px/1 'Noto Serif KR',serif;letter-spacing:.3em;transform:rotate(-13deg);opacity:.88;background:rgba(255,255,255,.18);mix-blend-mode:multiply}
+.eid-dstamp small{font:700 8.5px/1.4 'IBM Plex Mono',monospace;letter-spacing:.32em}
+.enti.eid.dead .eid-seal{border-color:#a3121c!important;color:#a3121c!important}
+.enti.eid.big .eid-dstamp{font-size:30px;right:26px;bottom:60px}
