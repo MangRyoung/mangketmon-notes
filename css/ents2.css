@@ -101,3 +101,9 @@ html[data-skin="univ"] .enti.el{background:linear-gradient(160deg,#efe6d2,#e4d8b
 .entgrid .insa{box-shadow:5px 0 0 var(--yel,#ffd23f)!important}
 .entgrid .nt-dragging{opacity:.35}
 .entsec h3 .esadd{padding:0 8px;line-height:18px;font-size:13px;margin-right:6px}
+/* 11-04 망령: 종류 칸 안의 묶음(캠페인 설정 「항목 묶음 태그」) */
+.entsub{margin:0 0 14px}
+.entsub:last-child{margin-bottom:4px}
+.entsubh{display:flex;align-items:center;gap:8px;margin:2px 0 8px;padding:0 0 4px;font-family:var(--lab);font-weight:400;font-size:13px;letter-spacing:.06em;color:var(--fg);border-bottom:1px dashed color-mix(in srgb,var(--c,#888) 55%,transparent)}
+.entsubh::before{content:"";width:6px;height:6px;background:var(--c,#888);transform:rotate(45deg);flex:none}
+.entsubh small{font-family:var(--mono);color:var(--mute);font-size:11px}
