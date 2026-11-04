@@ -39,6 +39,8 @@ window.NT_STORE=(()=>{
   /* 11-03: 자리 앉기 2 — 'ok' | 'taken' | 'pending'(GM 승인 대기) | 'up'. 함수가 없으면 예전 nt_claim (true → ok · false → taken) */
   async claim2(camp,seat,secret,name){const r=await sb().rpc('nt_claim2',{p_camp:camp,p_seat:seat,p_secret:secret,p_name:name||''});if(!r.error)return r.data;if(!noFn(r.error))throw err(r.error);const ok=await this.claim(camp,seat,secret,name);return ok?(seat?'ok':'up'):'taken'},
   claimDecide:(camp,secret,uid,ok)=>rpc('nt_claim_decide',{p_camp:camp,p_secret:secret,p_uid:uid,p_ok:!!ok}),
+  /* 11-04 여러 자리: 이미 앉은 자리 중 하나로 바꾸기 (patch_2026-11-04_여러자리.sql) */
+  seatUse:(camp,secret,seat)=>rpc('nt_seat_use',{p_camp:camp,p_secret:secret,p_seat:seat}),
   /* 11-03: 변경 이력 · 휴지통 (patch_2026-11-03_노트.sql). 함수가 없으면 null */
   async history(camp,secret,kind,id,limit){const r=await sb().rpc('nt_history',{p_camp:camp,p_secret:secret,p_kind:kind,p_id:id,p_limit:limit||20});if(!r.error)return r.data||[];if(noFn(r.error))return null;throw err(r.error)},
   async deleted(camp,secret,since){const r=await sb().rpc('nt_deleted',{p_camp:camp,p_secret:secret,p_since:since||null});if(!r.error)return r.data||[];if(noFn(r.error))return null;throw err(r.error)},

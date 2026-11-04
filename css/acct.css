@@ -59,3 +59,4 @@
 .seatcard .sface{width:64px;height:64px;border-radius:50%;background:#000 center/cover;border:1px solid var(--line2)}
 .seatcard b{font-size:14px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .seatcard small{font-size:11px;color:var(--mute)}
+.seatcard.own{border-color:var(--gold,#b8932a);box-shadow:0 0 0 1px var(--gold,#b8932a) inset}   /* 11-04 여러 자리: 내가 앉은 다른 자리 */
