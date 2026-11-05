@@ -112,7 +112,7 @@
  /* 10-29 망령: 이어 둔 제작기 폴더에서 아직 안 넣은 트레이너 */
  function mkBar(){const L=MK().linked();if(!L.length)return `<div class="mkbar off"><span>📁 제작기 폴더를 이으면 그 폴더에 만든 트레이너가 여기 바로 떠요</span><span class="sp"></span><button class="btn xs" data-p="mklink">폴더 잇기</button></div>`;
   const miss=MK().missing();const np=miss.filter(t=>!MK().isNpc(t)).length,nn=miss.length-np;
-  return `<div class="mkbar${miss.length?' new':''}"><span>📁 제작기 <b>${L.map(id=>esc(MK().folderName(id))).join(' · ')}</b></span>${miss.length?`<span class="mkmiss">${miss.slice(0,8).map(t=>`<i title="${esc(t.name||'')}" style="${t.image?`background-image:url('${cssu(t.image)}')`:''}"></i>`).join('')}</span><span>아직 안 넣은 트레이너 <b>${miss.length}명</b> <small class="dim">(${[np?'PC '+np:'',nn?'NPC '+nn:''].filter(Boolean).join(' · ')})</small></span>`:'<span class="dim small">폴더의 트레이너가 모두 들어와 있어요</span>'}<span class="sp"></span>${miss.length?'<button class="btn xs" data-p="add" title="이어 둔 폴더의 트레이너가 체크된 채로 열려요 — 넣을 사람만 골라요">골라 넣기</button><button class="btn xs pri" data-p="mksync">모두 넣기</button>':''}<button class="btn xs ghost" data-p="mklink">폴더 바꾸기</button></div>`}
+  return `<div class="mkbar${miss.length?' new':''}"><span>📁 제작기 <b>${L.map(id=>esc(MK().folderName(id))).join(' · ')}</b></span>${miss.length?`<span class="mkmiss">${miss.slice(0,8).map(t=>`<i title="${esc(t.name||'')}" style="${t.image?`background-image:url('${cssu(t.image)}')`:''}"></i>`).join('')}</span><span>아직 안 넣은 트레이너 <b>${miss.length}명</b> <small class="dim">(${[np?'PC '+np:'',nn?'NPC '+nn:''].filter(Boolean).join(' · ')})</small></span>`:'<span class="dim small">폴더의 트레이너가 모두 들어와 있어요</span>'}<span class="sp"></span>${miss.length?'<button class="btn xs" data-p="add" title="이어 둔 폴더의 트레이너가 체크된 채로 열려요 — 넣을 사람만 골라요">골라 넣기</button><button class="btn xs pri" data-p="mksync">모두 넣기</button>':''}<button class="btn xs ghost" data-p="mklink">폴더 바꾸기</button>${N().gm()?`<button class="btn xs ghost" data-p="mksup" title="웹툴 배틀 「+ 포켓몬」으로 도중에 부를 포켓몬이 든 제작기 폴더">🛟 지원 ${MK().support()?esc(MK().folderName(MK().support())):'폴더 없음'}</button>`:''}</div>`}
  async function mkSync(){await MK().load(true);const miss=MK().missing().sort((a,b)=>(a._ord||0)-(b._ord||0));if(!miss.length){N().render();return N().toast('넣을 트레이너가 없어요')}
   const n={pc:N().list('pc').length,npc:N().list('npc').length};
   await N().putMany(miss.map(t=>{const k=MK().isNpc(t)?'npc':'pc';return {kind:k,id:t.id,data:fromTrainer(t,{order:n[k]++}),vis:k==='npc'?'gm':'pub'}}));
@@ -435,6 +435,7 @@
  async function act(k,b){const id=b.dataset.id||(U.sel==='~'?'':U.sel);try{await MK().load()}catch(e){}   /* 10-31: 제작기 사본 없이 고치면 노트에만 저장돼 나중에 되돌아간다 */
   if(k==='reload'){await MK().load(true);N().render();return}
   if(k==='mklink'){await MK().pickLinked();return}
+  if(k==='mksup'){await MK().pickSupport();return}
   if(k==='mksync'){await mkSync();return}
   const KD=K();const NPC=U.mode==='npc';
   if(k==='add'||k==='mine'){await MK().load(true);let ts=MK().trainers().filter(t=>!N().data(KD,t.id));if(NPC)ts.sort((a,b)=>MK().isNpc(b)-MK().isNpc(a)||String(a.folder||'').localeCompare(String(b.folder||''),'ko'));if(k==='mine')ts=ts.filter(t=>t.id===N().me());if(!ts.length&&!(k==='add'&&N().gm()))return N().toast(k==='mine'?'제작기에 내 좌석 id 의 트레이너가 없어요 (GM 이 좌석을 트레이너 id 로 만들어야 해요)':'넣을 트레이너가 없어요 (제작기에서 먼저 만들어요)');

@@ -74,12 +74,23 @@ window.NT_MAKER=(()=>{
  const kids=id=>M.folders.filter(f=>f.parent===id).map(f=>f.id);
  function under(ids){const S=new Set(),q=[...ids];while(q.length){const x=q.shift();if(S.has(x))continue;S.add(x);q.push(...kids(x))}return S}
  const fpath=id=>{const L=[];let c=M.folders.find(x=>x.id===id),n=0;while(c&&n++<6){L.unshift(c.name);c=c.parent?M.folders.find(x=>x.id===c.parent):null}return L.join(' / ')};
- const linkedTrainers=()=>{const L=linked();if(!L.length)return [];const S=under(L);return trainers().filter(t=>t.folder&&S.has(t.folder))};
+ /* 11-05 23:52 망령 「불러오는 건 캠페인마다 지원용 폴더를 따로 만들어서 거기에 연동」: camp.data.mk.support = 제작기 폴더 id. 웹툴 배틀 「+ 포켓몬」이 그 폴더(아래 폴더 포함) 트레이너의 포켓몬을 도중에 부른다. 이어 둔 폴더 안에 있어도 PC/NPC 시트 「아직 안 넣은」에서는 뺀다 */
+ const support=()=>String((camp().mk||{}).support||'');
+ const linkedTrainers=()=>{const L=linked();if(!L.length)return [];const S=under(L);const X=support()?under([support()]):new Set();return trainers().filter(t=>t.folder&&S.has(t.folder)&&!X.has(t.folder))};
  /* 10-30 망령 「미사그 캠퍼스 폴더 안에 NPC 폴더」: 이어진 폴더 아래의 NPC 폴더(제작기 고정 id misag-npc, 또는 이름에 NPC)에 든 트레이너는 NPC 표시가 없어도 NPC 시트(GM만)로 */
  const npcFolders=()=>{const S=under(linked());return under(M.folders.filter(f=>S.has(f.id)&&(f.id==='misag-npc'||/npc/i.test(f.name||''))).map(f=>f.id))};
  const isNpc=t=>!!t&&(t.kind==='npc'||(!!t.folder&&npcFolders().has(t.folder)));
  const missing=()=>linkedTrainers().filter(t=>!N().data('pc',t.id)&&!N().data('npc',t.id));
- async function saveLinked(ids){await N().campPatch({mk:{folders:ids}})}   /* 11-03: 칸 단위 patch */
+ async function saveLinked(ids){await N().campPatch({mk:{folders:ids}})}
+ async function pickSupport(){await load(true);const cur=support();const roots=M.folders.filter(f=>!f.parent||!M.folders.some(x=>x.id===f.parent)).sort((a,b)=>(a.ord||0)-(b.ord||0));
+  const cnt=id=>{const S=under([id]);const ts=M.trainers.filter(t=>t.folder&&S.has(t.folder));return `${ts.length}명 · 포켓몬 ${M.pokemon.filter(p=>ts.some(t=>t.id===p.tid)).length}체`};
+  const row=(f,dep)=>`<label class="mkf" style="padding-left:${8+dep*20}px"><input type="radio" name="mksup" value="${N().esc(f.id)}" ${cur===f.id?'checked':''}><span>${dep?'└ ':''}📁 ${N().esc(f.name||f.id)}${f.priv?' 🔒':''}</span><small class="dim">${cnt(f.id)}</small></label>`+M.folders.filter(x=>x.parent===f.id).sort((a,b)=>(a.ord||0)-(b.ord||0)).map(x=>row(x,dep+1)).join('');
+  return new Promise(res=>{const md=N().openModal(`<div class="mhead"><h2>🛟 지원 폴더 (배틀 도중 부르기)</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
+   <p class="small" style="margin-top:0">웹툴 배틀 벤치의 「+ 포켓몬」이 이 폴더(아래 폴더 포함)에 있는 트레이너의 포켓몬을 한 마리씩 골라 진영에 부를 수 있어요. 캠페인마다 제작기에 지원용 폴더를 하나 만들어 두고 여기서 골라요. 이 폴더의 트레이너는 PC/NPC 시트의 「아직 안 넣은 트레이너」에는 뜨지 않아요.</p>
+   <div class="mkflist">${roots.map(f=>row(f,0)).join('')||'<div class="small dim">제작기에 폴더가 없어요</div>'}</div>
+   <div class="mfoot"><button class="btn ghost" id="mksNone">잇지 않기</button><span class="sp"></span><button class="btn pri" id="mksOk">저장</button></div>`);
+   const done=async id=>{try{await N().campPatch({mk:{support:id||null}});N().closeModal();N().toast(id?'지원 폴더를 이었어요':'지원 폴더 잇기를 풀었어요');N().render();res(id)}catch(e){N().toast('저장 실패: '+e.message)}};
+   N().$('#mksOk',md).onclick=()=>{const x=N().$('.mkflist input:checked',md);done(x?x.value:'')};N().$('#mksNone',md).onclick=()=>done('')})}   /* 11-03: 칸 단위 patch */
  /* 폴더 고르기 — 위 폴더를 고르면 아래 폴더도 같이 이어진다 */
  async function pickLinked(){await load(true);const cur=new Set(linked());const roots=M.folders.filter(f=>!f.parent||!M.folders.some(x=>x.id===f.parent)).sort((a,b)=>(a.ord||0)-(b.ord||0));
   const cnt=id=>{const S=under([id]);return M.trainers.filter(t=>t.folder&&S.has(t.folder)).length};
@@ -91,5 +102,5 @@ window.NT_MAKER=(()=>{
    const done=async ids=>{try{await saveLinked(ids);N().closeModal();N().toast(ids.length?'제작기 폴더를 이었어요':'폴더 잇기를 풀었어요');N().render();res(ids)}catch(e){N().toast('저장 실패: '+e.message)}};
    N().$('#mkfOk',md).onclick=()=>{let ids=N().$$('.mkflist input:checked',md).map(x=>x.value);const S=new Set(ids);ids=ids.filter(id=>{let c=M.folders.find(x=>x.id===id),n=0;while(c&&c.parent&&n++<8){if(S.has(c.parent))return false;c=M.folders.find(x=>x.id===c.parent)}return true});done(ids)};
    N().$('#mkfNone',md).onclick=()=>done([])})}
- return {load,trainers,trainer,mons,img,folderName,M,db,dbReady,move,baseLv,item,card,itemList,cardList,abil,pot,abilList,potList,moveList,dbSet,edit,linked,linkedTrainers,missing,isNpc,pickLinked,fpath,under};
+ return {load,trainers,trainer,mons,img,folderName,M,db,dbReady,move,baseLv,item,card,itemList,cardList,abil,pot,abilList,potList,moveList,dbSet,edit,linked,linkedTrainers,missing,isNpc,pickLinked,support,pickSupport,fpath,under};
 })();
