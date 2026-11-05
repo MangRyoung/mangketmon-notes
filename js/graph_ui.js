@@ -16,7 +16,9 @@
  /* 10-30 망령 「PC · 객원 · NPC 로 거르기」: 시트 노드의 종류 = 시트 분류(js/cls.js). 항목 노드는 「항목」. 거르기 단추는 보드 · 선도 같이 쓴다 */
  const CL=window.NT_CLS?null:{of:(k,p)=>k==='ents'?'ent':k==='npc'?'npc':'pc',name:c=>({pc:'PC',guest:'객원',npc:'NPC'})[c]||'항목',color:c=>({pc:'#d22a2a',guest:'#d9891c',npc:'#2f6fd0'})[c]||'#8e8e8e',shown:()=>true,chips:()=>'',bindChips:()=>{}};
  const C=()=>window.NT_CLS||CL;
- function sheetNodes(){const MK=window.NT_MAKER;return SK.flatMap(k=>N().list(k).map(p=>{const t=MK&&MK.trainer&&MK.trainer(p.id);const c=C().of(k,p);return {id:p.id,_k:k,_cls:c,title:(t&&t.name)||p.name||'?',type:C().name(c),sub:[p.player,p.sub].filter(Boolean).join(' · '),face:(t&&t.image)||p.image||p.face||'',gx:p.gx,gy:p.gy,_vis:p._vis,tags:[],teams:[],color:C().color(c)}}))}
+ /* 11-05 망령 「새 트레이너는 안 뜨게」: 이름을 아직 안 지은 빈 시트(「새 트레이너」)는 관계도에 그리지 않는다 — 시트는 그대로 */
+ const blankName=n=>/^\s*새 트레이너\s*\d*\s*$/.test(String(n||''));
+ function sheetNodes(){const MK=window.NT_MAKER;return SK.flatMap(k=>N().list(k).filter(p=>{const t=MK&&MK.trainer&&MK.trainer(p.id);return !blankName((t&&t.name)||p.name)}).map(p=>{const t=MK&&MK.trainer&&MK.trainer(p.id);const c=C().of(k,p);return {id:p.id,_k:k,_cls:c,title:(t&&t.name)||p.name||'?',type:C().name(c),sub:[p.player,p.sub].filter(Boolean).join(' · '),face:(t&&t.image)||p.image||p.face||'',gx:p.gx,gy:p.gy,_vis:p._vis,tags:[],teams:[],color:C().color(c)}}))}
  const clsOfNode=e=>e._cls||'ent';
  const clsCount=()=>{const o={pc:0,guest:0,npc:0,ent:0};for(const e of N().list('ents').concat(sheetNodes()))if(!plView()||e._vis==='pub')o[clsOfNode(e)]=(o[clsOfNode(e)]||0)+1;return o};
  const isSheet=id=>!N().doc('ents',id)&&SK.some(k=>N().doc(k,id));
@@ -106,14 +108,32 @@
   $('#rlOk',md).onclick=async()=>{await N().put('rels',id,{a:A,b:B,label:$('#rlLabel',md).value.trim(),kind:$('#rlKind',md).value,two:$('#rlTwo',md).checked,note:$('#rlNote',md).value.trim()},$('#rlVis',md).value);U.sel=id;N().closeModal()};
   $('#rlDel',md).onclick=async()=>{if(!await N().confirmBox('이 관계선을 지울까요?','지우기'))return;await N().del('rels',id);U.sel='';N().closeModal()}}
  /* ---- 코르크보드 ---- */
+ /* 11-05 망령 「예쁘게 정리 좀 하고 정리 버튼도 만들어」: 보드 「⇲ 정리」 — 보이는 카드를 분류 줄(PC → 객원 → NPC → 항목 종류별)로, 줄마다 가운데 맞춤.
+    분류 안 순서 = 실이 많은 사람 먼저 → 이름. 줄이 많으면 줄 간격을 좁혀 보드(2200×1400) 안에 넣는다. 자리는 각 문서 gx · gy (실행 취소 = 옛 자리로) */
+ async function tidyBoard(list){if(!list||!list.length)return N().toast('정리할 카드가 없어요');
+  const ORD=['pc','guest','npc','ent'];const deg={};for(const r of rels()){deg[r.a]=(deg[r.a]||0)+1;deg[r.b]=(deg[r.b]||0)+1}
+  const bands=[];for(const c of ORD){const L=list.filter(e=>clsOfNode(e)===c);if(!L.length)continue;
+   const sub=c==='ent'?[...new Set(L.map(e=>e.type||'기타'))].map(t=>L.filter(e=>(e.type||'기타')===t)):[L];
+   for(const g of sub)bands.push(g.slice().sort((a,b)=>(deg[b.id]||0)-(deg[a.id]||0)||String(a.title||'').localeCompare(String(b.title||''),'ko')))}
+  const CW=136,DX=176,M=90,cols=Math.max(1,Math.floor((BW-2*M-CW)/DX)+1);
+  const rowsOf=g=>Math.ceil(g.length/cols);const nRows=bands.reduce((a,g)=>a+rowsOf(g),0);const GAP=56;
+  let DY=236;const need=nRows*DY+(bands.length-1)*GAP;if(need>BH-2*M)DY=Math.max(150,Math.floor((BH-2*M-(bands.length-1)*GAP)/nRows));
+  let y=Math.max(M,Math.round((BH-(nRows*DY+(bands.length-1)*GAP))/2));const rows=[],undo=[];
+  for(const g of bands){for(let i=0;i<g.length;i+=cols){const line=g.slice(i,i+cols);const w=(line.length-1)*DX+CW;const x0=Math.round((BW-w)/2);
+    line.forEach((e,j)=>{const k=e._k||'ents';const dd=N().doc(k,e.id);if(!dd)return;const gx=Math.round((x0+j*DX)*W/BW),gy=Math.round(y*H/BH);if(dd.data.gx===gx&&dd.data.gy===gy)return;
+     undo.push({kind:k,id:e.id,data:N().clone(dd.data),vis:dd.vis});rows.push({kind:k,id:e.id,data:Object.assign(N().clone(dd.data),{gx,gy}),vis:dd.vis})});y+=DY}y+=GAP}
+  if(!rows.length)return N().toast('이미 가지런해요');
+  const n=await N().putMany(rows);if(!n)return;
+  N().toast(`카드 ${rows.length}장을 정리했어요`,{undo:async()=>{const m=await N().putMany(undo);N().toast(m?'옛 자리로 되돌렸어요':'되돌리지 못했어요')}})}
  function renderBoard(el){const G=N().gm();const all=N().list('ents');const list=nodes().filter(e=>e._cls||['인물','조직','기타','이벤트','PC','NPC'].includes(e.type)||e.face);const types=window.NT_ENTS?NT_ENTS.TYPES:[];
   const tags=[...new Set(all.flatMap(e=>e.tags||[]))].sort((a,b)=>a.localeCompare(b,'ko')),teams=[...new Set(all.flatMap(e=>e.teams||[]))].sort((a,b)=>a.localeCompare(b,'ko'));
   const nAll=all.length,nPub=all.filter(e=>e._vis==='pub').length,rPub=N().list('rels').filter(r=>r._vis==='pub').length,rAll=N().list('rels').length;
   el.innerHTML=`<div class="toolbar"><h2>관계도</h2><div class="seg"><button data-gview="board" class="on">보드</button><button data-gview="svg">선도</button></div>${G?`<div class="seg"><button data-gv="gm" class="${U.view!=='pl'?'on':''}" title="GM 참고용 — 비공개 인물 · 관계까지">🔒 GM 전체 ${nAll}·${rAll}</button><button data-gv="pl" class="${U.view==='pl'?'on':''}" title="PL 에게 보이는 그대로">👥 PL 공개 ${nPub}·${rPub}</button></div>`:''}
    ${C().chips('graph',clsCount())}<select id="grType"><option value="">모든 종류</option>${types.map(([t])=>`<option ${U.type===t?'selected':''}>${t}</option>`).join('')}</select>${tags.length?`<select id="grTag"><option value="">모든 태그</option>${tags.map(t=>`<option ${U.tag===t?'selected':''}>${esc(t)}</option>`).join('')}</select>`:''}${teams.length?`<select id="grTeam"><option value="">모든 편</option>${teams.map(t=>`<option ${U.team===t?'selected':''}>${esc(t)}</option>`).join('')}</select>`:''}
-   <span class="sp"></span>${N().presentBtn()}${N().bulkBtns('rels',null,'관계선')}${G&&U.view==='pl'?'<span class="note"><b style="color:var(--yel)">PL 이 보는 그대로</b></span>':''}</div><div class="cb" id="cbRoot"></div>`;
+   ${G?'<button class="btn xs" data-g="tidy" title="보이는 카드를 PC · 객원 · NPC · 항목 줄로 가지런히 놓아요 (실행 취소 가능)">⇲ 정리</button>':''}<span class="sp"></span>${N().presentBtn()}${N().bulkBtns('rels',null,'관계선')}${G&&U.view==='pl'?'<span class="note"><b style="color:var(--yel)">PL 이 보는 그대로</b></span>':''}</div><div class="cb" id="cbRoot"></div>`;
   $$('#grType,#grTag,#grTeam',el).forEach(sl=>sl.onchange=()=>{U[sl.id==='grType'?'type':sl.id==='grTag'?'tag':'team']=sl.value;N().render()});C().bindChips(el,'graph',()=>N().render());
   $$('[data-gv]',el).forEach(b=>b.onclick=()=>{U.view=b.dataset.gv;U.sel='';N().render()});$$('[data-gview]',el).forEach(b=>b.onclick=()=>{U.gview=b.dataset.gview;N().render()});
+  {const tb=$('[data-g="tidy"]',el);if(tb)tb.onclick=()=>tidyBoard(list)}
   const groups={};const gOf=e=>(e.teams&&e.teams[0])||e.type||'';list.forEach(e=>{const g=gOf(e);if(!groups[g])groups[g]={name:g||'기타',color:e.color&&!(e.teams&&e.teams[0])?e.color:undefined}});
   const ids=new Set(list.map(e=>e.id));
   const nodesB=list.map(e=>({id:e.id,name:e.title||'?',short:e.title,role:e.sub||e.type||'',img:e.face||e.photo||'',group:gOf(e),x:e.gx!=null?e.gx*BW/W:null,y:e.gy!=null?e.gy*BH/H:null,gmOnly:e._vis!=='pub'}));
