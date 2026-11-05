@@ -491,7 +491,8 @@ window.NT_SHELF=(()=>{
 
 ---
 > 출처 · 웹툴 오레마스 배틀 규칙(battle_ui.js 날씨 배율 · 효과 카드 요약, engine/field.js 설치기 · 철거 규칙)과 제작기 상태 변화 DB(js/fx/states.js) 기본값. 제작기 DB 관리에서 상태 변화를 고쳤다면 그쪽이 웹툴 배틀에 쓰입니다 — 이 책은 11-01 기본값입니다.`;
- const LATER=[{id:'field',no:'MR-420',c:'teal',t:'필드 · 상태 변화 편람',en:'FIELD AND STATUS',sub:'날씨 · 필드 · 룸 · 설치물 · 상태 변화',src:'웹툴 배틀 규칙 표(날씨 배율 · 효과 카드 요약 · 설치기 철거) · 제작기 상태 변화 DB 기본값(11-01)을 모았어요',parts:[{md:FIELDBOOK}]}];
+ /* 11-05 18:00 망령 「은열쇠는 여기(서가)에도 추가」: 룰북 「은열쇠 (카드)」 장 + 시작 카드 그림 모음 (rb_ui cardWall) */
+ const LATER=[{id:'silverkey',no:'MR-240',c:'plum',t:'은열쇠 카드',en:'SILVER KEY',sub:'세 칸 · 바치기 · 시작 카드 24장',src:'제작기 룰북 「은열쇠 (카드)」 장 · 카드 DB 시작 카드에서 바로 읽어요',parts:[{rb:{ch:'silverkey',h:[]}}]},{id:'field',no:'MR-420',c:'teal',t:'필드 · 상태 변화 편람',en:'FIELD AND STATUS',sub:'날씨 · 필드 · 룸 · 설치물 · 상태 변화',src:'웹툴 배틀 규칙 표(날씨 배율 · 효과 카드 요약 · 설치기 철거) · 제작기 상태 변화 DB 기본값(11-01)을 모았어요',parts:[{md:FIELDBOOK}]}];
  const COLORS=[['crim','진홍'],['navy','남색'],['moss','녹색'],['ochre','황토'],['plum','자주'],['teal','청록'],['ink','먹색']];
  const K='shelf',INIT='_init';
  const seeded=()=>!!N().doc(K,INIT);
@@ -529,7 +530,7 @@ window.NT_SHELF=(()=>{
  const pick=rb=>{const RB=window.NT_RB;const c=RB.chapter(rb.ch);if(!c)return null;const H=(rb.h||[]).filter(Boolean);if(!H.length)return {md:c.body||'',missing:[]};const S=RB.sections(c);const hit=h=>s=>s.h===h||s.h.startsWith(h+' ');
   return {md:H.map(h=>{const x=S.find(hit(h));return x?x.md:''}).filter(Boolean).join('\n\n'),missing:H.filter(h=>!S.some(hit(h)))}};
  function bodyOf(parts){const RB=window.NT_RB;let wait=false,miss=[];
-  const html=(parts||[]).map(p=>{if(p.rb&&p.rb.ch){if(!RB.R.book){wait=true;return ''}const k=pick(p.rb);if(!k){miss.push(p.rb.ch);return ''}if(k.missing.length)miss.push(...k.missing);return `<div class="shr-live">${RB.render(k.md)}</div>`}
+  const html=(parts||[]).map(p=>{if(p.rb&&p.rb.ch){if(!RB.R.book){wait=true;return ''}const k=pick(p.rb);if(!k){miss.push(p.rb.ch);return ''}if(k.missing.length)miss.push(...k.missing);return `<div class="shr-live">${RB.render(k.md)}</div>${p.rb.ch==='silverkey'&&window.NT_RBCW?NT_RBCW():''}`}
    return p.md?RB.render(p.md):''}).join('');
   return {html,wait,miss}}
  function toc(m){const H=[...m.querySelectorAll('.shr-page h4')];H.forEach((h,i)=>h.id='shr-h'+i);const t=m.querySelector('.shr-toc');if(!t)return;

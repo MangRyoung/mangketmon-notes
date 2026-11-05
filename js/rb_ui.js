@@ -55,5 +55,5 @@
    const s=e.target.closest('[data-rbsec]');if(s){e.preventDefault();const h=el.querySelector('#rbt-h'+s.dataset.rbsec);if(h)h.scrollIntoView({behavior:'smooth',block:'start'})}});
   const sel=el.querySelector('.rbt-sel');if(sel)sel.addEventListener('change',()=>pick(sel.value));
   const qi=el.querySelector('#rbtQ');let tq=0;if(qi)qi.addEventListener('input',()=>{clearTimeout(tq);tq=setTimeout(()=>{U.q=qi.value;U.jump=true;N().render()},250)});}
- N().MOD.rb={render};
+ N().MOD.rb={render};window.NT_RBCW=cardWall;   /* 서가 책 「은열쇠 카드」도 같은 그림 모음 */
 })();
