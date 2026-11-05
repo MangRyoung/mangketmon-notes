@@ -333,3 +333,5 @@ html:not(#_) .rbt-cwl{display:grid;grid-template-columns:repeat(auto-fill,minmax
 html:not(#_) .rbt-cwc .skc{width:100%}
 html:not(#_) .rbt-cw-wait{opacity:.6;font-size:13px}
 @media (max-width:760px){html:not(#_) .rbt-cwl{grid-template-columns:repeat(2,1fr);gap:8px}}
+/* 카드 그림 모음: 종이 쪽(.shr-page)의 「글자색 inherit · 그림자 없음」이 카드 이름까지 먹어 안 보이던 것 — 카드 이름은 카드 꾸밈 그대로 */
+html:not(#_) .shr-page .rbt-cw .skc .skc-n{color:#fff;text-shadow:0 .5cqw 0 rgba(0,0,0,.55),0 0 3cqw rgba(0,0,0,.5);font-family:var(--lab,'Do Hyeon'),var(--font,sans-serif)}
