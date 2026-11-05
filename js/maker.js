@@ -83,7 +83,7 @@ window.NT_MAKER=(()=>{
  const missing=()=>linkedTrainers().filter(t=>!N().data('pc',t.id)&&!N().data('npc',t.id));
  async function saveLinked(ids){await N().campPatch({mk:{folders:ids}})}
  async function pickSupport(){await load(true);const cur=support();const roots=M.folders.filter(f=>!f.parent||!M.folders.some(x=>x.id===f.parent)).sort((a,b)=>(a.ord||0)-(b.ord||0));
-  const cnt=id=>{const S=under([id]);const ts=M.trainers.filter(t=>t.folder&&S.has(t.folder));return `${ts.length}명 · 포켓몬 ${M.pokemon.filter(p=>ts.some(t=>t.id===p.tid)).length}체`};
+  const cnt=id=>{const S=under([id]);const ts=M.trainers.filter(t=>t.folder&&S.has(t.folder));return `${ts.length}명 · 포켓몬 ${ts.reduce((n,t)=>n+mons(t.id).length,0)}체`};
   const row=(f,dep)=>`<label class="mkf" style="padding-left:${8+dep*20}px"><input type="radio" name="mksup" value="${N().esc(f.id)}" ${cur===f.id?'checked':''}><span>${dep?'└ ':''}📁 ${N().esc(f.name||f.id)}${f.priv?' 🔒':''}</span><small class="dim">${cnt(f.id)}</small></label>`+M.folders.filter(x=>x.parent===f.id).sort((a,b)=>(a.ord||0)-(b.ord||0)).map(x=>row(x,dep+1)).join('');
   return new Promise(res=>{const md=N().openModal(`<div class="mhead"><h2>🛟 지원 폴더 (배틀 도중 부르기)</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
    <p class="small" style="margin-top:0">웹툴 배틀 벤치의 「+ 포켓몬」이 이 폴더(아래 폴더 포함)에 있는 트레이너의 포켓몬을 한 마리씩 골라 진영에 부를 수 있어요. 캠페인마다 제작기에 지원용 폴더를 하나 만들어 두고 여기서 골라요. 이 폴더의 트레이너는 PC/NPC 시트의 「아직 안 넣은 트레이너」에는 뜨지 않아요.</p>
