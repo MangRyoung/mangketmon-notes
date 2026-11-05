@@ -19,7 +19,7 @@
   for(const t of L){const v=t.nodeValue,lv=norm(v);const f=document.createDocumentFragment();let i=0,j;while((j=lv.indexOf(q,i))>=0){if(j>i)f.appendChild(document.createTextNode(v.slice(i,j)));const m=document.createElement('mark');m.className='rbt-hl';m.textContent=v.slice(j,j+q.length);f.appendChild(m);k++;i=j+q.length}if(i<v.length)f.appendChild(document.createTextNode(v.slice(i)));t.replaceWith(f)}
   return k}
  /* 11-05 망령 「미사그 대학에 카드 룰북도 추가」: 은열쇠 장 끝에 시작 카드 그림 모음 (제작기 카드 DB — 덱 「은열쇠 · 공통」 · 분류 「시작」. 카드 DB 를 고치면 따라온다) */
- function cardWall(){const MK=window.NT_MAKER,UX=window.NT_UNIV;if(!MK||!UX||!UX.skc)return '';if(!MK.dbReady()){MK.db().then(()=>{if(N().ST.view==='rb')N().render()});return '<p class="rbt-cw-wait">카드를 펴는 중이에요…</p>'}
+ function cardWall(){const MK=window.NT_MAKER,UX=window.NT_UNIV;if(!MK||!UX||!UX.skc)return '';if(!MK.dbReady()){MK.db().then(()=>{const w=document.querySelectorAll('.rbt-cw-wait');if(w.length){const h=cardWall();w.forEach(x=>x.outerHTML=h)}else if(N().ST.view==='rb')N().render()});return '<p class="rbt-cw-wait">카드를 펴는 중이에요…</p>'}   /* 서가 책 창에서도 자리만 바꿔 끼운다 */
   const L=MK.cardList().filter(r=>r&&r[0]==='은열쇠 · 공통'&&String(r[12]||'').trim()==='시작');if(!L.length)return '';
   const G=[['스킬',/체크|스킬/],['던전',/던전/],['배틀',/배틀/]];
   return `<section class="rbt-cw" aria-label="시작 카드 그림"><h4 id="rbt-cw">시작 카드 ${L.length}장 · 그림으로</h4>${G.map(([lab,re])=>{const g=L.filter(r=>re.test(String(r[2]||''))&&!G.slice(0,G.findIndex(x=>x[0]===lab)).some(([,r0])=>r0.test(String(r[2]||''))));return g.length?`<div class="rbt-cwg"><b>${lab} <small>${g.length}</small></b><div class="rbt-cwl">${g.map(r=>`<div class="rbt-cwc" title="${esc(r[1])}">${UX.skc(r[1])}</div>`).join('')}</div></div>`:''}).join('')}</section>`}
