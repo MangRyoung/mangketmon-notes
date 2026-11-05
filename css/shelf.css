@@ -322,3 +322,14 @@ html:not(#_) .rbt-src{font-size:12px;color:var(--si3)!important;border-bottom:1p
  html:not(#_) .rbt-add{position:static;display:inline-block;margin-top:6px}
  html:not(#_) .rbt-foot{grid-template-columns:1fr 1fr}html:not(#_) .rbt-src{grid-column:1/-1;grid-row:2;text-align:center}
 }
+
+/* 11-05 룰북 탭 · 은열쇠 장 끝 시작 카드 그림 모음 (rb_ui cardWall) */
+html:not(#_) .rbt-cw{margin:26px 0 8px;padding-top:14px;border-top:1px dashed rgba(60,40,20,.35)}
+html:not(#_) .rbt-cw h4{margin:0 0 10px}
+html:not(#_) .rbt-cwg{margin:0 0 16px}
+html:not(#_) .rbt-cwg>b{display:block;margin:0 0 8px;font-size:14px;letter-spacing:.06em}
+html:not(#_) .rbt-cwg>b small{opacity:.6;font-weight:400}
+html:not(#_) .rbt-cwl{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+html:not(#_) .rbt-cwc .skc{width:100%}
+html:not(#_) .rbt-cw-wait{opacity:.6;font-size:13px}
+@media (max-width:760px){html:not(#_) .rbt-cwl{grid-template-columns:repeat(2,1fr);gap:8px}}

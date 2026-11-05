@@ -181,5 +181,5 @@ window.NT_UNIV=(()=>{
   if(a==='ddel'){const k=+b.dataset.k;return run('trainers',id,d=>{if(!(d.deck||[])[k])return false;d.deck.splice(k,1)})}
   if(a==='dname'){const t=MK().trainer(id)||{};return N().promptBox('덱 이름',t.deckName||'',(t.name||'트레이너')+'의 덱').then(v=>{if(v==null)return;run('trainers',id,d=>{d.deckName=v.trim()})})}
   if(a==='item')return itemEd(id,b.dataset.pid)});
- return {uniqSec,ordSec,deckSec,itemEd,fx};
+ return {uniqSec,ordSec,deckSec,itemEd,fx,skc};
 })();

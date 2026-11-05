@@ -8,6 +8,7 @@ window.NT_RB=(()=>{
  const R={book:null,at:0,p:null,src:''};const RBC='nt_rb_cache';
  const url=()=>String((window.NT_CONFIG||{}).makerUrl||'').replace(/\/?$/,'/')+'rulebook.html';
  const link=(ch)=>url()+(ch?'#ch-'+encodeURIComponent(ch):'');
+ let HT=null;const html=async()=>{if(HT&&Date.now()-HT.at<600000)return HT.t;const t=await (await fetch(url(),{cache:'no-cache'})).text();HT={t,at:Date.now()};return t};
  async function load(force){if(R.p)return R.p;if(!force&&R.book&&Date.now()-R.at<600000)return R.book;
   R.p=(async()=>{let b=null;
    /* 10-30 망령 「용량 줄이기」: 룰북(약 100KB)을 이 브라우저에 두고, 공유 DB 의 수정 시각이 같으면 다시 받지 않는다 */
@@ -15,7 +16,11 @@ window.NT_RB=(()=>{
     const st=DB.makerStamp?await DB.makerStamp('rulebook','main'):'';
     if(st&&c&&c.at===st&&c.book&&Array.isArray(c.book.chapters)){b=c.book;R.src='db'}
     else{const d=DB.makerGet&&await DB.makerGet('rulebook','main');const v=d&&(d.data&&d.data.data||d.data);if(v&&Array.isArray(v.chapters)&&v.chapters.length){b=v;R.src='db';if(st)try{localStorage.setItem(RBC,JSON.stringify({at:st,book:v}))}catch(e){}}}}catch(e){}
-   if(!b){try{const t=await (await fetch(url(),{cache:'no-cache'})).text();const m=t.match(/<script type="application\/json" id="rb-data">([\s\S]*?)<\/script>/);if(m){b=JSON.parse(m[1]);R.src='html'}}catch(e){console.warn('rulebook',e)}}
+   /* 11-05 망령 「미사그 대학에 카드 룰북도」: 공유 DB 사본(rulebook/main)은 은열쇠 장 · 늦게 붙은 고침(LATER_*)이 빠진 옛 판일 수 있다.
+      제작기 룰북 화면은 열 때 rulebook.html 의 laterMerge 로 메워 보여 주므로, 여기도 같은 함수를 rulebook.html 에서 꺼내 똑같이 메운다 (사본 없음 · 실패하면 DB 그대로) */
+   if(b&&R.src==='db'){try{const t=await html();const bm=t.match(/<script type="application\/json" id="rb-data">([\s\S]*?)<\/script>/);const i0=t.indexOf('var LATER='),i1=t.indexOf('function useRemote(');
+     if(bm&&i0>0&&i1>i0){const BASE=JSON.parse(bm[1]);const lm=new Function('BASE',t.slice(i0,i1)+'\n;return laterMerge;')(BASE);b=Object.assign({},b,{chapters:lm(b.chapters)});R.merged=1}}catch(e){console.warn('rulebook merge',e)}}
+   if(!b){try{const t=await html();const m=t.match(/<script type="application\/json" id="rb-data">([\s\S]*?)<\/script>/);if(m){b=JSON.parse(m[1]);R.src='html'}}catch(e){console.warn('rulebook',e)}}
    if(b){R.book=b;R.at=Date.now();R.fail=false}else R.fail=true;return R.book})().finally(()=>{R.p=null});return R.p}
  const chapters=()=>(R.book&&R.book.chapters)||[];
  const chapter=id=>chapters().find(c=>c.id===id)||null;

@@ -18,6 +18,11 @@
   const L=[];let n;while((n=W.nextNode()))L.push(n);let k=0;
   for(const t of L){const v=t.nodeValue,lv=norm(v);const f=document.createDocumentFragment();let i=0,j;while((j=lv.indexOf(q,i))>=0){if(j>i)f.appendChild(document.createTextNode(v.slice(i,j)));const m=document.createElement('mark');m.className='rbt-hl';m.textContent=v.slice(j,j+q.length);f.appendChild(m);k++;i=j+q.length}if(i<v.length)f.appendChild(document.createTextNode(v.slice(i)));t.replaceWith(f)}
   return k}
+ /* 11-05 망령 「미사그 대학에 카드 룰북도 추가」: 은열쇠 장 끝에 시작 카드 그림 모음 (제작기 카드 DB — 덱 「은열쇠 · 공통」 · 분류 「시작」. 카드 DB 를 고치면 따라온다) */
+ function cardWall(){const MK=window.NT_MAKER,UX=window.NT_UNIV;if(!MK||!UX||!UX.skc)return '';if(!MK.dbReady()){MK.db().then(()=>{if(N().ST.view==='rb')N().render()});return '<p class="rbt-cw-wait">카드를 펴는 중이에요…</p>'}
+  const L=MK.cardList().filter(r=>r&&r[0]==='은열쇠 · 공통'&&String(r[12]||'').trim()==='시작');if(!L.length)return '';
+  const G=[['스킬',/체크|스킬/],['던전',/던전/],['배틀',/배틀/]];
+  return `<section class="rbt-cw" aria-label="시작 카드 그림"><h4 id="rbt-cw">시작 카드 ${L.length}장 · 그림으로</h4>${G.map(([lab,re])=>{const g=L.filter(r=>re.test(String(r[2]||''))&&!G.slice(0,G.findIndex(x=>x[0]===lab)).some(([,r0])=>r0.test(String(r[2]||''))));return g.length?`<div class="rbt-cwg"><b>${lab} <small>${g.length}</small></b><div class="rbt-cwl">${g.map(r=>`<div class="rbt-cwc" title="${esc(r[1])}">${UX.skc(r[1])}</div>`).join('')}</div></div>`:''}).join('')}</section>`}
  function render(el){const R=RB();
   if(!R){el.innerHTML='<div class="empty">룰북 읽기 도구가 없어요. 새로 고쳐 주세요.</div>';return}
   if(!R.R.book){el.innerHTML=`<section class="rbtab shelfm c-crim"><header class="shr-cover"><span class="shr-crest">${crest()}</span><div class="shr-ct"><span class="shr-no">MISAG LIB · RULEBOOK</span><h2>망켓몬 룰북</h2><p>${R.R.fail?'룰북을 읽지 못했어요. 인터넷 연결을 확인하고 새로 고쳐 주세요.':'룰북을 펴는 중이에요…'}</p></div></header></section>`;
@@ -40,7 +45,7 @@
     <select class="rbt-sel" aria-label="장 고르기">${groups.map(G=>`<optgroup label="${esc(G.g)}">${G.L.map(x=>`<option value="${esc(x.id)}" ${x.id===id?'selected':''}>${no(x)} · ${esc(x.title||x.id)}</option>`).join('')}</optgroup>`).join('')}</select>
     <article class="shr-page rbbody rbt-page">${c?`<div class="rbt-ch"><span class="rbt-chno">CHAPTER ${no(c)} · ${esc(c.group||'')}</span><h3>${esc(c.title||c.id)}</h3>${c.desc?`<p class="rbt-desc">${esc(c.desc)}</p>`:''}${c.added?`<span class="rbt-add">${esc(c.added)} 추가</span>`:''}</div>
      ${secs.length>1?`<div class="rbt-secs">${secs.map((s,i)=>`<a href="#" data-rbsec="${i}">${esc(s.h.replace(/\s*\(\d{4}-\d\d-\d\d\)\s*$/,''))}</a>`).join('')}</div>`:''}
-     <div class="rbt-live">${R.render(c.body||'')}</div>
+     <div class="rbt-live">${R.render(c.body||'')}</div>${c.id==='silverkey'?cardWall():''}
      <footer class="rbt-foot">${prev?`<a href="#" data-rbch="${esc(prev.id)}" class="rbt-pv">← ${esc(prev.title)}</a>`:'<span></span>'}<a class="rbt-src" href="${esc(R.link(c.id))}" target="_blank" rel="noopener">제작기 룰북에서 열기 ↗</a>${next?`<a href="#" data-rbch="${esc(next.id)}" class="rbt-nx">${esc(next.title)} →</a>`:'<span></span>'}</footer>`:'<p class="shr-wait">룰북에 장이 없어요.</p>'}</article>
    </div></section>`;
   const page=el.querySelector('.rbt-page');const H=[...el.querySelectorAll('.rbt-live h4')];H.forEach((h,i)=>h.id='rbt-h'+i);
