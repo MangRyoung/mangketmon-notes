@@ -115,11 +115,11 @@
   const bands=[];for(const c of ORD){const L=list.filter(e=>clsOfNode(e)===c);if(!L.length)continue;
    const sub=c==='ent'?[...new Set(L.map(e=>e.type||'기타'))].map(t=>L.filter(e=>(e.type||'기타')===t)):[L];
    for(const g of sub)bands.push(g.slice().sort((a,b)=>(deg[b.id]||0)-(deg[a.id]||0)||String(a.title||'').localeCompare(String(b.title||''),'ko')))}
-  const CW=136,DX=176,M=90,cols=Math.max(1,Math.floor((BW-2*M-CW)/DX)+1);
-  const rowsOf=g=>Math.ceil(g.length/cols);const nRows=bands.reduce((a,g)=>a+rowsOf(g),0);const GAP=56;
+  const CW=136,DX=190,M=90,cols=Math.max(1,Math.floor((BW-2*M-CW)/DX)+1);
+  const rowsOf=g=>Math.ceil(g.length/cols);const per=g=>Math.ceil(g.length/rowsOf(g));   /* 줄마다 고르게 (16장 = 8 + 8) */const nRows=bands.reduce((a,g)=>a+rowsOf(g),0);const GAP=56;
   let DY=236;const need=nRows*DY+(bands.length-1)*GAP;if(need>BH-2*M)DY=Math.max(150,Math.floor((BH-2*M-(bands.length-1)*GAP)/nRows));
   let y=Math.max(M,Math.round((BH-(nRows*DY+(bands.length-1)*GAP))/2));const rows=[],undo=[];
-  for(const g of bands){for(let i=0;i<g.length;i+=cols){const line=g.slice(i,i+cols);const w=(line.length-1)*DX+CW;const x0=Math.round((BW-w)/2);
+  for(const g of bands){const pr=per(g);for(let i=0;i<g.length;i+=pr){const line=g.slice(i,i+pr);const w=(line.length-1)*DX+CW;const x0=Math.round((BW-w)/2);
     line.forEach((e,j)=>{const k=e._k||'ents';const dd=N().doc(k,e.id);if(!dd)return;const gx=Math.round((x0+j*DX)*W/BW),gy=Math.round(y*H/BH);if(dd.data.gx===gx&&dd.data.gy===gy)return;
      undo.push({kind:k,id:e.id,data:N().clone(dd.data),vis:dd.vis});rows.push({kind:k,id:e.id,data:Object.assign(N().clone(dd.data),{gx,gy}),vis:dd.vis})});y+=DY}y+=GAP}
   if(!rows.length)return N().toast('이미 가지런해요');
