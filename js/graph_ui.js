@@ -108,29 +108,45 @@
   $('#rlOk',md).onclick=async()=>{await N().put('rels',id,{a:A,b:B,label:$('#rlLabel',md).value.trim(),kind:$('#rlKind',md).value,two:$('#rlTwo',md).checked,note:$('#rlNote',md).value.trim()},$('#rlVis',md).value);U.sel=id;N().closeModal()};
   $('#rlDel',md).onclick=async()=>{if(!await N().confirmBox('이 관계선을 지울까요?','지우기'))return;await N().del('rels',id);U.sel='';N().closeModal()}}
  /* ---- 코르크보드 ---- */
- /* 11-05 망령 「예쁘게 정리 좀 하고 정리 버튼도 만들어」: 보드 「⇲ 정리」 — 보이는 카드를 분류 줄(PC → 객원 → NPC → 항목 종류별)로, 줄마다 가운데 맞춤.
-    분류 안 순서 = 실이 많은 사람 먼저 → 이름. 줄이 많으면 줄 간격을 좁혀 보드(2200×1400) 안에 넣는다. 자리는 각 문서 gx · gy (실행 취소 = 옛 자리로) */
+ /* 11-05 망령 「예쁘게 정리 좀 하고 정리 버튼도 만들어」 → 17:42 「너무 1자로 세워뒀다 · 실끼리 묶어야 되니 적당히 느낌있게 · 같은 PL 의 캐릭터는 비슷한 위치에 묶으면」:
+    보드 「⇲ 정리」 — 묶음(같은 PL · PL 없는 시트는 분류 · 항목은 편/종류)마다 한 무리로 모으고, 실로 많이 이어진 무리끼리 가깝게 둥글게 놓은 뒤
+    살짝 힘 배치(카드끼리 밀어내기 · 실은 당기기 · 무리 중심으로 모으기)로 다듬는다. NPC 무리는 가운데. 같은 카드 · 실이면 늘 같은 자리(씨앗 고정). 실행 취소 = 옛 자리로 */
  async function tidyBoard(list){if(!list||!list.length)return N().toast('정리할 카드가 없어요');
-  const ORD=['pc','guest','npc','ent'];const deg={};for(const r of rels()){deg[r.a]=(deg[r.a]||0)+1;deg[r.b]=(deg[r.b]||0)+1}
-  const bands=[];for(const c of ORD){const L=list.filter(e=>clsOfNode(e)===c);if(!L.length)continue;
-   const sub=c==='ent'?[...new Set(L.map(e=>e.type||'기타'))].map(t=>L.filter(e=>(e.type||'기타')===t)):[L];
-   for(const g of sub)bands.push(g.slice().sort((a,b)=>(deg[b.id]||0)-(deg[a.id]||0)||String(a.title||'').localeCompare(String(b.title||''),'ko')))}
-  const CW=136,DX=190,M=90,cols=Math.max(1,Math.floor((BW-2*M-CW)/DX)+1);
-  const rowsOf=g=>Math.ceil(g.length/cols);const per=g=>Math.ceil(g.length/rowsOf(g));   /* 줄마다 고르게 (16장 = 8 + 8) */const nRows=bands.reduce((a,g)=>a+rowsOf(g),0);const GAP=56;
-  let DY=236;const need=nRows*DY+(bands.length-1)*GAP;if(need>BH-2*M)DY=Math.max(150,Math.floor((BH-2*M-(bands.length-1)*GAP)/nRows));
-  let y=Math.max(M,Math.round((BH-(nRows*DY+(bands.length-1)*GAP))/2));const rows=[],undo=[];
-  for(const g of bands){const pr=per(g);for(let i=0;i<g.length;i+=pr){const line=g.slice(i,i+pr);const w=(line.length-1)*DX+CW;const x0=Math.round((BW-w)/2);
-    line.forEach((e,j)=>{const k=e._k||'ents';const dd=N().doc(k,e.id);if(!dd)return;const gx=Math.round((x0+j*DX)*W/BW),gy=Math.round(y*H/BH);if(dd.data.gx===gx&&dd.data.gy===gy)return;
-     undo.push({kind:k,id:e.id,data:N().clone(dd.data),vis:dd.vis});rows.push({kind:k,id:e.id,data:Object.assign(N().clone(dd.data),{gx,gy}),vis:dd.vis})});y+=DY}y+=GAP}
-  if(!rows.length)return N().toast('이미 가지런해요');
+  const CW=136,CH=190,M=70;const ids=new Set(list.map(e=>e.id));const E=rels().filter(r=>ids.has(r.a)&&ids.has(r.b)&&r.a!==r.b);
+  const MK=window.NT_MAKER;const keyOf=e=>{if(clsOfNode(e)==='npc')return 'cls:npc';if(e._k&&e._k!=='ents'){const d=N().data(e._k,e.id)||{};const t=MK&&MK.trainer&&MK.trainer(e.id);const pl=String(d.player||(t&&t.pl)||'').trim();return pl?'pl:'+pl:'cls:'+clsOfNode(e)}return 'ent:'+((e.teams&&e.teams[0])||e.type||'기타')};
+  const G=new Map();for(const e of list){const k=keyOf(e);if(!G.has(k))G.set(k,[]);G.get(k).push(e)}
+  const kOfId={};for(const [k,L] of G)for(const e of L)kOfId[e.id]=k;
+  const W2={};const wk=(a,b)=>a<b?a+'|'+b:b+'|'+a;for(const r of E){const a=kOfId[r.a],b=kOfId[r.b];if(a!==b)W2[wk(a,b)]=(W2[wk(a,b)]||0)+1}
+  const wOf=(a,b)=>W2[wk(a,b)]||0;
+  /* 무리 순서: 가장 큰 무리부터, 이미 놓은 무리와 실이 많은 무리를 옆에 */
+  const keys=[...G.keys()];const mid=keys.filter(k=>k==='cls:npc');let rest=keys.filter(k=>!mid.includes(k)).sort((a,b)=>G.get(b).length-G.get(a).length||a.localeCompare(b,'ko'));
+  const ring=[];if(rest.length){ring.push(rest.shift());while(rest.length){const last=ring[ring.length-1];rest.sort((a,b)=>(wOf(b,last)*2+ring.reduce((s,x)=>s+wOf(b,x),0))-(wOf(a,last)*2+ring.reduce((s,x)=>s+wOf(a,x),0))||G.get(b).length-G.get(a).length);ring.push(rest.shift())}}
+  const cx=BW/2,cy=BH/2;const C={};const tot=ring.reduce((s,k)=>s+Math.sqrt(G.get(k).length),0)||1;let ang=-Math.PI/2;
+  const rx=ring.length>1?BW*.33:0,ry=ring.length>1?BH*.30:0;
+  let seed0=11;for(const k of keys)for(const ch of k)seed0=(seed0*31+ch.charCodeAt(0))%2147483647;const rnd0=()=>(seed0=(seed0*16807)%2147483647)/2147483647;
+  for(const k of ring){const sh=Math.sqrt(G.get(k).length)/tot*Math.PI*2;const a=ang+sh/2+(rnd0()-.5)*sh*.35;const f=.72+rnd0()*.34;C[k]={x:cx+Math.cos(a)*rx*f,y:cy+Math.sin(a)*ry*f};ang+=sh}   /* 반지름 · 각도를 조금씩 흔들어 동그라미 한 줄로 서지 않게 */
+  for(const k of mid)C[k]={x:cx,y:cy};
+  /* 처음 자리: 무리 중심 둘레 작은 원 (씨앗 고정) */
+  let seed=7;for(const e of list)for(const ch of e.id)seed=(seed*31+ch.charCodeAt(0))%2147483647;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const P={};for(const [k,L] of G){const n=L.length;const rr=n>1?70+38*Math.sqrt(n):0;L.forEach((e,i)=>{const a=i/n*Math.PI*2+rnd()*.5;P[e.id]={x:C[k].x+Math.cos(a)*rr,y:C[k].y+Math.sin(a)*rr*.8,k}})}
+  const NS=Object.keys(P);const minD=205,linkL=250;
+  for(let it=0;it<360;it++){const t=1-it/360;const F={};NS.forEach(id=>F[id]={x:0,y:0});
+   for(let i=0;i<NS.length;i++)for(let j=i+1;j<NS.length;j++){const A=P[NS[i]],B=P[NS[j]];let dx=B.x-A.x,dy=(B.y-A.y)*1.15,d=Math.hypot(dx,dy);if(d<1){dx=rnd()-.5;dy=rnd()-.5;d=1}
+    const want=A.k===B.k?minD:minD*1.25;if(d<want){const f=(want-d)*.5/d;F[NS[i]].x-=dx*f;F[NS[i]].y-=dy*f;F[NS[j]].x+=dx*f;F[NS[j]].y+=dy*f}}
+   for(const r of E){const A=P[r.a],B=P[r.b];const dx=B.x-A.x,dy=B.y-A.y,d=Math.hypot(dx,dy)||1;if(d<=linkL)continue;const f=(d-linkL)*.04/d;F[r.a].x+=dx*f;F[r.a].y+=dy*f;F[r.b].x-=dx*f;F[r.b].y-=dy*f}
+   for(const id of NS){const p=P[id],c=C[p.k];F[id].x+=(c.x-p.x)*.03;F[id].y+=(c.y-p.y)*.03}
+   for(const id of NS){const p=P[id],f=F[id];const mv=Math.hypot(f.x,f.y),cap=40*t+4;const s=mv>cap?cap/mv:1;p.x=Math.max(M+CW/2,Math.min(BW-M-CW/2,p.x+f.x*s));p.y=Math.max(M+CH/2,Math.min(BH-M-CH/2,p.y+f.y*s))}}
+  const rows=[],undo=[];for(const e of list){const k=e._k||'ents';const dd=N().doc(k,e.id);const p=P[e.id];if(!dd||!p)continue;const gx=Math.round((p.x-CW/2)*W/BW),gy=Math.round((p.y-CH/2)*H/BH);if(dd.data.gx===gx&&dd.data.gy===gy)continue;
+   undo.push({kind:k,id:e.id,data:N().clone(dd.data),vis:dd.vis});rows.push({kind:k,id:e.id,data:Object.assign(N().clone(dd.data),{gx,gy}),vis:dd.vis})}
+  if(!rows.length)return N().toast('이미 정리돼 있어요');
   const n=await N().putMany(rows);if(!n)return;
-  N().toast(`카드 ${rows.length}장을 정리했어요`,{undo:async()=>{const m=await N().putMany(undo);N().toast(m?'옛 자리로 되돌렸어요':'되돌리지 못했어요')}})}
+  N().toast(`카드 ${rows.length}장을 묶음별로 정리했어요 (${G.size}무리)`,{undo:async()=>{const m=await N().putMany(undo);N().toast(m?'옛 자리로 되돌렸어요':'되돌리지 못했어요')}})}
  function renderBoard(el){const G=N().gm();const all=N().list('ents');const list=nodes().filter(e=>e._cls||['인물','조직','기타','이벤트','PC','NPC'].includes(e.type)||e.face);const types=window.NT_ENTS?NT_ENTS.TYPES:[];
   const tags=[...new Set(all.flatMap(e=>e.tags||[]))].sort((a,b)=>a.localeCompare(b,'ko')),teams=[...new Set(all.flatMap(e=>e.teams||[]))].sort((a,b)=>a.localeCompare(b,'ko'));
   const nAll=all.length,nPub=all.filter(e=>e._vis==='pub').length,rPub=N().list('rels').filter(r=>r._vis==='pub').length,rAll=N().list('rels').length;
   el.innerHTML=`<div class="toolbar"><h2>관계도</h2><div class="seg"><button data-gview="board" class="on">보드</button><button data-gview="svg">선도</button></div>${G?`<div class="seg"><button data-gv="gm" class="${U.view!=='pl'?'on':''}" title="GM 참고용 — 비공개 인물 · 관계까지">🔒 GM 전체 ${nAll}·${rAll}</button><button data-gv="pl" class="${U.view==='pl'?'on':''}" title="PL 에게 보이는 그대로">👥 PL 공개 ${nPub}·${rPub}</button></div>`:''}
    ${C().chips('graph',clsCount())}<select id="grType"><option value="">모든 종류</option>${types.map(([t])=>`<option ${U.type===t?'selected':''}>${t}</option>`).join('')}</select>${tags.length?`<select id="grTag"><option value="">모든 태그</option>${tags.map(t=>`<option ${U.tag===t?'selected':''}>${esc(t)}</option>`).join('')}</select>`:''}${teams.length?`<select id="grTeam"><option value="">모든 편</option>${teams.map(t=>`<option ${U.team===t?'selected':''}>${esc(t)}</option>`).join('')}</select>`:''}
-   ${G?'<button class="btn xs" data-g="tidy" title="보이는 카드를 PC · 객원 · NPC · 항목 줄로 가지런히 놓아요 (실행 취소 가능)">⇲ 정리</button>':''}<span class="sp"></span>${N().presentBtn()}${N().bulkBtns('rels',null,'관계선')}${G&&U.view==='pl'?'<span class="note"><b style="color:var(--yel)">PL 이 보는 그대로</b></span>':''}</div><div class="cb" id="cbRoot"></div>`;
+   ${G?'<button class="btn xs" data-g="tidy" title="같은 PL 의 캐릭터끼리 · 실로 이어진 무리끼리 가깝게 모아 놓아요 (실행 취소 가능)">⇲ 정리</button>':''}<span class="sp"></span>${N().presentBtn()}${N().bulkBtns('rels',null,'관계선')}${G&&U.view==='pl'?'<span class="note"><b style="color:var(--yel)">PL 이 보는 그대로</b></span>':''}</div><div class="cb" id="cbRoot"></div>`;
   $$('#grType,#grTag,#grTeam',el).forEach(sl=>sl.onchange=()=>{U[sl.id==='grType'?'type':sl.id==='grTag'?'tag':'team']=sl.value;N().render()});C().bindChips(el,'graph',()=>N().render());
   $$('[data-gv]',el).forEach(b=>b.onclick=()=>{U.view=b.dataset.gv;U.sel='';N().render()});$$('[data-gview]',el).forEach(b=>b.onclick=()=>{U.gview=b.dataset.gview;N().render()});
   {const tb=$('[data-g="tidy"]',el);if(tb)tb.onclick=()=>tidyBoard(list)}
