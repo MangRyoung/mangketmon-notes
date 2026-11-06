@@ -174,6 +174,7 @@ window.NT_UNIV=(()=>{
   if(a==='card'){e.preventDefault();return cardView(id,+b.dataset.k)}
   if(a==='skv'){e.preventDefault();const t=MK().trainer(id)||{};return skView(b.dataset.n||((t.sk3||{})[b.dataset.k])||'')}
   if(!canEd(id))return N().toast('이 시트는 고칠 수 없어요');e.preventDefault();
+  if(a==='heal'){const m=(MK().mons(id)||[]).find(x=>x.id===b.dataset.pid);if(!m)return;b.disabled=true;return MK().heal1(m).then(()=>{N().toast(`「${m.nick||m.name||'포켓몬'}」 회복 — 웹툴 방 시트에도 곧 반영돼요`);N().render()}).catch(er=>{b.disabled=false;N().toast('회복 저장 실패: '+er.message)})}   /* 11-06 망령 「기술 포텐셜 접는 버튼 옆에 회복」 */
   if(a==='uqadd')return uqEdit(id,-1);if(a==='uqed')return uqEdit(id,+b.dataset.i);
   if(a==='dadd')return cardPick(id);
   if(a==='skpick')return skPick(id,b.dataset.k);

@@ -622,3 +622,13 @@ html[data-skin="univ"] .idrkc input{font-family:'Cinzel','Noto Serif KR',serif;c
 .ux-skon .ux-skc{outline:3px solid #b8932a;outline-offset:2px}
 .ux-skbig{width:300px}.ux-skbig .skc{width:100%}
 @media(max-width:640px){.ux-skrow .ux-skg{grid-template-columns:repeat(4,minmax(0,1fr));width:100%}.ux-skv{border-left:0;padding-left:0}.ux-skp{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}}
+/* 11-06 망령: 웹툴 결과 정리로 받은 지금 HP · 상태 + 회복 */
+.mkr-cond{margin-top:3px;gap:4px}
+.mkr-hp{position:relative;display:inline-flex;align-items:center;min-width:96px;height:18px;padding:0 6px;border:1px solid #b9a77f;border-radius:9px;overflow:hidden;font-size:11px;background:rgba(0,0,0,.06)}
+.mkr-hp i{position:absolute;left:0;top:0;bottom:0;background:#4caf50;opacity:.35}
+.mkr-hp.mid i{background:#e0a800}.mkr-hp.low i,.mkr-hp.dead i{background:#c62828}
+.mkr-hp b{position:relative;font-weight:700;white-space:nowrap}
+.mkr-cst{font-size:11px;padding:1px 7px;border-radius:9px;background:#7b3fa0;color:#fff;white-space:nowrap}
+.mkr-cst.dead{background:#c62828}
+.mkr-heal{margin-left:10px;padding:1px 10px;vertical-align:middle}
+div.mkr-more{display:flex;justify-content:flex-end}

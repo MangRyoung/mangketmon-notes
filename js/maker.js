@@ -6,8 +6,8 @@ window.NT_MAKER=(()=>{
  const M={trainers:[],pokemon:[],folders:[],at:0,loading:null};
  const unwrap=doc=>{const d=(doc.data&&doc.data.data)||doc.data||{};return Object.assign({id:doc.id,_ord:doc.data&&doc.data.ord!=null?+doc.data.ord:null},d)};
  /* 10-29 망령 「변동 사항만」: 받은 제작기 문서를 이 브라우저에 두고, 다음에는 그 뒤에 바뀐 것(updated_at)만 받는다. 지워진 건 id 목록으로 걸러 낸다 */
- const MKC='nt_mk_cache',KS=['trainers','pokemon','folders'];
- async function pull(){const DB=N().DBS();if(!DB.makerSince||!DB.makerIds){const [t,p,f]=await Promise.all([DB.makerDocs('trainers'),DB.makerDocs('pokemon'),DB.makerDocs('folders').catch(()=>[])]);return {trainers:t,pokemon:p,folders:f}}
+ const MKC='nt_mk_cache',KS=['trainers','pokemon','folders','pcond'];   /* pcond (11-06): 웹툴 결과 정리가 남긴 포켓몬의 지금 HP · 상태 */
+ async function pull(){const DB=N().DBS();if(!DB.makerSince||!DB.makerIds){const [t,p,f,c]=await Promise.all([DB.makerDocs('trainers'),DB.makerDocs('pokemon'),DB.makerDocs('folders').catch(()=>[]),DB.makerDocs('pcond').catch(()=>[])]);return {trainers:t,pokemon:p,folders:f,pcond:c}}
   let c=null;try{c=JSON.parse(localStorage.getItem(MKC)||'null')}catch(e){}if(!c||c.v!==1||Date.now()-c.t>7*864e5)c={v:1,t:Date.now(),since:{},docs:{}};
   /* 11-02 망령 「제작기엔 있는데 노트엔 없다」: 같은 때 저장된 문서는 수정 시각 순서와 들어온 순서가 어긋날 수 있다 → 1분 앞부터 받고,
      id 목록에 있는데 사본에 없는 문서가 있으면 그 종류는 전부 다시 받는다 */
@@ -19,7 +19,7 @@ window.NT_MAKER=(()=>{
   M.got=got;try{const s=JSON.stringify(c);if(s.length<4e6)localStorage.setItem(MKC,s);else localStorage.removeItem(MKC)}catch(e){try{localStorage.removeItem(MKC)}catch(e2){}}
   return Object.fromEntries(KS.map(k=>[k,Object.values(c.docs[k]||{})]))}
  async function load(force){if(M.loading)return M.loading;if(!force&&M.at&&Date.now()-M.at<600000)return M;
-  M.loading=(async()=>{try{const x=await pull();M.trainers=x.trainers.map(unwrap);M.pokemon=x.pokemon.map(unwrap);M.folders=x.folders.map(unwrap);M.at=Date.now();heal()}catch(e){console.warn('maker',e)}finally{M.loading=null}return M})();return M.loading}
+  M.loading=(async()=>{try{const x=await pull();M.trainers=x.trainers.map(unwrap);M.pokemon=x.pokemon.map(unwrap);M.folders=x.folders.map(unwrap);M.pc={};for(const r of x.pcond||[])M.pc[r.id]=r.data||{};M.at=Date.now();heal()}catch(e){console.warn('maker',e)}finally{M.loading=null}return M})();return M.loading}
  /* 10-29 망령 「제작기에서 이름을 바꿔도 노트엔 처음 이름」: GM 이 열 때 노트 칸의 이름 · 초상 사본을 제작기 값으로 맞춘다 (바뀐 것만) */
  /* 10-31 망령 「대학에서 포트 바꾸면 제작기 원본에 반영이 안 돼서 어느 순간 다시 불려 온다」「이름 · 메모 같은 트레이너 변경 사항도 다 점검」:
     노트에서 바꾼 이름 · 초상 · 상세에는 바꾼 시각(nameAt · imageAt · bioAt)이 남는다. 제작기 트레이너의 그 시각이 다르면 = 제작기에 안 들어갔다 → 노트를 덮지 않고, 제작기를 노트 값으로 고친다(GM · 그 PL).
@@ -102,5 +102,8 @@ window.NT_MAKER=(()=>{
    const done=async ids=>{try{await saveLinked(ids);N().closeModal();N().toast(ids.length?'제작기 폴더를 이었어요':'폴더 잇기를 풀었어요');N().render();res(ids)}catch(e){N().toast('저장 실패: '+e.message)}};
    N().$('#mkfOk',md).onclick=()=>{let ids=N().$$('.mkflist input:checked',md).map(x=>x.value);const S=new Set(ids);ids=ids.filter(id=>{let c=M.folders.find(x=>x.id===id),n=0;while(c&&c.parent&&n++<8){if(S.has(c.parent))return false;c=M.folders.find(x=>x.id===c.parent)}return true});done(ids)};
    N().$('#mkfNone',md).onclick=()=>done([])})}
- return {load,trainers,trainer,mons,img,folderName,M,db,dbReady,move,baseLv,item,card,itemList,cardList,abil,pot,abilList,potList,moveList,dbSet,edit,linked,linkedTrainers,missing,isNpc,pickLinked,support,pickSupport,fpath,under};
+ /* 11-06 망령 「결과 정리로 보낸 HP · 상태를 카드에 · 옆에 회복」: 웹툴이 결과 정리 때 docs kind 'pcond' 에 남긴다. 회복하면 src 'maker' 로 덮고, 웹툴 GM 화면이 방 시트에 받아 간다 */
+ const cond=id=>(M.pc||{})[id]||null;
+ async function heal1(m){const c=cond(m.id)||{};const d={hp:null,max:c.max||null,st:null,at:Date.now(),src:'maker',by:'notes'};await N().DBS().makerPut('pcond',m.id,d);M.pc=M.pc||{};M.pc[m.id]=d;return d}
+ return {cond,heal1,load,trainers,trainer,mons,img,folderName,M,db,dbReady,move,baseLv,item,card,itemList,cardList,abil,pot,abilList,potList,moveList,dbSet,edit,linked,linkedTrainers,missing,isNpc,pickLinked,support,pickSupport,fpath,under};
 })();
