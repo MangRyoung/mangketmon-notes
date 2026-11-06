@@ -190,6 +190,10 @@
    <div class="idc-foot"><span class="idc-bar" aria-hidden="true"></span><span class="idc-yr">2026학년도</span><span class="idc-seal" aria-hidden="true">미사그<br>대학인</span></div>
   </div><div class="idside">${heroIn}</div></div>`}
  const T2C={'노말':'#9aa','불꽃':'#f08030','물':'#6890f0','풀':'#78c850','전기':'#f8d030','얼음':'#98d8d8','격투':'#c03028','독':'#a040a0','땅':'#e0c068','비행':'#a890f0','에스퍼':'#f85888','벌레':'#a8b820','바위':'#b8a038','고스트':'#705898','드래곤':'#7038f8','악':'#705848','강철':'#b8b8d0','페어리':'#ee99ac'};
+ /* 11-07 망령 「알그룹도 타입처럼 꾸며줘」: 알그룹마다 색 (모르는 이름은 글자로 색을 정한다) · 알 모양 둥근 칩 */
+ const EGC={'괴수':'#7a5a3a','수중1':'#3a86c8','수중2':'#2b6aa8','수중3':'#1f4f86','벌레':'#8aa13a','비행':'#7d8fd8','육상':'#b07a3c','요정':'#e07fae','식물':'#4f9a4a','인간형':'#c46a4a','광물':'#8a8274','부정형':'#7a5aa0','메타몽':'#a07ac0','드래곤':'#5a4ac8','미발견':'#5c5c5c'};
+ const egCol=x=>{const k=String(x).replace(/\s+/g,'');if(EGC[k])return EGC[k];let h=0;for(const c of k)h=(h*31+c.charCodeAt(0))%360;return `hsl(${h} 38% 42%)`};
+ const egChip=x=>`<em class="egch" style="background:${egCol(x)}"><svg viewBox="0 0 10 12" aria-hidden="true"><path d="M5 .6C2.6.6.8 4.4.8 7.2a4.2 4.2 0 0 0 8.4 0C9.2 4.4 7.4.6 5 .6z" fill="currentColor"/></svg>${esc(x)}</em>`;
  const tchip=t=>t&&t!=='-'?`<em class="tch" style="background:${T2C[t]||'#666'}">${esc(t)}</em>`:'';
  /* ---------- 10-31 망령 「포텐셜이랑 기술 UI 개선 좀 하자」: 기술 = 카드(타입 띠 · 분류 · 위력 · 명중 · 효과 두 줄), 포텐셜 = 분류 색 띠 카드(효과 글 꾸밈) ----------
     제작기 기술 표 줄: [5] 타입 · [6] 분류 · [7] 위력 · [8] 명중(0 = 필중) · [9] 범위 · [10] 접촉 · [11] 우선도 · [13] 효과 */
@@ -278,7 +282,7 @@
     <span class="mkr-av">${monPic(m)}</span>
     <div class="mkr-id"><div class="mkr-n"><b>${esc(m.nick||m.name||'(이름 없음)')}</b>${m.nick?`<small class="mkr-sp" title="종 이름">${esc(m.name||'')}</small>`:''}${gGlyph(m.gender)}${m.partner?'<span class="mkr-star" title="파트너">★</span>':''}</div>
      <div class="mkr-c">${X.types.map(tchip).join('')}<span class="mkr-lv">Lv.${X.lv}</span></div>
-     ${(()=>{const eg=[m.egg1,m.egg2].filter(x=>x&&x!=='-');return eg.length?`<div class="mkr-c mkr-egg"><span class="mkr-k">알그룹</span>${eg.map(x=>`<span>${esc(x)}</span>`).join('<i>·</i>')}</div>`:''})()}
+     ${(()=>{const eg=[m.egg1,m.egg2].filter(x=>x&&x!=='-');return eg.length?`<div class="mkr-c mkr-egg" title="알그룹">${eg.map(egChip).join('')}</div>`:''})()}
      <div class="mkr-c">${aw?`<span class="mkr-aw">${AWL[m.awaken]}</span>`:''}${X.pride?`<span class="mkr-pr">프라이드 <b>${esc(X.pride)}</b></span>`:''}${m.tera&&m.tera!=='-'?`<span class="mkr-tg">테라 ${esc(m.tera)}</span>`:''}</div>${condChips(m)}</div>
     ${statBox(X)}
     <div class="mkr-ab"><div class="mkr-abn"><span class="mkr-k">특성</span><b>${esc(m.ability||'특성 없음')}</b></div>${abE?`<p title="${esc(abE)}">${esc(abE)}</p>`:''}${X.ex.map(x=>{const e=oneLn(x.eff||'');return `<div class="mkr-abn mkr-exn"><span class="mkr-k ex">전용</span><b>『${esc(String(x.name).replace(/[『』]/g,''))}』</b></div>${e?`<p class="mkr-exe" title="${esc(e)}">${esc(e)}</p>`:''}`}).join('')}${X.items.length?`<div class="mkr-it">${X.items.map(x=>`<span title="${esc(oneLn(x.e||''))}">${esc(x.n)}</span>`).join('')}</div>`:''}${window.NT_FLD&&t.id?NT_FLD.chips(m,'p',m.id,t.id,ED):''}</div>

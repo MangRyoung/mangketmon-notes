@@ -419,10 +419,10 @@ html[data-skin="univ"] .idc-foot{margin-top:auto}
 .mkr.sub .mkr-aw{background:var(--gold2,#8f7b52)}
 .mkr-pr,.mkr-tg{font-size:11px;padding:1px 7px;border-radius:3px;border:1px solid #a8936a;color:var(--ink2)}
 .mkr-pr b{color:var(--crim,#6e1019)}
-/* 11-07 망령: 타입 아래 알그룹 */
-.mkr-egg{font-size:11.5px;color:var(--ink2);gap:4px!important;align-items:center}
-.mkr-egg .mkr-k{font-size:10.5px;padding:0 6px;background:var(--gold2,#8f7b52)}
-.mkr-egg i{font-style:normal;opacity:.5}
+/* 11-07 망령: 타입 아래 알그룹 칩 (타입 칩과 같은 크기, 둥근 알 모양 + 알 아이콘) */
+.mkr-egg{gap:4px}
+.egch{display:inline-flex;align-items:center;gap:3px;font-style:normal;font-size:10px;font-weight:600;line-height:1.5;padding:0 7px 0 5px;color:#fff;border-radius:999px;letter-spacing:.04em;text-shadow:0 0 2px rgba(0,0,0,.6);box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+.egch svg{width:7px;height:9px;flex:none;color:rgba(255,255,255,.85)}
 .mkr-ab{flex:1 1 230px;min-width:0;background:#1a140d;color:#efe6d2;border-left:3px solid var(--crim2,#8f1a26);padding:6px 10px}
 .mkr-abn{display:flex;align-items:center;gap:6px;min-width:0}
 .mkr-abn b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
