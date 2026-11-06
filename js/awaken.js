@@ -251,10 +251,11 @@ window.NT_AWK=(()=>{
    const j=await res.json().catch(()=>({error:'응답을 읽지 못했어요 (HTTP '+res.status+')'}));if(!res.ok||j.error)throw new Error(j.error||('HTTP '+res.status));
    await applyRead(id,j,'fn');N().toast('각성체 그림을 읽었어요')}
   catch(e){N().toast('포트 읽기 실패: '+(e.message||e))}finally{U.busy=false;N().render()}}
- /* 읽은 결과(함수 · 붙여 넣기 같은 꼴): {sum, tags[], picks[{id|n, why}], extra[{n,o,r,e,c,f,l,d,k,t,w,g,why}]} */
+ /* 읽은 결과(함수 · 붙여 넣기 같은 꼴): {sum, tags[], picks[{id|n, why}], extra[{n,o,r,e,c,f,l,d,k,t,w,g,why}]}
+    11-06: 묶음 글이 「자동 · EX」 칸에 「g」 = 격("B" 같은 글자)으로 달라고 해서, g 가 글자면 (e.g||[]).filter 에서 넣기가 통째로 멈췄다 → 글자 g 는 gr(격)로, 배열 g 는 태그로 */
  async function applyRead(id,j,by){if(!id)return;if(!DB.base)await load();   /* 10-31: 후보 DB 를 아직 안 읽었으면 DB 추천(picks)이 빠지던 것 */const V=new Set(vocab());const tags=(j.tags||[]).filter(t=>V.has(t));const A=all();
   const picks=(j.picks||[]).map(p=>{const e=p.id&&byId(p.id)||A.find(x=>x.n===p.n);return e?{id:e.id,why:String(p.why||''),cost:String(p.cost||''),t:(p.t||[]).filter(t=>T2C[t]).slice(0,2),base:baseFix(p.base),ab:String(p.ab||'').trim(),so:/^(0\.5|1|1\.5|2|2\.5|3)$/.test(String(p.so||''))?String(p.so):''}:null}).filter(Boolean).slice(0,8);
-  const extra=(j.extra||[]).filter(e=>e&&e.n).slice(0,6).map(e=>({n:String(e.n),o:String(e.o||''),r:String(e.r||''),e:String(e.e||''),c:String(e.c||''),f:Math.max(1,Math.min(5,+e.f||2)),l:String(e.l||''),d:String(e.d||''),k:String(e.k||''),t:(e.t||[]).filter(t=>T2C[t]).slice(0,2),w:COSTS.includes(e.w)?e.w:'',g:(e.g||[]).filter(t=>V.has(t)),why:String(e.why||''),cost:String(e.cost||''),base:baseFix(e.base),ab:String(e.ab||'').trim(),so:/^(0\.5|1|1\.5|2|2\.5|3)$/.test(String(e.so||''))?String(e.so):''}));
+  const extra=(j.extra||[]).filter(e=>e&&e.n).slice(0,6).map(e=>({n:String(e.n),o:String(e.o||''),r:String(e.r||''),e:String(e.e||''),c:String(e.c||''),f:Math.max(1,Math.min(5,+e.f||2)),l:String(e.l||''),d:String(e.d||''),k:String(e.k||''),t:(e.t||[]).filter(t=>T2C[t]).slice(0,2),w:COSTS.includes(e.w)?e.w:'',g:(Array.isArray(e.g)?e.g:[]).filter(t=>V.has(t)),gr:PRIDES.includes(String(e.gr||(Array.isArray(e.g)?'':e.g)||''))?String(e.gr||e.g):'',why:String(e.why||''),cost:String(e.cost||''),base:baseFix(e.base),ab:String(e.ab||'').trim(),so:/^(0\.5|1|1\.5|2|2\.5|3)$/.test(String(e.so||''))?String(e.so):''}));
   await save(id,r=>{r.read={by,at:new Date().toISOString(),sum:String(j.sum||''),tags,picks,extra};r.tags=[...new Set((r.tags||[]).concat(tags))]})}
  function pasteBox(id){const md=N().openModal(`<div class="mhead"><h2>📋 ${id?'감우 결과 넣기 · '+esc(subName(id)):'묶음 결과 넣기 (여러 각성체)'}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
    <p class="small" style="margin-top:0">대화에서 각성체 그림을 보여 주면 감우가 이 꼴의 JSON 을 드려요. 그대로 붙여 넣으면 태그 · 후보가 채워져요.</p>
@@ -728,7 +729,7 @@ window.NT_AWK=(()=>{
   const e=nm?(candOf(sid,nm)||{n:nm}):null;const P=pref(pc,x.n);const aw=mkAw(pc);const m=x.pid&&MK().M.pokemon.find(q=>q.id===x.pid);
   let kind=P.main?'free':'c';if(!m&&kind==='free'&&aw.some(q=>q&&q.awaken==='free'))kind='c';
   /* 11-05 18:31 망령 「(이렌 퀴리) 왜 C 로 뜸?」: 칸 프라이드가 자동(비었음) · EX 면 고른 후보의 격(g, 없으면 why 의 「계산 종족치 n/B 525」)을 프라이드로 — 전엔 비워 둬서 제작기가 기본 C 로 보였다 */
-  const candG=e?(PRIDES.includes(String(e.g||''))&&e.g!=='EX'?e.g:((String(e.why||'').match(/\/\s*(A|B\+|B|C\+|C)\s*\d{3}/)||[])[1]||'')):'';
+  const cg=String(e&&(e.gr||(Array.isArray(e.g)?'':e.g))||'');const candG=e?(PRIDES.includes(cg)&&cg!=='EX'?cg:((String(e.why||'').match(/\/\s*(A|B\+|B|C\+|C)\s*\d{3}/)||[])[1]||'')):'';
   const pride=PRIDES.includes(P.pride)&&!(P.pride==='EX'&&candG)?P.pride:(kind==='c'?'C':candG);
   const T=(sp.t||[]).filter(Boolean).length?sp.t.filter(Boolean):((e&&e.t)||[]);const B=baseFix(sp.base)||(e&&baseFix(e.base))||null;const ab=sp.ab||(e&&e.ab)||'';
   try{await MK().db()}catch(err){}const abEff=ab?String((MK().abil(ab)||[])[2]||''):'';   /* 11-01 망령 「시트 보내기 하면 특성 효과가 안 뜬다」: 효과 글 사본(effTxt.ab)은 제작기가 저장할 때만 적어서 — 보낼 때 특성 DB 글을 같이 적는다 */
