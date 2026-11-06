@@ -278,6 +278,7 @@
     <span class="mkr-av">${monPic(m)}</span>
     <div class="mkr-id"><div class="mkr-n"><b>${esc(m.nick||m.name||'(이름 없음)')}</b>${m.nick?`<small class="mkr-sp" title="종 이름">${esc(m.name||'')}</small>`:''}${gGlyph(m.gender)}${m.partner?'<span class="mkr-star" title="파트너">★</span>':''}</div>
      <div class="mkr-c">${X.types.map(tchip).join('')}<span class="mkr-lv">Lv.${X.lv}</span></div>
+     ${(()=>{const eg=[m.egg1,m.egg2].filter(x=>x&&x!=='-');return eg.length?`<div class="mkr-c mkr-egg"><span class="mkr-k">알그룹</span>${eg.map(x=>`<span>${esc(x)}</span>`).join('<i>·</i>')}</div>`:''})()}
      <div class="mkr-c">${aw?`<span class="mkr-aw">${AWL[m.awaken]}</span>`:''}${X.pride?`<span class="mkr-pr">프라이드 <b>${esc(X.pride)}</b></span>`:''}${m.tera&&m.tera!=='-'?`<span class="mkr-tg">테라 ${esc(m.tera)}</span>`:''}</div>${condChips(m)}</div>
     ${statBox(X)}
     <div class="mkr-ab"><div class="mkr-abn"><span class="mkr-k">특성</span><b>${esc(m.ability||'특성 없음')}</b></div>${abE?`<p title="${esc(abE)}">${esc(abE)}</p>`:''}${X.ex.map(x=>{const e=oneLn(x.eff||'');return `<div class="mkr-abn mkr-exn"><span class="mkr-k ex">전용</span><b>『${esc(String(x.name).replace(/[『』]/g,''))}』</b></div>${e?`<p class="mkr-exe" title="${esc(e)}">${esc(e)}</p>`:''}`}).join('')}${X.items.length?`<div class="mkr-it">${X.items.map(x=>`<span title="${esc(oneLn(x.e||''))}">${esc(x.n)}</span>`).join('')}</div>`:''}${window.NT_FLD&&t.id?NT_FLD.chips(m,'p',m.id,t.id,ED):''}</div>
@@ -327,7 +328,7 @@
   const g=o&&o.grade&&o.grade!=='-'&&o.grade!=='?'?o.grade:'';const cats=o&&o.pen?Object.keys(o.pen):[];
   const bar=t&&(aw.length||E&&G)?`<div class="awcostbar"><b>각성체 대가</b>${g?`<span class="awcb-g">${esc(g)}</span>`:'<span class="awcb-n">없음</span>'}<small>${!o?'제작기에서 이 트레이너를 한 번 저장하면 보여요':!aw.some(m=>m.awaken==='free')?'각성 (대가) 각성체가 아직 없어요':!g?'대가 쪽 프라이드가 C 이거나 아직 정하지 않았어요':cats.length?'분류 '+cats.map(esc).join(' · '):'<span class="awcb-w">분류를 아직 안 골랐어요</span>'}</small><span class="sp"></span>${E&&G?`<button type="button" class="btn xs" data-moned="" data-id="${esc(id)}" data-sec="misagp" title="제작기 「각성체 대가」 칸을 열어 분류 · 통솔 항목 · 뺄 지령 등을 골라요 (등급은 대가 각성체 프라이드로 자동)">⚖ 대가 지정</button>`:''}</div>`:'';
   return `<div class="awxs">${aw.slice(0,2).map(card).join('')}${aw.length<2?[...Array(2-Math.min(2,aw.length))].map((_,k)=>empty(aw.length+k+1)).join(''):''}</div>${bar}`}
- window.NT_PCX={partySec,monCard};
+ window.NT_PCX={partySec,monCard,mkRow};
  /* 10-29: 지도의 인물 얼굴 → 이 시트 */
  window.NT_PC={select(k,id){U.mode=k==='npc'?'npc':'pc';U.sel=id;N().go(U.mode);setTimeout(()=>{const sh=$('.pcsheet');if(sh)sh.scrollIntoView({behavior:'smooth',block:'start'})},60)}};   /* 미리보기 · 점검용 */
  function monRow(m){const mv=(m.moves||[]).map(x=>typeof x==='string'?x:(x&&(x.name||x.n))||'').filter(Boolean);const pots=(m.pots||[]).filter(Boolean);
