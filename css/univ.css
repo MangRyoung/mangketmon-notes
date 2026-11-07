@@ -600,6 +600,7 @@ html[data-skin="univ"] .idrkc input{font-family:'Cinzel','Noto Serif KR',serif;c
 /* 11-02 학교 게시판 — 노트 왼쪽 아래 아이콘 · 창 (게시판 그림은 웹툴 css/bbs.css 를 불러온다) */
 .ntbbsfab{position:fixed;left:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:900;display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 12px 0 10px;border:2px solid #000;background:#ffd12e;color:#000;font:700 13px/1 'Do Hyeon',sans-serif;border-radius:19px;box-shadow:3px 3px 0 #000;cursor:pointer}
 .ntbbsfab[hidden]{display:none}
+.ntbbsfab{cursor:grab;user-select:none;-webkit-user-select:none}.ntbbsfab.drag{cursor:grabbing;opacity:.85;box-shadow:0 8px 18px rgba(0,0,0,.45)}   /* 11-07 끌어서 옮기기 */
 .ntbbsfab b{position:absolute;top:-8px;right:-8px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#e4002b;color:#fff;font:700 11px/20px monospace;text-align:center;border:2px solid #000}
 .ntbbsfab:focus-visible{outline:2px solid #fff;outline-offset:2px}
 @media (max-width:760px){.ntbbsfab{left:8px;height:34px;padding:0 10px}.ntbbsfab-t{display:none}}

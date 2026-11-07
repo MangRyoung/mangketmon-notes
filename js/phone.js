@@ -52,8 +52,21 @@ window.NT_PHONE=(()=>{
   try{window.OM_BBS_UI.mount(box,{who:null,compact:false,split:true,env:bbsEnv(()=>!!(PH.id&&PH.id.secret&&PH.id.role))})}catch(e){box.innerHTML=`<div class="ntph-empty sm">게시판을 그리지 못했어요<br><small>${esc(e.message||String(e))}</small></div>`;return}
   if(!(PH.id&&PH.id.role))N().toast('이 브라우저는 이어 둔 웹툴 방에 들어간 적이 없어 읽기만 해요 — 웹툴에서 한 번 들어오면 여기서도 써요')}
  function bbsFab(){let e=document.getElementById('ntbbsfab');const on=!!(N()&&N().ST&&N().ST.camp&&omRoom());if(!on){if(e)e.hidden=true;return}
-  if(!e){e=document.createElement('button');e.type='button';e.id='ntbbsfab';e.className='ntbbsfab';e.title='학교 게시판 (이어 둔 웹툴 방)';e.setAttribute('aria-label','학교 게시판 열기');e.onclick=openBoard;document.body.appendChild(e)}
+  if(!e){e=document.createElement('button');e.type='button';e.id='ntbbsfab';e.className='ntbbsfab';e.title='학교 게시판 (이어 둔 웹툴 방)';e.setAttribute('aria-label','학교 게시판 열기');e.onclick=ev=>{if(e._moved){e._moved=false;return}openBoard(ev)};document.body.appendChild(e);fabDrag(e)}
   const n=window.OM_BBS_UI?window.OM_BBS_UI.unread():0;e.hidden=false;e.innerHTML=`<span aria-hidden="true">✎</span><span class="ntbbsfab-t">게시판</span>${n?`<b>${n>99?'99+':n}</b>`:''}`}
+ /* 11-07 망령 「게시판 위치 드래그해서 조정해 둘 수 있게」: 「✎ 게시판」 단추를 끌어 옮기면 이 브라우저에 남긴다(nt_bbsfab_pos · 화면 크기 비율). 오른쪽 클릭(길게 누르기) = 제자리로 */
+ const FPK='nt_bbsfab_pos';
+ function fabPlace(e){let p=null;try{p=JSON.parse(localStorage.getItem(FPK)||'null')}catch(x){}if(!p){e.style.left='';e.style.top='';e.style.bottom='';e.style.right='';return}
+  const w=e.offsetWidth||110,h=e.offsetHeight||38;const x=Math.round(Math.max(4,Math.min(innerWidth-w-4,p.x*(innerWidth-w)))),y=Math.round(Math.max(4,Math.min(innerHeight-h-4,p.y*(innerHeight-h))));
+  e.style.left=x+'px';e.style.top=y+'px';e.style.bottom='auto';e.style.right='auto'}
+ function fabDrag(e){e.style.touchAction='none';e.title='학교 게시판 (이어 둔 웹툴 방) — 끌어서 옮기기 · 오른쪽 클릭으로 제자리';let d=null;
+  e.addEventListener('pointerdown',ev=>{if(ev.button!==0)return;const r=e.getBoundingClientRect();d={id:ev.pointerId,x0:ev.clientX,y0:ev.clientY,ox:ev.clientX-r.left,oy:ev.clientY-r.top,mv:false};addEventListener('pointermove',mvH);addEventListener('pointerup',end);addEventListener('pointercancel',end)});
+  const mvH=ev=>{if(!d||d.id!==ev.pointerId)return;if(!d.mv){if(Math.hypot(ev.clientX-d.x0,ev.clientY-d.y0)<6)return;d.mv=true;try{e.setPointerCapture(ev.pointerId)}catch(x){}e.classList.add('drag')}
+   const w=e.offsetWidth,h=e.offsetHeight;const x=Math.max(4,Math.min(innerWidth-w-4,ev.clientX-d.ox)),y=Math.max(4,Math.min(innerHeight-h-4,ev.clientY-d.oy));e.style.left=x+'px';e.style.top=y+'px';e.style.bottom='auto';e.style.right='auto';ev.preventDefault()};
+  const end=ev=>{if(!d||d.id!==ev.pointerId)return;removeEventListener('pointermove',mvH);removeEventListener('pointerup',end);removeEventListener('pointercancel',end);if(d.mv){e._moved=true;setTimeout(()=>{e._moved=false},400);e.classList.remove('drag');const w=e.offsetWidth,h=e.offsetHeight;const r=e.getBoundingClientRect();
+    try{localStorage.setItem(FPK,JSON.stringify({x:Math.max(0,Math.min(1,r.left/Math.max(1,innerWidth-w))),y:Math.max(0,Math.min(1,r.top/Math.max(1,innerHeight-h)))}))}catch(x){}}d=null};
+  e.addEventListener('contextmenu',ev=>{if(e._moved||(d&&d.mv)){ev.preventDefault();return}let had=false;try{had=!!localStorage.getItem(FPK);localStorage.removeItem(FPK)}catch(x){}if(!had)return;ev.preventDefault();fabPlace(e);N().toast('게시판 단추를 제자리로 돌렸어요')});
+  addEventListener('resize',()=>fabPlace(e));setTimeout(()=>fabPlace(e),0)}
  setInterval(()=>{try{bbsFab()}catch(e){}},2000);
  const acctTok=()=>{try{const a=JSON.parse(localStorage.getItem('om_acct')||sessionStorage.getItem('om_acct')||'null');return (a&&a.token)||''}catch(e){return ''}};
  /* 이 브라우저의 웹툴 신분 (계정 → GM 비밀값 → 좌석 비밀값 순) */
