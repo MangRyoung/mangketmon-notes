@@ -44,3 +44,12 @@ html:not(#_) .mkr .mkr-more summary{font-size:12.5px;font-weight:700;color:#4a3f
 /* 10-31 시트 접기 단추 (pc_ui · data-pshut) */
 .pcshut{display:flex;justify-content:flex-end;margin:10px 0 -2px}
 .pcshut .btn{font-size:12px}
+
+/* 11-07 망령 「미사그도 페그오 카드로」: 양피지 카드(.pmc.u) 안 기술 · 포텐셜 카드 — 위 .mkr 과 같은 색 */
+html:not(#_) .pmc.u .mvp-h{color:var(--crim,#6e1019);font-family:'Noto Serif KR',serif}
+html:not(#_) .pmc.u .mvc,html:not(#_) .pmc.u .ptc{background:rgba(255,255,255,.55);border-color:#c9b994;color:#1a140d;box-shadow:0 1px 0 rgba(255,255,255,.6) inset}
+html:not(#_) .pmc.u .ptc{border-left-color:var(--kc)}
+html:not(#_) .pmc.u .mvc-h b,html:not(#_) .pmc.u .ptc-h b,html:not(#_) .pmc.u .mvc-n b{color:#1a140d}
+html:not(#_) .pmc.u .mvc-n small,html:not(#_) .pmc.u .mvc-half,html:not(#_) .pmc.u .mvc-ct{color:#7a6a50;opacity:1}
+html:not(#_) .pmc.u .mvc-e,html:not(#_) .pmc.u .ptc-e{color:#3a3024;opacity:1}
+html:not(#_) .pmc.u .ptc-e.dim,html:not(#_) .pmc.u .mvc-e.dim{color:#7a6a50}

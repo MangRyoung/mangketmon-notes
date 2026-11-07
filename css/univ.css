@@ -640,4 +640,42 @@ div.mkr-more{display:flex;justify-content:flex-end}
 .ptm.bench{opacity:.6;border-left-style:dashed}
 .ptm.bench .ptm-pic img{filter:grayscale(.7)}
 .ptm-bn{padding:0 6px;border:1px dashed currentColor;border-radius:999px;font-size:11px;opacity:.8}
-.ptm-bnb{margin-left:auto;padding:0 6px;font-size:11px}
+.ptm-bnb{padding:0 6px;font-size:11px}
+.ptm-act{flex:none;display:flex;align-items:center;gap:4px}   /* 11-07 망령 「대기 버튼 편집 버튼이랑 줄 맞춰」 */
+
+/* ---------- 11-07 망령 「미사그 세션 노트도 페그오 카드 느낌으로 · 테마에 맞게」: 양피지 카드 (.pmc.u) ---------- */
+.pmc.u{--ink:#1a140d;--ink2:#4a3f30;--ink3:#7a6a50;--fg:var(--ink);--fg2:var(--ink2);--mute:var(--ink3);--line:#c9b994;--line2:#a8936a;--blue:#2b5f9e;
+  position:relative;background:linear-gradient(160deg,#efe6d2,#e4d8bd);color:var(--ink);border:1px solid #b9a77f;border-top:4px solid var(--c1);border-radius:6px;padding:12px 12px 10px;box-shadow:0 4px 12px rgba(0,0,0,.35)}
+.pmc.u::before{content:"";position:absolute;inset:4px;border:1px solid rgba(143,123,82,.28);border-radius:4px;pointer-events:none}
+.pmc.u.aw{border-top-color:var(--crim2,#8f1a26);background:linear-gradient(160deg,#f1e3cf,#e5d2b5)}
+.pmc.u.aw.sub{border-top-color:var(--gold2,#8f7b52)}
+.pmc.u.aw::after{content:"覺";position:absolute;right:10px;top:6px;font-family:'Noto Serif KR',serif;font-weight:900;font-size:34px;line-height:1;color:rgba(143,26,38,.13);pointer-events:none}
+.pmc.u.aw.sub::after{color:rgba(143,123,82,.18)}
+.pmc.u .pmh i{width:62px;height:62px;border-radius:50%;background-color:#1a140d;border:3px solid var(--c1);box-shadow:0 0 0 2px #efe6d2,0 0 0 3px var(--c2)}
+.pmc.u .pmh i.noimg{color:#e9c46a;background:#1a140d}
+.pmc.u .pmn{font-family:'Noto Serif KR',serif;font-weight:900;font-size:16.5px;color:var(--ink)}
+.pmc.u .pmsp{color:var(--ink3);opacity:1}
+.pmc.u .pmlv{background:#1a140d;color:#e9c46a;border-radius:999px;padding:0 8px;font-size:11.5px}
+.pmc.u .pmb{border-color:#a8936a;color:var(--ink2);border-radius:3px}
+.pmc.u .pmb.pr{border-color:var(--crim2,#8f1a26);color:var(--crim,#6e1019);font-weight:700}
+.pmc.u .pmb.star{color:#9a7400;border-color:#c9a64a}
+.pmc.u .pmb.aw{color:#f3eadb}
+.pmc.u .pmst span{background:rgba(255,255,255,.5);border:1px solid #d6c7a2}
+.pmc.u .pmst small{color:var(--ink3);font-weight:700}
+.pmc.u .pmst b{color:var(--ink2)}
+.pmc.u .pmst span.up b{color:#2e8a4f}.pmc.u .pmst b sup{color:#2e8a4f}
+.pmc.u .pmst .tot{background:#1a140d;border-color:#1a140d}
+.pmc.u .pmst .tot small{color:#cdbf9f}.pmc.u .pmst .tot em{color:#f1d58e}
+.pmc.u .pml{color:var(--ink)}
+.pmc.u .pme{color:var(--ink2)}
+.pmc.u .pml.ab,.pmc.u .pml.ex{background:#1a140d;color:#efe6d2;border-left:3px solid var(--crim2,#8f1a26);padding:6px 10px;margin:0;border-radius:0 4px 4px 0}
+.pmc.u .pml.ex{border-left-color:#b08a3e}
+.pmc.u .pml.ab+.pml.ex{margin-top:-7px;border-top:1px dashed rgba(207,174,110,.35)}
+.pmc.u .pml.ab .pme,.pmc.u .pml.ex .pme{color:#cdbf9f}
+.pmc.u .pml.ex .pmk{background:#b08a3e;color:#1a140d}
+.pmc.u .pml.ex b{color:#f1d58e}
+.pmc.u .ux-itbs .linkbtn{color:var(--crim2,#8f1a26)}
+.pmc.u .pmpot{border-top:1px dashed #b9a77f;padding-top:4px}
+.pmc.u .pmpot summary{color:var(--ink2);font-weight:700}
+.pmc.u .pmpot summary .dim{color:var(--ink3);font-weight:400}
+.mkparty .ptygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:12px;margin:4px 0 6px}
