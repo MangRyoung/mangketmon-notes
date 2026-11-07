@@ -231,9 +231,12 @@
   const eg=[m.egg1,m.egg2].filter(x=>x&&x!=='-');const fm=(m.forms||[]).filter(f=>f&&f.name);
   const c1=T2C[X.types[0]]||'#8f7b52',c2=T2C[X.types[1]]||c1;
   const aw=o.aw&&isAw(m);
+  /* 11-07 망령 「각성체도 PL 도 임명한 역할 체크해서 칩에 역할 뜨게」: 분류가 「역할」인 포텐셜(제작기 roleOf 와 같이 — 분류가 비면 1번 칸) */
+  const role=(()=>{let i=(m.pots||[]).findIndex((n,k)=>n&&/역할/.test(kindOf(k)));if(i<0&&(m.pots||[])[0]&&!kindOf(0))i=0;const n=i<0?'':String(m.pots[i]||'').replace(/[『』]/g,'').trim();return n&&n!=='역할 포텐셜'&&n!=='-'?n:''})();
+  const RFC=[['서포터|어시스트|옵저버|힐러','#b08800'],['블로커|탱커','#2b6cb4'],['러너|닌자','#2e8a4f'],['에이스','#7a3a96'],['와일드|보스','#7a5a3a'],['어태커|어쌔신','#c8362b'],['타이트','#8a4b2a']];const rc=role?((RFC.find(([re])=>new RegExp(re).test(role))||[])[1]||'#5b4a2a'):'';
   return `<div class="pmc ${o.univ?'u':''} ${aw?'aw '+(m.awaken==='free'?'free':'sub'):''} ${aw&&o.awd?'awd':''} ${m.bench?'bench':''}" id="pm-${esc(m.id)}" style="--c1:${c1};--c2:${c2}">
    <div class="pmh">${monPic(m)}<div class="pmt"><div class="pmnr"><b class="pmn">${esc(m.nick||m.name||'(이름 없음)')}</b>${m.nick?`<small class="pmsp" title="종 이름">${esc(m.name||'')}</small>`:''}${gGlyph(m.gender)}${m.partner?'<small class="pmb star">★ 파트너</small>':''}${aw?`<small class="pmb aw">${AWL[m.awaken]}</small>`:''}${m.bench?'<small class="pmb" title="대기(벤치) — 통솔점 · 【1/시】 · 기술점 셈에서 빠져요">대기</small>':''}${o.bench||''}</div>
-    <div class="pmrow"><span class="pmlv">Lv ${X.lv}</span>${X.pride?`<span class="pmb pr">프라이드 ${esc(X.pride)}</span>`:''}${X.types.map(tchip).join('')}${m.tera&&m.tera!=='-'?`<small class="pmb">테라 ${esc(m.tera)}</small>`:''}</div>
+    <div class="pmrow"><span class="pmlv">Lv ${X.lv}</span>${X.pride?`<span class="pmb pr">프라이드 ${esc(X.pride)}</span>`:''}${role?`<span class="pmrole" style="--rc:${rc}" title="역할 포텐셜">${esc(role)}</span>`:''}${X.types.map(tchip).join('')}${m.tera&&m.tera!=='-'?`<small class="pmb">테라 ${esc(m.tera)}</small>`:''}</div>
     ${eg.length||fm.length?`<div class="pmrow pmeg" title="알그룹">${eg.map(egChip).join('')}${fm.length?`<small class="dim">폼 ${fm.map(f=>esc(f.name)).join(' · ')}</small>`:''}</div>`:''}${condChips(m)}${healBtn(t,m,ED)}</div></div>
    ${o.strip||''}
    <div class="pmst">${STL.map((l,i)=>{const v=+bs[i]||0,g=grd(bs[i]),up=bu&&bu[i]!==b0[i];return `<span class="${gcls(g)} ${up?'up':''}" title="${l} ${v||'-'} · ${g}${up?` (포텐셜로 ${b0[i]} → ${bu[i]})`:''}"><small>${l}</small><em>${esc(g)}</em><b>${v||'-'}${up?'<sup>▲</sup>':''}</b></span>`}).join('')}<span class="tot"><small>합</small><em>${X.tot||'-'}</em><b>&nbsp;</b></span></div>
