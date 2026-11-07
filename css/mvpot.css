@@ -59,3 +59,12 @@ html:not(#_) .pmc.u.awd .mvc,html:not(#_) .pmc.u.awd .ptc{background:rgba(0,0,0,
 html:not(#_) .pmc.u.awd .mvc-h b,html:not(#_) .pmc.u.awd .ptc-h b,html:not(#_) .pmc.u.awd .mvc-n b{color:#f8eed9}
 html:not(#_) .pmc.u.awd .mvc-n small,html:not(#_) .pmc.u.awd .mvc-half,html:not(#_) .pmc.u.awd .mvc-ct{color:#a8936a}
 html:not(#_) .pmc.u.awd .mvc-e,html:not(#_) .pmc.u.awd .ptc-e{color:#d8cbb0}
+/* 11-07 기술 묶음 접기 (details.mvfold) */
+details.mvfold>summary.mvp-h{cursor:pointer;list-style:none;user-select:none}
+details.mvfold>summary.mvp-h::-webkit-details-marker{display:none}
+details.mvfold>summary.mvp-h::before{content:"▾";font-size:11px;opacity:.7;transition:transform .15s;display:inline-block}
+details.mvfold:not([open])>summary.mvp-h::before{transform:rotate(-90deg)}
+details.mvfold:not([open])>summary.mvp-h{margin-bottom:0}
+.mvp-tg{order:9;font-style:normal;font-size:10.5px;font-weight:600;letter-spacing:0;opacity:.55}
+details.mvfold[open] .mvp-tg::after{content:"접기"}details.mvfold:not([open]) .mvp-tg::after{content:"펼치기"}
+details.mvfold>summary.mvp-h:hover .mvp-tg{opacity:.9}

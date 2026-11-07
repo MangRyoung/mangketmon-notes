@@ -204,11 +204,14 @@
     제작기 기술 표 줄: [5] 타입 · [6] 분류 · [7] 위력 · [8] 명중(0 = 필중) · [9] 범위 · [10] 접촉 · [11] 우선도 · [13] 효과 */
  const fxT=s=>window.NT_UNIV&&window.NT_UNIV.fx?window.NT_UNIV.fx(s):esc(brN(s));
  const CLS={'물리':'ph','특수':'sp','변화':'st'};
- function moveGrid(mv){if(!mv.length)return '';
-  return `<section class="mvp"><h5 class="mvp-h"><span>기술</span><small>${mv.length}</small></h5><div class="mvg">${mv.map(x=>{const r=MK().move(x.name);const ty=r&&r[5]&&r[5]!=='-'?r[5]:'';const cl=r?String(r[6]||''):'';
+ /* 11-07 망령 「카드 기술 쪽도 기본은 켜 놓되 클릭해서 접어 둘 수 있게」: 기술 묶음 = details(기본 펼침). 접은 카드는 이 브라우저에 기억(nt_mvfold) */
+ const MVF=(()=>{try{return new Set(JSON.parse(localStorage.getItem('nt_mvfold')||'[]'))}catch(e){return new Set()}})();
+ if(!window._ntMvFold){window._ntMvFold=1;document.addEventListener('toggle',e=>{const d=e.target;if(!d||!d.matches||!d.matches('details[data-mvk]'))return;const k=d.dataset.mvk;if(d.open)MVF.delete(k);else MVF.add(k);try{localStorage.setItem('nt_mvfold',JSON.stringify([...MVF].slice(-300)))}catch(x){}},true)}
+ function moveGrid(mv,key){if(!mv.length)return '';const k=key?String(key):'';
+  return `<details class="mvp mvfold" ${k?`data-mvk="${esc(k)}"`:''} ${k&&MVF.has(k)?'':'open'}><summary class="mvp-h"><span>기술</span><small>${mv.length}</small><em class="mvp-tg" aria-hidden="true"></em></summary><div class="mvg">${mv.map(x=>{const r=MK().move(x.name);const ty=r&&r[5]&&r[5]!=='-'?r[5]:'';const cl=r?String(r[6]||''):'';
    const pw=r&&+r[7]?r[7]:'—',ac=r?(+r[8]?r[8]:(cl==='변화'?'—':'필중')):'—';const pr=r&&+r[11]?(+r[11]>0?'+':'')+r[11]:'';const eff=r?brN(r[13]||''):'';
    return `<article class="mvc" style="--tc:${T2C[ty]||'#8f7b52'}"><div class="mvc-h">${ty?tchip(ty):''}<b title="${esc(x.name)}">${esc(x.name)}</b>${x.half?'<small class="mvc-half" title="자속 기술 할인">할인</small>':''}${cl?`<span class="mvc-cl c-${CLS[cl]||'st'}">${esc(cl)}</span>`:''}</div>
-    ${r?`<div class="mvc-n"><span><small>위력</small><b>${esc(pw)}</b></span><span><small>명중</small><b>${esc(ac)}</b></span>${r[9]&&r[9]!=='-'?`<span><small>범위</small><b>${esc(r[9])}</b></span>`:''}${pr?`<span><small>우선</small><b>${esc(pr)}</b></span>`:''}${r[10]==='O'?'<span class="mvc-ct" title="접촉 기술">접촉</span>':''}</div>${eff?`<p class="mvc-e" title="${esc(eff)}">${fxT(eff)}</p>`:''}`:'<p class="mvc-e dim">기술 표에 없는 이름이에요</p>'}</article>`}).join('')}</div></section>`}
+    ${r?`<div class="mvc-n"><span><small>위력</small><b>${esc(pw)}</b></span><span><small>명중</small><b>${esc(ac)}</b></span>${r[9]&&r[9]!=='-'?`<span><small>범위</small><b>${esc(r[9])}</b></span>`:''}${pr?`<span><small>우선</small><b>${esc(pr)}</b></span>`:''}${r[10]==='O'?'<span class="mvc-ct" title="접촉 기술">접촉</span>':''}</div>${eff?`<p class="mvc-e" title="${esc(eff)}">${fxT(eff)}</p>`:''}`:'<p class="mvc-e dim">기술 표에 없는 이름이에요</p>'}</article>`}).join('')}</div></details>`}
  const PKC={'역할':'#8f1a26','분류':'#3c5878','종족':'#2e6b45','속별':'#1f6f72','특권':'#a07a1e','전용':'#5b2a6e','특성':'#3f9a5a','소지품':'#6b5d44','계제':'#7a4a1c'};
  const pkc=k=>{for(const [n,c] of Object.entries(PKC))if(String(k).includes(n))return c;return '#6a6f7a'};
  function potGrid(list){if(!list.length)return '';
@@ -235,7 +238,7 @@
    ${o.strip||''}
    <div class="pmst">${STL.map((l,i)=>{const v=+bs[i]||0,g=grd(bs[i]),up=bu&&bu[i]!==b0[i];return `<span class="${gcls(g)} ${up?'up':''}" title="${l} ${v||'-'} · ${g}${up?` (포텐셜로 ${b0[i]} → ${bu[i]})`:''}"><small>${l}</small><em>${esc(g)}</em><b>${v||'-'}${up?'<sup>▲</sup>':''}</b></span>`}).join('')}<span class="tot"><small>합</small><em>${X.tot||'-'}</em><b>&nbsp;</b></span></div>
    ${m.ability?line('특성',m.ability,E.ab||(MK().abil(m.ability)||[])[2]||'','ab'):''}${X.ex.map(x=>line('전용','『'+String(x.name).replace(/[『』]/g,'')+'』',x.eff||'','ex')).join('')}${X.items.map(x=>line('소지품',x.n,x.e,'it')).join('')}${window.NT_FLD&&t.id?NT_FLD.chips(m,'p',m.id,t.id,ED):''}${ED&&t.id?`<div class="ux-itbs"><button type="button" class="linkbtn small ux-itb" data-ux="item" data-id="${esc(t.id)}" data-pid="${esc(m.id)}">✎ 소지품${X.items.length?' 고치기':' 넣기'}</button>${window.NT_MONED?`<button type="button" class="linkbtn small ux-itb" data-moned="${esc(m.id)}" data-id="${esc(t.id)}">✎ 포켓몬 고치기</button><button type="button" class="linkbtn small ux-itb" data-moned="${esc(m.id)}" data-id="${esc(t.id)}" data-sec="pcard" title="제작기 「한 장 요약」 — 기술 · 포텐셜 · 상성을 한 장으로 (PNG 저장도)">▤ 한 장 보기</button>`:''}</div>`:''}
-   ${moveGrid(X.mv)}
+   ${moveGrid(X.mv,m.id)}
    ${X.pots.length?`<details class="pmpot"><summary>포텐셜 ${X.pots.length} <span class="dim small">${X.pots.map(x=>esc(x.n)).join(' · ')}</span></summary>${potGrid(X.pots.map(x=>({k:kindOf(x.i),n:'『'+x.n+'』',e:effOf(x.i)})))}</details>`:''}
    ${o.awx?`<div class="pmawx">${o.awx}${(()=>{const r=memoRest(m.memo);return r?`<div class="pme pre mkr-memo pmawm">${esc(r)}</div>`:''})()}</div>`:m.memo?`<details class="pmpot"><summary>메모</summary>${memoHtml(m.memo,o.univ?'mkr-memo':'')}</details>`:''}
   </div>`}
