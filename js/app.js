@@ -329,6 +329,7 @@ window.NT=(()=>{
    /* 10-29 계정: 링크로 받은 비밀구가 없으면 계정(웹툴과 같은 로그인) 권한을 먼저 — 권한이 없으면 저장된 비밀구 */
    const tok=!given&&window.NT_ACCT?NT_ACCT.tok():'';
    ST.acct='';if(tok){/* 10-29 망령 「웹툴처럼 로그인한 PL 은 기본 PL 권한으로 자기가 자리에 앉게」: 열면 PL 권한(자리 없음)을 받는다 (patch_2026-10-29_PL기본.sql) */try{ST.acct=await DBS().acct.join(tok,camp)||''}catch(e){}
+    /* 11-08 망령 「두 자리에 앉아 있는데 나갔다 오니 하나만 보임」: 주소로 바로 열면(새로고침 · 링크) 대기실을 안 거쳐 내 계정 정보(ME · 앉은 자리 전부)가 비어 있었다 → 열 때마다 새로 읽는다 */try{await NT_ACCT.me(true)}catch(e){}
     try{const w=await DBS().whoami(camp,'u:'+tok);if(w){ST.role=w;ST.secret='u:'+tok}}catch(e){}}
    if(!ST.role&&sec){ST.secret=sec;ST.role=await DBS().whoami(camp,sec);if(!ST.role){toast('저장된 비밀구가 맞지 않아 구경 모드예요');ST.secret=''}}
    try{ST.seats=await DBS().seats(camp)||[]}catch(e){ST.seats=[]}

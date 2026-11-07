@@ -69,7 +69,7 @@ window.NT_ACCT=(()=>{
  /* ----- 자리 앉기 (10-29 망령 「웹툴처럼 로그인한 PL 은 기본 PL 권한으로 자기가 자리에 앉게」) -----
     계정으로 캠페인을 열면 서버(nt_join)가 PL 권한(자리 없음)을 준다. 빈 PC 시트를 골라 앉으면(nt_claim 'u:') 그 시트를 고칠 수 있다 */
  async function useSeat(id){const S=N().ST;try{await DB().seatUse(S.camp,'u:'+A.tok(),id);await me(true);N().closeModal(true);N().toast(`「${N().seatName(id)||id}」 자리로 바꿨어요`);if(PR)PR.send({uid:(A.get()||{}).uid,camp:S.camp,seat:id});N().open(S.camp,S.view)}catch(e){N().toast(/nt_seat_use|function/.test(String(e&&e.message))?'서버에 여러 자리 기능이 아직 없어요 — GM 이 patch_2026-11-04_여러자리.sql 을 돌려야 해요':errMsg(e))}}
- function seatPicker(){const S=N().ST;if(!S.camp||!A.tok())return;const mine=S.role&&S.role!=='gm'?S.role:'';const own=new Set(mySeats(S.camp));if(mine)own.add(mine);
+ function seatPicker(again){const S=N().ST;if(!S.camp||!A.tok())return;/* 11-08: 내 계정 정보가 아직 없으면 먼저 읽는다 — 없으면 내 다른 자리가 「누군가 앉음」으로 잠겼다 */if(!ME&&!again){me(true).then(()=>seatPicker(1));return}const mine=S.role&&S.role!=='gm'?S.role:'';const own=new Set(mySeats(S.camp));if(mine)own.add(mine);
   const taken={};(S.seats||[]).forEach(x=>{if(!own.has(x.seat))taken[x.seat]=x.name||'누군가'});
   /* 11-03: 「모두」 공개된 시트만 앉을 수 있다 · 캠페인 설정이 「GM 승인」이면 요청만 남긴다 (camp.data.claims) */
   const cd=((S.campInfo||{}).data)||{};const approve=cd.claimMode==='approve';const myUid=(A.get()||{}).uid||'';const pend=(cd.claims||{})[myUid];
