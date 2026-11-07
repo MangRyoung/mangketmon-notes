@@ -636,3 +636,8 @@ html[data-skin="univ"] .idrkc input{font-family:'Cinzel','Noto Serif KR',serif;c
 .mkr-cst.dead{background:#c62828}
 .mkr-heal{margin-left:10px;padding:1px 10px;vertical-align:middle}
 div.mkr-more{display:flex;justify-content:flex-end}
+/* 11-07 대기(벤치) */
+.ptm.bench{opacity:.6;border-left-style:dashed}
+.ptm.bench .ptm-pic img{filter:grayscale(.7)}
+.ptm-bn{padding:0 6px;border:1px dashed currentColor;border-radius:999px;font-size:11px;opacity:.8}
+.ptm-bnb{margin-left:auto;padding:0 6px;font-size:11px}
