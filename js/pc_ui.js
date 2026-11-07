@@ -229,7 +229,7 @@
   const c1=T2C[X.types[0]]||'#8f7b52',c2=T2C[X.types[1]]||c1;
   const aw=o.aw&&isAw(m);
   return `<div class="pmc ${o.univ?'u':''} ${aw?'aw '+(m.awaken==='free'?'free':'sub'):''} ${aw&&o.awd?'awd':''} ${m.bench?'bench':''}" id="pm-${esc(m.id)}" style="--c1:${c1};--c2:${c2}">
-   <div class="pmh">${monPic(m)}<div class="pmt"><div class="pmnr"><b class="pmn">${esc(m.nick||m.name||'(이름 없음)')}</b>${m.nick?`<small class="pmsp" title="종 이름">${esc(m.name||'')}</small>`:''}${gGlyph(m.gender)}${m.partner?'<small class="pmb star">★ 파트너</small>':''}${aw?`<small class="pmb aw">${AWL[m.awaken]}</small>`:''}${m.bench?'<small class="pmb" title="대기(벤치) — 통솔점 · 【1/시】 · 기술점 셈에서 빠져요">대기</small>':''}</div>
+   <div class="pmh">${monPic(m)}<div class="pmt"><div class="pmnr"><b class="pmn">${esc(m.nick||m.name||'(이름 없음)')}</b>${m.nick?`<small class="pmsp" title="종 이름">${esc(m.name||'')}</small>`:''}${gGlyph(m.gender)}${m.partner?'<small class="pmb star">★ 파트너</small>':''}${aw?`<small class="pmb aw">${AWL[m.awaken]}</small>`:''}${m.bench?'<small class="pmb" title="대기(벤치) — 통솔점 · 【1/시】 · 기술점 셈에서 빠져요">대기</small>':''}${o.bench||''}</div>
     <div class="pmrow"><span class="pmlv">Lv ${X.lv}</span>${X.pride?`<span class="pmb pr">프라이드 ${esc(X.pride)}</span>`:''}${X.types.map(tchip).join('')}${m.tera&&m.tera!=='-'?`<small class="pmb">테라 ${esc(m.tera)}</small>`:''}</div>
     ${eg.length||fm.length?`<div class="pmrow pmeg" title="알그룹">${eg.map(egChip).join('')}${fm.length?`<small class="dim">폼 ${fm.map(f=>esc(f.name)).join(' · ')}</small>`:''}</div>`:''}${condChips(m)}${healBtn(t,m,ED)}</div></div>
    ${o.strip||''}
@@ -448,15 +448,16 @@
   /* 11-07 망령 「파티 서머리랑 포켓몬 카드 따로 둘 필요 있나 — 합치자」 · 「큰 각성체 카드는 그대로, 각성체 카드는 거기에 맞춘 전용으로」:
      각성체 = 큰 카드(awCards) · 대가 줄 · 원전 아래에 각성체 전용 카드(진홍 · 남색), PL 포켓몬 = 양피지 카드. 서머리 줄의 숫자(통솔 · 분배 · 할인 · 1/시 · 소켓) · 대기 단추는 카드 머리로 */
   const strip=(m,i)=>{const x=D.mons[m.id]||{};const sc=x.sockCap!=null?`${fmt(x.sock)}/${fmt(x.sockCap)}`:'';const L=[x.pride&&!isAw(m)?`<span>통솔 <b>${fmt(x.cost)}</b></span>`:'',x.dist?`<span>분배 <b>${x.dist>0?'+':''}${x.dist}</b></span>`:'',x.disc?`<span>할인 <b>${x.disc}</b></span>`:'',x.once?`<span><em class="ux-tag">1/시</em> <b>${x.once}</b></span>`:'',sc?`<span>소켓 <b>${sc}</b></span>`:''].filter(Boolean);
-   const bb=E&&!N().ST.plView?`<button type="button" class="btn xs ghost ptm-bnb" data-bench="${esc(m.id)}" title="${BN(m)?'출전으로 — 셈에 다시 넣어요':'대기(벤치)로 — 통솔점 · 【1/시】 · 기술점 셈에서 빼요'}">${BN(m)?'출전':'대기'}</button>`:'';
-   return L.length||bb?`<div class="pmsum" style="--pc:${col(i)}">${L.join('')}<span class="sp"></span>${bb}</div>`:''};
+   return L.length?`<div class="pmsum" style="--pc:${col(i)}">${L.join('')}</div>`:''};
+  /* 11-07 망령 「대기 버튼은 괜히 줄 밀리게 하지 말고 이름 줄 오른쪽 끝에」 */
+  const bbtn=m=>E&&!N().ST.plView?`<button type="button" class="btn xs ghost ptm-bnb pmbn" data-bench="${esc(m.id)}" title="${BN(m)?'출전으로 — 셈에 다시 넣어요':'대기(벤치)로 — 통솔점 · 【1/시】 · 기술점 셈에서 빼요'}">${BN(m)?'출전':'대기'}</button>`:'';
   const uParty=()=>{const G0=N().gm();const pl=ms.filter(m=>!isAw(m)),aw=ms.filter(isAw).sort((a,b)=>(a.awaken==='free'?0:1)-(b.awaken==='free'?0:1));
    const add=(k,n)=>E&&(k!=='aw'||G0)&&n?`<button type="button" class="btn xs" data-monadd="${k}" data-id="${esc(id)}" title="제작기에 새 시트를 만들어 바로 열어요">＋ ${k==='aw'?'각성체':'PL 포켓몬'}</button>`:'';
    return `${window.NT_FLD?`<div class="ptfld"><b>트레이너 필드 전개</b><span class="sp"></span>${NT_FLD.chips(t,'t',t.id||id,'',E)}</div>`:''}
     <div class="ptsub aw"><b>각성체</b><small>${aw.length} / 2 · GM이 짠다 · 통솔점을 쓰지 않는다</small>${skTO(awSock(D,ms),'각성체 2체 몫 · 1인 기준 (2체) 표')}${add('aw',aw.length<2)}</div>${window.NT_AWK?NT_AWK.idCard(id):''}
-    ${aw.length?`<div class="ptygrid awg">${aw.map(m=>monCard(t,m,E,{univ:1,aw:1,awd:1,strip:strip(m,ms.indexOf(m)),awx:awBig(id,t,ms,m,E)})).join('')}</div>`:''}
+    ${aw.length?`<div class="ptygrid awg">${aw.map(m=>monCard(t,m,E,{univ:1,aw:1,awd:1,strip:strip(m,ms.indexOf(m)),bench:bbtn(m),awx:awBig(id,t,ms,m,E)})).join('')}</div>`:''}
     <div class="ptsub"><b>PL 포켓몬</b><small>${pl.length} / 4 · PL이 짠다</small>${skTO(D.sock,'PL 4체 몫')}${add('pl',pl.length<4)}</div>
-    ${pl.length?`<div class="ptygrid">${pl.map(m=>monCard(t,m,E,{univ:1,strip:strip(m,ms.indexOf(m))})).join('')}</div>`:'<p class="mkpe">아직 없어요</p>'}`};
+    ${pl.length?`<div class="ptygrid">${pl.map(m=>monCard(t,m,E,{univ:1,strip:strip(m,ms.indexOf(m)),bench:bbtn(m)})).join('')}</div>`:'<p class="mkpe">아직 없어요</p>'}`};
   return `<section class="ux-sec ux-pt ${part==='mons'?'ux-ptm':''} ${part==='mons'&&N().skin&&N().skin()==='univ'?'ux-pty':''}"><h4 class="ux-h"><span>${part==='mons'?(N().skin&&N().skin()==='univ'?'파티':'파티 서머리'):'PT 서머리'}</span><small>${ms.length}체</small><span class="sp"></span>${D.sock&&!UV?`<small class="ptsk ${D.sock.u>D.sock.m?'warn':''}">PT 기술점 <b>${fmt(D.sock.u)}</b> / ${fmt(D.sock.m)}</small>`:''}${part!=='gauge'?isockChip(id,t,D,E):''}</h4>
    ${G&&D.items.length?`<div class="ptgs">${D.items.map(gauge).join('')}</div>`:''}
    ${Mo&&part==='mons'&&N().skin&&N().skin()==='univ'?uParty():Mo&&ms.length?`<div class="ptms">${ms.map(mon).join('')}</div>`:''}

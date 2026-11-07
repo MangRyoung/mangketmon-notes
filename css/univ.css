@@ -768,3 +768,5 @@ button.awb-tend:hover,button.awb-tend:focus-visible{border-color:#f1d58e;backgro
 .awb-qm.end{position:static;font-size:18px;vertical-align:-4px;margin-left:2px;opacity:.7}
 .awx.sub .awb-qm{color:#9cc8ff}
 @media (max-width:640px){.awx.awbig .awx-seal{top:12px;bottom:auto}.awx.awbig{flex-direction:column}.awx.awbig .awx-por{width:84px;height:110px}.awx-b{padding-right:0}.awb-q{font-size:14px}}
+.pmnr .pmbn{margin-left:auto;flex:none;padding:0 8px}   /* 11-07 대기 단추 = 이름 줄 오른쪽 끝 */
+.pmc.u .pmsum .sp{display:none}
