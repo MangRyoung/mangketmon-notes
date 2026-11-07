@@ -742,3 +742,29 @@ html[data-skin="univ"] .idcard.ids-miss .idc-seal{border-color:#1d3f7a;color:#1d
 .idsc2 input:checked+span{background:var(--yel,#f5d000);color:#000;border-color:#000}
 .idsc2.ids-dead input:checked+span{background:#a3121c;color:#fff;border-color:#a3121c}
 .idsc2.ids-miss input:checked+span{background:#1d3f7a;color:#fff;border-color:#1d3f7a}
+/* ---------- 11-07 망령 「원전 글씨 안 보임 · 파란 글자 안 보임 · 메모 늘 펼침 · 큰 카드를 메모 자리로 · 누구 · 대가 · 대가 멘트만 · 대가 성향 눌러서 지정 · 멘트 멋있게」 ---------- */
+.pmc.u.awd .ux-st{color:#9cc8ff}.pmc.u.awd .ux-nm{color:#f1d58e}.pmc.u.awd .ux-tag{color:#f3eadb;background:rgba(207,174,110,.18);border-color:rgba(207,174,110,.45)}
+html:not(#_) .pmc.u.awd .mvc-e .ux-st,html:not(#_) .pmc.u.awd .ptc-e .ux-st{color:#9cc8ff}
+.pmawx{display:flex;flex-direction:column;gap:8px;border-top:1px dashed rgba(207,174,110,.35);padding-top:10px;margin-top:2px}
+.pmc.u.awd .pmawm{color:#e9dcc0;font-size:12.5px;line-height:1.6;background:rgba(0,0,0,.25);border-left:3px solid #cfae6e;padding:6px 10px;border-radius:0 4px 4px 0}
+.awx.awbig{box-shadow:inset 0 0 0 3px rgba(207,174,110,.16),0 3px 10px rgba(0,0,0,.45)}
+.awx.awbig .awx-por{width:96px;height:128px}
+.awb-who{display:flex;gap:8px;font-size:13px;line-height:1.6;color:#f3eadb}
+.awb-who i{flex:none;font-style:normal;font-size:11px;font-weight:700;letter-spacing:.12em;color:#cfae6e;padding-top:2px}
+.awb-tend{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin:2px 0 0;padding:5px 8px;border:1px solid rgba(207,174,110,.45);border-radius:6px;background:rgba(0,0,0,.28);color:#f3eadb;font:inherit;font-size:12.5px;text-align:left;width:fit-content;max-width:100%}
+button.awb-tend{cursor:pointer;transition:border-color .15s,background .15s}
+button.awb-tend:hover,button.awb-tend:focus-visible{border-color:#f1d58e;background:rgba(207,174,110,.15);outline:none}
+.awb-tl{font-size:11px;font-weight:700;letter-spacing:.1em;color:#cfae6e;margin-right:2px}
+.awb-chip{padding:1px 8px;border-radius:999px;background:#8f1a26;color:#fff;font-weight:700;font-size:12px}
+.awb-chip b{color:#f1d58e}
+.awb-g{min-width:26px;text-align:center;padding:0 6px;border:1px solid #e2404d;color:#fff;background:#b3202e;font:900 14px/1.5 'Noto Serif KR',serif;border-radius:3px}
+.awb-none{color:#cdbf9f;font-size:12px}
+.awb-ed{margin-left:4px;font-size:11.5px;font-weight:700;color:#1a0c0f;background:#cfae6e;padding:1px 8px;border-radius:999px}
+.awbig .awx-cost{color:#e9dcc0}
+.awb-q{position:relative;display:block;margin:6px 0 2px;padding:10px 16px 10px 22px;font-family:'Noto Serif KR',serif;font-weight:700;font-size:15px;line-height:1.6;color:#f8eed9;letter-spacing:.02em;
+  background:linear-gradient(90deg,rgba(207,174,110,.2),rgba(207,174,110,.04) 70%,transparent);border-left:3px solid #cfae6e;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.awx.sub .awb-q{background:linear-gradient(90deg,rgba(156,200,255,.16),rgba(156,200,255,.03) 70%,transparent);border-left-color:#9cc8ff}
+.awb-qm{position:absolute;left:4px;top:-4px;font-size:30px;line-height:1;color:#cfae6e;opacity:.85}
+.awb-qm.end{position:static;font-size:18px;vertical-align:-4px;margin-left:2px;opacity:.7}
+.awx.sub .awb-qm{color:#9cc8ff}
+@media (max-width:640px){.awx.awbig .awx-seal{top:12px;bottom:auto}.awx.awbig{flex-direction:column}.awx.awbig .awx-por{width:84px;height:110px}.awx-b{padding-right:0}.awb-q{font-size:14px}}

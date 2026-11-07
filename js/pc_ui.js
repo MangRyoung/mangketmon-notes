@@ -237,7 +237,7 @@
    ${m.ability?line('특성',m.ability,E.ab||(MK().abil(m.ability)||[])[2]||'','ab'):''}${X.ex.map(x=>line('전용','『'+String(x.name).replace(/[『』]/g,'')+'』',x.eff||'','ex')).join('')}${X.items.map(x=>line('소지품',x.n,x.e,'it')).join('')}${window.NT_FLD&&t.id?NT_FLD.chips(m,'p',m.id,t.id,ED):''}${ED&&t.id?`<div class="ux-itbs"><button type="button" class="linkbtn small ux-itb" data-ux="item" data-id="${esc(t.id)}" data-pid="${esc(m.id)}">✎ 소지품${X.items.length?' 고치기':' 넣기'}</button>${window.NT_MONED?`<button type="button" class="linkbtn small ux-itb" data-moned="${esc(m.id)}" data-id="${esc(t.id)}">✎ 포켓몬 고치기</button><button type="button" class="linkbtn small ux-itb" data-moned="${esc(m.id)}" data-id="${esc(t.id)}" data-sec="pcard" title="제작기 「한 장 요약」 — 기술 · 포텐셜 · 상성을 한 장으로 (PNG 저장도)">▤ 한 장 보기</button>`:''}</div>`:''}
    ${moveGrid(X.mv)}
    ${X.pots.length?`<details class="pmpot"><summary>포텐셜 ${X.pots.length} <span class="dim small">${X.pots.map(x=>esc(x.n)).join(' · ')}</span></summary>${potGrid(X.pots.map(x=>({k:kindOf(x.i),n:'『'+x.n+'』',e:effOf(x.i)})))}</details>`:''}
-   ${m.memo?`<details class="pmpot"><summary>메모</summary>${memoHtml(m.memo,o.univ?'mkr-memo':'')}</details>`:''}
+   ${o.awx?`<div class="pmawx">${o.awx}${(()=>{const r=memoRest(m.memo);return r?`<div class="pme pre mkr-memo pmawm">${esc(r)}</div>`:''})()}</div>`:m.memo?`<details class="pmpot"><summary>메모</summary>${memoHtml(m.memo,o.univ?'mkr-memo':'')}</details>`:''}
   </div>`}
  /* ---------- 10-30 망령: 미사그 — 「파티 4체 외에 강조될 각성체 2체, 서머리 분리해서 멋있게」 「파티 UI 도 제작기 쪽 따라가자」 ----------
     파티 = 제작기 포켓몬 줄과 같은 모양(No. · 볼 · 타입 · Lv · 특성 · 육각형 · 종족치 등급). 「PL 포켓몬 n/4」 · 「각성체 n/2」 두 묶음, 각성체 줄은 붉은 띠.
@@ -319,6 +319,25 @@
   for(let k=i+1;k<L.length;k++){const x=L[k].trim();if(!x||/^【/.test(x))break;const mm=x.match(/^([^:：]{1,12})\s*[:：]\s*(.+)$/);if(mm)kv.push([mm[1].trim(),mm[2].trim()]);else if(kv.length)kv[kv.length-1][1]+=' '+x}
   const show=kv.filter(([k,v])=>v&&!/^(없음|-)$/.test(v));if(!head.length&&!show.length)return '';
   return `<span class="awx-org">${head.length?`<span class="awx-orh">${head.map(esc).join(' · ')}</span>`:''}${show.length?`<span class="awx-okv">${show.map(([k,v])=>`<span class="awx-ok"><i>${esc(k)}</i><span title="${esc(v)}">${esc(v)}</span></span>`).join('')}</span>`:''}</span>`}
+ /* 11-07 망령 「메모는 항상 뜨게 하되 기존 큰 카드를 저기에 내려서 원전을 설명 — 열화 · 은열쇠는 빼고 누구인지 · 대가 · 대가 멘트만」
+    「대가 성향은 메모 글이 아니라 각성체 대가의 그 칸을 눌러 지정 → 반영」 「대가 멘트는 잘 보이게 멋있게」: 각성체 카드 맨 아래 큰 카드 */
+ const memoRest=memo=>{const s2=String(memo||'');const m=/【각성체 원전】[ \t]*([^\n]*)((?:\n(?!\s*\n)[^\n]*)*)/.exec(s2);return (m?(s2.slice(0,m.index)+'\n'+s2.slice(m.index+m[0].length)):s2).replace(/\n{3,}/g,'\n\n').trim()};
+ function awBig(id,t,ms,m,E){const o=t.misagOut||null;const G=N().gm();const free=m.awaken==='free';const X=monInfo(t,m);const u=MK().img(m);
+  const s2=String(m.memo||'');const mm=/【각성체 원전】[ \t]*([^\n]*)((?:\n(?!\s*\n)[^\n]*)*)/.exec(s2);const head=mm?mm[1].split(/\s*·\s*/).map(x=>x.trim()).filter(Boolean):[];const onm=head.shift()||X.origin||'';
+  const who=mm?((mm[2].split('\n').map(x=>x.trim()).map(x=>/^누구\s*[:：]\s*(.+)$/.exec(x)).find(Boolean)||[])[1]||''):'';
+  const awAll=ms.filter(isAw);const P=N().data('pcp',id)||{};const i=awAll.indexOf(m);const slot=Array.isArray(P.awk)&&P.awk[i];const note=String((slot&&!slot.fixed&&slot.note)||'').trim();
+  const quote=note||(free&&o&&o.note?String(o.note).trim():'');
+  const cats=free&&o&&o.pen?Object.keys(o.pen):[];const g=free&&o&&o.grade&&o.grade!=='-'&&o.grade!=='?'?o.grade:'';
+  const costL=free?costLines(o?Object.assign({},o,quote===String(o.note||'').trim()?{note:''}:{}):null):[];
+  const can=E&&G&&free;const tend=`<span class="awb-tl">대가 성향</span>${cats.length?cats.map(c=>`<span class="awb-chip">${esc(c)}${o.pen[c]?` <b>${esc(o.pen[c])}</b>`:''}</span>`).join(''):`<span class="awb-none">${!o?'제작기에서 한 번 저장하면 보여요':g?'아직 안 골랐어요':'대가 등급 없음 (프라이드 C 이하)'}</span>`}${g?`<span class="awb-g" title="대가 등급 (대가 각성체 프라이드로 자동)">${esc(g)}</span>`:''}${can?'<span class="awb-ed">⚖ 지정</span>':''}`;
+  return `<div class="awx awbig ${free?'free':'sub'}" style="--c1:${T2C[X.types[0]]||'#8f7b52'}">
+   <span class="awx-por ${u?'':'noimg'}" style="${u?`background-image:url('${cssu(u)}')`:''}">${u?'':esc([...(m.name||'?')][0]||'?')}</span>
+   <span class="awx-b"><span class="awx-k">${free?'각성 · 대가':'각성 · 보조'}${head.length?' — '+head.map(esc).join(' · '):''}</span><b class="awx-n">${esc(m.nick||m.name||'(이름 없음)')}</b>${onm?`<span class="awx-o">원전 ${esc(onm)}</span>`:''}
+    ${who?`<span class="awb-who"><i>누구</i>${esc(who)}</span>`:''}
+    ${free?(can?`<button type="button" class="awb-tend" data-moned="" data-id="${esc(id)}" data-sec="misagp" title="눌러서 대가 지정 — 분류 · 통솔 항목 · 뺄 지령 (등급은 대가 각성체 프라이드로 자동)">${tend}</button>`:`<span class="awb-tend">${tend}</span>`):''}
+    ${costL.length?`<span class="awx-cost">${costL.map(x=>`<span>${x}</span>`).join('')}</span>`:''}
+    ${quote?`<span class="awb-q"><span class="awb-qm" aria-hidden="true">“</span>${esc(quote)}<span class="awb-qm end" aria-hidden="true">”</span></span>`:''}</span>
+   <span class="awx-seal" aria-hidden="true">${free?'代價':'補助'}</span></div>`}
  function awCards(id,t,ms,E,D){const aw=ms.filter(isAw).sort((a,b)=>(a.awaken==='free'?0:1)-(b.awaken==='free'?0:1));const o=t.misagOut||null;const G=N().gm();
   const pen=o&&o.pen?Object.entries(o.pen).map(([k,v])=>`<span>${esc(k)} <b>${esc(v)}</b></span>`).join(''):'';
   /* 10-30 망령 「서머리에서 적용 중인 대가랑 코멘트가 안 보여」: 대가 카드에 걸린 대가를 한 줄씩(제작기 misagOut) + 각성체 칸 코멘트(pcp.awk[n].note) */
@@ -434,8 +453,8 @@
   const uParty=()=>{const G0=N().gm();const pl=ms.filter(m=>!isAw(m)),aw=ms.filter(isAw).sort((a,b)=>(a.awaken==='free'?0:1)-(b.awaken==='free'?0:1));
    const add=(k,n)=>E&&(k!=='aw'||G0)&&n?`<button type="button" class="btn xs" data-monadd="${k}" data-id="${esc(id)}" title="제작기에 새 시트를 만들어 바로 열어요">＋ ${k==='aw'?'각성체':'PL 포켓몬'}</button>`:'';
    return `${window.NT_FLD?`<div class="ptfld"><b>트레이너 필드 전개</b><span class="sp"></span>${NT_FLD.chips(t,'t',t.id||id,'',E)}</div>`:''}
-    <div class="ptsub aw"><b>각성체</b><small>${aw.length} / 2 · GM이 짠다 · 통솔점을 쓰지 않는다</small>${skTO(awSock(D,ms),'각성체 2체 몫 · 1인 기준 (2체) 표')}${add('aw',aw.length<2)}</div>${awCards(id,t,ms,E,D)}${window.NT_AWK?NT_AWK.idCard(id):''}
-    ${aw.length?`<div class="ptygrid awg">${aw.map(m=>monCard(t,m,E,{univ:1,aw:1,awd:1,strip:strip(m,ms.indexOf(m))})).join('')}</div>`:''}
+    <div class="ptsub aw"><b>각성체</b><small>${aw.length} / 2 · GM이 짠다 · 통솔점을 쓰지 않는다</small>${skTO(awSock(D,ms),'각성체 2체 몫 · 1인 기준 (2체) 표')}${add('aw',aw.length<2)}</div>${window.NT_AWK?NT_AWK.idCard(id):''}
+    ${aw.length?`<div class="ptygrid awg">${aw.map(m=>monCard(t,m,E,{univ:1,aw:1,awd:1,strip:strip(m,ms.indexOf(m)),awx:awBig(id,t,ms,m,E)})).join('')}</div>`:''}
     <div class="ptsub"><b>PL 포켓몬</b><small>${pl.length} / 4 · PL이 짠다</small>${skTO(D.sock,'PL 4체 몫')}${add('pl',pl.length<4)}</div>
     ${pl.length?`<div class="ptygrid">${pl.map(m=>monCard(t,m,E,{univ:1,strip:strip(m,ms.indexOf(m))})).join('')}</div>`:'<p class="mkpe">아직 없어요</p>'}`};
   return `<section class="ux-sec ux-pt ${part==='mons'?'ux-ptm':''} ${part==='mons'&&N().skin&&N().skin()==='univ'?'ux-pty':''}"><h4 class="ux-h"><span>${part==='mons'?(N().skin&&N().skin()==='univ'?'파티':'파티 서머리'):'PT 서머리'}</span><small>${ms.length}체</small><span class="sp"></span>${D.sock&&!UV?`<small class="ptsk ${D.sock.u>D.sock.m?'warn':''}">PT 기술점 <b>${fmt(D.sock.u)}</b> / ${fmt(D.sock.m)}</small>`:''}${part!=='gauge'?isockChip(id,t,D,E):''}</h4>
