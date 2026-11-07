@@ -680,3 +680,33 @@ div.mkr-more{display:flex;justify-content:flex-end}
 .pmc.u .pmpot summary{color:var(--ink2);font-weight:700}
 .pmc.u .pmpot summary .dim{color:var(--ink3);font-weight:400}
 .mkparty .ptygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:12px;margin:4px 0 6px}
+/* ---------- 11-07 망령 「파티 서머리 + 포켓몬 카드 합치기 · 각성체 카드는 큰 카드에 맞춘 전용」 (pc_ui ptSec uParty) ---------- */
+.ux-pty .ptygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:12px;margin:8px 0 6px}
+.ux-pty .ptygrid.awg{grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:10px}
+.ux-pty .ptsub .btn{margin-left:6px;font-family:'Pretendard','Noto Sans KR',sans-serif;letter-spacing:0}
+.ptfld{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 10px;font-size:12.5px;color:var(--ink2)}
+.ptfld b{font-family:'Noto Serif KR',serif;font-weight:900;color:var(--crim2,#8f1a26);letter-spacing:.06em}
+.pmsum{display:flex;align-items:center;flex-wrap:wrap;gap:3px 12px;font-size:11.5px;color:var(--ink3);padding:4px 8px;border-left:3px solid var(--pc);background:rgba(255,255,255,.4);border-radius:0 4px 4px 0}
+.pmsum b{color:var(--ink);font-weight:800}.pmsum .ux-tag{font-size:10px;line-height:15px}.pmsum .sp{flex:1}
+.pmsum .ptm-bnb{padding:0 8px}
+/* 각성체 전용 카드: 큰 카드(.awx)와 같은 진홍(대가) · 남색(보조) */
+.pmc.u.awd{color:#f3eadb;border:1px solid #8f7b52;border-top:4px solid #cfae6e;box-shadow:inset 0 0 0 3px rgba(207,174,110,.14),0 6px 14px rgba(0,0,0,.4);
+  background:radial-gradient(circle at 85% 8%,rgba(207,174,110,.16),transparent 40%),linear-gradient(160deg,#5a0d17,#1a0c0f 70%)}
+.pmc.u.awd.sub{background:radial-gradient(circle at 85% 8%,rgba(207,174,110,.14),transparent 40%),linear-gradient(160deg,#22324a,#0f1622 70%)}
+.pmc.u.awd::before{border-color:rgba(207,174,110,.25)}
+.pmc.u.awd::after{content:"代價";font-size:22px;color:rgba(207,174,110,.16);letter-spacing:.1em}
+.pmc.u.awd.sub::after{content:"補助"}
+.pmc.u.awd .pmh i{box-shadow:0 0 0 2px #1a0c0f,0 0 0 3px #cfae6e}
+.pmc.u.awd .pmn{color:#f8eed9}.pmc.u.awd .pmsp{color:#cdbf9f}
+.pmc.u.awd .pmb{color:#e9dcc0;border-color:#8f7b52}.pmc.u.awd .pmb.pr{color:#f1d58e;border-color:#cfae6e}
+.pmc.u.awd .pmb.aw{background:#cfae6e;border-color:#cfae6e;color:#1a0c0f}
+.pmc.u.awd .pmlv{background:#cfae6e;color:#1a0c0f}
+.pmc.u.awd .pmst span{background:rgba(0,0,0,.28);border-color:rgba(207,174,110,.3)}
+.pmc.u.awd .pmst small{color:#cdbf9f}.pmc.u.awd .pmst b{color:#efe6d2}
+.pmc.u.awd .pmst .tot{background:#cfae6e;border-color:#cfae6e}.pmc.u.awd .pmst .tot small{color:#3a2a14}.pmc.u.awd .pmst .tot em{color:#1a0c0f}
+.pmc.u.awd .pml.ab,.pmc.u.awd .pml.ex{background:rgba(0,0,0,.35)}
+.pmc.u.awd .pml{color:#efe6d2}.pmc.u.awd .pme{color:#cdbf9f}
+.pmc.u.awd .pmsum{background:rgba(0,0,0,.25);color:#cdbf9f;border-left-color:#cfae6e}.pmc.u.awd .pmsum b{color:#f8eed9}
+.pmc.u.awd .ux-itbs .linkbtn,.pmc.u.awd .linkbtn{color:#f1d58e}
+.pmc.u.awd .pmpot{border-top-color:rgba(207,174,110,.35)}.pmc.u.awd .pmpot summary{color:#e9dcc0}.pmc.u.awd .pmpot summary .dim{color:#a8936a}
+.pmc.u.awd .ptm-bnb{color:#f1d58e;border-color:#8f7b52}

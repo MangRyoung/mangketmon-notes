@@ -53,3 +53,9 @@ html:not(#_) .pmc.u .mvc-h b,html:not(#_) .pmc.u .ptc-h b,html:not(#_) .pmc.u .m
 html:not(#_) .pmc.u .mvc-n small,html:not(#_) .pmc.u .mvc-half,html:not(#_) .pmc.u .mvc-ct{color:#7a6a50;opacity:1}
 html:not(#_) .pmc.u .mvc-e,html:not(#_) .pmc.u .ptc-e{color:#3a3024;opacity:1}
 html:not(#_) .pmc.u .ptc-e.dim,html:not(#_) .pmc.u .mvc-e.dim{color:#7a6a50}
+/* 각성체 전용 카드(.pmc.u.awd) 안 기술 · 포텐셜 — 어두운 바탕 */
+html:not(#_) .pmc.u.awd .mvp-h{color:#f1d58e}
+html:not(#_) .pmc.u.awd .mvc,html:not(#_) .pmc.u.awd .ptc{background:rgba(0,0,0,.3);border-color:rgba(207,174,110,.3);color:#efe6d2;box-shadow:none}
+html:not(#_) .pmc.u.awd .mvc-h b,html:not(#_) .pmc.u.awd .ptc-h b,html:not(#_) .pmc.u.awd .mvc-n b{color:#f8eed9}
+html:not(#_) .pmc.u.awd .mvc-n small,html:not(#_) .pmc.u.awd .mvc-half,html:not(#_) .pmc.u.awd .mvc-ct{color:#a8936a}
+html:not(#_) .pmc.u.awd .mvc-e,html:not(#_) .pmc.u.awd .ptc-e{color:#d8cbb0}
