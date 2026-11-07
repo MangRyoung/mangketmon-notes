@@ -4,7 +4,7 @@
    데이터: D[kind][id] = {data, vis, updated_at}. 처음엔 nt_all 로 전부, 그 뒤엔 실시간(pub) + 알림(broadcast)으로 바뀐 것만 nt_get. */
 "use strict";
 window.NT=(()=>{
- const ST={camp:'',secret:'',role:null,camps:[],campInfo:null,view:'map',online:false,since:null,seats:[],plView:false,plAs:''};
+ const ST={camp:'',secret:'',role:null,camps:[],campInfo:null,view:'map',online:false,since:null,seats:[],plView:false,plAs:'',plSit:false};
  const D={};
  const $=(s,r)=>(r||document).querySelector(s),$$=(s,r)=>[...(r||document).querySelectorAll(s)];
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -14,9 +14,19 @@ window.NT=(()=>{
  const DBS=()=>window.NT_STORE;
  /* 11-03 감우 「PL 눈으로 보기」: 진짜 GM 이 켜면 모든 탭이 구경(또는 고른 좌석) 눈으로 그려진다(gm() = false · me() = 고른 좌석). 저장은 막는다. realGm() 은 켜도 참 */
  const realGm=()=>ST.role==='gm';
- const gm=()=>ST.role==='gm'&&!ST.plView;
- const me=()=>ST.plView?(ST.plAs||''):(ST.role&&ST.role!=='gm'?ST.role:'');
- function plViewSet(on,as){if(!realGm())return;ST.plView=!!on;ST.plAs=on?(as||''):'';document.body.classList.toggle('plview',ST.plView);closeModal(true);if(ST.plView&&!subOk(ST.view))ST.view=tabOf(ST.view)[2][0];render()}
+ /* 11-07 망령 「세션 노트에서도 GM 이지만 PL 자리에 앉게 · 앉으면 다음 접속 때도 그 자리」: 「🪑 PL 로」(plSit) — PL 눈과 같이 그 자리 PL 처럼 보이고 그리지만 저장은 된다(신분은 GM 그대로).
+    고른 자리는 이 브라우저에 남겨(nt_plsit_<캠페인>) 다음에 열 때 그 자리로. 「GM 으로」를 누르면 잊는다 */
+ const plEye=()=>ST.plView||ST.plSit;
+ const gm=()=>ST.role==='gm'&&!plEye();
+ const me=()=>plEye()?(ST.plAs||''):(ST.role&&ST.role!=='gm'?ST.role:'');
+ const PSK=()=>'nt_plsit_'+ST.camp;
+ function plSitSet(seat,quiet){if(!realGm())return;ST.plView=false;document.body.classList.remove('plview');ST.plSit=!!seat;ST.plAs=seat||'';document.body.classList.toggle('plsit',ST.plSit);
+  try{if(seat)localStorage.setItem(PSK(),seat);else localStorage.removeItem(PSK())}catch(e){}closeModal(true);if(ST.plSit&&!subOk(ST.view))ST.view=tabOf(ST.view)[2][0];
+  if(!quiet)toast(seat?`「${seatName(seat)||seat}」 자리 PL 로 앉았어요 — 다음에 들어와도 이 자리예요 (GM 화면은 「GM 으로」)`:'GM 으로 돌아왔어요 — 다음에도 GM 으로 들어와요');render()}
+ function plSitPick(){if(!realGm())return;if(!ST.seats.length)return toast('아직 자리(PC 좌석)가 없어요');
+  const m=openModal(`<div class="mhead"><h2>🪑 PL 로 앉기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><p class="small dim" style="margin:0 0 10px">고른 자리 PL 처럼 보이고, 그 자리 PL 이 할 수 있는 것은 저장돼요. 이 브라우저는 다음에 열어도 이 자리로 들어와요 — GM 화면은 위 띠 「GM 으로」.</p><div class="row" style="gap:6px;flex-wrap:wrap">${ST.seats.map(x=>`<button class="btn" data-sit="${esc(x.seat)}">${esc(seatName(x.seat)||x.seat)}</button>`).join('')}</div>`);
+  m.addEventListener('click',e=>{const b=e.target.closest('[data-sit]');if(b)plSitSet(b.dataset.sit)})}
+ function plViewSet(on,as){if(!realGm())return;if(on&&ST.plSit){ST.plSit=false;document.body.classList.remove('plsit')}ST.plView=!!on;ST.plAs=on?(as||''):'';document.body.classList.toggle('plview',ST.plView);closeModal(true);if(ST.plView&&!subOk(ST.view))ST.view=tabOf(ST.view)[2][0];render()}
  const PLV_BLOCK='「PL 눈으로 보기」 중에는 저장하지 않아요 — 위 띠에서 끄고 다시';
  const VIEWS=[['rb','룰북'],['map','지도'],['graph','관계도'],['ents','항목'],['pc','PC 시트'],['npc','NPC 시트'],['awk','각성체'],['awdb','각성체 DB'],['scen','시나리오'],['plan','일정'],['logs','기록'],['set','설정']];
  /* 10-29 망령: 위 탭은 6개 — 자료(항목 · 관계도) · 지도 · 시트 · 일정(일정 · 기록) · 시나리오 · 설정. 화면(VIEWS)과 주소는 그대로라 예전 링크 · 알림도 그대로 간다 */
@@ -95,9 +105,9 @@ window.NT=(()=>{
 
  /* ----- 데이터 ----- */
  const col=k=>D[k]||(D[k]={});
- const doc=(k,id)=>{const d=(D[k]||{})[id]||null;return d&&ST.plView&&!canSee(d.vis)?null:d};   /* PL 눈으로 보기: 그 눈에 안 보이는 문서는 없는 것으로 */
+ const doc=(k,id)=>{const d=(D[k]||{})[id]||null;return d&&plEye()&&!canSee(d.vis)?null:d};   /* PL 눈으로 보기: 그 눈에 안 보이는 문서는 없는 것으로 */
  const data=(k,id)=>{const d=doc(k,id);return d?d.data:null};
- const list=k=>Object.entries(col(k)).filter(([id,d])=>!ST.plView||canSee(d.vis)).map(([id,d])=>Object.assign({id,_vis:d.vis,_at:d.updated_at},d.data));
+ const list=k=>Object.entries(col(k)).filter(([id,d])=>!plEye()||canSee(d.vis)).map(([id,d])=>Object.assign({id,_vis:d.vis,_at:d.updated_at},d.data));
  const canSee=vis=>vis==='pub'||gm()||(me()&&vis==='pl:'+me());
  const canEdit=(k,id)=>gm()||!!(me()&&(((k==='pc'||k==='pcp')&&id===me())||(k==='avail'&&String(id).endsWith('_'+me()))));
  const VISL={pub:'모두',gm:'GM만'};
@@ -262,7 +272,7 @@ window.NT=(()=>{
   renderTop($('.top',sh));const fs=$('#ntFavSlot',sh);if(fs&&window.NT_FAV)fs.innerHTML=NT_FAV.rail();const old=$('#ntMain',sh);const keep=keepState(old);const main=old.cloneNode(false);old.replaceWith(main);main.dataset.view=ST.view;/* 탭 모듈이 render 마다 el.addEventListener 를 붙이므로, 매번 새 요소로 바꿔 처리기가 쌓이거나 다른 탭 것과 섞이지 않게 한다 */const M=MOD[ST.view];
   try{if(M)M.render(main);else main.innerHTML='<div class="empty">준비 중</div>';subTabs(main);foldToolbar(main);const gh=guideHtml();if(gh)main.insertAdjacentHTML('afterbegin',gh);restoreState(main,keep)}catch(e){console.error(e);main.innerHTML=`<div class="empty vfail"><b>「${esc((VIEWS.find(v=>v[0]===ST.view)||[])[1]||ST.view)}」 화면을 그리지 못했어요.</b><div class="small dim" style="margin-top:6px;word-break:break-all">${esc(e&&e.message||e)}</div><button class="btn sm" onclick="NT.go('map')">지도로</button></div>`}}
  function renderTop(top){const c=ST.campInfo||{};const role=gm()?'<span class="badge gm">GM</span>':me()?`<span class="badge seat">${esc(seatName(me())||me())}</span>`:'<span class="badge">구경</span>';
-  const plv=realGm()?`<span class="plvsw ${ST.plView?'on':''}" title="PL 눈으로 보기 — 모든 탭을 구경(또는 고른 좌석)의 눈으로 그려요. 켜 둔 동안은 저장하지 않아요"><button type="button" class="btn xs ${ST.plView?'pri':'ghost'}" data-plv="${ST.plView?'off':'on'}">👁 ${ST.plView?'PL 눈 끄기':'PL 눈'}</button>${ST.plView?`<select data-plvas title="누구의 눈으로"><option value="">구경 (링크만)</option>${ST.seats.map(x=>`<option value="${esc(x.seat)}" ${x.seat===ST.plAs?'selected':''}>${esc(seatName(x.seat)||x.seat)}</option>`).join('')}</select>`:''}</span>`:'';
+  const plv=realGm()?(ST.plSit?`<span class="plvsw on"><button type="button" class="btn xs pri" data-plsit="off" title="GM 화면으로 — 이 브라우저의 자리 기억도 지워요">🪑 GM 으로</button></span>`:`<span class="plvsw ${ST.plView?'on':''}" title="PL 눈으로 보기 — 모든 탭을 구경(또는 고른 좌석)의 눈으로 그려요. 켜 둔 동안은 저장하지 않아요"><button type="button" class="btn xs ${ST.plView?'pri':'ghost'}" data-plv="${ST.plView?'off':'on'}">👁 ${ST.plView?'PL 눈 끄기':'PL 눈'}</button>${ST.plView?`<select data-plvas title="누구의 눈으로"><option value="">구경 (링크만)</option>${ST.seats.map(x=>`<option value="${esc(x.seat)}" ${x.seat===ST.plAs?'selected':''}>${esc(seatName(x.seat)||x.seat)}</option>`).join('')}</select>`:''}</span>`.replace(/<\/span>$/,`<button type="button" class="btn xs ghost" data-plsit="pick" title="PL 로 앉기 — 고른 자리 PL 처럼 보고 써요(저장돼요). 다음에 들어와도 그 자리 · 「GM 으로」를 누르면 잊어요">🪑 PL 로</button></span>`)):'';
   const cur=tabOf(ST.view)[0];const tabs=TABS.filter(tabOk).map(t=>`<button data-v="${t[0]===cur?ST.view:subGet(t)}" data-tab="${t[0]}" class="${t[0]===cur?'on':''}">${t[1]}</button>`).join('');
   /* 11-03 감우: 휴대폰(640px 이하)에서는 PL 눈 · 🔍 · 🔔 · 웹툴 · 로그인 · 나가기를 「⋯」 메뉴(.topx) 뒤로 — 위 띠가 두 줄 넘게 늘어나던 것 */
   top.innerHTML=`<a class="back" href="#" data-lobby>← 캠페인</a><h1 class="camp name"><b>${esc(c.name||'…')}</b>${c.data&&c.data.sub?`<small>${esc(c.data.sub)}</small>`:''}</h1>${role}<nav class="tabs" id="sceneTabs">${tabs}</nav><span class="sp"></span><button type="button" class="favtop" data-favdrawer title="즐겨찾기">★</button><span id="ntLive" class="live ${ST.online?'on':''}" title="${ST.online?'실시간 연결됨':'연결 중…'}"></span><button type="button" class="btn xs ghost morebtn" data-topmore title="더 보기" aria-expanded="${document.body.classList.contains('topmore')}">⋯</button><div class="topx">${plv}<button type="button" class="btn xs ghost srchbtn" data-search title="전체 검색 (/)">🔍<span class="xl"> 검색</span></button>
@@ -274,7 +284,8 @@ window.NT=(()=>{
    if(t.closest('.topx')&&!t.closest('.vtsw,[data-plvas],.plvsw select,[data-omsel]')&&innerWidth<=640&&!t.closest('[data-bell]'))setTimeout(()=>document.body.classList.remove('topmore'),0);
    if(t.closest('[data-lobby]')){e.preventDefault();leave();return}
    if(t.closest('[data-search]')){if(window.NT_SEARCH)NT_SEARCH.open();return}
-   const pv=t.closest('[data-plv]');if(pv){plViewSet(pv.dataset.plv==='on',ST.plAs);return}
+   const pv=t.closest('[data-plv]');if(pv){plViewSet(pv.dataset.plv==='on',ST.plSit?'':ST.plAs);return}
+   const ps=t.closest('[data-plsit]');if(ps){if(ps.dataset.plsit==='off')plSitSet('');else plSitPick();return}
    if(t.closest('[data-dcset]')){if(window.NT_PHONE&&NT_PHONE.openDc)NT_PHONE.openDc();return}
    if(t.closest('[data-login]'))return window.NT_ACCT&&!NT_ACCT.tok()?NT_ACCT.loginModal():loginBox();   /* 10-29: 로그인 안 했으면 계정 로그인(비밀구는 그 창 아래), 계정은 있는데 권한이 없으면 비밀구 */
    if(t.closest('[data-acme]'))return NT_ACCT.meMenu();
@@ -310,7 +321,7 @@ window.NT=(()=>{
 
  async function open(camp,view){const q=readHash();ST.camp=camp;let sec='';try{sec=localStorage.getItem(SK(camp))||''}catch(e){}
   const given=q.gm||q.pl;if(given){sec=given;try{localStorage.setItem(SK(camp),sec)}catch(e){}cleanQuery()}
-  ST.secret=sec;ST.role=null;ST.plView=false;ST.plAs='';document.body.classList.remove('plview');ST.view=view||q.view||(()=>{try{return localStorage.getItem('nt_view')}catch(e){return ''}})()||'map';if(!VIEWS.some(x=>x[0]===ST.view))ST.view='map';
+  ST.secret=sec;ST.role=null;ST.plView=false;ST.plAs='';ST.plSit=false;document.body.classList.remove('plview','plsit');ST.view=view||q.view||(()=>{try{return localStorage.getItem('nt_view')}catch(e){return ''}})()||'map';if(!VIEWS.some(x=>x[0]===ST.view))ST.view='map';
   const app=$('#app');app.innerHTML='<div class="lobby dim">캠페인을 여는 중…</div>';
   try{if(!ST.camps.length)ST.camps=await DBS().camps();ST.campInfo=ST.camps.find(c=>c.id===camp)||null;if(!ST.campInfo){toast('없는 캠페인이에요');ST.camp='';setHash();return render()}campLook(ST.campInfo);
    /* 10-29 계정: 링크로 받은 비밀구가 없으면 계정(웹툴과 같은 로그인) 권한을 먼저 — 권한이 없으면 저장된 비밀구 */
@@ -319,15 +330,17 @@ window.NT=(()=>{
     try{const w=await DBS().whoami(camp,'u:'+tok);if(w){ST.role=w;ST.secret='u:'+tok}}catch(e){}}
    if(!ST.role&&sec){ST.secret=sec;ST.role=await DBS().whoami(camp,sec);if(!ST.role){toast('저장된 비밀구가 맞지 않아 구경 모드예요');ST.secret=''}}
    try{ST.seats=await DBS().seats(camp)||[]}catch(e){ST.seats=[]}
-   await loadAll();if(window.NT_MAKER)NT_MAKER.load().then(()=>render()).catch(()=>{});
+   await loadAll();
+   /* 11-07: GM 이 지난번 「🪑 PL 로」 앉은 자리 — 아직 있으면 그 자리로 연다 */
+   if(ST.role==='gm'){let ps='';try{ps=localStorage.getItem(PSK())||''}catch(e){}if(ps&&ST.seats.some(x=>x.seat===ps)){ST.plSit=true;ST.plAs=ps;document.body.classList.add('plsit');if(!subOk(ST.view))ST.view=tabOf(ST.view)[2][0];setTimeout(()=>toast(`지난번처럼 「${seatName(ps)||ps}」 자리 PL 로 들어왔어요 — GM 화면은 위 띠 「🪑 GM 으로」`),600)}else if(ps){try{localStorage.removeItem(PSK())}catch(e){}}}if(window.NT_MAKER)NT_MAKER.load().then(()=>render()).catch(()=>{});
    setHash();app.innerHTML='';render();listen();if(window.NT_ACCT)NT_ACCT.afterOpen()}
   catch(e){app.innerHTML=`<div class="empty">열지 못했어요: ${esc(e.message)} <button class="btn sm" onclick="NT.leave()">캠페인 목록</button></div>`}}
- function leave(){clearTimeout(cacheT);if(unsub){unsub();unsub=null}document.body.classList.remove('present','topmore');ST.guideOpen=false;ST.camp='';ST.role=null;ST.plView=false;ST.plAs='';document.body.classList.remove('plview');ST.campInfo=null;campLook(null);for(const k in D)delete D[k];setHash();render()}
+ function leave(){clearTimeout(cacheT);if(unsub){unsub();unsub=null}document.body.classList.remove('present','topmore');ST.guideOpen=false;ST.camp='';ST.role=null;ST.plView=false;ST.plAs='';ST.plSit=false;document.body.classList.remove('plview','plsit');ST.campInfo=null;campLook(null);for(const k in D)delete D[k];setHash();render()}
  async function refreshCamp(){try{ST.camps=await DBS().camps();ST.campInfo=ST.camps.find(c=>c.id===ST.camp)||ST.campInfo;campLook(ST.campInfo)}catch(e){}try{ST.seats=await DBS().seats(ST.camp)||[]}catch(e){}render()}
 
  window.addEventListener('hashchange',()=>{const q=readHash();if(q.camp!==ST.camp){if(q.camp)open(q.camp,q.view);else leave()}else if(q.view&&q.view!==ST.view)go(q.view)});
  window.addEventListener('DOMContentLoaded',()=>{const q=readHash();if(q.camp)open(q.camp,q.view);else render()});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&ST.camp)resync()});
 
- return {loginBox,ST,D,SYNC,$,$$,esc,uid,clone,cssu,gm,me,realGm,plViewSet,canSee,canEdit,toast,toastUndo,presentSet,presentBtn,fitView,guideSet,guideOff,openModal,closeModal,confirmBox,promptBox,armDraft,sortable,reorder,ctxMenu,bindCtx,pinch,doc,data,list,put,patch,del,putMany,campPatch,bulkVis,bulkBtns,BULKF,upload,shrink,bindDrop,visSelect,visBadge,visLabel,seatName,render,go,open,leave,refreshCamp,resync,MOD,VIEWS,TABS,DBS,VT,SKINS,skin};
+ return {loginBox,ST,D,SYNC,$,$$,esc,uid,clone,cssu,gm,me,realGm,plViewSet,plSitSet,plEye,canSee,canEdit,toast,toastUndo,presentSet,presentBtn,fitView,guideSet,guideOff,openModal,closeModal,confirmBox,promptBox,armDraft,sortable,reorder,ctxMenu,bindCtx,pinch,doc,data,list,put,patch,del,putMany,campPatch,bulkVis,bulkBtns,BULKF,upload,shrink,bindDrop,visSelect,visBadge,visLabel,seatName,render,go,open,leave,refreshCamp,resync,MOD,VIEWS,TABS,DBS,VT,SKINS,skin};
 })();
