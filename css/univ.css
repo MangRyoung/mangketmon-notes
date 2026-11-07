@@ -710,3 +710,35 @@ div.mkr-more{display:flex;justify-content:flex-end}
 .pmc.u.awd .ux-itbs .linkbtn,.pmc.u.awd .linkbtn{color:#f1d58e}
 .pmc.u.awd .pmpot{border-top-color:rgba(207,174,110,.35)}.pmc.u.awd .pmpot summary{color:#e9dcc0}.pmc.u.awd .pmpot summary .dim{color:#a8936a}
 .pmc.u.awd .ptm-bnb{color:#f1d58e;border-color:#8f7b52}
+/* ---------- 11-07 망령 「사망 · 실종 · 증 종류」: PC 시트 학생증(.idcard) — 종류별 머리띠 · 상태 도장 (pc_ui idHero · 「학생증 고치기」) ---------- */
+html[data-skin="univ"] .idcard.idk-grad .idc-head{background:linear-gradient(90deg,#1f3b2c,#0f2018)}
+html[data-skin="univ"] .idcard.idk-res .idc-head{background:linear-gradient(90deg,#12393d,#0a2124)}
+html[data-skin="univ"] .idcard.idk-exch .idc-head{background:linear-gradient(90deg,#3a2350,#1f1230)}
+html[data-skin="univ"] .idcard.idk-alum .idc-head{background:linear-gradient(90deg,#5a4614,#2e2408)}
+html[data-skin="univ"] .idcard.idk-visit .idc-head{background:repeating-linear-gradient(135deg,rgba(0,0,0,.14) 0 7px,transparent 7px 14px),linear-gradient(90deg,#a8521a,#5e2a08)}
+html[data-skin="univ"] .idcard.idk-gen .idc-head{background:linear-gradient(90deg,#3a3f47,#22262c)}
+.idc-st{position:absolute;inset:0;pointer-events:none;z-index:3;overflow:hidden;border-radius:inherit}
+.idc-st .eid-splat{position:absolute;right:-24px;top:34px;width:62%;height:auto;mix-blend-mode:multiply}
+.idc-stamp{position:absolute;left:4%;top:150px;display:flex;flex-direction:column;align-items:center;padding:4px 16px 3px;border:4px double #a3121c;color:#a3121c;font:900 34px/1 'Noto Serif KR',serif;letter-spacing:.32em;transform:rotate(-13deg);opacity:.88;background:rgba(255,255,255,.18);mix-blend-mode:multiply}
+.idc-stamp small{font:700 10px/1.5 'IBM Plex Mono',monospace;letter-spacing:.34em}
+.idc-st.miss .idc-stamp{border:3px dashed #1d3f7a;color:#1d3f7a;transform:rotate(9deg)}
+html[data-skin="univ"] .idcard.ids-dead .idc-photo{filter:grayscale(1) contrast(1.05) brightness(.92)}
+html[data-skin="univ"] .idcard.ids-dead .idc-name{text-decoration:line-through;text-decoration-color:rgba(125,10,18,.75);text-decoration-thickness:2px}
+html[data-skin="univ"] .idcard.ids-dead .idc-seal{border-color:#a3121c;color:#a3121c}
+html[data-skin="univ"] .idcard.ids-miss .idc-photo{filter:grayscale(.85) sepia(.25) blur(.5px);opacity:.6}
+html[data-skin="univ"] .idcard.ids-miss .idc-seal{border-color:#1d3f7a;color:#1d3f7a}
+@media (max-width:640px){.idc-stamp{font-size:26px;top:118px;left:3%}}
+/* 고치기 창: 종류 · 상태 고르기 */
+.idkp{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:6px}
+.idkc,.idsc2{position:relative;cursor:pointer}
+.idkc input,.idsc2 input{position:absolute;opacity:0;pointer-events:none}
+.idkc span{display:flex;flex-direction:column;gap:1px;padding:6px 8px;border:1px solid var(--line2,#a8936a);border-radius:6px;border-left:5px solid var(--kc,#6e1019);font-weight:700;font-size:13px;background:rgba(255,255,255,.04)}
+.idkc span small{font:500 9.5px/1.3 'IBM Plex Mono',monospace;letter-spacing:.12em;opacity:.7}
+.idkc input:checked+span{outline:2px solid var(--yel,#f5d000);outline-offset:1px;background:rgba(255,255,255,.1)}
+.idkc input:focus-visible+span,.idsc2 input:focus-visible+span{outline:2px solid var(--blue,#3a6fc4)}
+.idkc.idk-stu{--kc:#6e1019}.idkc.idk-staff{--kc:#1d2a3c}.idkc.idk-grad{--kc:#1f3b2c}.idkc.idk-res{--kc:#12393d}.idkc.idk-exch{--kc:#3a2350}.idkc.idk-alum{--kc:#8a6a1e}.idkc.idk-visit{--kc:#a8521a}.idkc.idk-gen{--kc:#3a3f47}
+.idsp{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.idsc2 span{display:inline-block;padding:4px 14px;border:1px solid var(--line2,#a8936a);border-radius:999px;font-size:13px;font-weight:700}
+.idsc2 input:checked+span{background:var(--yel,#f5d000);color:#000;border-color:#000}
+.idsc2.ids-dead input:checked+span{background:#a3121c;color:#fff;border-color:#a3121c}
+.idsc2.ids-miss input:checked+span{background:#1d3f7a;color:#fff;border-color:#1d3f7a}

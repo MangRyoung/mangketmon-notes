@@ -132,3 +132,13 @@ html[data-skin="univ"] .enti.el{background:linear-gradient(160deg,#efe6d2,#e4d8b
 .eid-dstamp small{font:700 8.5px/1.4 'IBM Plex Mono',monospace;letter-spacing:.32em}
 .enti.eid.dead .eid-seal{border-color:#a3121c!important;color:#a3121c!important}
 .enti.eid.big .eid-dstamp{font-size:30px;left:36%;bottom:62px}
+/* 11-07 망령 「사망 · 실종 두 개 · 증 종류 몇 개 더」: 실종 도장 · 증 종류별 머리띠 색 (PC 시트 학생증 .idcard 도 같은 색) */
+.enti.eid.missing .eid-p{filter:grayscale(.85) sepia(.25) blur(.4px) brightness(1.05)!important;opacity:.62}
+.eid-miss .eid-dstamp{border:2px dashed #1d3f7a;color:#1d3f7a;transform:rotate(9deg);left:38%;background:rgba(255,255,255,.22)}
+.enti.eid.missing .eid-seal{border-color:#1d3f7a!important;color:#1d3f7a!important}
+.enti.eid.eid-grad{--hd1:#1f3b2c;--hd2:#0f2018}
+.enti.eid.eid-res{--hd1:#12393d;--hd2:#0a2124}
+.enti.eid.eid-exch{--hd1:#3a2350;--hd2:#1f1230}
+.enti.eid.eid-alum{--hd1:#5a4614;--hd2:#2e2408}
+.enti.eid.eid-visit{--hd1:#a8521a;--hd2:#5e2a08}
+.enti.eid.eid-visit .eid-h{background:repeating-linear-gradient(135deg,rgba(0,0,0,.12) 0 6px,transparent 6px 12px),linear-gradient(90deg,var(--hd1),var(--hd2))}
