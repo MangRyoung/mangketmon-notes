@@ -334,12 +334,11 @@
   const costL=free?costLines(o?Object.assign({},o,quote===String(o.note||'').trim()?{note:''}:{}):null):[];
   const can=E&&G&&free;const tend=`<span class="awb-tl">대가 성향</span>${cats.length?cats.map(c=>`<span class="awb-chip">${esc(c)}${o.pen[c]?` <b>${esc(o.pen[c])}</b>`:''}</span>`).join(''):`<span class="awb-none">${!o?'제작기에서 한 번 저장하면 보여요':g?'아직 안 골랐어요':'대가 등급 없음 (프라이드 C 이하)'}</span>`}${g?`<span class="awb-g" title="대가 등급 (대가 각성체 프라이드로 자동)">${esc(g)}</span>`:''}${can?'<span class="awb-ed">⚖ 지정</span>':''}`;
   return `<div class="awx awbig ${free?'free':'sub'}" style="--c1:${T2C[X.types[0]]||'#8f7b52'}">
-   <span class="awx-por ${u?'':'noimg'}" style="${u?`background-image:url('${cssu(u)}')`:''}">${u?'':esc([...(m.name||'?')][0]||'?')}</span>
    <span class="awx-b"><span class="awx-k">${free?'각성 · 대가':'각성 · 보조'}${head.length?' — '+head.map(esc).join(' · '):''}</span><b class="awx-n">${esc(m.nick||m.name||'(이름 없음)')}</b>${onm?`<span class="awx-o">원전 ${esc(onm)}</span>`:''}
     ${who?`<span class="awb-who"><i>누구</i>${esc(who)}</span>`:''}
     ${free?(can?`<button type="button" class="awb-tend" data-moned="" data-id="${esc(id)}" data-sec="misagp" title="눌러서 대가 지정 — 분류 · 통솔 항목 · 뺄 지령 (등급은 대가 각성체 프라이드로 자동)">${tend}</button>`:`<span class="awb-tend">${tend}</span>`):''}
     ${costL.length?`<span class="awx-cost">${costL.map(x=>`<span>${x}</span>`).join('')}</span>`:''}
-    ${quote?`<span class="awb-q"><span class="awb-qm" aria-hidden="true">“</span>${esc(quote)}<span class="awb-qm end" aria-hidden="true">”</span></span>`:''}</span>
+    ${quote?`<span class="awb-q"><i class="awb-ql">${free?'代價 · 대가의 말':'補助 · 보조의 말'}</i><span class="awb-qt">${esc(quote)}</span></span>`:''}</span>
    <span class="awx-seal" aria-hidden="true">${free?'代價':'補助'}</span></div>`}
  function awCards(id,t,ms,E,D){const aw=ms.filter(isAw).sort((a,b)=>(a.awaken==='free'?0:1)-(b.awaken==='free'?0:1));const o=t.misagOut||null;const G=N().gm();
   const pen=o&&o.pen?Object.entries(o.pen).map(([k,v])=>`<span>${esc(k)} <b>${esc(v)}</b></span>`).join(''):'';

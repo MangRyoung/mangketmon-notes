@@ -761,12 +761,17 @@ button.awb-tend:hover,button.awb-tend:focus-visible{border-color:#f1d58e;backgro
 .awb-none{color:#cdbf9f;font-size:12px}
 .awb-ed{margin-left:4px;font-size:11.5px;font-weight:700;color:#1a0c0f;background:#cfae6e;padding:1px 8px;border-radius:999px}
 .awbig .awx-cost{color:#e9dcc0}
-.awb-q{position:relative;display:block;margin:6px 0 2px;padding:10px 16px 10px 22px;font-family:'Noto Serif KR',serif;font-weight:700;font-size:15px;line-height:1.6;color:#f8eed9;letter-spacing:.02em;
-  background:linear-gradient(90deg,rgba(207,174,110,.2),rgba(207,174,110,.04) 70%,transparent);border-left:3px solid #cfae6e;text-shadow:0 1px 2px rgba(0,0,0,.6)}
-.awx.sub .awb-q{background:linear-gradient(90deg,rgba(156,200,255,.16),rgba(156,200,255,.03) 70%,transparent);border-left-color:#9cc8ff}
-.awb-qm{position:absolute;left:4px;top:-4px;font-size:30px;line-height:1;color:#cfae6e;opacity:.85}
-.awb-qm.end{position:static;font-size:18px;vertical-align:-4px;margin-left:2px;opacity:.7}
-.awx.sub .awb-qm{color:#9cc8ff}
-@media (max-width:640px){.awx.awbig .awx-seal{top:12px;bottom:auto}.awx.awbig{flex-direction:column}.awx.awbig .awx-por{width:84px;height:110px}.awx-b{padding-right:0}.awb-q{font-size:14px}}
+.awx.awbig{padding:14px 16px 16px}
+.awx.awbig .awx-b{padding-right:58px}
+.awx.awbig .awx-seal{top:12px;bottom:auto}
+/* 11-07 망령 「멘트가 좀 이상한데」: 따옴표를 띄우지 않고, 위아래 금줄 사이 가운데 정렬 한 줄 */
+.awb-q{display:flex;flex-direction:column;align-items:center;gap:4px;margin:10px 0 0;padding:9px 12px 10px;text-align:center;
+  border-top:1px solid transparent;border-bottom:1px solid transparent;border-image:linear-gradient(90deg,transparent,#cfae6e 20%,#cfae6e 80%,transparent) 1;
+  background:radial-gradient(ellipse at center,rgba(207,174,110,.14),transparent 70%)}
+.awb-ql{font-style:normal;font:700 10px/1 'Noto Serif KR',serif;letter-spacing:.3em;color:#cfae6e;opacity:.85}
+.awb-qt{font-family:'Noto Serif KR',serif;font-weight:700;font-size:16px;line-height:1.6;color:#f8eed9;letter-spacing:.04em;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+.awx.sub .awb-q{border-image:linear-gradient(90deg,transparent,#9cc8ff 20%,#9cc8ff 80%,transparent) 1;background:radial-gradient(ellipse at center,rgba(156,200,255,.12),transparent 70%)}
+.awx.sub .awb-ql{color:#9cc8ff}
+@media (max-width:640px){.awx.awbig .awx-seal{top:10px;bottom:auto;width:42px;height:42px;font-size:12px}.awx.awbig .awx-b{padding-right:0}.awx.awbig .awx-n{padding-right:48px}.awb-qt{font-size:14.5px}}
 .pmnr .pmbn{margin-left:auto;flex:none;padding:0 8px}   /* 11-07 대기 단추 = 이름 줄 오른쪽 끝 */
 .pmc.u .pmsum .sp{display:none}
