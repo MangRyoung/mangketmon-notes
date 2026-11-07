@@ -23,8 +23,10 @@ window.NT=(()=>{
  function plSitSet(seat,quiet){if(!realGm())return;ST.plView=false;document.body.classList.remove('plview');ST.plSit=!!seat;ST.plAs=seat||'';document.body.classList.toggle('plsit',ST.plSit);
   try{if(seat)localStorage.setItem(PSK(),seat);else localStorage.removeItem(PSK())}catch(e){}closeModal(true);if(ST.plSit&&!subOk(ST.view))ST.view=tabOf(ST.view)[2][0];
   if(!quiet)toast(seat?`「${seatName(seat)||seat}」 자리 PL 로 앉았어요 — 다음에 들어와도 이 자리예요 (GM 화면은 「GM 으로」)`:'GM 으로 돌아왔어요 — 다음에도 GM 으로 들어와요');render()}
- function plSitPick(){if(!realGm())return;if(!ST.seats.length)return toast('아직 자리(PC 좌석)가 없어요');
-  const m=openModal(`<div class="mhead"><h2>🪑 PL 로 앉기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><p class="small dim" style="margin:0 0 10px">고른 자리 PL 처럼 보이고, 그 자리 PL 이 할 수 있는 것은 저장돼요. 이 브라우저는 다음에 열어도 이 자리로 들어와요 — GM 화면은 위 띠 「GM 으로」.</p><div class="row" style="gap:6px;flex-wrap:wrap">${ST.seats.map(x=>`<button class="btn" data-sit="${esc(x.seat)}">${esc(seatName(x.seat)||x.seat)}</button>`).join('')}</div>`);
+ /* 11-07 망령 「PC 추가했는데 왜 자리 없다고 함?」: 계정으로 쓰는 캠페인은 좌석(비밀구) 표가 비어 있다 — PC 시트도 자리로 친다 (PC 시트 id = 자리 id) */
+ const sitSeats=()=>[...new Set([...ST.seats.map(x=>x.seat),...Object.keys(col('pc'))])].filter(Boolean);
+ function plSitPick(){if(!realGm())return;const SS=sitSeats();if(!SS.length)return toast('아직 PC 시트가 없어요');
+  const m=openModal(`<div class="mhead"><h2>🪑 PL 로 앉기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><p class="small dim" style="margin:0 0 10px">고른 자리 PL 처럼 보이고, 그 자리 PL 이 할 수 있는 것은 저장돼요. 이 브라우저는 다음에 열어도 이 자리로 들어와요 — GM 화면은 위 띠 「GM 으로」.</p><div class="row" style="gap:6px;flex-wrap:wrap">${SS.map(x=>`<button class="btn" data-sit="${esc(x)}">${esc(seatName(x)||x)}</button>`).join('')}</div>`);
   m.addEventListener('click',e=>{const b=e.target.closest('[data-sit]');if(b)plSitSet(b.dataset.sit)})}
  function plViewSet(on,as){if(!realGm())return;if(on&&ST.plSit){ST.plSit=false;document.body.classList.remove('plsit')}ST.plView=!!on;ST.plAs=on?(as||''):'';document.body.classList.toggle('plview',ST.plView);closeModal(true);if(ST.plView&&!subOk(ST.view))ST.view=tabOf(ST.view)[2][0];render()}
  const PLV_BLOCK='「PL 눈으로 보기」 중에는 저장하지 않아요 — 위 띠에서 끄고 다시';
@@ -332,7 +334,7 @@ window.NT=(()=>{
    try{ST.seats=await DBS().seats(camp)||[]}catch(e){ST.seats=[]}
    await loadAll();
    /* 11-07: GM 이 지난번 「🪑 PL 로」 앉은 자리 — 아직 있으면 그 자리로 연다 */
-   if(ST.role==='gm'){let ps='';try{ps=localStorage.getItem(PSK())||''}catch(e){}if(ps&&ST.seats.some(x=>x.seat===ps)){ST.plSit=true;ST.plAs=ps;document.body.classList.add('plsit');if(!subOk(ST.view))ST.view=tabOf(ST.view)[2][0];setTimeout(()=>toast(`지난번처럼 「${seatName(ps)||ps}」 자리 PL 로 들어왔어요 — GM 화면은 위 띠 「🪑 GM 으로」`),600)}else if(ps){try{localStorage.removeItem(PSK())}catch(e){}}}if(window.NT_MAKER)NT_MAKER.load().then(()=>render()).catch(()=>{});
+   if(ST.role==='gm'){let ps='';try{ps=localStorage.getItem(PSK())||''}catch(e){}if(ps&&sitSeats().includes(ps)){ST.plSit=true;ST.plAs=ps;document.body.classList.add('plsit');if(!subOk(ST.view))ST.view=tabOf(ST.view)[2][0];setTimeout(()=>toast(`지난번처럼 「${seatName(ps)||ps}」 자리 PL 로 들어왔어요 — GM 화면은 위 띠 「🪑 GM 으로」`),600)}else if(ps){try{localStorage.removeItem(PSK())}catch(e){}}}if(window.NT_MAKER)NT_MAKER.load().then(()=>render()).catch(()=>{});
    setHash();app.innerHTML='';render();listen();if(window.NT_ACCT)NT_ACCT.afterOpen()}
   catch(e){app.innerHTML=`<div class="empty">열지 못했어요: ${esc(e.message)} <button class="btn sm" onclick="NT.leave()">캠페인 목록</button></div>`}}
  function leave(){clearTimeout(cacheT);if(unsub){unsub();unsub=null}document.body.classList.remove('present','topmore');ST.guideOpen=false;ST.camp='';ST.role=null;ST.plView=false;ST.plAs='';ST.plSit=false;document.body.classList.remove('plview','plsit');ST.campInfo=null;campLook(null);for(const k in D)delete D[k];setHash();render()}
