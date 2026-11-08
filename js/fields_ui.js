@@ -11,7 +11,9 @@ window.NT_FLD=(()=>{
  const TC={Normal:'#9a9a7a',Fire:'#e8692c',Water:'#3f7fe0',Grass:'#4ea83a',Electric:'#e3b81f',Ice:'#5cc4c7',Fighting:'#b8322b',Poison:'#9a3ea0',Ground:'#c79a46',Flying:'#8c8ff0',Psychic:'#ec4f86',Bug:'#93a91f',Rock:'#a68f3c',Ghost:'#6a54a0',Dragon:'#5b3ef0',Dark:'#5a4638',Steel:'#8f8fae',Fairy:'#e58fc6'};
  const ko=en=>(TY.find(x=>x[1]===en)||[])[0]||'';
  /* 제작기 fieldsFix 와 같은 정리 */
- const fix=a=>(Array.isArray(a)?a:[]).filter(x=>x&&typeof x==='object'&&String(x.name||'').trim()).map(x=>({type:[0,1,2].includes(+x.type)?+x.type:0,name:String(x.name).trim().slice(0,60),loc:String(x.loc||'').slice(0,60),img:String(x.img||'').slice(0,600),eff:String(x.eff||'').slice(0,4000),count:+x.count>0?Math.min(99,Math.round(+x.count)):-1,color:String(x.color||'').slice(0,20)}));
+ /* 11-09 망령 「필드에도 구문」: auto = {deploy · start · end · entry · hold · who} — 고칠 때 지우지 않게 (편집 칸은 제작기 js/fx/fx_ui.js fieldAutoBox, NT_WORD 로 불러온다) */
+ const AK=['deploy','start','end','entry','hold'];const autoN=a=>{if(!a||typeof a!=='object')return null;const o={};for(const k of AK){const v=String(a[k]==null?'':a[k]).replace(/\r/g,'').trim();if(v)o[k]=v.slice(0,4000)}if(!Object.keys(o).length)return null;if(a.who==='own'||a.who==='foe')o.who=a.who;return o};
+ const fix=a=>(Array.isArray(a)?a:[]).filter(x=>x&&typeof x==='object'&&String(x.name||'').trim()).map(x=>Object.assign({type:[0,1,2].includes(+x.type)?+x.type:0,name:String(x.name).trim().slice(0,60),loc:String(x.loc||'').slice(0,60),img:String(x.img||'').slice(0,600),eff:String(x.eff||'').slice(0,4000),count:+x.count>0?Math.min(99,Math.round(+x.count)):-1,color:String(x.color||'').slice(0,20)},autoN(x.auto)?{auto:autoN(x.auto)}:{}));
  const owner=(kind,id)=>{if(!MK())return null;if(kind==='t')return MK().trainer(id)||null;return (MK().M.pokemon||[]).find(q=>q.id===id)||null};
  const CSS=`.fldrow{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:6px}
 .fldchip{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:2px 8px 2px 3px;border-radius:999px;border:1px solid color-mix(in srgb,var(--fc,#888) 60%,transparent);background:color-mix(in srgb,var(--fc,#888) 16%,transparent)}
@@ -58,13 +60,15 @@ window.NT_FLD=(()=>{
     <label>그림 주소<input type="text" id="fdI" value="${esc(f.img)}" placeholder="https://… (아래 칸에 끌어 놓아도 돼요)"></label>
     <div class="full flde-img" id="fdIB" style="${f.img?`background-image:url('${cssu(f.img)}')`:''}">${f.img?'':'그림을 끌어 놓거나 눌러서 올려요'}</div>
     <label class="full">효과 (한 줄에 하나)<textarea id="fdE" rows="6" placeholder="①…&#10;②…">${esc(f.eff)}</textarea></label>
+     <div class="full" id="fdA"></div>
    </div>
    <div class="mfoot"><span class="sp"></span><button class="btn pri" id="fdOk">저장</button></div>`,'wide',{stack:true});
+  /* 11-09 자동화 구문 칸 — 제작기 사이트의 fx 스크립트를 NT_WORD 가 불러온 뒤 그린다 */let FAB=null;{const h=$('#fdA',md);const draw=()=>{if(FAB||!h.isConnected)return;if(window.OM_FX_UI&&OM_FX_UI.fieldAutoBox)FAB=OM_FX_UI.fieldAutoBox(h,f.auto,{toast:t=>N().toast(t)})};draw();if(!FAB){h.innerHTML=`<div class="small dim" style="margin-top:6px">⚙ 자동화 구문 칸을 불러오는 중…${autoN(f.auto)?' (지금 구문은 그대로 남아요)':''}</div>`;if(window.NT_WORD&&NT_WORD.load)NT_WORD.load().then(draw).catch(()=>{h.innerHTML='<div class="small dim">자동화 구문 칸을 불러오지 못했어요 — 제작기에서 고쳐 주세요 (지금 구문은 그대로 남아요)</div>'})}}
   const ib=$('#fdIB',md),ii=$('#fdI',md);const show=u=>{ib.style.backgroundImage=u?`url('${cssu(u)}')`:'';ib.textContent=u?'':'그림을 끌어 놓거나 눌러서 올려요'};
   ii.addEventListener('input',()=>show(ii.value.trim()));
   N().bindDrop(ib,async fs=>{if(!fs||!fs[0])return;ib.textContent='올리는 중…';try{const u=await N().upload(fs[0],'photo','fields');ii.value=u;show(u)}catch(e){show(ii.value.trim());N().toast('올리기 실패: '+(e.message||e))}},false,'image/*');
   $('#fdOk',md).onclick=()=>{const nm=$('#fdN',md).value.trim();if(!nm)return N().toast('이름을 적어 주세요');
-   const o=fix([{type:+$('#fdT',md).value,name:nm,loc:$('#fdL',md).value.trim(),img:ii.value.trim(),eff:$('#fdE',md).value.replace(/\s+$/,''),count:+$('#fdK',md).value,color:$('#fdC',md).value}])[0];N().closeModal();done(o)}}
+   const o=fix([{type:+$('#fdT',md).value,name:nm,loc:$('#fdL',md).value.trim(),img:ii.value.trim(),eff:$('#fdE',md).value.replace(/\s+$/,''),count:+$('#fdK',md).value,color:$('#fdC',md).value,auto:FAB?FAB.get():f.auto}])[0];N().closeModal();done(o)}}
  document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-fld]');if(!b)return;e.preventDefault();e.stopPropagation();open(b.dataset.fld,b.dataset.id,b.dataset.tid,b.dataset.k!=null&&b.dataset.k!==''?+b.dataset.k:null)});
  return {chips,open,fix};
 })();
