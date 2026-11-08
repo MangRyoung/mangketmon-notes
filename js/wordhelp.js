@@ -12,7 +12,7 @@ window.NT_WORD=(()=>{
  function load(){if(window.MKM_POTLINT&&window.OM_FX&&window.OM_FX_UI&&window.OM_ITEMRULE)return Promise.resolve(true);if(P)return P;
   /* fx_ui 는 웹툴 창 함수(OM_APP)를 부른다 — 노트 창으로 이어 준다 */
   if(!window.OM_APP)window.OM_APP={openModal:h=>N().openModal(h,'wide',{stack:true}),closeModal:()=>N().closeModal(),toast:t=>N().toast(t),ST:{role:'player',state:{}},set:async()=>false};
-  const one=src=>new Promise(res=>{const s=document.createElement('script');s.src=base()+src+'?v=202611090820frc';s.onload=()=>res(true);s.onerror=()=>res(false);document.head.appendChild(s)});
+  const one=src=>new Promise(res=>{const s=document.createElement('script');s.src=base()+src+'?v=202611091200df';s.onload=()=>res(true);s.onerror=()=>res(false);document.head.appendChild(s)});
   P=(async()=>{const a=await one('js/potlint.js');let b=true;for(const f of ['states.js','readymade.js','fx.js','fx_ui.js','itemrule.js'])b=(await one('js/fx/'+f))&&b;
    ST=a&&b?'ok':a||b?'part':'fail';if(ST==='fail')P=null;return ST!=='fail'})();return P}
  const CSS=`.wh{display:flex;flex-direction:column;gap:8px;margin-top:8px}
