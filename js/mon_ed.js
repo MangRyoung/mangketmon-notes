@@ -58,5 +58,14 @@ window.NT_MONED=(()=>{
   if(!canEd(id))return N().toast('이 시트는 고칠 수 없어요');
   if(b.dataset.monadd!=null)return add(id,b.dataset.monadd);
   open(id,b.dataset.moned||'',b.dataset.sec||'')});
+ /* 11-09 망령 「카드에서 이름 · 레벨 · 프라이드 · 타입 · 알그룹 · 역할 / 종족치 / 특성 / 전용 / 소지품 / 기술 / 포텐셜 — 그 자리를 누르면 고치게」:
+    [data-mesec] (pc_ui monCard) = 제작기 한 장을 ?sec= 로 열어 그 칸으로 간다(특성 · 전용 · 포텐셜은 고르는 창 · 편집 창까지). 소지품은 노트의 「✎ 소지품」 창 그대로.
+    안쪽 단추(회복 · 대기 · 접기 등)를 누른 것은 건드리지 않는다. 글을 끌어서 고르는 중이면 열지 않는다 */
+ document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('[data-mesec]');if(!el)return;
+  const inner=e.target.closest('button,a,input,select,textarea,label,summary,[data-ux],[data-moned]');if(inner&&inner!==el&&el.contains(inner))return;
+  try{const s=window.getSelection&&String(window.getSelection()||'');if(s&&s.trim().length>1)return}catch(_){}
+  const id=el.dataset.id||'',sec=el.dataset.mesec||'';e.preventDefault();if(!canEd(id))return N().toast('이 시트는 고칠 수 없어요');
+  if(sec==='item'){const card=el.closest('.pmc');const b=card&&card.querySelector('[data-ux="item"]');if(b){b.click();return}}
+  open(id,el.dataset.pid||'',sec)});
  return {open,url,add,make,locked};
 })();

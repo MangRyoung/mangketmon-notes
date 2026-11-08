@@ -139,3 +139,8 @@ html[data-vt="mm"] .pv{background:rgba(19,17,14,.94);border-color:#2e271d}
 html[data-vt="mm"] .pv-read{font-family:'Noto Serif KR',serif;background:rgba(0,0,0,.3)}
 html[data-vt="mm"] .pv-title{font-family:'Noto Serif KR',serif;font-weight:900}
 html[data-skin="univ"] .pv-read{font-family:'Noto Serif KR',serif}
+
+/* 11-09 망령 「카드에서 그 자리를 누르면 고치게」 — js/pc_ui.js monCard 의 [data-mesec] (눌러서 고치는 칸) */
+[data-mesec]{cursor:pointer}
+[data-mesec]:hover{outline:1px dashed color-mix(in srgb,currentColor 45%,transparent);outline-offset:2px}
+[data-mesec]:has([data-mesec]:hover){outline:none}
