@@ -19,6 +19,15 @@ window.NT_FLD=(()=>{
 .fldchip{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:2px 8px 2px 3px;border-radius:999px;border:1px solid color-mix(in srgb,var(--fc,#888) 60%,transparent);background:color-mix(in srgb,var(--fc,#888) 16%,transparent)}
 .fldchip i{font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.06em;padding:1px 6px;border-radius:999px;background:var(--fc,#888);color:#fff}
 .fldchip small{opacity:.75}
+.fldcards{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.fldcard{cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr);border:1px solid color-mix(in srgb,var(--fc,#888) 55%,transparent);border-left:4px solid var(--fc,#888);border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--fc,#888) 10%,transparent)}
+.fldcard:has(.fldcard-img){grid-template-columns:112px minmax(0,1fr)}
+.fldcard:hover{border-color:var(--fc,#888)}
+.fldcard-img{background:#0005 center/cover no-repeat;min-height:72px}
+.fldcard-b{padding:6px 9px;min-width:0;display:flex;flex-direction:column;gap:3px}
+.fldcard-h{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.fldcard-h b{font-size:13px}.fldcard-h small{font-size:11px;opacity:.75}
+.fldcard-e{white-space:pre-wrap;font-size:12px;line-height:1.5}
+@media (max-width:520px){.fldcard:has(.fldcard-img){grid-template-columns:1fr}.fldcard-img{min-height:90px}}
 .fldl{display:flex;flex-direction:column;gap:10px}
 .fldc{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;border:1px solid var(--line,#8886);border-left:4px solid var(--fc,#888);border-radius:8px;padding:8px;background:color-mix(in srgb,var(--fc,#888) 6%,transparent)}
 .fldc-img{aspect-ratio:16/10;border-radius:6px;background:#0005 center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:11px;opacity:.9}
@@ -32,8 +41,10 @@ window.NT_FLD=(()=>{
 @media (max-width:640px){.fldc{grid-template-columns:1fr}.flde{grid-template-columns:1fr}}`;
  function css(){if(document.getElementById('fld-css'))return;const s=document.createElement('style');s.id='fld-css';s.textContent=CSS;document.head.appendChild(s)}
  /* 카드에 붙는 줄 */
+ /* 11-09 망령 「카드에서 이계 그림이랑 효과는 보여 줘야지」: 칩 대신 그림 · 종류 · 이름 · 턴 · 효과 글이 보이는 줄 (누르면 필드 창) */
+ const imgOk=u=>/^(https?:|data:image\/)/.test(String(u||''));
  function chips(o,kind,id,tid,E){css();const L=fix(o&&o.fields);if(!L.length&&!E)return '';
-  return `<div class="fldrow">${L.map((f,k)=>`<button type="button" class="fldchip" style="--fc:${TC[f.color]||'#8f7b52'}" data-fld="${kind}" data-id="${esc(id)}" data-tid="${esc(tid||'')}" data-k="${k}" title="${esc(KINDS[f.type]+' · '+f.name+(f.count>0?' · '+f.count+'턴':' · 무한')+(f.eff?'\n'+f.eff:''))}"><i>${KINDS[f.type]}</i>${esc(f.name)}${f.count>0?`<small>${f.count}턴</small>`:''}</button>`).join('')}${E?`<button type="button" class="linkbtn small" data-fld="${kind}" data-id="${esc(id)}" data-tid="${esc(tid||'')}">🏟 필드 전개${L.length?' 고치기':' 넣기'}</button>`:''}</div>`}
+  return `<div class="fldcards">${L.map((f,k)=>`<div class="fldcard" role="button" tabindex="0" style="--fc:${TC[f.color]||'#8f7b52'}" data-fld="${kind}" data-id="${esc(id)}" data-tid="${esc(tid||'')}" data-k="${k}" title="눌러서 필드 전개 보기${E?' · 고치기':''}">${imgOk(f.img)?`<div class="fldcard-img" style="background-image:url('${cssu(f.img)}')"></div>`:''}<div class="fldcard-b"><div class="fldcard-h"><span class="fldc-k">${KINDS[f.type]}</span><b>《${esc(f.name)}》</b><small>${esc(f.loc||'')}${f.loc?' · ':''}${f.count>0?f.count+'턴':'무한'}${autoN(f.auto)?' · ⚙ 구문':''}</small></div>${f.eff?`<div class="fldcard-e">${esc(f.eff)}</div>`:''}</div></div>`).join('')}${E?`<div class="fldrow"><button type="button" class="linkbtn small" data-fld="${kind}" data-id="${esc(id)}" data-tid="${esc(tid||'')}">🏟 필드 전개${L.length?' 고치기':' 넣기'}</button></div>`:''}</div>`}
  /* 목록 창 */
  function open(kind,id,tid,k0){css();const o=owner(kind,id);if(!o)return N().toast('제작기 문서를 찾지 못했어요');const E=N().gm()||N().me()===(kind==='t'?id:tid);let L=fix(o.fields);
   const who=kind==='t'?'트레이너':'포켓몬';
