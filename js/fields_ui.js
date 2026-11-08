@@ -12,7 +12,7 @@ window.NT_FLD=(()=>{
  const ko=en=>(TY.find(x=>x[1]===en)||[])[0]||'';
  /* 제작기 fieldsFix 와 같은 정리 */
  /* 11-09 망령 「필드에도 구문」: auto = {deploy · start · end · entry · hold · who} — 고칠 때 지우지 않게 (편집 칸은 제작기 js/fx/fx_ui.js fieldAutoBox, NT_WORD 로 불러온다) */
- const AK=['deploy','start','end','entry','hold'];const autoN=a=>{if(!a||typeof a!=='object')return null;const o={};for(const k of AK){const v=String(a[k]==null?'':a[k]).replace(/\r/g,'').trim();if(v)o[k]=v.slice(0,4000)}if(!Object.keys(o).length)return null;if(a.who==='own'||a.who==='foe')o.who=a.who;return o};
+ const AK=['deploy','start','end','entry','use','hold'];const autoN=a=>{if(!a||typeof a!=='object')return null;const o={};for(const k of AK){const v=String(a[k]==null?'':a[k]).replace(/\r/g,'').trim();if(v)o[k]=v.slice(0,4000)}if(!Object.keys(o).length)return null;if(a.who==='own'||a.who==='foe')o.who=a.who;return o};
  const fix=a=>(Array.isArray(a)?a:[]).filter(x=>x&&typeof x==='object'&&String(x.name||'').trim()).map(x=>Object.assign({type:[0,1,2].includes(+x.type)?+x.type:0,name:String(x.name).trim().slice(0,60),loc:String(x.loc||'').slice(0,60),img:String(x.img||'').slice(0,600),eff:String(x.eff||'').slice(0,4000),count:+x.count>0?Math.min(99,Math.round(+x.count)):-1,color:String(x.color||'').slice(0,20)},autoN(x.auto)?{auto:autoN(x.auto)}:{}));
  const owner=(kind,id)=>{if(!MK())return null;if(kind==='t')return MK().trainer(id)||null;return (MK().M.pokemon||[]).find(q=>q.id===id)||null};
  const CSS=`.fldrow{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:6px}
