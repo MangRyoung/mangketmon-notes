@@ -19,7 +19,8 @@ window.NT_MAKER=(()=>{
   M.got=got;try{const s=JSON.stringify(c);if(s.length<4e6)localStorage.setItem(MKC,s);else localStorage.removeItem(MKC)}catch(e){try{localStorage.removeItem(MKC)}catch(e2){}}
   return Object.fromEntries(KS.map(k=>[k,Object.values(c.docs[k]||{})]))}
  async function load(force){if(M.loading)return M.loading;if(!force&&M.at&&Date.now()-M.at<600000)return M;
-  M.loading=(async()=>{try{const x=await pull();M.trainers=x.trainers.map(unwrap);M.pokemon=x.pokemon.map(unwrap);M.folders=x.folders.map(unwrap);M.pc={};for(const r of x.pcond||[])M.pc[r.id]=r.data||{};M.at=Date.now();heal()}catch(e){console.warn('maker',e)}finally{M.loading=null}return M})();return M.loading}
+  M.loading=(async()=>{try{try{db()}catch(e){}   /* 11-10 「파티 처음 누르면 기술이 다 『표에 없는 이름』」: 기술 표(db.js · dbedit)를 제작기 문서와 함께 미리 받기 시작 */
+   const x=await pull();M.trainers=x.trainers.map(unwrap);M.pokemon=x.pokemon.map(unwrap);M.folders=x.folders.map(unwrap);M.pc={};for(const r of x.pcond||[])M.pc[r.id]=r.data||{};M.at=Date.now();heal()}catch(e){console.warn('maker',e)}finally{M.loading=null}return M})();return M.loading}
  /* 10-29 망령 「제작기에서 이름을 바꿔도 노트엔 처음 이름」: GM 이 열 때 노트 칸의 이름 · 초상 사본을 제작기 값으로 맞춘다 (바뀐 것만) */
  /* 10-31 망령 「대학에서 포트 바꾸면 제작기 원본에 반영이 안 돼서 어느 순간 다시 불려 온다」「이름 · 메모 같은 트레이너 변경 사항도 다 점검」:
     노트에서 바꾼 이름 · 초상 · 상세에는 바꾼 시각(nameAt · imageAt · bioAt)이 남는다. 제작기 트레이너의 그 시각이 다르면 = 제작기에 안 들어갔다 → 노트를 덮지 않고, 제작기를 노트 값으로 고친다(GM · 그 PL).
