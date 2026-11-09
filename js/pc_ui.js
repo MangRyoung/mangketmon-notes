@@ -442,6 +442,9 @@
   /* 11-01 망령 「PT 서머리에서 할인점 6개 뜨는 거 4개로 — 지금 미사그 룰에서」 · 「【1/시】도 나눠 줘」(3 → PL 2 + 각성체 1): 미사그(4+2)는 각성체 2체가 「1인 기준 (2체)」 몫(6의 1/3)을 따로 쓰므로,
      막대는 PL 4체 몫(6 − 2 = 4)과 PL 포켓몬이 쓴 할인만 · 각성체 몫은 옆에 작은 칸 「각성체 n/2」 */
   const MG=!!t.misagOut||ms.some(isAw);
+  /* 11-09 망령 「2/6 + 4/6 으로 나눠 각성체 / PL 분배레벨로 · 패널티도 그렇게 (반올림)」: 분배레벨도 PL 4체 막대(6체 − 1인 값, 대가 PL 몫) + 「각성체 n/m」 칸(각성체 분배 합 + 대가 각성체 몫 / 1인 값) */
+  if(MG){const mo=t.misagOut||{};D.items=D.items.map(it=>{if(it.auto!=='dist'||it.use==null)return it;const awM=mo.distSolo!=null?+mo.distSolo:Math.round(it.max/3);const pen=+it.pen||0,pa=mo.distAw!=null?+mo.distAw:Math.round(pen/3);let awU=0;for(const m of ms)if(isAw(m))awU+=+((D.mons[m.id]||{}).dist)||0;
+   return Object.assign({},it,{max:it.max-awM,use:it.use-awU-(D.snap?pa:0),pen:pen-pa,awd:{u:awU+pa,m:awM}})})}
   if(MG)D.items=D.items.map(it=>{if((it.auto!=='disc'&&it.auto!=='once')||it.use==null)return it;const awM=Math.round(it.max/3);let awU=0;for(const m of ms)if(isAw(m)&&!BN(m))awU+=+((D.mons[m.id]||{})[it.auto])||0;return Object.assign({},it,{max:it.max-awM,use:Math.max(0,it.use-awU),awd:{u:awU,m:awM}})});
   /* 11-05 망령 「PT 서머리에 전용 갯수도」: 제작기 사본 ptUse.excl {u, m, aw:{u,m}} — 전용 포텐셜 수 / 능력 표 상한(각성체 대가 −n). 미사그는 PL 4체 막대 + 「각성체 n/m」 칸. 사본이 없으면 「제작기에서 한 번 저장」 */
   if(G&&D.items.length){const X=(t.ptUse||{}).excl;if(X){const cnt=m=>[m.excl,...(m.exclX||[])].filter(x=>x&&x.name&&x.name!=='전용 포텐셜').length;for(const m of ms){const r=D.mons[m.id]||(D.mons[m.id]={});if(r.excl==null)r.excl=cnt(m)}D.items.push({n:'전용',max:+X.m||0,use:+X.u||0,auto:'excl',awd:X.aw&&(+X.aw.m||+X.aw.u)?{u:+X.aw.u||0,m:+X.aw.m||0}:null})}else D.items.push({n:'전용',max:0,use:null,auto:'excl'})}
