@@ -75,6 +75,7 @@ window.NT_STORE=(()=>{
   omWho:(room,secret)=>rpc('om_whoami',{p_room:room,p_secret:secret||''}),
   async omPhoneState(room){const r=await sb().from('om_state').select('tr:data->roster->trainers,pub:data->pub,nodes:data->graph->nodes,sms:data->rp->sms,seats:data->seats,cal:data->calendar').eq('room',room).maybeSingle();if(r.error)throw err(r.error);return r.data||null},
   async omSms(room,after){let q=sb().from('om_log').select('id,at,who,kind,data').eq('room',room).eq('kind','chat').not('data->>sms','is',null).order('id',{ascending:false}).limit(400);if(after)q=q.gt('id',after);const r=await q;if(r.error)throw err(r.error);return (r.data||[]).reverse()},
+  async omClues(room){const r=await sb().from('om_state').select('lib:data->rp->clueLib,log:data->rp->clueLog').eq('room',room).maybeSingle();if(r.error)throw err(r.error);return r.data||{}},   /* 11-10 도안 단서 ↔ 웹툴 단서 카드 */
   omLogAdd:(room,secret,kind,who,data)=>rpc('om_log_add',{p_room:room,p_secret:secret,p_kind:kind,p_who:who,p_data:data||{}}),
   omRpc:(fn,args)=>rpc(fn,args),   /* 11-02 망령: 학교 게시판(om_bbs_*) — 웹툴 bbs_ui 가 이 함수로 부른다 */
   async omPut(room,secret,path,value){const args={p_room:room,p_secret:secret,p_path:path,p_value:value===undefined?null:value};const r=await sb().rpc('om_put',args);if(!r.error)return r.data;if(/PGRST202|Could not find the function|does not exist/i.test(String(r.error.message||r.error.code||'')))return rpc('om_set_state',args);throw err(r.error)},
@@ -136,6 +137,7 @@ window.NT_STORE=(()=>{
   /* 시험용 웹툴 방 (휴대폰) */
   async omWho(){return this._omWho===undefined?'gm':this._omWho},
   async omPhoneState(){return this._om||null},
+  async omClues(){const rp=(this._om||{}).rp||{};return {lib:rp.clueLib||[],log:rp.clueLog||[]}},
   async omSms(room,after){return (this._omLog||[]).filter(r=>r.kind==='chat'&&r.data&&r.data.sms&&(!after||r.id>after))},
   async omLogAdd(room,secret,kind,who,data){this._omLog=this._omLog||[];const r={id:(this._omLog.length?this._omLog[this._omLog.length-1].id:0)+1,at:new Date().toISOString(),who,kind,data};this._omLog.push(r);setTimeout(()=>(this._omSubs||[]).forEach(f=>f(r)),20);return r.id},
   async omPut(room,secret,path,value){this._om=this._om||{};let o=this._om;const P=path[0]==='pub'?['pub',...path.slice(1)]:path;for(let i=0;i<P.length-1;i++){o[P[i]]=o[P[i]]||{};o=o[P[i]]}o[P[P.length-1]]=value;return true},

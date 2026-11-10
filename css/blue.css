@@ -121,3 +121,99 @@
  .bp-log{font-size:15px}
  .bp-rs b{font-size:9px}
 }
+
+/* ---------- 11-10 22시: 옆 창(고치기) · 지우기 · 분기 · 서랍에서 만들기 ---------- */
+.bp-sel{outline:2px solid #fff!important;outline-offset:1px;z-index:2}
+.bp-ep.bp-sel{background:rgba(255,255,255,.08);transform:translateX(3px)}
+.bp-log{cursor:pointer}.bp-mrow{cursor:pointer}.bp-meta{cursor:default}
+.bp-rs[data-b]{cursor:pointer;transition:transform .1s}.bp-rs[data-b]:hover{transform:translateY(-2px)}
+/* 칩의 × · 카드의 ✕ */
+.bp-x{font-style:normal;display:inline-block;margin-left:5px;padding:0 3px;color:var(--mute);cursor:pointer;border-left:1px solid var(--line2)}
+.bp-x:hover{color:#fff;background:var(--red)}
+.bp-board .bp-x,.bp-extra .bp-x{display:none}
+.bp-board .bp-chip:hover .bp-x,.bp-extra .bp-chip:hover .bp-x{display:inline-block}
+.bp-del{position:absolute;top:4px;right:5px;border:0;background:transparent;color:var(--mute);font-size:12px;line-height:1;padding:3px 5px;cursor:pointer;opacity:0;transition:opacity .12s}
+.bp-ep:hover .bp-del,.bp-ep:focus-within .bp-del{opacity:1}
+.bp-del:hover{color:#fff;background:var(--red)}
+.bp-ep:hover .bp-est{opacity:0}
+.bp-af .sp{flex:1}.bp-af{gap:4px}
+/* 단서 줄 (판) */
+.bp-clue{display:flex;align-items:flex-start;gap:4px}
+.bp-clue label{flex:1;display:flex;gap:6px;align-items:flex-start;cursor:pointer;min-width:0}
+.bp-clue em{font-style:normal;color:var(--mute)}
+.bp-mini{border:1px solid var(--line2);background:transparent;color:var(--fg);font-size:11px;line-height:1;padding:3px 6px;cursor:pointer;flex:none}
+.bp-mini:hover,.bp-mini.on{border-color:var(--red);background:rgba(225,29,72,.2)}
+.bp-mini.x:hover{background:var(--red);color:#fff}
+.bp-clue .bp-mini{opacity:.35}.bp-clue:hover .bp-mini{opacity:1}
+.bp-clues.none{cursor:pointer}
+/* 분기 */
+.bp-fks{margin-top:4px;display:flex;flex-direction:column;gap:2px;width:100%}
+.bp-fk{font-size:11.5px;line-height:1.45;color:var(--fg2,var(--fg));border-left:2px dotted #ffb35c;padding-left:6px}
+.bp-fk b{color:#ffb35c;font-weight:800}.bp-fk i{font-style:normal;color:var(--mute)}.bp-fk em{font-style:normal;color:var(--ac);font-weight:700}
+/* 서랍에서 만들기 */
+.bp-dnew{font:inherit;font-size:12.5px;padding:3px 10px;border:1px dashed var(--line2);background:transparent;color:var(--fg);cursor:pointer}
+.bp-dnew:hover{border-color:var(--red);border-style:solid;background:rgba(225,29,72,.14)}
+
+/* 옆 창 */
+.bp-panel{position:fixed;top:0;right:0;bottom:0;width:min(440px,100vw);z-index:900;display:flex;flex-direction:column;background:#0d0d10;border-left:1px solid var(--line2);box-shadow:-14px 0 40px rgba(0,0,0,.65);transform:translateX(104%);transition:transform .2s cubic-bezier(.2,.8,.2,1);color:var(--fg)}
+.bp-panel.on{transform:none}
+.bp-panel::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--ac,var(--red))}
+.bp-ph{display:flex;align-items:center;gap:8px;padding:12px 14px 10px 18px;border-bottom:1px solid var(--line2);background:linear-gradient(160deg,color-mix(in srgb,var(--ac,#e11d48) 26%,transparent),transparent 70%)}
+.bp-ph .sp{flex:1}
+.bp-pk{display:flex;align-items:baseline;gap:8px}
+.bp-pk b{font-size:20px;font-weight:900;font-style:italic;color:var(--ac,var(--red));letter-spacing:-.02em;text-shadow:2px 2px 0 rgba(0,0,0,.6)}
+.bp-pk span{font-size:12px;color:var(--mute);letter-spacing:.04em}
+.bp-saved{font-size:11px;color:#6fdc8c;opacity:0;transition:opacity .2s}.bp-saved.on{opacity:1}
+.bp-pclose{border:1px solid var(--line2);background:transparent;color:var(--fg);font-size:13px;line-height:1;padding:6px 9px;cursor:pointer}
+.bp-pclose:hover{background:var(--red);border-color:var(--red);color:#fff}
+.bp-pb{flex:1;overflow:auto;padding:14px 16px 20px 18px;display:flex;flex-direction:column;gap:12px}
+.bp-pf{display:flex;align-items:center;gap:6px;padding:9px 14px 10px 18px;border-top:1px solid var(--line2);background:rgba(0,0,0,.35)}
+.bp-pf .sp{flex:1}
+.bp-panel input[type=text],.bp-panel input[type=number],.bp-panel textarea,.bp-panel select{width:100%;box-sizing:border-box;background:#050506;border:1px solid var(--line2);color:var(--fg);font:inherit;font-size:14px;padding:7px 9px;border-radius:0;transition:border-color .12s,box-shadow .12s}
+.bp-panel textarea{resize:vertical;line-height:1.55;min-height:60px}
+.bp-panel input:focus,.bp-panel textarea:focus,.bp-panel select:focus{outline:0;border-color:var(--ac,var(--red));box-shadow:0 0 0 2px color-mix(in srgb,var(--ac,#e11d48) 30%,transparent)}
+.bp-panel input::placeholder,.bp-panel textarea::placeholder{color:#5c5c63}
+.bp-panel .bp-title{font-size:20px!important;font-weight:800;padding:8px 10px!important;border-color:transparent!important;border-bottom:2px solid var(--ac,var(--red))!important;background:transparent!important}
+.bp-panel .bp-title:focus{background:#050506!important}
+.bp-panel .bp-n{width:90px!important}
+.bp-f{display:flex;flex-direction:column;gap:5px}
+.bp-f+textarea{margin-top:-7px}
+.bp-f>label{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;letter-spacing:.06em;color:var(--mute)}
+.bp-f>label small{font-weight:400;letter-spacing:0;font-size:11px;color:#77777f;flex:1}
+.bp-seg{display:flex;gap:0;border:1px solid var(--line2);width:max-content;max-width:100%;flex-wrap:wrap}
+.bp-seg button{border:0;border-right:1px solid var(--line2);background:transparent;color:var(--mute);font:inherit;font-size:12.5px;padding:5px 12px;cursor:pointer}
+.bp-seg button:last-child{border-right:0}
+.bp-seg button:hover{color:var(--fg);background:rgba(255,255,255,.06)}
+.bp-seg button.on{background:var(--ac,var(--red));color:#fff;font-weight:700}
+.bp-sw{display:flex;gap:6px;flex-wrap:wrap}
+.bp-sw button{width:24px;height:24px;border:2px solid transparent;background:var(--c);cursor:pointer;padding:0}
+.bp-sw button.on{border-color:#fff;box-shadow:0 0 0 2px #000 inset}
+.bp-lk>label{justify-content:flex-start}
+.bp-plus{margin-left:auto;border:1px solid var(--line2);background:transparent;color:var(--fg);font:inherit;font-size:11.5px;line-height:1;padding:4px 9px;cursor:pointer;flex:none}
+.bp-plus:hover,.bp-plus.on{background:var(--ac,var(--red));border-color:var(--ac,var(--red));color:#fff}
+.bp-panel .bp-tags{margin-top:0;gap:5px}
+.bp-panel .bp-chip{font-size:12.5px;padding:2px 4px 2px 8px}
+.bp-panel .bp-x{margin-left:6px;padding:0 5px}
+.bp-nil{font-size:12px;color:#5c5c63;font-style:italic}
+.bp-pick2{border:1px solid var(--ac,var(--red));background:#050506;padding:6px;display:flex;flex-direction:column;gap:6px}
+.bp-pl{display:flex;flex-wrap:wrap;gap:4px;max-height:150px;overflow:auto}
+.bp-pl button{border:1px solid var(--line2);background:rgba(127,127,127,.12);color:var(--fg);font:inherit;font-size:12.5px;padding:3px 9px;cursor:pointer}
+.bp-pl button:hover{border-color:var(--ac,var(--red));background:color-mix(in srgb,var(--ac,#e11d48) 22%,transparent)}
+.bp-pl button[hidden]{display:none}
+/* 단서 (옆 창) */
+.bp-cr{border:1px solid var(--line2);background:rgba(0,0,0,.3)}
+.bp-cr.ok{border-color:color-mix(in srgb,var(--ac,#e11d48) 55%,var(--line2))}
+.bp-cr1{display:flex;align-items:center;gap:5px;padding:4px 5px}
+.bp-cr1 input[type=checkbox]{flex:none;accent-color:var(--ac,var(--red));width:16px;height:16px}
+.bp-cr1 input[type=text]{border-color:transparent!important;background:transparent!important;padding:4px 5px!important}
+.bp-cr1 input[type=text]:focus{background:#050506!important;border-color:var(--ac,var(--red))!important}
+.bp-cr.ok .bp-cr1 input[type=text]{color:var(--mute)}
+.bp-cr2{display:flex;flex-direction:column;gap:5px;padding:0 5px 6px 26px}
+.bp-clb{display:flex;gap:6px;flex-wrap:wrap}
+/* 분기 (옆 창) */
+.bp-fr{display:grid;grid-template-columns:1fr auto 1fr auto;gap:5px;align-items:center;border:1px solid var(--line2);padding:5px;background:rgba(0,0,0,.3)}
+.bp-fr>span{color:#ffb35c;font-weight:800}
+.bp-fr select{grid-column:1 / span 3;font-size:12.5px!important;padding:4px 6px!important}
+.bp-fr .bp-mini{grid-row:1;grid-column:4}
+@media (min-width:1100px){body.bp-panel-on #ntMain[data-view="blue"]{margin-right:440px}}
+@media (max-width:640px){.bp-panel{width:100vw;border-left:0}.bp-del{opacity:.6}.bp-board .bp-x,.bp-extra .bp-x{display:inline-block}.bp-clue .bp-mini{opacity:1}}

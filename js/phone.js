@@ -280,5 +280,14 @@ window.NT_PHONE=(()=>{
    try{const pid='nt_'+String(sc.id||Date.now()).replace(/[^a-z0-9_]/gi,'_');await DB().omPut(room,sec,['rp','scenes',pid],{id:pid,name:sc.title||'장면',bg:bg?{src:bg.src,name:bg.name}:null,bgm:null,stage,sub:sc.read||'',from:'notes',at:Date.now()});done.push('프리셋')}catch(e){console.warn('scenes preset',e)}
   }catch(e){return N().toast('보내지 못했어요: '+(e.message||e))}
   N().toast((done.length?'웹툴로 보냈어요: '+done.join(' · '):'보낼 것이 없었어요')+(miss.length?' / 스탠딩 없음: '+miss.join(', '):''))}
- return {open,btn,panel,boot,load,PH,openBoard,openDc,sendScene,omRoom};
+ /* 11-10 망령 「(도안의) 단서 기능도 웹툴이랑 연계」: 도안 단서 {id,t,d,img} ↔ 웹툴 단서 카드(rp.clue 지금 띄운 것 · rp.clueLog 공개 기록 · rp.clueLib 보관 목록). 웹툴 쪽 id 는 'nt_'+단서 id.
+    clueShow = 지금 모두에게 공개(웹툴 showClueRp 와 같은 꼴) · clueLib = 보관 목록에 넣기/고치기(웹툴 GM 이 연출 탭에서 꺼내 쓴다) · clueShown = 웹툴에서 공개된 도안 단서 id 들 (읽기만) */
+ async function clueCtx(){const room=omRoom();if(!room){N().toast('이 캠페인에 웹툴 방이 이어져 있지 않아요 — 설정 탭 「세 도구 잇기 → 웹툴 방」');return null}await load(true);const id=PH.id||{};if(!(id.secret&&id.role==='gm')){N().toast('이 브라우저의 웹툴 신분이 그 방의 GM 이 아니에요 — 웹툴을 GM 으로 한 번 열어 주세요');return null}return {room,sec:id.secret}}
+ const clueV=c=>({t:String(c.t||'').slice(0,60),d:String(c.d||'').slice(0,1200),img:String(c.img||'').slice(0,600)});
+ async function clueShow(c){const x=await clueCtx();if(!x)return false;try{const st=await DB().omClues(x.room);const v=Object.assign(clueV(c),{at:Date.now(),k:'k'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),scene:'',id:'nt_'+c.id});
+   const L=[v,...(Array.isArray(st.log)?st.log:[])].slice(0,60);await DB().omPut(x.room,x.sec,['rp','clue'],v);await DB().omPut(x.room,x.sec,['rp','clueLog'],L);await DB().omLogAdd(x.room,x.sec,'sys','GM',{t:`🔍 단서 — ${v.t||'단서'}${v.d?'\n'+v.d:''}`});return true}catch(e){N().toast('웹툴에 보내지 못했어요: '+(e.message||e));return false}}
+ async function clueLib(list,group){const x=await clueCtx();if(!x)return -1;try{const st=await DB().omClues(x.room);const L=(Array.isArray(st.lib)?st.lib:[]).slice();let n=0;for(const c of list||[]){if(!c||!(c.t||c.d||c.img))continue;const it=Object.assign({id:'nt_'+c.id,g:String(group||'').slice(0,30)},clueV(c));const j=L.findIndex(y=>y&&y.id===it.id);if(j>=0)L[j]=Object.assign({},L[j],it);else L.unshift(it);n++}
+   await DB().omPut(x.room,x.sec,['rp','clueLib'],L.slice(0,120));return n}catch(e){N().toast('웹툴에 보내지 못했어요: '+(e.message||e));return -1}}
+ async function clueShown(){const room=omRoom();if(!room||!DB().omClues)return null;try{const st=await DB().omClues(room);return new Set((Array.isArray(st.log)?st.log:[]).map(v=>v&&String(v.id||'')).filter(k=>k.startsWith('nt_')).map(k=>k.slice(3)))}catch(e){return null}}
+ return {open,btn,panel,boot,load,PH,openBoard,openDc,sendScene,omRoom,clueShow,clueLib,clueShown};
 })();
