@@ -51,13 +51,25 @@ window.NT_UNIV=(()=>{
   if(!has)return [`<section class="ux-sec ux-ord span">${head('')}<p class="small dim" style="margin:0">아직 지령 종류를 정하지 않았어요 (웹툴 방 설정을 따라요).</p></section>`];
   if(!S||!S.preset)return [`<section class="ux-sec ux-ord span">${head('')}<p class="small dim" style="margin:0">제작기에서 이 트레이너를 한 번 열면(저장되면) 여기에 4식 · 6령이 보여요.</p></section>`];
   const two=S.mode==='solo'||S.mode==='misag';
-  const chips=L=>L.map(x=>`<span class="oc ${x.n?'':'z'} ${two&&x.pick?'pk':''} ${x.off?'off':''}" title="${esc(x.nm)}${x.ex?' · 예외 계열 '+x.ex:''}${x.off?' · 각성체 대가로 뺌':''}${two&&x.pick?' · 2체 기준으로 고름':''}"><span>${esc(x.nm)}</span><b>${x.n}</b>${x.ex?'<i>예외</i>':''}</span>`).join('');
-  const pickLine=(kind,L)=>{if(!two)return '';const n=(S.pickN||{})[kind]||0;const pk=L.filter(x=>x.pick).length;return `<div class="ux-ordp ${pk===n?'':'need'}">${S.mode==='misag'?'2체로 합칠 때':'1인 기준'} 고른 것 <b>${pk}/${n}</b>${pk===n?'':' · 제작기에서 골라요'}</div>`};
+  /* 11-10 망령 「(2체로 합칠 때 고르기를) 이 쪽에서 그냥 클릭해서 바꿀 수 있게」: 고칠 수 있으면 칩을 눌러 고르기 · 빼기 (제작기 t.orders.pick 과 같은 칸) */
+  const pickable=x=>E&&two&&x.avail!==false&&!x.off;
+  const chips=(L,kind)=>L.map(x=>{const pa=pickable(x);const tg=pa?'button':'span';return `<${tg} ${pa?`type="button" data-ux="ordpick" data-id="${esc(id)}" data-kind="${kind}" data-k="${esc(x.k)}"`:''} class="oc ${pa?'oc-pa':''} ${x.n?'':'z'} ${two&&x.pick?'pk':''} ${x.off?'off':''}" title="${esc(x.nm)}${x.ex?' · 예외 계열 '+x.ex:''}${x.off?' · 각성체 대가로 뺌':''}${two&&x.pick?' · 2체 기준으로 고름':''}${pa?(x.pick?' — 누르면 뺀다':' — 누르면 고른다'):''}"><span>${esc(x.nm)}</span><b>${x.n}</b>${x.ex?'<i>예외</i>':''}</${tg}>`}).join('');
+  const pickLine=(kind,L)=>{if(!two)return '';const n=(S.pickN||{})[kind]||0;const pk=L.filter(x=>x.pick).length;return `<div class="ux-ordp ${pk===n?'':'need'}">${S.mode==='misag'?'2체로 합칠 때':'1인 기준'} 고른 것 <b>${pk}/${n}</b>${pk===n?'':(E?' · 칩을 눌러 골라요':' · 제작기에서 골라요')}</div>`};
   const offLine=(kind,L)=>{const n=S.offN&&S.offN[kind];if(!n)return '';const k=L.filter(x=>x.off).length;return `<div class="ux-ordp ${k===n?'':'need'}">각성체 대가로 뺀 것 <b>${k}/${n}</b></div>`};
-  const blk=(kind,tag,lab,fam)=>{const L=S[kind]||[];return `<div class="ux-ordb"><div class="ux-ordt"><span class="ordk ${kind}">${tag}</span><b>${lab}</b><small>${esc(fam)}</small></div><div class="ux-ordl">${chips(L)}</div>${offLine(kind,L)}${pickLine(kind,L)}</div>`};
+  const blk=(kind,tag,lab,fam)=>{const L=S[kind]||[];return `<div class="ux-ordb"><div class="ux-ordt"><span class="ordk ${kind}">${tag}</span><b>${lab}</b><small>${esc(fam)}</small></div><div class="ux-ordl">${chips(L,kind)}</div>${offLine(kind,L)}${pickLine(kind,L)}</div>`};
   return [`<section class="ux-sec ux-ord o">${head(`지시 ${esc(S.rk||'-')} · ${esc(S.presetName||'')}`)}${blk('o','ORDER','명령 (4식)',S.oName)}</section>`,
    `<section class="ux-sec ux-ord c"><h4 class="ux-h"><span>지시 체계</span><small>COMMAND</small></h4>${blk('c','COMMAND','지령 (6령)',S.cName)}</section>`]}
 
+ /* 11-10 지시 체계 칩 고르기: t.orders.pick[kind] 를 고치고, 노트가 그리는 요약(t.ordOut · 미사그 misagOut.two)도 같은 규칙으로 바로 맞춘다 (제작기가 다음에 저장하면 제작기 계산으로 다시 덮음) */
+ function ordPick(id,kind,k){const t=MK().trainer(id)||{};const S=t.ordOut;if(!S||!S.preset||!(kind==='o'||kind==='c'))return;const L=S[kind]||[];const x=L.find(q=>q.k===k);if(!x||x.off||x.avail===false)return;
+  const cur=((t.orders||{}).pick||{})[kind];const pk=Array.isArray(cur)?cur.slice():[];const on=pk.includes(k);const n=(S.pickN||{})[kind]||0;
+  if(!on&&n&&pk.filter(q=>L.some(y=>y.k===q&&!y.off&&y.avail!==false)).length>=n)return N().toast(`이미 ${n}개 골랐어요 — 하나를 먼저 눌러 빼 주세요`);
+  const nx=on?pk.filter(q=>q!==k):pk.concat(k);
+  /* 제작기 soloMustOk: 지시 A 이상 2체 · 1인 기준은 6령에 회피 · 명중 중 하나를 넣어야 — 다 골랐는데 없으면 알려만 준다 */
+  const lv={A:3,AA:4,AAA:5,S:6,EX:6}[String(S.rk||'').replace(/[+\-]/g,'').toUpperCase()]||0;const can=kind==='c'&&lv>=3?['evasion','accuracy'].filter(q=>L.some(y=>y.k===q&&!y.off&&y.avail!==false)):[];const warn=can.length&&nx.length>=n&&!nx.some(q=>can.includes(q))?' · 지시 A 이상은 회피 · 명중 지령 중 하나를 넣어야 해요':'';
+  return run('trainers',id,d=>{d.orders=d.orders||{};d.orders.pick=Object.assign({},d.orders.pick||{});d.orders.pick[kind]=nx;
+   const O=d.ordOut;if(O&&Array.isArray(O[kind])){for(const y of O[kind]){y.pick=nx.includes(y.k);const zero=y.avail===false||(O.mode==='solo'&&!y.pick)||y.off;y.n=zero?0:(+O.base||1)}}
+   const two=d.misagOut&&d.misagOut.two;if(two&&O&&Array.isArray(O[kind])){const ok=O[kind].filter(y=>y.pick&&y.avail!==false&&!y.off);two.pick=Object.assign({},two.pick||{});two.names=Object.assign({},two.names||{});two.pick[kind]=ok.map(y=>y.k);two.names[kind]=ok.map(y=>y.nm)}},`${x.nm} — ${on?'뺐어요':'골랐어요'}${warn}`)}
  /* 11-04 망령 「여긴 왜 안 고쳐」: 은열쇠 세 칸 (노트 27 · 제작기 sk3Html 과 같은 데이터)
     t.sk3 = {c 체크, d 던전, b 배틀, r 예비} 카드 이름 · t.vault = [{n, src, at}] 카드 보관소. 칸을 누르면 그 종류의 공통 카드 + 보관소 카드에서 고른다. 코스트 없음 */
  const SK3=[['c','스킬'],['d','던전'],['b','배틀'],['r','예비']],SK3N={c:'스킬',d:'던전',b:'배틀',r:'예비'};
@@ -178,6 +190,7 @@ window.NT_UNIV=(()=>{
   if(a==='uqadd')return uqEdit(id,-1);if(a==='uqed')return uqEdit(id,+b.dataset.i);
   if(a==='dadd')return cardPick(id);
   if(a==='skpick')return skPick(id,b.dataset.k);
+  if(a==='ordpick')return ordPick(id,b.dataset.kind,b.dataset.k);
   if(a==='dq'){const k=+b.dataset.k,dd=+b.dataset.d;return run('trainers',id,d=>{const x=(d.deck||[])[k];if(!x)return false;x.q=Math.max(0,Math.min(99,(+x.q||0)+dd))})}
   if(a==='ddel'){const k=+b.dataset.k;return run('trainers',id,d=>{if(!(d.deck||[])[k])return false;d.deck.splice(k,1)})}
   if(a==='dname'){const t=MK().trainer(id)||{};return N().promptBox('덱 이름',t.deckName||'',(t.name||'트레이너')+'의 덱').then(v=>{if(v==null)return;run('trainers',id,d=>{d.deckName=v.trim()})})}
