@@ -35,15 +35,17 @@
   if(!G){el.innerHTML=`<div class="toolbar"><h2>도안</h2></div><div class="empty">시나리오 도안은 GM만 봐요.</div>`;return}
   const A=arcs(),M=meta(),no=numbering(A,M),tot=Object.keys(no).length,tgt=+M.target||16;
   el.innerHTML=`<div class="toolbar"><h2>도안</h2><span class="note">큰 사건 ${A.length}개 · ${tot}화 / 목표 ${tgt}화</span><span class="sp"></span>${A.length?`<button class="btn sm" data-b="arcnew">＋ 큰 사건</button>`:''}<button class="btn sm ghost" data-b="meta">캠페인 설정</button></div>
-   ${metaHtml(M,tot,tgt)}
+   ${metaHtml(M,tot,tgt,A,no)}
    ${A.length?drawerHtml():''}
-   ${A.length?`<div class="bp-board">${A.map((a,i)=>arcCol(a,i,A.length,no)).join('')}</div>${extraHtml(M,no)}${checkHtml(A,M,tot,tgt)}`:emptyHtml()}`;
+   ${A.length?`<div class="bp-wrap"><div class="bp-board" style="--n:${A.length}">${A.map((a,i)=>arcCol(a,i,A.length,no)).join('')}</div></div>${extraHtml(M,no)}${checkHtml(A,M,tot,tgt)}`:emptyHtml()}`;
   bind(el)}
 
- function metaHtml(M,tot,tgt){const pct=Math.min(100,Math.round(tot/Math.max(1,tgt)*100));
+ function ribbon(A,M,no,tgt){const R=[];A.forEach((a,i)=>{const col=a.color||PAL[i%PAL.length];for(const [k] of PH)for(const e of (a.eps||[]))if(e.ph===k)R.push({e,col,k,a:i+1})});for(const e of (M.extra||[]))R.push({e,col:'#8a8a8a',k:'x',a:0});
+  const pad=Math.max(0,tgt-R.length);return `<div class="bp-rib" title="화 흐름 — 사건 색 · 높은 칸 = 하이라이트">${R.map(x=>`<span class="bp-rs k-${x.k} est-${x.e.st||'none'}" style="--ac:${esc(x.col)}" title="${no[x.e.id]}화 · ${x.a?'사건 '+x.a+' · ':''}${esc(PHK[x.k]||'여유')}${x.e.title?' · '+esc(x.e.title):''}"><b>${no[x.e.id]}</b></span>`).join('')}${'<span class="bp-rs pad"></span>'.repeat(pad)}</div>`}
+ function metaHtml(M,tot,tgt,A,no){const pct=Math.min(100,Math.round(tot/Math.max(1,tgt)*100));
   return `<div class="bp-meta" data-b="meta" title="눌러서 고친다">
    <div class="bp-log">${M.logline?esc(M.logline):'<span class="dim">캠페인 한 줄을 적어 두세요 (눌러서)</span>'}</div>
-   <div class="bp-bar" title="${tot}화 / ${tgt}화"><i style="width:${pct}%"></i><b>${tot} / ${tgt}화</b></div>
+   ${A&&A.length?ribbon(A,M,no,tgt):`<div class="bp-bar" title="${tot}화 / ${tgt}화"><i style="width:${pct}%"></i><b>${tot} / ${tgt}화</b></div>`}
    ${M.black||M.end?`<div class="bp-mrow">${M.black?`<div><small>흑막 · 큰 그림</small><p>${esc(M.black)}</p></div>`:''}${M.end?`<div><small>결말</small><p>${esc(M.end)}</p></div>`:''}</div>`:''}</div>`}
 
  /* 서랍: 노트의 인물 · PC · 장소 · 던전 · 항목을 끌어 화 카드 · 사건 머리에 놓는다 (휴대폰은 화 · 사건 창의 고르기 칸으로) */
@@ -65,22 +67,24 @@
  function emptyHtml(){return `<div class="empty bp-empty"><b>아직 도안이 없어요.</b><p class="small">커뮤 ① → 던전 → 커뮤 ② → 하이라이트 배틀을 한 사이클로, 큰 사건 3개를 돌리는 틀을 만들어요.<br>한 사이클 5화(커뮤 ① 2화 · 던전 1 · 커뮤 ② 1 · 하이라이트 1) × 3 = 15화 + 여유 1화.</p>
    <div class="row" style="justify-content:center;gap:8px;margin-top:10px"><button class="btn pri" data-b="tmpl" data-n="3">큰 사건 3개 틀 만들기</button><button class="btn" data-b="tmpl" data-n="4">4개 (3 + 최종장)</button><button class="btn ghost" data-b="arcnew">빈 사건 하나</button></div></div>`}
 
- function arcCol(a,i,n,no){const col=a.color||PAL[i%PAL.length];const eps=a.eps||[];const cl=a.clues||[];const ok=cl.filter(c=>c.ok).length;
-  return `<section class="bp-arc st-${a.st||'none'}" style="--ac:${esc(col)}" data-drop="arc" data-id="${esc(a.id)}">
-   <header class="bp-ah" data-b="arc" data-id="${esc(a.id)}" title="눌러서 사건을 고친다">
-    <div class="bp-ahk"><small>사건 ${i+1}</small><em class="bp-st">${AST[a.st||'']}</em></div>
-    <b>${esc(a.name||'(이름 없음)')}</b>${a.line?`<p>${esc(a.line)}</p>`:''}
-    ${a.theme?`<div class="bp-theme">${esc(a.theme)}</div>`:''}
-    <div class="bp-tags">${a.pc&&nm('pc',a.pc)?goChip('pc',a.pc,'pc'):chip('스포트라이트 PC 없음','warn')}${(a.boss||[]).map(id=>goChip('npc',id,'boss')).join('')}${txtNames(a.bossTxt).map(x=>chip(x,'boss','주역')).join('')}${(a.cast||[]).map(id=>goChip('npc',id)).join('')}${txtNames(a.castTxt).map(x=>chip(x,'','연결 인물')).join('')}</div>
-    ${(a.spots||[]).length||a.dg||(a.ents||[]).length?`<div class="bp-tags">${(a.spots||[]).map(id=>goChip('spots',id)).join('')}${a.dg?goChip('dgs',a.dg,'dg'):''}${(a.ents||[]).map(id=>goChip('ents',id)).join('')}</div>`:''}
-   </header>
-   ${cl.length?`<div class="bp-clues"><small>단서 ${ok} / ${cl.length}</small>${cl.map((c,j)=>`<label class="bp-clue ${c.ok?'ok':''}"><input type="checkbox" data-clue="${esc(a.id)}|${j}" ${c.ok?'checked':''}><span>${esc(c.t)}</span></label>`).join('')}</div>`:''}
-   ${PH.map(([k,lab,tip])=>{const L=eps.filter(e=>e.ph===k);return `<div class="bp-ph ph-${k}"><div class="bp-phh" title="${esc(tip)}"><span>${lab}</span><button type="button" class="bp-add" data-b="epnew" data-id="${esc(a.id)}" data-ph="${k}" title="${lab}에 화 더하기">＋</button></div>${L.map(e=>epCard(a.id,e,no)).join('')||'<div class="bp-none">—</div>'}</div>`}).join('')}
-   <footer class="bp-af"><button class="btn xs ghost" data-b="mv" data-id="${esc(a.id)}" data-d="-1" ${i?'':'disabled'} title="앞으로">◀</button><span class="dim small">${eps.length}화</span><button class="btn xs ghost" data-b="mv" data-id="${esc(a.id)}" data-d="1" ${i<n-1?'':'disabled'} title="뒤로">▶</button></footer>
-  </section>`}
+ /* 사건 칸 — 줄(머리 · 단서 · 단계 4 · 발)을 사건끼리 맞춰 그리드에 놓는다 (휴대폰은 사건마다 차례로 쌓음) */
+ const PHE={c1:'COMMU',dg:'DUNGEON',c2:'COMMU',hl:'BATTLE'};
+ function arcCol(a,i,n,no){const col=a.color||PAL[i%PAL.length];const eps=a.eps||[];const cl=a.clues||[];const ok=cl.filter(c=>c.ok).length;const c=i+1;
+  const cell=(r,cls,inner,attr)=>`<div class="bp-cell ${cls}" style="--ac:${esc(col)};grid-column:${c};grid-row:${r};--o:${i*10+r}" ${attr||''}>${inner}</div>`;
+  const tags=[a.pc&&nm('pc',a.pc)?goChip('pc',a.pc,'pc'):chip('스포트라이트 PC 없음','warn'),...(a.boss||[]).map(id=>goChip('npc',id,'boss')),...txtNames(a.bossTxt).map(x=>chip(x,'boss','주역')),...(a.cast||[]).map(id=>goChip('npc',id)),...txtNames(a.castTxt).map(x=>chip(x,'','연결 인물'))].filter(Boolean);
+  const stage=[...(a.spots||[]).map(id=>goChip('spots',id)),a.dg?goChip('dgs',a.dg,'dg'):'',...(a.ents||[]).map(id=>goChip('ents',id))].filter(Boolean);
+  const head=`<div class="bp-ah" data-b="arc" data-id="${esc(a.id)}" title="눌러서 사건을 고친다 · 서랍에서 끌어 놓으면 사건에 이어진다">
+    <div class="bp-ahk"><span class="bp-no">${String(c).padStart(2,'0')}</span><span class="bp-ahm"><small>CASE ${c}</small><em class="bp-st st-${a.st||'none'}">${AST[a.st||'']}</em></span></div>
+    <b class="bp-an">${esc(a.name||'(이름 없음)')}</b>${a.line?`<p class="bp-al">${esc(a.line)}</p>`:''}
+    ${a.theme?`<div class="bp-theme"><small>주제</small>${esc(a.theme)}</div>`:''}
+    <div class="bp-tags">${tags.join('')}</div>${stage.length?`<div class="bp-tags bp-stage">${stage.join('')}</div>`:''}</div>`;
+  const clues=cl.length?`<div class="bp-clues"><div class="bp-ch"><small>단서</small><span class="bp-cbar"><i style="width:${Math.round(ok/cl.length*100)}%"></i></span><small>${ok} / ${cl.length}</small></div>${cl.map((x,j)=>`<label class="bp-clue ${x.ok?'ok':''}"><input type="checkbox" data-clue="${esc(a.id)}|${j}" ${x.ok?'checked':''}><span>${esc(x.t)}</span></label>`).join('')}</div>`:'<div class="bp-clues none"><small>단서 없음 — 사건 머리를 눌러 적어요</small></div>';
+  return cell(1,'top',head,`data-drop="arc" data-id="${esc(a.id)}"`)+cell(2,'mid',clues)
+   +PH.map(([k,lab,tip],pi)=>{const L=eps.filter(e=>e.ph===k);return cell(3+pi,'mid ph ph-'+k,`<div class="bp-phh" title="${esc(tip)}"><span class="bp-phl">${lab}<small>${PHE[k]}</small></span><button type="button" class="bp-add" data-b="epnew" data-id="${esc(a.id)}" data-ph="${k}" title="${lab}에 화 더하기">＋</button></div>${L.map(e=>epCard(a.id,e,no)).join('')||'<div class="bp-none">비어 있음</div>'}`)}).join('')
+   +cell(7,'bot',`<div class="bp-af"><button class="btn xs ghost" data-b="mv" data-id="${esc(a.id)}" data-d="-1" ${i?'':'disabled'} title="앞으로">◀</button><span class="dim small">${eps.length}화</span><button class="btn xs ghost" data-b="mv" data-id="${esc(a.id)}" data-d="1" ${i<n-1?'':'disabled'} title="뒤로">▶</button></div>`)}
 
  function epCard(aid,e,no){const L=[...(e.pcs||[]).map(id=>goChip('pc',id,'pc')),...(e.npcs||[]).map(id=>goChip('npc',id)),...(e.spots||[]).map(id=>goChip('spots',id)),e.dg?goChip('dgs',e.dg,'dg'):'',...(e.ents||[]).map(id=>goChip('ents',id)),e.route?goChip('routes',e.route):''].filter(Boolean);
-  return `<div role="button" tabindex="0" class="bp-ep est-${e.st||'none'}" data-b="ep" data-id="${esc(aid)}" data-ep="${esc(e.id)}" data-drop="ep"><i>${no[e.id]||'?'}화</i><span>${esc(e.title||'(제목 없음)')}</span>${e.goal?`<small>${esc(e.goal)}</small>`:''}${L.length?`<div class="bp-tags">${L.join('')}</div>`:''}</div>`}
+  return `<div role="button" tabindex="0" class="bp-ep est-${e.st||'none'}" data-b="ep" data-id="${esc(aid)}" data-ep="${esc(e.id)}" data-drop="ep"><i>${no[e.id]||'?'}화</i>${e.title?`<span>${esc(e.title)}</span>`:'<span class="bp-ph0">빈 화 — 눌러서 채우기</span>'}${e.st?`<b class="bp-est">${EST[e.st]}</b>`:''}${e.goal?`<small>${esc(e.goal)}</small>`:''}${L.length?`<div class="bp-tags">${L.join('')}</div>`:''}</div>`}
 
  function extraHtml(M,no){const L=M.extra||[];
   return `<div class="bp-extra"><div class="bp-phh"><span>여유 · 최종장</span><small class="dim">추가플 · 밀린 진행 · 짧은 최종장</small><button type="button" class="bp-add" data-b="epnew" data-id="_x" data-ph="x" title="여유 칸에 화 더하기">＋</button></div><div class="bp-exl">${L.map(e=>epCard('_x',e,no)).join('')||'<div class="bp-none">—</div>'}</div></div>`}
