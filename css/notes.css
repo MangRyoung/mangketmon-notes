@@ -530,3 +530,9 @@ body.plview::after{content:'👁 PL 눈으로 보는 중 — 저장하지 않아
 /* 11-07 역할 칩 (monCard) */
 .pmrole{display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:800;line-height:1.5;padding:0 6px 0 5px;white-space:nowrap;border-radius:3px;background:var(--rc);color:#fff;letter-spacing:.04em;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
 .pmrole::before{content:"◆";font-size:7px;opacity:.8}
+/* 11-10 큰 지도 ↔ 작은 지도 단추 */
+.mapnav{display:inline-flex;gap:4px;flex-wrap:wrap}
+.mapgo{border-color:var(--red)!important;white-space:nowrap}
+.mapgo.up{background:transparent}
+.pin em.pinsub{top:auto;bottom:-4px;left:auto;right:-14px;background:#1c1c20;border:1px solid var(--red);font-size:11px;padding:0 2px;letter-spacing:0;line-height:1.3}
+.spsub{margin:6px 0 4px;width:100%}

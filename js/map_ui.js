@@ -13,6 +13,11 @@
  const spots=m=>N().list('spots').filter(s=>s.map===m);
  const links=()=>N().list('links');
  const curMap=()=>{const L=maps();if(!L.length)return null;let m=L.find(x=>x.id===U.map);if(!m){m=L[0];U.map=m.id}return m};
+ /* 11-10 망령 「대학 지도에선 도시 지도로 가는 버튼, 도시 지도에선 대학 지도로 가는 버튼」: maps.up = 이 지도가 들어 있는 큰 지도 · maps.upSpot = 큰 지도의 그 장소 (그 핀에서 작은 지도로 들어간다) */
+ const upOf=m=>m&&m.up&&N().data('maps',m.up)?Object.assign({id:m.up},N().data('maps',m.up)):null;
+ const kidsOf=m=>m?maps().filter(x=>x.up===m.id):[];
+ const subAt=sid=>maps().find(x=>x.upSpot===sid&&x.up)||null;
+ function mapNav(m){const u=upOf(m),K=kidsOf(m);if(!u&&!K.length)return '';return `<span class="mapnav">${u?`<button type="button" class="btn sm mapgo up" data-mapgo="${esc(u.id)}" title="큰 지도로">↖ ${esc(u.name||'지도')}</button>`:''}${K.map(k=>`<button type="button" class="btn sm mapgo" data-mapgo="${esc(k.id)}" title="${k.upSpot&&spotNm(k.upSpot)?esc(spotNm(k.upSpot))+' 안 지도':'안쪽 지도'}">↘ ${esc(k.name||'지도')}</button>`).join('')}</span>`}
  const spotNm=id=>{const x=N().data('spots',id);return x?x.name:''};
  const entsAt=sid=>N().list('ents').filter(e=>(e.at||[]).includes(sid));
  /* 10-29 망령 「장소엔 인물 배치」: 인물 = 항목(인물 · 얼굴 있는 것) + PC · NPC 시트. 놓인 곳은 저마다의 at=[장소 id] (항목은 원래 있던 칸, 시트는 새 칸).
@@ -87,7 +92,7 @@
   if(!m){el.innerHTML=`<div class="toolbar"><h2>지도</h2></div><div class="empty">아직 지도가 없어요.${G?'<br><button class="btn sm pri" data-m="newmap" style="margin-top:10px">＋ 지도 만들기 (그림 올리기)</button>':''}</div>`;bind(el);return}
   const sp=spots(m.id).filter(s=>!U.filter||s.kind===U.filter);
   const sel=U.sel&&N().data('spots',U.sel)?Object.assign({id:U.sel,_vis:(N().doc('spots',U.sel)||{}).vis},N().data('spots',U.sel)):null;
-  el.innerHTML=`<div class="toolbar"><h2>지도</h2>${maps().length>1||G?`<select id="mapSel">${maps().map(x=>`<option value="${esc(x.id)}" ${x.id===m.id?'selected':''}>${esc(x.name||'지도')}</option>`).join('')}</select>`:''}
+  el.innerHTML=`<div class="toolbar"><h2>지도</h2>${maps().length>1||G?`<select id="mapSel">${maps().map(x=>`<option value="${esc(x.id)}" ${x.id===m.id?'selected':''}>${esc(x.name||'지도')}</option>`).join('')}</select>`:''}${mapNav(m)}
    <div class="seg" id="mapKinds"><button data-k="" class="${!U.filter?'on':''}">전체</button>${KINDS.map(([k,,c])=>`<button data-k="${k}" class="${U.filter===k?'on':''}" style="--c:${c}"><i class="kdot"></i>${k}</button>`).join('')}</div>
    ${CL()?CL().chips('map',clsCount(m)):''}
    ${G?`<div class="seg"><button data-mode="sel" class="${U.mode==='sel'?'on':''}">고르기 · 끌기</button><button data-mode="add" class="${U.mode==='add'?'on':''}">＋ 장소 찍기</button>${U.mode==='add'?`<button data-multi class="${U.multi?'on':''}" title="켜 두면 편집 창 없이 계속 찍어요 (Shift+클릭과 같아요)">연속 찍기</button>`:''}</div>`:''}
@@ -97,7 +102,7 @@
     <div class="mapwrap ${U.linkFrom?'linking':''}" id="mapWrap" data-mode="${U.mode}" style="--ar:${m.w&&m.h?(m.h/m.w).toFixed(4):0.66}"><div class="mapinner" id="mapInner" style="transform:translate(${U.px}px,${U.py}px) scale(${U.zoom});${m.w?`aspect-ratio:${m.w}/${m.h}`:''}">
      ${m.img?`<img class="mapimg" src="${esc(m.img)}" alt="${esc(m.name)}" draggable="false">`:'<div class="mapimg blank"></div>'}
      ${routeSvg(m)}
-     ${sp.map(s=>{const k=kc(s.kind);const party=m.party===s.id;return `<button type="button" class="pin ${s.id===U.sel?'on':''} ${s._vis!=='pub'?'hid':''} ${party?'party':''}" data-pin="${esc(s.id)}" style="left:${s.x}%;top:${s.y}%;--c:${k[2]}" title="${esc(s.name)}${s._vis!=='pub'?' ('+N().visLabel(s._vis)+')':''}"><i></i><b>${esc(s.num||'')}</b><span>${esc(s.name)}</span>${window.NT_DG?NT_DG.pinMark(s.id):''}${party?'<em>PC</em>':''}</button>`}).join('')}
+     ${sp.map(s=>{const k=kc(s.kind);const party=m.party===s.id;return `<button type="button" class="pin ${s.id===U.sel?'on':''} ${s._vis!=='pub'?'hid':''} ${party?'party':''}" data-pin="${esc(s.id)}" style="left:${s.x}%;top:${s.y}%;--c:${k[2]}" title="${esc(s.name)}${s._vis!=='pub'?' ('+N().visLabel(s._vis)+')':''}"><i></i><b>${esc(s.num||'')}</b><span>${esc(s.name)}</span>${window.NT_DG?NT_DG.pinMark(s.id):''}${party?'<em>PC</em>':''}${subAt(s.id)?'<em class="pinsub" title="안쪽 지도가 있어요">🗺</em>':''}</button>`}).join('')}
      ${npcLayer(m,sp)}
     </div></div>
     <aside class="side" id="mapSide">${sel?spotPanel(sel,m):mapPanel(m,sp)}</aside></div>`;
@@ -123,6 +128,7 @@
   const imgs=[s.img?{p:s.img,t:''}:null,...(s.imgs||[])].filter(Boolean);
   /* 10-30 망령 「지도도 배경 첨부」: s.bg = 웹툴 무대 배경 (웹툴 「지도 가져오기」 때 핀 배경으로 넘어감) */
   const body=`${s.bg?`<figure class="spbg"><img src="${esc(s.bg)}" alt="${esc(s.name||'')} 배경" loading="lazy" data-big="${esc(s.bg)}"><figcaption>🖼 배경${s.bgName&&s.bgName!==s.name?' · '+esc(s.bgName):''}</figcaption></figure>`:''}${imgs.length?`<div class="spimgs">${imgs.map(x=>`<figure><img src="${esc(x.p)}" alt="${esc(x.t||s.name)}" loading="lazy" data-big="${esc(x.p)}">${x.t?`<figcaption>${esc(x.t)}</figcaption>`:''}</figure>`).join('')}</div>`:''}
+   ${(()=>{const sub=subAt(s.id);return sub?`<button type="button" class="btn sm pri mapgo spsub" data-mapgo="${esc(sub.id)}">🗺 「${esc(sub.name||'지도')}」 지도 열기</button>`:''})()}
    ${s.summary?`<p class="pre">${esc(s.summary)}</p>`:''}${s.items?`<div class="kv"><b>얻을 것</b><span>${esc(s.items)}</span></div>`:''}
    ${window.NT_DG?NT_DG.spotSec(s.id):''}
    ${(()=>{const ps=peopleAt(s.id);const CP=G||myPlaceable().length>0;if(!ps.length&&!CP)return '';return `<div class="sec">인물 배치 <small class="dim">${ps.length}명</small>${CP?` <button type="button" class="btn xs ghost" data-m="place" title="${G?'이 장소에 인물(항목 · PC · NPC)을 놓아요':'내 캐릭터를 이 장소에 놓아요'}">＋ ${G?'인물':'내 캐릭터'} 놓기</button>`:''}</div>${ps.length?`<div class="spppl">${ps.map(x=>`<div class="sppp">${faceBtn(x,'sppf')}<button type="button" class="linkbtn" data-pkey="${esc(pKey(x))}"><b>${esc(x.name||'(이름 없음)')}</b><small>${esc(x.sub||'')}</small></button>${canPlace(x)?`<button type="button" class="lnkx" data-unplace="${esc(pKey(x))}" title="이 장소에서 빼기">✕</button>`:''}</div>`).join('')}</div>${CP?`<div class="small dim">지도 위 ${G?'':'내 캐릭터 '}얼굴을 다른 핀으로 끌면 옮겨져요.</div>`:''}`:'<div class="small dim">아직 아무도 없어요.</div>'}`})()}
@@ -144,6 +150,7 @@
  function apply(el){const inner=$('#mapInner',el);if(inner)inner.style.transform=`translate(${U.px}px,${U.py}px) scale(${U.zoom})`;const w=$('#mapWrap',el);if(w)w.classList.toggle('lbl',U.zoom>=1.8);placePop(el)}
  function bind(el){
   const sel=$('#mapSel',el);if(sel)sel.onchange=()=>{U.map=sel.value;U.sel='';U.fitDone=false;N().render()};
+  el.querySelectorAll('[data-mapgo]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const to=b.dataset.mapgo;if(!N().data('maps',to))return;const back=U.map;U.map=to;U.sel='';const cm=N().data('maps',to);/* 작은 지도에서 큰 지도로 갈 땐 그 장소를 골라 둔다 */const was=N().data('maps',back);U.sel=was&&was.up===to&&was.upSpot&&N().data('spots',was.upSpot)?was.upSpot:'';U.fitDone=false;N().render()}));
   $$('#mapKinds button',el).forEach(b=>b.onclick=()=>{U.filter=b.dataset.k;N().render()});if(CL())CL().bindChips(el,'map',()=>N().render());
   $$('[data-mode]',el).forEach(b=>b.onclick=()=>{U.mode=b.dataset.mode;if(U.mode!=='add')U.multi=false;N().render()});
   const mb=$('[data-multi]',el);if(mb)mb.onclick=()=>{U.multi=!U.multi;N().toast(U.multi?'연속 찍기 — 편집 창 없이 계속 찍어요':'연속 찍기 끔');N().render()};
@@ -319,12 +326,14 @@
  function editMap(id){const m=N().data('maps',id);if(!m)return;const md=N().openModal(`<div class="mhead"><h2>지도 설정</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
    <div class="mrow"><label class="lbl">이름<input id="mpName" type="text" value="${esc(m.name||'')}"></label><label class="lbl">순서<input id="mpOrd" type="number" class="n" value="${m.order||0}"></label><label class="lbl">공개${N().visSelect(N().doc('maps',id).vis,'mpVis',{noPl:true})}</label></div>
    <label class="lbl">설명<textarea id="mpD" rows="2">${esc(m.d||'')}</textarea></label>
+   <div class="mrow"><label class="lbl">큰 지도 <small class="dim">(이 지도가 들어 있는 지도 — 서로 오가는 단추가 생겨요)</small><select id="mpUp"><option value="">없음</option>${maps().filter(x=>x.id!==id&&x.up!==id).map(x=>`<option value="${esc(x.id)}" ${m.up===x.id?'selected':''}>${esc(x.name||'지도')}</option>`).join('')}</select></label><label class="lbl">큰 지도의 장소 <small class="dim">(그 핀에서 이 지도로)</small><select id="mpUpSpot"></select></label></div>
    <div class="mrow"><label class="lbl">종류<select id="mpKind"><option value="" ${m.kind!=='globe'?'selected':''}>그림 지도 (핀 · 루트)</option><option value="globe" ${m.kind==='globe'?'selected':''}>지구본 · 관측실 (위도 · 경도 특이점)</option></select></label><label class="lbl" style="grid-column:span 2">특이점 번호 목록 <small class="dim">(지구본용 · 쉼표로 · 빈 번호는 「미관측」 가림막)</small><input id="mpSlots" type="text" value="${esc((m.slots||[]).join(', '))}" placeholder="예: 序, I, II, III, IV, V, VI, VII, EX"></label></div>
    <div class="sec">지도 그림 <small class="dim">(지구본이면 안 써요)</small></div><div class="updz" id="mpDz"><div class="pv" style="${m.img?`background-image:url('${cssu(m.img)}')`:''}"></div><b>＋ 그림 올리기</b><span>끌어 놓기 · 클릭 · Ctrl+V — 올릴 때 3200px 안으로 줄여요</span></div>
    <div class="row" style="margin-top:8px"><input type="text" id="mpImg" placeholder="또는 그림 주소 https://…" value="${esc(m.img||'')}" style="flex:1">${spots(id).length?'<button type="button" class="btn sm" id="mpAlign" title="그림을 옮기고 키워 지금 핀 자리에 맞춰요 (새 그림이면 그 그림으로)">📐 핀에 맞추기</button>':''}</div>
    ${spots(id).length?`<p class="small dim" style="margin:4px 0 0">그림을 바꾸면 저장할 때 「핀에 맞추기」 창이 떠요 — 새 그림을 끌고 키워 지금 장소 ${spots(id).length}곳 자리에 맞춰요.</p>`:''}
    ${spots(id).length&&m.kind!=='globe'?`<div class="sec">장소 배경 <small class="dim" id="mpBgN"></small></div><div class="updz" id="mpBgDz"><b>＋ 배경 여러 장 한꺼번에</b><span>파일 이름 앞 번호(01_정문…)나 장소 이름으로 알아서 맞춰 넣어요 · 칸을 누르면 그 장소만</span></div><div class="mpbgs" id="mpBgs"></div>`:''}
    <div class="row" style="margin-top:14px"><button class="btn danger ghost sm" id="mpDel">지도 지우기</button><span class="sp"></span><button class="btn pri" id="mpOk">저장</button></div>`);
+  {const us=$('#mpUp',md),ss=$('#mpUpSpot',md);const fill=()=>{const L=us.value?spots(us.value).slice().sort((a,b)=>(parseFloat(a.num)||999)-(parseFloat(b.num)||999)):[];ss.innerHTML=`<option value="">${us.value?'고르지 않음':'—'}</option>`+L.map(x=>`<option value="${esc(x.id)}" ${m.upSpot===x.id?'selected':''}>${esc((x.num?x.num+'. ':'')+(x.name||''))}</option>`).join('');ss.disabled=!us.value};us.onchange=fill;fill()}
   N().bindDrop($('#mpDz',md),async fs=>{try{const u=await N().upload(fs[0],'map','map');$('#mpImg',md).value=u;$('#mpDz .pv',md).style.backgroundImage=`url('${cssu(u)}')`}catch(e){N().toast('올리기 실패: '+e.message)}});
   /* 10-29 망령 「지도에 배경 넣기 기능이랑 뽑아둔 배경 알맞게 넣어두기」: 장소마다 s.bg (웹툴 무대 배경) — 여러 장을 한 번에 받아 번호 · 이름으로 맞춘다 */
   const bgBox=$('#mpBgs',md);if(bgBox){const nk=x=>String(x||'').replace(/\.[a-z0-9]+$/i,'').replace(/^\d+[_\s.-]*/,'').replace(/[\s_·・()（）\-]/g,'').toLowerCase();
@@ -337,8 +346,8 @@
     const fi=document.createElement('input');fi.type='file';fi.accept='image/*';fi.onchange=async()=>{const f=fi.files&&fi.files[0];if(!f)return;try{await setBg(sid,await N().upload(f,'photo','spotbg'));draw()}catch(er){N().toast('올리기 실패: '+er.message)}};fi.click()});
    draw()}
   const al=$('#mpAlign',md);if(al)al.onclick=()=>{const img=$('#mpImg',md).value.trim()||m.img;if(!img)return N().toast('그림을 먼저 넣어요');alignMap(id,img)};
-  $('#mpOk',md).onclick=async()=>{const img=$('#mpImg',md).value.trim();if(img&&m.img&&img!==m.img&&spots(id).length&&$('#mpKind',md).value!=='globe'){const nm=$('#mpName',md).value.trim()||'지도';await N().patch('maps',id,d=>{d.name=nm;d.order=+$('#mpOrd',md).value||0;d.d=$('#mpD',md).value.trim()});return alignMap(id,img)}let w=m.w||0,h=m.h||0;if(img&&img!==m.img){try{const im=await new Promise((r,j)=>{const i=new Image();i.onload=()=>r(i);i.onerror=j;i.src=img});w=im.naturalWidth;h=im.naturalHeight}catch(e){}}
-   await N().put('maps',id,Object.assign({},m,{name:$('#mpName',md).value.trim()||'지도',order:+$('#mpOrd',md).value||0,d:$('#mpD',md).value.trim(),img,w,h,kind:$('#mpKind',md).value,slots:$('#mpSlots',md).value.split(/[,，]/).map(x=>x.trim()).filter(Boolean)}),$('#mpVis',md).value);N().closeModal();U.fitDone=false;N().render()};
+  $('#mpOk',md).onclick=async()=>{const img=$('#mpImg',md).value.trim();if(img&&m.img&&img!==m.img&&spots(id).length&&$('#mpKind',md).value!=='globe'){const nm=$('#mpName',md).value.trim()||'지도';await N().patch('maps',id,d=>{d.name=nm;d.order=+$('#mpOrd',md).value||0;d.d=$('#mpD',md).value.trim();d.up=$('#mpUp',md).value;d.upSpot=d.up?$('#mpUpSpot',md).value:''});return alignMap(id,img)}let w=m.w||0,h=m.h||0;if(img&&img!==m.img){try{const im=await new Promise((r,j)=>{const i=new Image();i.onload=()=>r(i);i.onerror=j;i.src=img});w=im.naturalWidth;h=im.naturalHeight}catch(e){}}
+   await N().put('maps',id,Object.assign({},m,{name:$('#mpName',md).value.trim()||'지도',order:+$('#mpOrd',md).value||0,d:$('#mpD',md).value.trim(),img,w,h,kind:$('#mpKind',md).value,up:$('#mpUp',md).value,upSpot:$('#mpUp',md).value?$('#mpUpSpot',md).value:'',slots:$('#mpSlots',md).value.split(/[,，]/).map(x=>x.trim()).filter(Boolean)}),$('#mpVis',md).value);N().closeModal();U.fitDone=false;N().render()};
   $('#mpDel',md).onclick=async()=>{if(!await N().confirmBox(`「${m.name}」 지도를 지울까요? 이 지도의 장소 ${spots(id).length}곳도 같이 지워져요.`,'지우기'))return;for(const s of spots(id))await N().del('spots',s.id);await N().del('maps',id);N().closeModal();U.map='';U.sel='';N().render()}}
  /* ---------- 핀에 맞추기 (10-29 망령 「미사그 대학 지도에 배경 이미지 넣는 기능이랑 위치에 맞게 넣게」) ----------
     지금 지도 틀(옛 그림 비율) 위에 핀을 그대로 두고, 새 그림을 끌어 옮기고(드래그) 키워(휠 · 막대) 핀 자리에 맞춘다.
