@@ -19,7 +19,7 @@
  const arcs=()=>N().list('arcs').sort((a,b)=>(a.order||0)-(b.order||0));
  const meta=()=>N().data('blue','main')||{};
  const npcs=()=>N().list('npc').filter(x=>x&&x.name).sort((a,b)=>String(a.name).localeCompare(String(b.name),'ko'));
- const pcs=()=>N().list('pc').filter(x=>x&&x.name);
+ const pcs=()=>N().list('pc').filter(x=>x&&x.name&&x.cls!=='guest');   /* 11-10 망령 「객원은 객원 — 구성 단계에 넣지 않는다」: 객원(cls guest) 시트는 스포트라이트 · 서랍 · 점검에서 뺀다 */
  const nm=(kind,id)=>{const d=N().data(kind,id);return d?(d.name||d.title||''):''};
  const KN={npc:['npc','🎭'],pc:['pc','🧑'],spots:['spots','📍'],dgs:['dgs','⛩'],ents:['ents','📇'],routes:['routes','🧭']};
  const nmS=id=>{const d=N().data('spots',id);return d?(d.num?d.num+'. ':'')+(d.name||''):''};
@@ -79,9 +79,9 @@
     ${a.theme?`<div class="bp-theme"><small>주제</small>${esc(a.theme)}</div>`:''}
     <div class="bp-tags">${tags.join('')}</div>${stage.length?`<div class="bp-tags bp-stage">${stage.join('')}</div>`:''}</div>`;
   const clues=cl.length?`<div class="bp-clues"><div class="bp-ch"><small>단서</small><span class="bp-cbar"><i style="width:${Math.round(ok/cl.length*100)}%"></i></span><small>${ok} / ${cl.length}</small></div>${cl.map((x,j)=>`<label class="bp-clue ${x.ok?'ok':''}"><input type="checkbox" data-clue="${esc(a.id)}|${j}" ${x.ok?'checked':''}><span>${esc(x.t)}</span></label>`).join('')}</div>`:'<div class="bp-clues none"><small>단서 없음 — 사건 머리를 눌러 적어요</small></div>';
-  return cell(1,'top',head,`data-drop="arc" data-id="${esc(a.id)}"`)+cell(2,'mid',clues)
-   +PH.map(([k,lab,tip],pi)=>{const L=eps.filter(e=>e.ph===k);return cell(3+pi,'mid ph ph-'+k,`<div class="bp-phh" title="${esc(tip)}"><span class="bp-phl">${lab}<small>${PHE[k]}</small></span><button type="button" class="bp-add" data-b="epnew" data-id="${esc(a.id)}" data-ph="${k}" title="${lab}에 화 더하기">＋</button></div>${L.map(e=>epCard(a.id,e,no)).join('')||'<div class="bp-none">비어 있음</div>'}`)}).join('')
-   +cell(7,'bot',`<div class="bp-af"><button class="btn xs ghost" data-b="mv" data-id="${esc(a.id)}" data-d="-1" ${i?'':'disabled'} title="앞으로">◀</button><span class="dim small">${eps.length}화</span><button class="btn xs ghost" data-b="mv" data-id="${esc(a.id)}" data-d="1" ${i<n-1?'':'disabled'} title="뒤로">▶</button></div>`)}
+  return cell(1,'bp-t',head,`data-drop="arc" data-id="${esc(a.id)}"`)+cell(2,'bp-m',clues)
+   +PH.map(([k,lab,tip],pi)=>{const L=eps.filter(e=>e.ph===k);return cell(3+pi,'bp-m bp-p ph-'+k,`<div class="bp-phh" title="${esc(tip)}"><span class="bp-phl">${lab}<small>${PHE[k]}</small></span><button type="button" class="bp-add" data-b="epnew" data-id="${esc(a.id)}" data-ph="${k}" title="${lab}에 화 더하기">＋</button></div>${L.map(e=>epCard(a.id,e,no)).join('')||'<div class="bp-none">비어 있음</div>'}`)}).join('')
+   +cell(7,'bp-b',`<div class="bp-af"><button class="btn xs ghost" data-b="mv" data-id="${esc(a.id)}" data-d="-1" ${i?'':'disabled'} title="앞으로">◀</button><span class="dim small">${eps.length}화</span><button class="btn xs ghost" data-b="mv" data-id="${esc(a.id)}" data-d="1" ${i<n-1?'':'disabled'} title="뒤로">▶</button></div>`)}
 
  function epCard(aid,e,no){const L=[...(e.pcs||[]).map(id=>goChip('pc',id,'pc')),...(e.npcs||[]).map(id=>goChip('npc',id)),...(e.spots||[]).map(id=>goChip('spots',id)),e.dg?goChip('dgs',e.dg,'dg'):'',...(e.ents||[]).map(id=>goChip('ents',id)),e.route?goChip('routes',e.route):''].filter(Boolean);
   return `<div role="button" tabindex="0" class="bp-ep est-${e.st||'none'}" data-b="ep" data-id="${esc(aid)}" data-ep="${esc(e.id)}" data-drop="ep"><i>${no[e.id]||'?'}화</i>${e.title?`<span>${esc(e.title)}</span>`:'<span class="bp-ph0">빈 화 — 눌러서 채우기</span>'}${e.st?`<b class="bp-est">${EST[e.st]}</b>`:''}${e.goal?`<small>${esc(e.goal)}</small>`:''}${L.length?`<div class="bp-tags">${L.join('')}</div>`:''}</div>`}
