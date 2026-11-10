@@ -168,6 +168,7 @@ window.NT_SPLAT=() => SPLAT;
    ${(e.at||[]).length?`<div class="sec">장소</div><div class="row">${e.at.map(id=>`<button class="chip" data-spot="${esc(id)}">📍 ${esc(spotName(id)||id)}</button>`).join('')}</div>`:''}
    ${(e.teams||[]).length?`<div class="sec">소속 · 편</div><div class="row">${e.teams.map(x=>`<span class="chip static">${esc(x)}</span>`).join('')}</div>`:''}
    ${rels.length?`<div class="sec">관계</div><ul class="lnk">${rels.map(r=>{const oid=r.a===e.id?r.b:r.a;const o=N().data('ents',oid);return `<li><button class="linkbtn" data-sel="${esc(oid)}">${esc(o?o.title:'?')}</button> <span class="small dim">${r.a===e.id?'→':'←'} ${esc(r.label||'')}</span></li>`}).join('')}</ul><button class="btn xs ghost" data-e="graph" data-id="${esc(e.id)}">관계도에서 보기</button>`:''}
+   ${window.NT_BLUE&&NT_BLUE.usesHtml?NT_BLUE.usesHtml('ents',e.id):''}
    ${(()=>{const A=appears(e);return A.length?`<div class="sec">시나리오에 나오는 곳</div><ul class="appear">${A.map(a=>`<li style="--c:${esc(a.c)}"><i class="dot"></i><button class="linkbtn" data-appear="${esc(a.rid)}|${a.i}">${esc(a.route)} · ${a.i+1}. ${esc(a.title)}</button><span class="small dim">${a.why}</span></li>`).join('')}</ul>`:''})()}
    ${G&&sec&&sec.t?`<div class="gmnote"><b>GM 메모</b><div class="pre">${esc(sec.t)}</div></div>`:''}</div>`}
  /* 10-29 망령: 제작기 트레이너 상자 — 랭크 · 파티 · 시트로 가기 */
