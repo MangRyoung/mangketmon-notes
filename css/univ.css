@@ -778,3 +778,9 @@ button.awb-tend:hover,button.awb-tend:focus-visible{border-color:#f1d58e;backgro
 @media (max-width:640px){.awx.awbig .awx-seal{top:10px;bottom:auto;width:42px;height:42px;font-size:12px}.awx.awbig .awx-b{padding-right:0}.awx.awbig .awx-n{padding-right:48px}.awb-qt{font-size:14.5px}}
 .pmnr .pmbn{margin-left:auto;flex:none;padding:0 8px}   /* 11-07 대기 단추 = 이름 줄 오른쪽 끝 */
 .pmc.u .pmsum .sp{display:none}
+
+/* 11-11 망령 「대기 · 서브 칸 — 이름 길이에 상관없이 오른쪽 위에 딱 붙어 있게」: 단추 묶음을 카드 오른쪽 위에 고정, 이름 줄은 그만큼 비운다 */
+.pmc{position:relative}
+.pmbns{position:absolute;top:8px;right:8px;display:flex;gap:4px;z-index:2}
+.pmbns .pmbn{margin:0;flex:none;padding:0 8px}
+.pmc:has(.pmbns) .pmt{padding-right:92px}
