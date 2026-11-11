@@ -468,7 +468,7 @@
   /* 11-07 망령 「대기 버튼은 괜히 줄 밀리게 하지 말고 이름 줄 오른쪽 끝에」 */
   const bbtn=m=>E&&!N().ST.plView?`<button type="button" class="btn xs ghost ptm-bnb pmbn" data-bench="${esc(m.id)}" title="${BN(m)?'출전으로 — 셈에 다시 넣어요':'대기(벤치)로 — 통솔점 · 【1/시】 · 기술점 셈에서 빼요'}">${BN(m)?'출전':'대기'}</button>`:'';
   /* 11-11 망령 「대기 옆에 서브 버튼」: 미사그 1인 3체(3+3) 때 데려갈 PL 포켓몬 — 제작기 포켓몬 문서 sub 칸 · 트레이너마다 1체 */
-  const sbtn=m=>E&&!N().ST.plView&&!isAw(m)?`<button type="button" class="btn xs ${m.sub?'':'ghost'} ptm-bnb pmbn pmsub" data-sub="${esc(m.id)}" data-tid="${esc(id)}" title="${m.sub?'서브 해제':'서브로 — 2명이서 3+3 으로 합칠 때 각성체 2체와 같이 데려가는 PL 포켓몬 (트레이너마다 1체 · 통솔점 · 기술점은 PL 4체 몫의 1/4 까지)'}">${m.sub?'서브 ✓':'서브'}</button>`:'';
+  const sbtn=m=>E&&!N().ST.plView&&!isAw(m)?`<button type="button" class="btn xs ${m.sub?'':'ghost'} ptm-bnb pmbn pmsub" data-sub="${esc(m.id)}" data-tid="${esc(id)}" title="${m.sub?'서브 해제':'서브로 — 2명이서 3+3 으로 합칠 때 각성체 2체와 같이 데려가는 PL 포켓몬 (트레이너마다 1체 · 프라이드는 각성체(보조) 이하 · 기술점은 PL 4체 몫의 1/4 까지)'}">${m.sub?'서브 ✓':'서브'}</button>`:'';
   const uParty=()=>{const G0=N().gm();const pl=ms.filter(m=>!isAw(m)),aw=ms.filter(isAw).sort((a,b)=>(a.awaken==='free'?0:1)-(b.awaken==='free'?0:1));
    const add=(k,n)=>E&&(k!=='aw'||G0)&&n?`<button type="button" class="btn xs" data-monadd="${k}" data-id="${esc(id)}" title="제작기에 새 시트를 만들어 바로 열어요">＋ ${k==='aw'?'각성체':'PL 포켓몬'}</button>`:'';
    return `${window.NT_FLD?`<div class="ptfld"><b>트레이너 필드 전개</b><span class="sp"></span>${NT_FLD.chips(t,'t',t.id||id,'',E)}</div>`:''}
