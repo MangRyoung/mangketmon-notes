@@ -420,6 +420,8 @@
  /* 11-07 대기(벤치) 켜고 끄기 — 제작기 포켓몬 문서 bench 칸 */
  document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-bench]');if(!b)return;e.preventDefault();e.stopPropagation();const pid=b.dataset.bench;let on=false;b.disabled=true;
   try{await MK().edit('pokemon',pid,d=>{on=!d.bench;if(on)d.bench=true;else delete d.bench});await MK().load(true);N().render();N().toast(on?'대기로 뺐어요 — 통솔점 · 【1/시】 · 기술점 셈에서 빠져요':'출전으로 돌렸어요')}catch(er){b.disabled=false;N().toast('제작기에 못 썼어요: '+er.message)}},true);
+ document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-sub]');if(!b)return;e.preventDefault();e.stopPropagation();const pid=b.dataset.sub,tid=b.dataset.tid;let on=false;b.disabled=true;   /* 11-11 서브 켜고 끄기 — 같은 트레이너의 다른 서브는 끔 */
+  try{await MK().edit('pokemon',pid,d=>{on=!d.sub;if(on)d.sub=true;else delete d.sub});if(on){for(const q of MK().mons(tid))if(q&&q.id!==pid&&q.sub)await MK().edit('pokemon',q.id,d=>{delete d.sub})}await MK().load(true);N().render();N().toast(on?'서브로 정했어요 — 3+3 때 각성체 2체와 같이 데려가요':'서브를 풀었어요')}catch(er){b.disabled=false;N().toast('제작기에 못 썼어요: '+er.message)}},true);
  document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-isock]');if(!b)return;e.preventDefault();const id=b.dataset.isock;const t=MK().trainer(id)||{};
   const md=N().openModal(`<div class="mhead"><h2>소지품 소켓 조정 · ${esc(t.name||'')}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
    <p class="small dim" style="margin:0 0 8px">지시 랭크 상한에 더하거나 뺄 몫 (0.5 단위 · − 도 된다). 보상 · 시나리오 사유를 적어 두면 툴팁에 보여요. 제작기 · 웹툴도 같은 값을 써요.</p>
@@ -465,13 +467,15 @@
    return L.length?`<div class="pmsum" style="--pc:${col(i)}">${L.join('')}</div>`:''};
   /* 11-07 망령 「대기 버튼은 괜히 줄 밀리게 하지 말고 이름 줄 오른쪽 끝에」 */
   const bbtn=m=>E&&!N().ST.plView?`<button type="button" class="btn xs ghost ptm-bnb pmbn" data-bench="${esc(m.id)}" title="${BN(m)?'출전으로 — 셈에 다시 넣어요':'대기(벤치)로 — 통솔점 · 【1/시】 · 기술점 셈에서 빼요'}">${BN(m)?'출전':'대기'}</button>`:'';
+  /* 11-11 망령 「대기 옆에 서브 버튼」: 미사그 1인 3체(3+3) 때 데려갈 PL 포켓몬 — 제작기 포켓몬 문서 sub 칸 · 트레이너마다 1체 */
+  const sbtn=m=>E&&!N().ST.plView&&!isAw(m)?`<button type="button" class="btn xs ${m.sub?'':'ghost'} ptm-bnb pmbn pmsub" data-sub="${esc(m.id)}" data-tid="${esc(id)}" title="${m.sub?'서브 해제':'서브로 — 2명이서 3+3 으로 합칠 때 각성체 2체와 같이 데려가는 PL 포켓몬 (트레이너마다 1체 · 통솔점 · 기술점은 PL 4체 몫의 1/4 까지)'}">${m.sub?'서브 ✓':'서브'}</button>`:'';
   const uParty=()=>{const G0=N().gm();const pl=ms.filter(m=>!isAw(m)),aw=ms.filter(isAw).sort((a,b)=>(a.awaken==='free'?0:1)-(b.awaken==='free'?0:1));
    const add=(k,n)=>E&&(k!=='aw'||G0)&&n?`<button type="button" class="btn xs" data-monadd="${k}" data-id="${esc(id)}" title="제작기에 새 시트를 만들어 바로 열어요">＋ ${k==='aw'?'각성체':'PL 포켓몬'}</button>`:'';
    return `${window.NT_FLD?`<div class="ptfld"><b>트레이너 필드 전개</b><span class="sp"></span>${NT_FLD.chips(t,'t',t.id||id,'',E)}</div>`:''}
     <div class="ptsub aw"><b>각성체</b><small>${aw.length} / 2 · GM이 짠다 · 통솔점을 쓰지 않는다</small>${skTO(awSock(D,ms),'각성체 2체 몫 · 1인 기준 (2체) 표')}${add('aw',aw.length<2)}</div>${window.NT_AWK?NT_AWK.idCard(id):''}
-    ${aw.length?`<div class="ptygrid awg">${aw.map(m=>monCard(t,m,E,{univ:1,aw:1,awd:1,strip:strip(m,ms.indexOf(m)),bench:bbtn(m),awx:awBig(id,t,ms,m,E)})).join('')}</div>`:''}
+    ${aw.length?`<div class="ptygrid awg">${aw.map(m=>monCard(t,m,E,{univ:1,aw:1,awd:1,strip:strip(m,ms.indexOf(m)),bench:bbtn(m)+sbtn(m),awx:awBig(id,t,ms,m,E)})).join('')}</div>`:''}
     <div class="ptsub"><b>PL 포켓몬</b><small>${pl.length} / 4 · PL이 짠다</small>${skTO(D.sock,'PL 4체 몫')}${add('pl',pl.length<4)}</div>
-    ${pl.length?`<div class="ptygrid">${pl.map(m=>monCard(t,m,E,{univ:1,strip:strip(m,ms.indexOf(m)),bench:bbtn(m)})).join('')}</div>`:'<p class="mkpe">아직 없어요</p>'}`};
+    ${pl.length?`<div class="ptygrid">${pl.map(m=>monCard(t,m,E,{univ:1,strip:strip(m,ms.indexOf(m)),bench:bbtn(m)+sbtn(m)})).join('')}</div>`:'<p class="mkpe">아직 없어요</p>'}`};
   return `<section class="ux-sec ux-pt ${part==='mons'?'ux-ptm':''} ${part==='mons'&&N().skin&&N().skin()==='univ'?'ux-pty':''}"><h4 class="ux-h"><span>${part==='mons'?(N().skin&&N().skin()==='univ'?'파티':'파티 서머리'):'PT 서머리'}</span><small>${ms.length}체</small><span class="sp"></span>${D.sock&&!UV?`<small class="ptsk ${D.sock.u>D.sock.m?'warn':''}">PT 기술점 <b>${fmt(D.sock.u)}</b> / ${fmt(D.sock.m)}</small>`:''}${part!=='gauge'?isockChip(id,t,D,E):''}</h4>
    ${G&&D.items.length?`<div class="ptgs">${D.items.map(gauge).join('')}</div>`:''}
    ${Mo&&part==='mons'&&N().skin&&N().skin()==='univ'?uParty():Mo&&ms.length?`<div class="ptms">${ms.map(mon).join('')}</div>`:''}
