@@ -175,7 +175,7 @@ window.NT_SPLAT=() => SPLAT;
  function mkBox(tid){const MK=window.NT_MAKER;if(!MK)return '';const t=MK.trainer(tid);const G=N().gm();
   if(!t)return `<div class="mkx"><span class="small dim">🎴 ${MK.M.at?'제작기에서 이 트레이너를 찾지 못했어요 ('+esc(tid)+')':'제작기 트레이너를 읽는 중이에요…'}</span></div>`;
   if(t.priv&&!G&&t.id!==N().me())return '';
-  const ms=MK.mons(tid),rk=t.ranks||{};const sheet=N().data('pc',tid)?'pc':N().data('npc',tid)?'npc':'';
+  const ms=MK.mons(tid).filter(m=>!m.priv||G||t.id===N().me()),rk=t.ranks||{};   /* 11-12 숨긴 포켓몬은 주인 · GM 만 */const sheet=N().data('pc',tid)?'pc':N().data('npc',tid)?'npc':'';
   return `<div class="mkx"><span class="por" style="${t.image?`background-image:url('${cssu(t.image)}')`:''}"></span><div class="mb"><div class="row" style="gap:6px"><b>🎴 ${esc(t.name||tid)}</b><small class="dim">제작기 ${t.kind==='npc'?'NPC':'PC'}${t.folder?' · '+esc(MK.folderName(t.folder)):''}</small></div>
    <div class="rk">${['지시','육성','통솔','능력'].map(k=>`<span>${k} <b>${esc(rk[k]||'-')}</b></span>`).join('')}</div>${ms.length?`<div class="mons">${ms.slice(0,6).map(m=>`<i title="${esc(m.name||'')}" style="${MK.img(m)?`background-image:url('${cssu(MK.img(m))}')`:''}">${MK.img(m)?'':esc((m.name||'?')[0])}</i>`).join('')}</div>`:''}</div>
    <div class="acts">${sheet?`<button class="btn xs" data-gosheet="${sheet}|${esc(tid)}">시트 보기</button>`:G?`<button class="btn xs" data-mkadd="${esc(tid)}">시트로 넣기</button>`:''}<a class="btn xs ghost" href="${esc((window.NT_CONFIG||{}).makerUrl||'#')}" target="_blank" rel="noopener">제작기 ↗</a></div></div>`}
