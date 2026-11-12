@@ -113,3 +113,54 @@
 .cg-desc b{font-weight:700;font-size:11px;color:var(--mute);margin-right:2px}
 .cg-desc.pub{border-left-color:#2f7d4f;background:rgba(47,125,79,.10);margin-bottom:6px;-webkit-line-clamp:3}
 .cg-desc.pub b{color:#8fe0ac}
+
+/* 11-13 08:32 옆 창 다듬기 — 칸 묶음(카드) · 포트 / 스탠딩 두 칸 · 글자 크고 밝게 */
+.cg-panel .bp-pb{gap:12px;background:#0b0b0e}
+.cg-panel input[type=text],.cg-panel textarea,.cg-panel select{background:#15151b!important;border:1px solid #34343d!important;color:#f1f1f4!important;font-size:14.5px!important;border-radius:4px!important}
+.cg-panel input[type=text]:hover,.cg-panel textarea:hover,.cg-panel select:hover{border-color:#4a4a55!important}
+.cg-panel input:focus,.cg-panel textarea:focus,.cg-panel select:focus{border-color:var(--ac,var(--red))!important;background:#18181f!important}
+.cg-panel input::placeholder,.cg-panel textarea::placeholder{color:#6e6e78!important}
+.cg-panel input.bp-title{font-size:22px!important;font-weight:800;border-radius:0!important;background:transparent!important;border:0!important;border-bottom:2px solid var(--ac,var(--red))!important;padding:6px 4px!important}
+.cg-sec{border:1px solid #2a2a31;background:#111115;border-radius:6px;padding:10px 12px 12px;display:flex;flex-direction:column;gap:9px}
+.cg-sec>header{display:flex;align-items:center;gap:8px}
+.cg-sec>header b{font-size:14.5px;font-weight:800;color:#f4f4f6;letter-spacing:-.01em;display:flex;align-items:baseline;gap:6px}
+.cg-sec>header .bp-plus{margin-left:auto}
+.cg-sec>header .cg-pubst{margin-left:auto}
+.cg-cnt{font-size:12px;font-weight:600;color:var(--mute)}
+.cg-hint{margin:-4px 0 0;font-size:12.5px;line-height:1.5;color:#a3a3ad}
+.cg-hint b{color:#fff}
+.cg-row{display:flex;flex-direction:column;gap:5px}
+.cg-lab{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;white-space:nowrap;font-size:13px;font-weight:700;color:#dcdce2}
+.cg-lab small{white-space:normal;font-weight:400;font-size:11.5px;color:#8e8e98}
+.cg-sec.pub{border-color:#2c5e3f;background:linear-gradient(180deg,rgba(47,125,79,.16),rgba(47,125,79,.05))}
+.cg-sec.pub.on{border-color:#3fa267;box-shadow:inset 3px 0 0 #3fa267}
+.cg-sec.pub>header b{color:#9fe6b8}
+.cg-sec.gm{border-color:#5a2a33;background:linear-gradient(180deg,rgba(225,29,72,.12),rgba(225,29,72,.03))}
+.cg-sec.gm>header b{color:#ff9fb2}
+.cg-pubst{font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:#2a2a31;color:#b9b9c2}
+.cg-pubst.on{background:#2f7d4f;color:#fff}
+.cg-prl.pub{background:#2f7d4f}
+.cg-sec .bp-seg{border-radius:4px;overflow:hidden}
+.cg-sec .bp-seg button{font-size:13px;padding:6px 14px}
+.cg-sec .cg-acts .btn{min-height:30px}
+/* 그림 두 칸 */
+.cg-imgs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:10px;align-items:end}
+.cg-slot{position:relative;border:1px dashed #44444e;border-radius:6px;background:radial-gradient(120% 90% at 50% 0%,color-mix(in srgb,var(--ac,#e11d48) 20%,#17171c),#09090b 75%);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;outline:0;transition:border-color .12s,box-shadow .12s}
+.cg-slot.k-face{aspect-ratio:1/1}
+.cg-slot.k-img{aspect-ratio:3/4;max-height:44vh}
+.cg-slot.has{border-style:solid;border-color:#3a3a44}
+.cg-slot:hover,.cg-slot:focus-visible,.cg-slot.over{border-color:var(--ac,var(--red));box-shadow:0 0 0 2px color-mix(in srgb,var(--ac,#e11d48) 35%,transparent)}
+.cg-slot img{width:100%;height:100%;object-fit:contain;object-position:center top}
+.cg-slot.k-face img{object-fit:cover}
+.cg-slab{position:absolute;left:6px;top:6px;z-index:1;font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:999px;background:rgba(0,0,0,.72);color:#fff}
+.cg-slab i{font-style:normal;font-weight:400;color:#bbb}
+.cg-sph{text-align:center;color:#8a8a94;font-size:22px;line-height:1.3}
+.cg-sph small{font-size:11.5px}
+.cg-sx{position:absolute;right:6px;top:6px;z-index:1;border:0;border-radius:999px;width:24px;height:24px;background:rgba(0,0,0,.72);color:#fff;font-size:12px;cursor:pointer}
+.cg-sx:hover{background:var(--red)}
+.cg-urls{font-size:12.5px;color:#a3a3ad;margin-top:-4px}
+.cg-urls summary{cursor:pointer;padding:2px 0}
+.cg-urls[open]{display:flex;flex-direction:column;gap:8px}
+/* 판의 스탠딩 위 작은 포트 */
+.cg-fc{position:absolute;left:4px;bottom:4px;width:30%;aspect-ratio:1/1;border-radius:50%;border:2px solid #0b0b0e;box-shadow:0 0 0 1px var(--gc);background:#16161b center/cover no-repeat}
+.cg-pt.only-face{background-size:cover,auto;background-position:center,center}
