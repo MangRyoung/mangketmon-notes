@@ -30,15 +30,15 @@ window.NT=(()=>{
   m.addEventListener('click',e=>{const b=e.target.closest('[data-sit]');if(b)plSitSet(b.dataset.sit)})}
  function plViewSet(on,as){if(!realGm())return;if(on&&ST.plSit){ST.plSit=false;document.body.classList.remove('plsit')}ST.plView=!!on;ST.plAs=on?(as||''):'';document.body.classList.toggle('plview',ST.plView);closeModal(true);if(ST.plView&&!subOk(ST.view))ST.view=tabOf(ST.view)[2][0];render()}
  const PLV_BLOCK='「PL 눈으로 보기」 중에는 저장하지 않아요 — 위 띠에서 끄고 다시';
- const VIEWS=[['rb','룰북'],['map','지도'],['graph','관계도'],['ents','항목'],['pc','PC 시트'],['npc','NPC 시트'],['awk','각성체'],['awdb','각성체 DB'],['blue','도안'],['scen','루트'],['plan','일정'],['logs','기록'],['set','설정']];
+ const VIEWS=[['rb','룰북'],['map','지도'],['graph','관계도'],['ents','항목'],['pc','PC 시트'],['npc','NPC 시트'],['awk','각성체'],['awdb','각성체 DB'],['blue','도안'],['cast','조직'],['scen','루트'],['plan','일정'],['logs','기록'],['set','설정']];
  /* 10-29 망령: 위 탭은 6개 — 자료(항목 · 관계도) · 지도 · 시트 · 일정(일정 · 기록) · 시나리오 · 설정. 화면(VIEWS)과 주소는 그대로라 예전 링크 · 알림도 그대로 간다 */
- const TABS=[['rb','룰북',['rb']],['ents','자료',['ents']],['map','지도',['map']],['pc','시트',['pc','npc','awk','awdb']],['graph','관계도',['graph']],['plan','일정',['plan','logs']],['scen','시나리오',['blue','scen']],['set','설정',['set']]];   /* 10-30 망령 「관계도도 시트 옆에」: 자료에서 꺼내 시트 바로 옆 탭으로 (웹툴처럼) */
+ const TABS=[['rb','룰북',['rb']],['ents','자료',['ents']],['map','지도',['map']],['pc','시트',['pc','npc','awk','awdb']],['graph','관계도',['graph']],['plan','일정',['plan','logs']],['scen','시나리오',['blue','cast','scen']],['set','설정',['set']]];   /* 10-30 망령 「관계도도 시트 옆에」: 자료에서 꺼내 시트 바로 옆 탭으로 (웹툴처럼) */
  const tabOf=v=>TABS.find(t=>t[2].includes(v))||TABS[1];
  /* 11-04 21:52 망령 「미사그 대학에 전체 룰북 탭 옮겨 달래 — 자료 왼쪽에 · 테마에 맞게」: 룰북 탭은 꾸밈 「대학」 캠페인에만 (js/rb_ui.js) */
  const rbOn=()=>skin()==='univ';
  const tabOk=([k])=>k==='rb'?rbOn():(k!=='set'||gm()||me());
  /* 10-29: 각성체 DB 는 GM만. 10-30 망령 「PC 시트 옆에 NPC 시트」: NPC 시트는 GM, 또는 공개된 NPC 가 있을 때만 */
- const subOk=v=>v==='rb'?rbOn():v==='awdb'?gm():v==='npc'?(gm()||list('npc').length>0):true;
+ const subOk=v=>v==='rb'?rbOn():v==='awdb'||v==='cast'?gm():v==='npc'?(gm()||list('npc').length>0):true;
  const subGet=t=>{try{const v=localStorage.getItem('nt_sub_'+t[0]);return t[2].includes(v)&&subOk(v)?v:t[2][0]}catch(e){return t[2][0]}};
  /* 묶인 화면은 머리글(h2) 자리에 「항목 · 관계도」 같은 작은 탭을 둔다 */
  function subTabs(main){const t0=tabOf(ST.view);const t=[t0[0],t0[1],t0[2].filter(v=>subOk(v)||v===ST.view)];if(t[2].length<2)return;try{localStorage.setItem('nt_sub_'+t[0],ST.view)}catch(e){}
@@ -297,7 +297,7 @@ window.NT=(()=>{
    if(t.closest('.vtcur')){const s=t.closest('.vtsw');s.classList.toggle('open');return}};
   const pas=$('[data-plvas]',top);if(pas)pas.onchange=()=>plViewSet(true,pas.value);
   if(!window._vtswBound){window._vtswBound=1;document.addEventListener('pointerdown',ev=>{if(!ev.target.closest('.vtsw'))$$('.vtsw.open').forEach(x=>x.classList.remove('open'))},{capture:true})}}
- function go(v){v=VIEWS.some(x=>x[0]===v)?v:'map';if(v==='rb'&&!rbOn())v='ents';if(v!==ST.view&&window.NT_FLOWMAP&&NT_FLOWMAP.markFresh)NT_FLOWMAP.markFresh();if(v!==ST.view){document.body.classList.remove('topmore');if(document.body.classList.contains('present'))presentSet(false)}ST.view=v;setHash();render();try{localStorage.setItem('nt_view',ST.view)}catch(e){}}
+ function go(v){v=VIEWS.some(x=>x[0]===v)?v:'map';if(v!==ST.view){if(ST.view==='blue'&&window.NT_BLUE&&NT_BLUE.close)NT_BLUE.close();if(ST.view==='cast'&&window.NT_CAST&&NT_CAST.close)NT_CAST.close()}/* 11-13 옆 창은 화면을 떠나면 닫는다 */if(v==='rb'&&!rbOn())v='ents';if(v!==ST.view&&window.NT_FLOWMAP&&NT_FLOWMAP.markFresh)NT_FLOWMAP.markFresh();if(v!==ST.view){document.body.classList.remove('topmore');if(document.body.classList.contains('present'))presentSet(false)}ST.view=v;setHash();render();try{localStorage.setItem('nt_view',ST.view)}catch(e){}}
 
  /* ----- 로비 ----- */
  async function renderLobby(app){if(window.NT_ACCT)await NT_ACCT.me();const AC=window.NT_ACCT&&NT_ACCT.tok()&&DBS().acct;
