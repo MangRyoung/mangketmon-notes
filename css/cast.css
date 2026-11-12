@@ -52,6 +52,7 @@
 .cg-desc:hover{background:rgba(255,255,255,.04)}
 .cg-add{margin:0 8px;border:1px dashed var(--line2);background:transparent;color:var(--mute);font:inherit;font-size:12.5px;padding:8px;cursor:pointer}
 .cg-add:hover{color:var(--fg);border-color:var(--ac)}
+.cg-addall{border-style:solid;color:var(--fg);border-color:color-mix(in srgb,var(--ac) 60%,var(--line2))}
 .cg-empty .btn{min-width:150px}
 
 /* 옆 창 — 넓은 화면에선 판을 옆 창만큼 비켜 둔다 (도안과 같이) */

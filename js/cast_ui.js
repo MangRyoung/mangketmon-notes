@@ -44,6 +44,8 @@
  const isPub=id=>{if(!id||!ent(id))return false;const d=N().doc('ents',id);return !!d&&d.vis==='pub'};
  const blankMem=m=>!(m.name||m.img||m.ent||m.npc||m.line||m.note||m.pub);
  const realArc=g=>g&&g.arc&&N().data('arcs',g.arc)?g.arc:'';
+ /* 11-13 08:26 망령 「학장이랑 선생 넣을 그룹이 없네」: 사건과 상관없는 「상시」 열(arc '_all') — 교사진 같은 캠페인 내내 나오는 그룹 */
+ const ALL='_all';const colOf=g=>g&&g.arc===ALL?ALL:realArc(g);
 
  /* ---- 저장 ---- */
  const gSave=(gid,fn)=>N().patch('grp',gid,x=>{x.mem=x.mem||[];return fn(x)});
@@ -65,13 +67,13 @@
  async function memStep(gid,mid,d){await gSave(gid,x=>{const i=x.mem.findIndex(y=>y.id===mid),j=i+d;if(i<0||j<0||j>=x.mem.length)return false;const t=x.mem[i];x.mem[i]=x.mem[j];x.mem[j]=t})}
  /* 그룹을 다른 사건 열로 (before 그룹 앞에) — 사건이 바뀌면 단서도 따라간다 */
  async function grpPlace(gid,arc,before){const L=grps();const g=L.find(x=>x.id===gid);if(!g||before===gid)return;const from=realArc(g);
-  const col=L.filter(x=>(realArc(x)||'')===arc&&x.id!==gid);const i=before?col.findIndex(x=>x.id===before):-1;if(i>=0)col.splice(i,0,g);else col.push(g);
+  const col=L.filter(x=>(colOf(x)||'')===arc&&x.id!==gid);const i=before?col.findIndex(x=>x.id===before):-1;if(i>=0)col.splice(i,0,g);else col.push(g);
   const base=Math.max(0,...L.map(x=>x.order||0))+1;const rows=[];col.forEach((x,k)=>{const nx=Object.assign(clone(x),{order:base+k},x.id===gid?{arc}:{});rows.push({kind:'grp',id:x.id,data:nx,vis:'gm'})});
   if(N().putMany)await N().putMany(rows);else for(const r of rows)await N().put('grp',r.id,r.data,'gm');
-  if(from!==arc)await clueCarry(gid,from,arc)}
- async function grpStep(gid,d){const g=N().data('grp',gid);if(!g)return;const a=realArc(g);const col=grps().filter(x=>realArc(x)===a);const i=col.findIndex(x=>x.id===gid),j=i+d;if(j<0||j>=col.length)return;
+  const to=arc===ALL?'':arc;if(from!==to)await clueCarry(gid,from,to)}
+ async function grpStep(gid,d){const g=N().data('grp',gid);if(!g)return;const a=colOf(g);const col=grps().filter(x=>colOf(x)===a);const i=col.findIndex(x=>x.id===gid),j=i+d;if(j<0||j>=col.length)return;
   return grpPlace(gid,a,d<0?col[j].id:(col[j+1]?col[j+1].id:''))}
- async function setArc(gid,to){const g=N().data('grp',gid);if(!g)return;const from=realArc(g);await gSave(gid,x=>{x.arc=to});if(from!==to)await clueCarry(gid,from,to)}
+ async function setArc(gid,to){const g=N().data('grp',gid);if(!g)return;const from=realArc(g);await gSave(gid,x=>{x.arc=to});const t=to===ALL?'':to;if(from!==t)await clueCarry(gid,from,t)}
  /* 그림 올리기 */
  async function upImg(gid,mid,f){if(!f)return;let u;try{u=await N().upload(f,'thumb','grp')}catch(e){return N().toast('그림을 올리지 못했어요')}if(!u)return;
   if(mid){await mSave(gid,mid,m=>{m.img=u});await pubSync(gid,mid)}else mid=await memAdd(gid,{img:u});
@@ -140,10 +142,15 @@
   [1,'뒷골목','비공식 정보 쪽 — 공장 지대 뒷사정',[['뒷골목 청년','face'],['뒷골목 정보상','info'],['운하 뱃사공','con']]],
   [2,'대성당','마지막 사건의 큰 이야기',[['대성당 수녀','face'],['대성당 사제','info'],['대성당 교주','con']]],
   [2,'병원·구빈원','도시의 울적한 쪽 — 사람 냄새 나는 동기',[['구빈원 소녀','face'],['시립 병원 의사','info'],['구빈원 관리인','con']]]];
+ /* 상시 그룹: 학장 + 선생 넷(지시 · 육성 · 통솔 · 능력 — 73). 이름만 — 정체 · 배신 같은 건 GM 설정에 망령 님이 적는다 */
+ const SEED_ALL=['교사진','학장과 선생들 — 캠페인 내내 나오는 사람들',['학장','지시 교수','육성 선생','통솔 선생','능력 선생']];
+ const seedAllRow=base=>{const [name,line,mm]=SEED_ALL;return {kind:'grp',id:N().uid('g'),vis:'gm',data:{order:base,arc:ALL,name,color:'#d4a017',line,pub:'',desc:'',place:'',note:'',ent:'',hold:[],mem:mm.map(n=>{const e=chars().find(x=>x.title===n||String(x.title).startsWith(n));return newMem({name:e?e.title:n,ent:e?e.id:''})})}}};
+ async function seedAll(){const base=Math.max(-1,...grps().map(x=>x.order||0))+1;const r=seedAllRow(base);await N().put('grp',r.id,r.data,'gm');N().toast('교사진 그룹을 「상시」 열에 넣었어요 — 이름은 자료 항목과 같으면 저절로 이어요');return r.id}
  async function seed(){const A=arcs();if(grps().length&&!await N().confirmBox('지금 그룹은 그대로 두고 뒤에 더할까요?','더하기'))return;
   const base=Math.max(-1,...grps().map(x=>x.order||0))+1;const rows=SEED.map(([ai,name,line,mm],k)=>{const a=A[ai];return {kind:'grp',id:N().uid('g'),vis:'gm',data:{order:base+k,arc:a?a.id:'',name,color:a?arcCol(a,ai):PAL[k%PAL.length],line,pub:'',desc:'',place:'',note:'',ent:'',hold:[],mem:mm.map(([n,r])=>{const e=chars().find(x=>x.title===n);return newMem({name:n,role:r,ent:e?e.id:''})})}}});
+  if(!grps().some(g=>g.arc===ALL))rows.unshift(seedAllRow(base-1));
   if(N().putMany)await N().putMany(rows);else for(const r of rows)await N().put('grp',r.id,r.data,'gm');
-  N().toast(A.length>=3?'그룹 5개를 넣었어요 — 인물 칸에 그림을 끌어 놓아요':'그룹 5개를 넣었어요 (도안의 사건이 모자라 일부는 「사건 미정」에)')}
+  N().toast(A.length>=3?'그룹 5개(+ 상시 교사진)를 넣었어요 — 인물 칸에 그림을 끌어 놓아요':'그룹 5개를 넣었어요 (도안의 사건이 모자라 일부는 「사건 미정」에)')}
 
  /* ---- 서랍: 자료의 인물 항목 · NPC 시트를 끌어 놓기 ---- */
  const DKEY='nt_cg_drawer';const dGet=()=>{try{return localStorage.getItem(DKEY)||'ents'}catch(e){return 'ents'}};const dSet=v=>{try{localStorage.setItem(DKEY,v)}catch(e){}};
@@ -158,19 +165,19 @@
  function render(el){if(window.NT_BLUE&&NT_BLUE.close)NT_BLUE.close();const G=N().gm();
   if(!G){panelClose();el.innerHTML=`<div class="toolbar"><h2>조직</h2></div><div class="empty">조직 판은 GM만 봐요.</div>`;return}
   const A=arcs(),L=grps();const nm=L.reduce((s,g)=>s+(g.mem||[]).filter(m=>!blankMem(m)).length,0);const ni=L.reduce((s,g)=>s+(g.mem||[]).filter(m=>imgOf(m)).length,0);const nc=L.reduce((s,g)=>s+clues(g.id).length,0);
-  const cols=[...A.map((a,i)=>({id:a.id,a,i})),{id:'',a:null,i:A.length}];const showNone=!A.length||L.some(g=>!realArc(g));const C=showNone?cols:cols.slice(0,-1);
+  const cols=[{id:ALL,a:null,i:-1,all:1},...A.map((a,i)=>({id:a.id,a,i})),{id:'',a:null,i:A.length}];const showNone=!A.length||L.some(g=>colOf(g)==='');const C=showNone?cols:cols.slice(0,-1);
   el.innerHTML=`<div class="toolbar"><h2>조직</h2><span class="note">그룹 ${L.length}개 · 인물 ${nm}명 · 그림 ${ni}장 · 단서 ${nc}개</span><span class="sp"></span>${L.length?`<button class="btn sm" data-c="gnew" data-arc="">＋ 그룹</button><button class="btn sm ghost" data-c="copy" title="조직 판 전체를 글(마크다운)로 복사">⧉ 글로 복사</button>`:''}</div>
    <div class="cg-tip small dim"><b>누르면</b> 옆 창에서 자세히 · 이름을 <b>두 번 누르면</b> 그 자리에서 고치기 · <b>우클릭</b>(휴대폰은 길게 누르기) 메뉴 · 그림 파일이나 서랍의 인물을 <b>끌어 놓기</b> · 인물 · 그룹 머리를 끌어 옮기기.</div>
    ${L.length?drawerHtml():''}
    ${L.length?`<div class="cg-wrap"><div class="cg-board" style="--n:${C.length}">${C.map(c=>colHtml(c,L)).join('')}</div></div>`:emptyHtml(A)}`;
   bind(el);panelSync()}
- function emptyHtml(A){return `<div class="empty cg-empty"><b>아직 그룹이 없어요.</b><p class="small">사건 1 = 학교 · 사건 2 · 3 = 조직 둘씩 (11-13 정한 틀).${A.length?'':'<br>도안에 큰 사건이 아직 없어 「사건 미정」 열에 놓여요.'}</p>
-  <div class="row" style="justify-content:center;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn pri" data-c="seed" title="학교 · 시청·경관 · 뒷골목 · 대성당 · 병원·구빈원 — 이름과 역할만 넣고 설정은 비워 둬요">11-13 배치 안으로 5개 넣기</button><button class="btn ghost" data-c="gnew" data-arc="">빈 그룹 하나</button></div></div>`}
- function colHtml(c,L){const a=c.a;const col=a?arcCol(a,c.i):'#8a8a8a';const G=L.filter(g=>a?realArc(g)===a.id:!realArc(g));
+ function emptyHtml(A){return `<div class="empty cg-empty"><b>아직 그룹이 없어요.</b><p class="small">상시 = 학장 · 선생들 · 사건 1 = 학교 · 사건 2 · 3 = 조직 둘씩 (11-13 정한 틀).${A.length?'':'<br>도안에 큰 사건이 아직 없어 「사건 미정」 열에 놓여요.'}</p>
+  <div class="row" style="justify-content:center;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn pri" data-c="seed" title="상시 교사진 + 학교 · 시청·경관 · 뒷골목 · 대성당 · 병원·구빈원 — 이름과 역할만 넣고 설정은 비워 둬요">11-13 배치 안으로 넣기 (교사진 + 5개)</button><button class="btn ghost" data-c="gnew" data-arc="">빈 그룹 하나</button></div></div>`}
+ function colHtml(c,L){const a=c.a;const col=c.all?'#d4a017':a?arcCol(a,c.i):'#8a8a8a';const G=L.filter(g=>colOf(g)===c.id);
   return `<section class="cg-col" style="--ac:${esc(col)}" data-col="${esc(c.id)}">
-   <header class="cg-ch">${a?`<span class="cg-no">${String(c.i+1).padStart(2,'0')}</span><span class="cg-cm"><small>CASE ${c.i+1}</small><b>${esc(a.name||'(이름 없음)')}</b></span>`:`<span class="cg-cm"><small>UNSORTED</small><b>사건 미정</b></span>`}<span class="cg-cn">${G.length}개</span></header>
+   <header class="cg-ch">${c.all?`<span class="cg-no">∞</span><span class="cg-cm"><small>ALWAYS</small><b>상시 · 교사진</b></span>`:a?`<span class="cg-no">${String(c.i+1).padStart(2,'0')}</span><span class="cg-cm"><small>CASE ${c.i+1}</small><b>${esc(a.name||'(이름 없음)')}</b></span>`:`<span class="cg-cm"><small>UNSORTED</small><b>사건 미정</b></span>`}<span class="cg-cn">${G.length}개</span></header>
    ${G.map(g=>grpHtml(g,L.indexOf(g))).join('')}
-   <button type="button" class="cg-add" data-c="gnew" data-arc="${esc(c.id)}">＋ 그룹</button></section>`}
+   ${c.all&&!G.length?`<button type="button" class="cg-add cg-addall" data-c="seedall" title="학장 · 지시 · 육성 · 통솔 · 능력 — 이름만 넣어요">＋ 교사진 그룹 넣기 (학장 · 선생 넷)</button>`:''}<button type="button" class="cg-add" data-c="gnew" data-arc="${esc(c.id)}">＋ 그룹</button></section>`}
  function grpHtml(g,i){const col=grpCol(g,i);const M=g.mem||[];const slots=M.map(m=>memHtml(g,m)).concat(Array.from({length:Math.max(0,MIN-M.length)},(_,k)=>emptySlot(g,k)));
   const sel=P&&P.gid===g.id&&!P.mid?'cg-sel':'';const C=clues(g.id);const ok=C.filter(c=>c.ok).length;const nCard=M.filter(m=>m.ent&&ent(m.ent)).length;const nPub=M.filter(m=>isPub(m.ent)).length;
   return `<article class="cg-grp ${sel}" style="--gc:${esc(col)}" data-g="${esc(g.id)}">
@@ -189,7 +196,7 @@
  function outline(){const A=arcs(),L=grps();const out=['# 조직 (NPC 그룹)'];const sec=(t,G)=>{if(!G.length)return;out.push('',`## ${t}`);G.forEach(g=>{out.push('',`### ${g.name||'(그룹)'}${g.place?` — 📍 ${g.place}`:''}`);if(g.line)out.push(g.line);if(g.pub)out.push('','공개 소개: '+String(g.pub).replace(/\n/g,'\n  '));if(g.desc)out.push('','GM 설정: '+String(g.desc).replace(/\n/g,'\n  '));
   (g.mem||[]).forEach(m=>{out.push(`- ${nameOf(m)||'(이름)'}${m.role?` [${RL[m.role]}]`:''}${m.line?' — '+m.line:''}`);if(m.pub)out.push('  공개: '+String(m.pub).replace(/\n/g,'\n  '));if(m.note)out.push('  GM: '+String(m.note).replace(/\n/g,'\n  '))});
   clues(g.id).forEach(c=>{const w=(g.mem||[]).find(m=>m.id===c.who);out.push(`- 단서 [${c.ok?'x':' '}] ${c.t||''}${w?` (${nameOf(w)})`:''}${c.d?' — '+c.d:''}`)});if(g.note)out.push('','메모: '+g.note)})};
-  A.forEach((a,i)=>sec(`사건 ${i+1}. ${a.name||''}`,L.filter(g=>realArc(g)===a.id)));sec('사건 미정',L.filter(g=>!realArc(g)));return out.join('\n')}
+  sec('상시 · 교사진',L.filter(g=>colOf(g)===ALL));A.forEach((a,i)=>sec(`사건 ${i+1}. ${a.name||''}`,L.filter(g=>realArc(g)===a.id)));sec('사건 미정',L.filter(g=>colOf(g)===''));return out.join('\n')}
  async function copyOut(){const t=outline();try{await navigator.clipboard.writeText(t);N().toast('조직 판을 글로 복사했어요')}catch(e){N().openModal(`<div class="mhead"><h2>조직 (글)</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><textarea rows="18" style="width:100%" readonly>${esc(t)}</textarea>`)}}
 
  /* ---- 그 자리에서 이름 고치기 (두 번 누르기) ---- */
@@ -211,7 +218,7 @@
   const h=t.closest('.cg-grp');if(!h)return [];const gid=h.dataset.g;const g=N().data('grp',gid);if(!g)return [];const A=arcs();
   return [{t:'고치기 (옆 창)',on:()=>panelOpen({gid})},{t:'이름 바꾸기',on:()=>{const b=h.querySelector('.cg-gn');if(b)inlineEdit(b)}},{t:'＋ 인물 더하기',on:async()=>{const mid=await memAdd(gid);panelOpen({gid,mid,focus:'name'})}},{t:'🔍 단서 더하기',on:()=>panelOpen({gid,focus:'clue'})},'-',
    {t:'📇 인물 카드 한꺼번에 만들기',on:()=>grpCards(gid)},isPub(g.ent)?{t:'🔒 조직 카드 GM만 보게',on:()=>pubSet(gid,'',false)}:{t:'👁 조직 카드 공개로',on:()=>pubSet(gid,'',true)},g.ent&&ent(g.ent)?{t:'📇 조직 카드 열기',on:()=>goEnt(g.ent)}:{t:'📇 조직 카드 만들기',on:()=>orgCard(gid)},{t:'▶ 웹툴 무대로',on:()=>toStage(gid)},'-',
-   {t:'▲ 위로',on:()=>grpStep(gid,-1)},{t:'▼ 아래로',on:()=>grpStep(gid,1)},...A.filter(a=>a.id!==realArc(g)).map(a=>({t:`→ 사건 ${arcIdx(a.id)+1}(으)로`,on:()=>grpPlace(gid,a.id,'')})),...(realArc(g)?[{t:'→ 사건 미정으로',on:()=>grpPlace(gid,'','')}]:[]),'-',
+   {t:'▲ 위로',on:()=>grpStep(gid,-1)},{t:'▼ 아래로',on:()=>grpStep(gid,1)},...(colOf(g)!==ALL?[{t:'→ 상시(교사진 열)로',on:()=>grpPlace(gid,ALL,'')}]:[]),...A.filter(a=>a.id!==colOf(g)).map(a=>({t:`→ 사건 ${arcIdx(a.id)+1}(으)로`,on:()=>grpPlace(gid,a.id,'')})),...(colOf(g)?[{t:'→ 사건 미정으로',on:()=>grpPlace(gid,'','')}]:[]),'-',
    {t:'🗑 그룹 지우기',danger:1,on:()=>grpDel(gid)}]}
 
  /* ---- 판 단추 · 끌기 ---- */
@@ -223,7 +230,7 @@
    /* 서랍 칩을 누르면 넣을 그룹 고르기 (휴대폰은 끌기가 안 되니 이쪽으로) */
    const dr=e.target.closest('.bp-dr[data-dk]');if(dr&&N().ctxMenu){const r=dr.getBoundingClientRect();const L=grps();if(!L.length)return;N().ctxMenu(r.left,r.bottom+4,L.map(g=>({t:'→ '+(g.name||'(그룹)')+(realArc(g)?` · 사건 ${arcIdx(g.arc)+1}`:''),on:()=>dropDrawer(dr.dataset.dk,dr.dataset.did,g.id,'')})));return}
    const b=e.target.closest('[data-c]');if(!b||!el.contains(b))return;const k=b.dataset.c,id=b.dataset.id;
-   if(k==='seed')return seed();if(k==='copy')return copyOut();
+   if(k==='seed')return seed();if(k==='copy')return copyOut();if(k==='seedall'){const gid=await seedAll();return panelOpen({gid})}
    if(k==='gnew'){const gid=await grpNew(b.dataset.arc||'');return panelOpen({gid,focus:'name'})}
    if(k==='mnew'){e.stopPropagation();const mid=await memAdd(id);return panelOpen({gid:id,mid,focus:'name'})}
    if(k==='clue'){e.stopPropagation();return panelOpen({gid:id,focus:'clue'})}
@@ -247,7 +254,7 @@
    const D=DRAG;DRAG=null;if(!D)return;
    if(D.t==='dr')return dropDrawer(D.k,D.id,gid,mid);
    if(D.t==='mem')return memMove(D.gid,D.mid,gid,mid);
-   if(t.classList.contains('cg-grp')){const g=N().data('grp',t.dataset.g);if(g)return grpPlace(D.gid,realArc(g),t.dataset.g);return}
+   if(t.classList.contains('cg-grp')){const g=N().data('grp',t.dataset.g);if(g)return grpPlace(D.gid,colOf(g),t.dataset.g);return}
    if(t.classList.contains('cg-col'))return grpPlace(D.gid,t.dataset.col,'')})}
 
  /* ---- 옆 창 (도안과 같은 모양 · .bp-panel 을 같이 쓴다) ---- */
@@ -262,7 +269,7 @@
  const txa=(f,v,rows,ph)=>`<textarea data-f="${f}" rows="${rows||3}" placeholder="${esc(ph||'')}">${esc(v||'')}</textarea>`;
  /* 단서 칸 (그룹 = 그룹 전체 · 인물 = 그 인물이 쥔 것) */
  function clueSec(g,mid){const L=clues(g.id,mid);const arcOk=!!realArc(g);const ms=g.mem||[];const open=P.copen||{};
-  return `<div class="bp-f bp-cl cg-clsec"><label>단서<small>${arcOk?`도안 「사건 ${arcIdx(g.arc)+1}」 단서와 같은 것 · ${L.filter(c=>c.ok).length} / ${L.length} 찾음`:'사건 미정 — 그룹이 맡아 둬요 (사건에 놓으면 도안 · 웹툴과 이어져요)'}</small></label>
+  return `<div class="bp-f bp-cl cg-clsec"><label>단서<small>${arcOk?`도안 「사건 ${arcIdx(g.arc)+1}」 단서와 같은 것 · ${L.filter(c=>c.ok).length} / ${L.length} 찾음`:(g.arc===ALL?'상시 그룹':'사건 미정')+' — 그룹이 맡아 둬요 (사건에 놓으면 도안 · 웹툴과 이어져요)'}</small></label>
    ${L.map(c=>{const w=ms.find(m=>m.id===c.who);const op=open[c.id];return `<div class="bp-cr ${c.ok?'ok':''}"><div class="bp-cr1"><input type="checkbox" data-cok="${esc(c.id)}" ${c.ok?'checked':''} title="찾음"><input type="text" data-cf="t|${esc(c.id)}" value="${esc(c.t||'')}" placeholder="단서 이름">${!mid&&w?`<small class="cg-cwho" title="이 단서를 쥔 인물">${esc(nameOf(w))}</small>`:''}<button type="button" class="bp-mini ${op?'on':''}" data-cop="${esc(c.id)}" title="설명 · 그림 · 쥔 인물">⋯</button><button type="button" class="bp-mini" data-cshow="${esc(c.id)}" title="웹툴 방에 지금 공개" ${arcOk?'':'disabled'}>🔍</button><button type="button" class="bp-mini" data-cdel="${esc(c.id)}" title="지우기">✕</button></div>
     ${op?`<div class="bp-cr2"><textarea data-cf="d|${esc(c.id)}" rows="2" placeholder="설명 — 웹툴 단서 카드에 나오는 글">${esc(c.d||'')}</textarea><input type="text" data-cf="img|${esc(c.id)}" value="${esc(c.img||'')}" placeholder="그림 주소 (선택)"><select data-cf="who|${esc(c.id)}"><option value="">쥔 인물 없음 (그룹)</option>${ms.map(m=>`<option value="${esc(m.id)}" ${c.who===m.id?'selected':''}>${esc(nameOf(m)||'(이름)')}</option>`).join('')}</select></div>`:''}</div>`}).join('')}
    <input type="text" class="bp-cnew" data-nosave data-cnew placeholder="＋ 단서 적고 Enter">
@@ -272,9 +279,9 @@
   return `<div class="bp-f cg-pubf ${on?'on':''}"><label>👁 공개 소개<small>${on?'공개 중 — 자료 탭 항목 칸에서 PL 도 봐요 · 고치면 저절로 맞춰요':'「공개로」를 누르면 이 글만 PL 에게 보여요'}</small></label>${txa('pub',v,4,m?'PL 이 알아도 되는 것 — 겉모습 · 하는 일 · 평판':'PL 이 알아도 되는 것 — 겉으로 알려진 모습 · 하는 일')}
    <div class="cg-acts"><span class="cg-pubst ${on?'on':''}">${on?'👁 공개 중':has?'🔒 GM만 (카드 있음)':'🔒 GM만'}</span><span class="sp"></span>${on?`<button type="button" class="btn xs ghost" data-p="pubx">🔒 GM만 보게</button><button type="button" class="btn xs ghost" data-p="pubgo">📇 항목 보기</button>`:`<button type="button" class="btn xs pri" data-p="pub">👁 공개로 (${m?'인물':'조직'} 카드)</button>`}</div></div>`}
  function panelDraw(){const el=panelEl();if(!el||!P)return;const g=N().data('grp',P.gid);if(!g)return panelClose();const L=grps();const gi=L.findIndex(x=>x.id===g.id);const col=grpCol(g,gi);const keep=el.scrollTop;let body='',foot='',kick='';const A=arcs();
-  if(!P.mid){kick=`<b>GROUP</b><span>그룹 · 조직${realArc(g)?' · 사건 '+(arcIdx(g.arc)+1):''}</span>`;const oc=g.ent&&ent(g.ent);
+  if(!P.mid){kick=`<b>GROUP</b><span>그룹 · 조직${realArc(g)?' · 사건 '+(arcIdx(g.arc)+1):g.arc===ALL?' · 상시':''}</span>`;const oc=g.ent&&ent(g.ent);
    body=`<input type="text" class="bp-title" data-f="name" value="${esc(g.name||'')}" placeholder="그룹 이름 — 예: 대성당">`
-    +fld('사건',`<select data-f="arc"><option value="">사건 미정</option>${A.map((a,i)=>`<option value="${esc(a.id)}" ${realArc(g)===a.id?'selected':''}>사건 ${i+1} · ${esc(a.name||'')}</option>`).join('')}</select>`,'도안의 큰 사건 · 바꾸면 단서도 따라가요')
+    +fld('사건',`<select data-f="arc"><option value="">사건 미정</option><option value="${ALL}" ${g.arc===ALL?'selected':''}>상시 (교사진 · 캠페인 내내)</option>${A.map((a,i)=>`<option value="${esc(a.id)}" ${realArc(g)===a.id?'selected':''}>사건 ${i+1} · ${esc(a.name||'')}</option>`).join('')}</select>`,'도안의 큰 사건 · 바꾸면 단서도 따라가요')
     +fld('색',`<div class="bp-sw" data-seg="color">${PAL.map(c=>`<button type="button" data-v="${c}" class="${(g.color||'')===c?'on':''}" style="--c:${c}" title="${c}"></button>`).join('')}</div>`)
     +fld('한 줄',inp('line',g.line,'이 그룹이 이야기에서 맡는 것'),'판에만 보여요 (GM)')
     +fld('커뮤 장소',inp('place',g.place,'PL 이 이 그룹을 만나러 가는 곳 — 예: 대성당 회랑'))
