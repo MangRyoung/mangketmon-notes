@@ -523,7 +523,7 @@
   if(k==='mksup'){await MK().pickSupport();return}
   if(k==='mksync'){await mkSync();return}
   const KD=K();const NPC=U.mode==='npc';
-  if(k==='add'||k==='mine'){await MK().load(true);let ts=MK().trainers().filter(t=>!N().data(KD,t.id));if(NPC)ts.sort((a,b)=>MK().isNpc(b)-MK().isNpc(a)||String(a.folder||'').localeCompare(String(b.folder||''),'ko'));if(k==='mine')ts=ts.filter(t=>t.id===N().me());if(!ts.length&&!(k==='add'&&N().gm()))return N().toast(k==='mine'?'제작기에 내 좌석 id 의 트레이너가 없어요 (GM 이 좌석을 트레이너 id 로 만들어야 해요)':'넣을 트레이너가 없어요 (제작기에서 먼저 만들어요)');
+  if(k==='add'||k==='mine'){await MK().load(true);let ts=MK().trainers().filter(t=>!N().data('pc',t.id)&&!N().data('npc',t.id));   /* 11-13 망령 「골라 넣기 PC 쪽에서 왜 NPC 에 넣어 둔 것도 보이지」: PC · NPC 어느 쪽이든 이미 넣은 트레이너는 뺀다 (막대의 「아직 안 넣은」 수와 같게) */if(NPC)ts.sort((a,b)=>MK().isNpc(b)-MK().isNpc(a)||String(a.folder||'').localeCompare(String(b.folder||''),'ko'));if(k==='mine')ts=ts.filter(t=>t.id===N().me());if(!ts.length&&!(k==='add'&&N().gm()))return N().toast(k==='mine'?'제작기에 내 좌석 id 의 트레이너가 없어요 (GM 이 좌석을 트레이너 id 로 만들어야 해요)':'넣을 트레이너가 없어요 (제작기에서 먼저 만들어요)');
    if(k==='mine'){await N().put('pc',ts[0].id,{name:ts[0].name,image:ts[0].image||'',player:'',sub:'',order:pcs().length,log:[]},'pub');U.sel=ts[0].id;N().render();return}
    /* 11-05 23:38 망령 「PC 넣기도 미사그 폴더에 연동된 것만 체크 · 전부 넣기 말고 지정한 것만 넣는 기능」: 이어 둔 폴더(하위 폴더 포함) 트레이너가 처음에 체크돼 있고 그것만 보인다. 카드를 눌러 체크를 켜고 끄고 「선택한 N명 넣기」 */
    const LS=new Set(MK().linkedTrainers().map(t=>t.id)),hasL=MK().linked().length>0;const sel=new Set(ts.filter(t=>LS.has(t.id)).map(t=>t.id));
