@@ -30,7 +30,7 @@
 .cg-m:hover .cg-pt,.cg-m:focus-visible .cg-pt{border-color:var(--gc);transform:translateY(-1px)}
 .cg-m.cg-sel .cg-pt{border-color:#fff;box-shadow:0 0 0 2px var(--gc)}
 .cg-m.cg-over .cg-pt{border:2px dashed #fff}
-.cg-ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;color:#6b6b74;line-height:1.35}
+.cg-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:13px;color:#6b6b74;line-height:1.35}
 .cg-ph small{font-size:10.5px}
 .cg-m.empty .cg-pt{border-style:dashed;background:transparent}
 .cg-m.empty:hover .cg-ph{color:var(--fg)}
@@ -82,3 +82,33 @@
  .cg-mn{font-size:12px}
  .cg-ml{display:none}
 }
+
+/* 11-13 08:12 · 08:15 — 서랍 · 단서 · 카드 · 공개 */
+.cg-drawer{margin-bottom:12px}
+.cg-drawer .bp-dr.cg-used{opacity:.45}
+.cg-gf{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:0 10px 9px}
+.cg-gf .sp{flex:1}
+.cg-cl{display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-size:12px;cursor:pointer}
+.cg-cl i{font-style:normal;padding:1px 7px;border:1px solid var(--line2);background:rgba(127,127,127,.12)}
+.cg-cl i.ok{border-color:#3d9a5c;color:#9be0b1;text-decoration:line-through;text-decoration-color:rgba(155,224,177,.5)}
+.cg-cl small{color:var(--mute);font-size:11px}
+.cg-mini{border:1px dashed var(--line2);background:transparent;color:var(--mute);font:inherit;font-size:11.5px;padding:2px 8px;cursor:pointer}
+.cg-mini:hover{color:var(--fg);border-color:var(--gc)}
+.cg-badge{font-size:11px;color:var(--mute);border:1px solid var(--line2);padding:1px 7px}
+.cg-badge.pub{color:#fff;background:#2f7d4f;border-color:#2f7d4f}
+.cg-mk{position:absolute;right:3px;top:3px;display:flex;gap:2px}
+.cg-mk i{font-style:normal;font-size:10.5px;line-height:1;padding:3px 4px;background:rgba(0,0,0,.6);color:#fff}
+.cg-mk i.cg-pubk{background:#2f7d4f}
+.cg-inl{font:inherit;font-size:inherit;font-weight:inherit;color:var(--fg);background:#050506;border:1px solid var(--gc,var(--red));padding:1px 4px;max-width:100%;box-sizing:border-box}
+.cg-acts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.cg-acts .sp{flex:1}
+.cg-pubf{padding:8px 9px;border:1px solid var(--line2);background:rgba(47,125,79,.06)}
+.cg-pubf.on{border-color:#2f7d4f;background:rgba(47,125,79,.14)}
+.cg-pubst{font-size:12px;color:var(--mute)}
+.cg-pubst.on{color:#8fe0ac;font-weight:700}
+.cg-cwho{font-size:11px;color:var(--mute);white-space:nowrap;max-width:7em;overflow:hidden;text-overflow:ellipsis}
+.cg-clsec .bp-cr2{display:flex;flex-direction:column;gap:5px;margin-top:5px}
+.bp-mini:disabled{opacity:.35;cursor:default}
+.cg-desc b{font-weight:700;font-size:11px;color:var(--mute);margin-right:2px}
+.cg-desc.pub{border-left-color:#2f7d4f;background:rgba(47,125,79,.10);margin-bottom:6px;-webkit-line-clamp:3}
+.cg-desc.pub b{color:#8fe0ac}
