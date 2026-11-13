@@ -186,3 +186,42 @@
 .bp-allk{display:flex;flex-direction:column;justify-content:center;padding:0 8px;border-right:1px solid var(--line2)}
 .bp-allk small{font-size:10px;letter-spacing:.14em;color:var(--mute)}
 .bp-allk b{font-size:15px;color:#d4a017}
+
+/* 11-13 시나리오 「던전」 (dgplan_ui) */
+.dp-board{display:grid;grid-template-columns:repeat(var(--n,3),minmax(330px,1fr));gap:14px;align-items:start}
+.dp-col{display:flex;flex-direction:column;gap:10px;border-top:4px solid var(--ac);background:linear-gradient(180deg,color-mix(in srgb,var(--ac) 12%,transparent),transparent 160px);padding-bottom:8px}
+.dp-sec{margin:0 8px;border:1px solid var(--line2);background:rgba(10,10,12,.6);padding:8px 10px;display:flex;flex-direction:column;gap:8px}
+.dp-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dp-h b{font-size:14px;font-weight:800}
+.dp-h small{color:var(--mute);font-size:11.5px;flex:1}
+.dp-h select,.dp-sec>select{background:#15151b;border:1px solid #34343d;color:var(--fg);font:inherit;font-size:12.5px;padding:3px 6px}
+.dp-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px 8px}
+.dp-f{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:12px;color:#c9c9d1;padding:2px 4px;border-left:2px solid transparent}
+.dp-f.chg{border-left-color:var(--ac);background:rgba(255,255,255,.03)}
+.dp-f input[type=text],.dp-f input[type=number]{width:70px;background:#15151b;border:1px solid #34343d;color:#f1f1f4;font:inherit;font-size:13px;padding:3px 5px;text-align:right}
+.dp-f input:focus{outline:0;border-color:var(--ac)}
+.dp-dg{display:grid;grid-template-columns:110px 1fr;gap:8px;align-items:start;border-top:1px dashed var(--line2);padding-top:8px}
+.dp-dg:first-of-type{border-top:0}
+.dp-mini{cursor:pointer;border:1px solid var(--line2);background:#0b0b0e;min-height:70px;overflow:hidden}
+.dp-mini svg{width:100%;height:auto;display:block}
+.dp-dgb{display:flex;flex-direction:column;gap:3px;min-width:0}
+.dp-dgb>b{font-size:13.5px;cursor:pointer}
+.dp-dgb>b:hover{text-decoration:underline}
+.dp-dgb>small{font-size:11px;color:var(--mute)}
+.dp-bt{font-size:12px;color:#c9c9d1}
+.dp-chk{display:flex;flex-wrap:wrap;gap:4px}
+.dp-chk span{font-size:11px;padding:1px 7px;border:1px solid var(--line2)}
+.dp-chk .ok{border-color:#2f7d4f;color:#9fe6b8}
+.dp-chk .warn{border-color:#a8641a;color:#ffc27a}
+.dp-acts{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
+.dp-none{font-size:12px;color:#6e6e78;font-style:italic}
+.dp-sh{display:flex;align-items:center;gap:8px;padding:4px 6px;border:1px solid var(--line2);cursor:pointer}
+.dp-sh:hover{border-color:var(--ac)}
+.dp-sh i{width:28px;height:28px;border-radius:50%;background:#22222a center/cover no-repeat;flex:none}
+.dp-sh b{font-size:13px}
+.dp-sh small{flex:1;font-size:11px;color:var(--mute)}
+.dp-sh.none{border-style:dashed;cursor:default}
+.dp-free{margin-top:12px;font-size:12.5px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.dp-fd{border:1px solid var(--line2);padding:2px 8px;cursor:pointer}
+.dp-fd:hover{border-color:var(--red)}
+@media (max-width:760px){.dp-board{grid-template-columns:1fr}.dp-grid{grid-template-columns:1fr}}
