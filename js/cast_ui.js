@@ -41,6 +41,9 @@
  const faceOf=m=>m.face||((ent(m.ent)||{}).face)||npcImg(m.npc)||'';
  const imgOf=m=>stOf(m)||faceOf(m)||'';
  const nameOf=m=>m.name||((ent(m.ent)||{}).title)||((N().data('npc',m.npc)||{}).name)||'';
+ /* 이름 맞추기: 「(가칭)」 · 빈칸 · 가운뎃점을 빼고 비교 (「경비원·사감」 = 「경비원 · 사감 (가칭)」) */
+ const normName=s=>String(s||'').replace(/\(가칭\)/g,'').replace(/[\s·・]/g,'').trim();
+ const charByName=n=>{const k=normName(n);if(!k)return null;return chars().find(x=>normName(x.title)===k)||null};
  const chars=()=>N().list('ents').filter(x=>x&&x.title&&String(x.type||'')==='인물').sort((a,b)=>String(a.title).localeCompare(String(b.title),'ko'));
  const npcs=()=>N().list('npc').filter(x=>x&&x.name).sort((a,b)=>String(a.name).localeCompare(String(b.name),'ko'));
  const newMem=o=>Object.assign({id:N().uid('m'),name:'',role:'',img:'',face:'',line:'',pub:'',note:'',ent:'',npc:''},o||{});
@@ -109,7 +112,7 @@
  async function arcLinkEnt(gid,eid){const g=N().data('grp',gid);if(!realArc(g)||!eid)return;await arcSave(g.arc,x=>{if(x.ents.includes(eid))return false;x.ents.push(eid)})}
  async function memCard(gid,mid,quiet){const g=N().data('grp',gid);const m=mOf(gid,mid);if(!g||!m)return;if(m.ent&&ent(m.ent)){if(!quiet)goEnt(m.ent);return m.ent}
   const nm=nameOf(m);if(!nm){if(!quiet)N().toast('이름을 먼저 적어요');return}
-  const same=chars().find(x=>x.title===nm);if(same&&(quiet||await N().confirmBox(`자료에 같은 이름의 인물 「${nm}」이 있어요. 그 항목에 이을까요? (취소하면 새로 만들어요)`,'잇기'))){await mSave(gid,mid,x=>{x.ent=same.id});await arcLinkEnt(gid,same.id);if(!quiet)N().toast('인물 항목에 이었어요');return same.id}
+  const same=charByName(nm);if(same&&(quiet||await N().confirmBox(`자료에 같은 이름의 인물 「${nm}」이 있어요. 그 항목에 이을까요? (취소하면 새로 만들어요)`,'잇기'))){await mSave(gid,mid,x=>{x.ent=same.id});await arcLinkEnt(gid,same.id);if(!quiet)N().toast('인물 항목에 이었어요');return same.id}
   const id=N().uid('e');const rows=T_PERSON.map(k=>({k,v:''}));   /* 카드에는 공개해도 되는 것만 — GM 설정(note) · 역할 · 한 줄은 넣지 않는다 */
   await N().put('ents',id,{type:'인물',title:nm,sub:g.name||'',body:m.pub||'',rows,tags:[],teams:g.name?[g.name]:[],face:m.face||m.img||'',photo:m.img||'',at:[],created:Date.now(),order:N().list('ents').length},'gm');
   await mSave(gid,mid,x=>{x.ent=id});await arcLinkEnt(gid,id);if(!quiet)N().toast(`인물 카드 「${nm}」를 만들었어요 — 아직 GM만 (「👁 공개로」를 눌러야 PL 에게 보여요)`);return id}
@@ -135,6 +138,8 @@
   const id=N().uid('e');const face=(g.mem||[]).map(faceOf).find(Boolean)||'';   /* 공개해도 되는 것만 — GM 설정(desc) · 한 줄 · 장소는 넣지 않는다 */
   await N().put('ents',id,{type:'조직',title:g.name||'새 조직',sub:'',body:g.pub||'',rows:[{k:'목적',v:''},{k:'구성원',v:''},{k:'거점',v:''},{k:'가진 것',v:''},{k:'숨긴 것',v:''}],tags:[],teams:[],face,photo:'',at:[],created:Date.now(),order:N().list('ents').length},'gm');
   await gSave(gid,x=>{x.ent=id});await arcLinkEnt(gid,id);if(!quiet)N().toast(`조직 카드 「${g.name||'조직'}」를 만들었어요 (GM만 — 「👁 공개로」를 눌러야 PL 에게 보여요)`);return id}
+ /* 같은 이름의 인물 항목을 아직 안 이은 인물에 잇는다 (+ 그룹이 사건에 있으면 도안 관련 항목에도) */
+ async function linkByName(){let n=0;const miss=[];for(const g of grps()){for(const m of g.mem||[]){if(m.ent&&ent(m.ent))continue;const e=charByName(nameOf(m));if(!e){if(nameOf(m))miss.push(nameOf(m));continue}await mSave(g.id,m.id,x=>{x.ent=e.id});await arcLinkEnt(g.id,e.id);n++}}N().toast(n?`인물 항목 ${n}명을 이었어요${miss.length?` · 같은 이름이 없는 인물 ${miss.length}명`:''}`:'새로 이을 인물이 없어요');return {n,miss}}
  function goEnt(id){panelClose();if(window.NT_FAV)NT_FAV.go({kind:'ents',id});else N().go('ents')}
  /* 웹툴 무대로 (인물 카드가 있는 셋까지) */
  async function toStage(gid){const g=N().data('grp',gid);if(!g)return;if(!window.NT_PHONE||!NT_PHONE.sendScene)return N().toast('웹툴 연결을 불러오지 못했어요');
@@ -149,10 +154,10 @@
   [2,'병원·구빈원','도시의 울적한 쪽 — 사람 냄새 나는 동기',[['구빈원 소녀','face'],['시립 병원 의사','info'],['구빈원 관리인','con']]]];
  /* 상시 그룹: 학장 + 선생 넷(지시 · 육성 · 통솔 · 능력 — 73). 이름만 — 정체 · 배신 같은 건 GM 설정에 망령 님이 적는다 */
  const SEED_ALL=['교사진','학장과 선생들 — 캠페인 내내 나오는 사람들',['학장','지시 교수','육성 선생','통솔 선생','능력 선생']];
- const seedAllRow=base=>{const [name,line,mm]=SEED_ALL;return {kind:'grp',id:N().uid('g'),vis:'gm',data:{order:base,arc:ALL,name,color:'#d4a017',line,pub:'',desc:'',place:'',note:'',ent:'',hold:[],mem:mm.map(n=>{const e=chars().find(x=>x.title===n||String(x.title).startsWith(n));return newMem({name:e?e.title:n,ent:e?e.id:''})})}}};
+ const seedAllRow=base=>{const [name,line,mm]=SEED_ALL;return {kind:'grp',id:N().uid('g'),vis:'gm',data:{order:base,arc:ALL,name,color:'#d4a017',line,pub:'',desc:'',place:'',note:'',ent:'',hold:[],mem:mm.map(n=>{const e=charByName(n)||chars().find(x=>String(x.title).startsWith(n));return newMem({name:n,ent:e?e.id:''})})}}};
  async function seedAll(){const base=Math.max(-1,...grps().map(x=>x.order||0))+1;const r=seedAllRow(base);await N().put('grp',r.id,r.data,'gm');N().toast('교사진 그룹을 「상시」 열에 넣었어요 — 이름은 자료 항목과 같으면 저절로 이어요');return r.id}
  async function seed(){const A=arcs();if(grps().length&&!await N().confirmBox('지금 그룹은 그대로 두고 뒤에 더할까요?','더하기'))return;
-  const base=Math.max(-1,...grps().map(x=>x.order||0))+1;const rows=SEED.map(([ai,name,line,mm],k)=>{const a=A[ai];return {kind:'grp',id:N().uid('g'),vis:'gm',data:{order:base+k,arc:a?a.id:'',name,color:a?arcCol(a,ai):PAL[k%PAL.length],line,pub:'',desc:'',place:'',note:'',ent:'',hold:[],mem:mm.map(([n,r])=>{const e=chars().find(x=>x.title===n);return newMem({name:n,role:r,ent:e?e.id:''})})}}});
+  const base=Math.max(-1,...grps().map(x=>x.order||0))+1;const rows=SEED.map(([ai,name,line,mm],k)=>{const a=A[ai];return {kind:'grp',id:N().uid('g'),vis:'gm',data:{order:base+k,arc:a?a.id:'',name,color:a?arcCol(a,ai):PAL[k%PAL.length],line,pub:'',desc:'',place:'',note:'',ent:'',hold:[],mem:mm.map(([n,r])=>{const e=charByName(n);return newMem({name:n,role:r,ent:e?e.id:''})})}}});
   if(!grps().some(g=>g.arc===ALL))rows.unshift(seedAllRow(base-1));
   if(N().putMany)await N().putMany(rows);else for(const r of rows)await N().put('grp',r.id,r.data,'gm');
   N().toast(A.length>=3?'그룹 5개(+ 상시 교사진)를 넣었어요 — 인물 칸에 그림을 끌어 놓아요':'그룹 5개를 넣었어요 (도안의 사건이 모자라 일부는 「사건 미정」에)')}
@@ -171,7 +176,7 @@
   if(!G){panelClose();el.innerHTML=`<div class="toolbar"><h2>조직</h2></div><div class="empty">조직 판은 GM만 봐요.</div>`;return}
   const A=arcs(),L=grps();const nm=L.reduce((s,g)=>s+(g.mem||[]).filter(m=>!blankMem(m)).length,0);const ni=L.reduce((s,g)=>s+(g.mem||[]).filter(m=>imgOf(m)).length,0);const nc=L.reduce((s,g)=>s+clues(g.id).length,0);
   const cols=[{id:ALL,a:null,i:-1,all:1},...A.map((a,i)=>({id:a.id,a,i})),{id:'',a:null,i:A.length}];const showNone=!A.length||L.some(g=>colOf(g)==='');const C=showNone?cols:cols.slice(0,-1);
-  el.innerHTML=`<div class="toolbar"><h2>조직</h2><span class="note">그룹 ${L.length}개 · 인물 ${nm}명 · 그림 ${ni}장 · 단서 ${nc}개</span><span class="sp"></span>${L.length?`<button class="btn sm" data-c="gnew" data-arc="">＋ 그룹</button><button class="btn sm ghost" data-c="copy" title="조직 판 전체를 글(마크다운)로 복사">⧉ 글로 복사</button>`:''}</div>
+  el.innerHTML=`<div class="toolbar"><h2>조직</h2><span class="note">그룹 ${L.length}개 · 인물 ${nm}명 · 그림 ${ni}장 · 단서 ${nc}개</span><span class="sp"></span>${L.length?`<button class="btn sm" data-c="gnew" data-arc="">＋ 그룹</button><button class="btn sm ghost" data-c="link" title="이름이 같은 자료의 「인물」 항목을 아직 안 이은 인물에 잇는다 (「(가칭)」 · 빈칸 · 가운뎃점은 빼고 비교)">📇 같은 이름 항목 잇기</button><button class="btn sm ghost" data-c="copy" title="조직 판 전체를 글(마크다운)로 복사">⧉ 글로 복사</button>`:''}</div>
    <div class="cg-tip small dim"><b>누르면</b> 옆 창에서 자세히 · 이름을 <b>두 번 누르면</b> 그 자리에서 고치기 · <b>우클릭</b>(휴대폰은 길게 누르기) 메뉴 · 그림 파일이나 서랍의 인물을 <b>끌어 놓기</b> · 인물 · 그룹 머리를 끌어 옮기기.</div>
    ${L.length?drawerHtml():''}
    ${L.length?`<div class="cg-wrap"><div class="cg-board" style="--n:${C.length}">${C.map(c=>colHtml(c,L)).join('')}</div></div>`:emptyHtml(A)}`;
@@ -235,7 +240,7 @@
    /* 서랍 칩을 누르면 넣을 그룹 고르기 (휴대폰은 끌기가 안 되니 이쪽으로) */
    const dr=e.target.closest('.bp-dr[data-dk]');if(dr&&N().ctxMenu){const r=dr.getBoundingClientRect();const L=grps();if(!L.length)return;N().ctxMenu(r.left,r.bottom+4,L.map(g=>({t:'→ '+(g.name||'(그룹)')+(realArc(g)?` · 사건 ${arcIdx(g.arc)+1}`:''),on:()=>dropDrawer(dr.dataset.dk,dr.dataset.did,g.id,'')})));return}
    const b=e.target.closest('[data-c]');if(!b||!el.contains(b))return;const k=b.dataset.c,id=b.dataset.id;
-   if(k==='seed')return seed();if(k==='copy')return copyOut();if(k==='seedall'){const gid=await seedAll();return panelOpen({gid})}
+   if(k==='seed')return seed();if(k==='copy')return copyOut();if(k==='link')return linkByName();if(k==='seedall'){const gid=await seedAll();return panelOpen({gid})}
    if(k==='gnew'){const gid=await grpNew(b.dataset.arc||'');return panelOpen({gid,focus:'name'})}
    if(k==='mnew'){e.stopPropagation();const mid=await memAdd(id);return panelOpen({gid:id,mid,focus:'name'})}
    if(k==='clue'){e.stopPropagation();return panelOpen({gid:id,focus:'clue'})}
@@ -375,5 +380,5 @@
    if(k==='mprev'||k==='mnext'){const g=N().data('grp',P.gid);const i=g.mem.findIndex(x=>x.id===P.mid);const nx=g.mem[i+(k==='mprev'?-1:1)];if(!nx)return N().toast(k==='mprev'?'첫 인물이에요':'마지막 인물이에요');return panelOpen({gid:P.gid,mid:nx.id})}})}
 
  N().MOD.cast={render};
- window.NT_CAST={grps,clues,outline,open:panelOpen,close:panelClose};
+ window.NT_CAST={grps,clues,outline,open:panelOpen,close:panelClose,faceOf,nameOf,roles:RL,linkByName};
 })();

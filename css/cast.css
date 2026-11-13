@@ -164,3 +164,25 @@
 /* 판의 스탠딩 위 작은 포트 */
 .cg-fc{position:absolute;left:4px;bottom:4px;width:30%;aspect-ratio:1/1;border-radius:50%;border:2px solid #0b0b0e;box-shadow:0 0 0 1px var(--gc);background:#16161b center/cover no-repeat}
 .cg-pt.only-face{background-size:cover,auto;background-position:center,center}
+
+/* 11-13 도안 사건 머리의 조직 카드 (blue_ui grpBlock) · 상시 띠 */
+.bp-grps{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.bp-grp{position:relative;border:1px solid color-mix(in srgb,var(--gc) 45%,var(--line2));border-left:3px solid var(--gc);background:rgba(0,0,0,.35);padding:6px 8px;cursor:pointer;transition:border-color .12s,background .12s}
+.bp-grp:hover{background:color-mix(in srgb,var(--gc) 14%,rgba(0,0,0,.4));border-color:var(--gc)}
+.bp-grph{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.bp-grph b{font-size:13.5px;font-weight:800}
+.bp-grph small{font-size:11.5px;color:var(--mute);line-height:1.4}
+.bp-gms{display:flex;flex-wrap:wrap;gap:4px 8px;margin-top:5px}
+.bp-gm{display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer}
+.bp-gm:hover em{text-decoration:underline}
+.bp-gm em{font-style:normal}
+.bp-gmi{width:22px;height:22px;border-radius:50%;flex:none;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:700;color:#fff;background:#2a2a31 center/cover no-repeat;box-shadow:0 0 0 2px #555}
+.bp-gmi.r-face{box-shadow:0 0 0 2px var(--gc)}
+.bp-gmi.r-info{box-shadow:0 0 0 2px #2f6fb3}
+.bp-gmi.r-con{box-shadow:0 0 0 2px #a8641a}
+.bp-gd{margin:5px 0 0;font-size:11.5px;color:#b5b5be;line-height:1.5;white-space:pre-wrap}
+.bp-allg{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:0 0 12px;padding:8px;border:1px solid var(--line2);background:linear-gradient(90deg,rgba(212,160,23,.12),transparent 40%)}
+.bp-allg .bp-grp{flex:1;min-width:240px}
+.bp-allk{display:flex;flex-direction:column;justify-content:center;padding:0 8px;border-right:1px solid var(--line2)}
+.bp-allk small{font-size:10px;letter-spacing:.14em;color:var(--mute)}
+.bp-allk b{font-size:15px;color:#d4a017}

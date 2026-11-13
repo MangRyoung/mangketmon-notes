@@ -297,7 +297,7 @@ window.NT=(()=>{
    if(t.closest('.vtcur')){const s=t.closest('.vtsw');s.classList.toggle('open');return}};
   const pas=$('[data-plvas]',top);if(pas)pas.onchange=()=>plViewSet(true,pas.value);
   if(!window._vtswBound){window._vtswBound=1;document.addEventListener('pointerdown',ev=>{if(!ev.target.closest('.vtsw'))$$('.vtsw.open').forEach(x=>x.classList.remove('open'))},{capture:true})}}
- function go(v){v=VIEWS.some(x=>x[0]===v)?v:'map';if(v!==ST.view){if(ST.view==='blue'&&window.NT_BLUE&&NT_BLUE.close)NT_BLUE.close();if(ST.view==='cast'&&window.NT_CAST&&NT_CAST.close)NT_CAST.close()}/* 11-13 옆 창은 화면을 떠나면 닫는다 */if(v==='rb'&&!rbOn())v='ents';if(v!==ST.view&&window.NT_FLOWMAP&&NT_FLOWMAP.markFresh)NT_FLOWMAP.markFresh();if(v!==ST.view){document.body.classList.remove('topmore');if(document.body.classList.contains('present'))presentSet(false)}ST.view=v;setHash();render();try{localStorage.setItem('nt_view',ST.view)}catch(e){}}
+ function go(v){v=VIEWS.some(x=>x[0]===v)?v:'map';if(v!==ST.view){if(window.NT_BLUE&&NT_BLUE.close)NT_BLUE.close();if(window.NT_CAST&&NT_CAST.close)NT_CAST.close()}/* 11-13 옆 창은 화면을 떠나면 닫는다 */if(v==='rb'&&!rbOn())v='ents';if(v!==ST.view&&window.NT_FLOWMAP&&NT_FLOWMAP.markFresh)NT_FLOWMAP.markFresh();if(v!==ST.view){document.body.classList.remove('topmore');if(document.body.classList.contains('present'))presentSet(false)}ST.view=v;setHash();render();try{localStorage.setItem('nt_view',ST.view)}catch(e){}}
 
  /* ----- 로비 ----- */
  async function renderLobby(app){if(window.NT_ACCT)await NT_ACCT.me();const AC=window.NT_ACCT&&NT_ACCT.tok()&&DBS().acct;

@@ -33,6 +33,12 @@
  const faceOf=(k,id)=>{try{const d=N().data(k,id)||{};if(k==='pc'||k==='npc'){const t=window.NT_MAKER&&NT_MAKER.trainer&&NT_MAKER.trainer(id);return (t&&t.image)||d.image||''}if(k==='ents')return d.face||d.photo||'';if(k==='spots')return d.img||''}catch(e){}return ''};
  const ico=(k,id)=>{const u=faceOf(k,id);return u?`<i class="bp-av" style="background-image:url('${esc(cssu(u))}')"></i>`:(KN[k]?KN[k][1]+' ':'')};
  const PHI={c1:'💬',dg:'⛩',c2:'💬',hl:'⚔'};
+ /* 11-13 망령 「도안 왜 인물 배치나 설명 안 돼 있어」: 조직 판(cast_ui)의 그룹을 사건 머리에 — 그룹 이름 · 한 줄 · 인물(포트 · 이름 · 역할). 누르면 조직 옆 창 */
+ const CG=()=>window.NT_CAST||null;
+ const grpsOf=aid=>CG()?CG().grps().filter(g=>(aid==='_all'?g.arc==='_all':g.arc===aid)):[];
+ function grpCard(g){const C=CG();const RL=C.roles||{};return `<div class="bp-grp" style="--gc:${esc(g.color||'#888')}" data-cg="${esc(g.id)}" title="눌러서 조직 옆 창 — 「${esc(g.name||'')}」"><div class="bp-grph"><b>${esc(g.name||'(그룹)')}</b>${g.line?`<small>${esc(g.line)}</small>`:''}</div><div class="bp-gms">${(g.mem||[]).map(m=>{const u=C.faceOf(m);const n=C.nameOf(m)||'(이름)';return `<span class="bp-gm" data-cgm="${esc(g.id)}|${esc(m.id)}" title="${esc(n)}${m.role&&RL[m.role]?' · '+RL[m.role]:''}${m.line?' — '+esc(m.line):''}"><i class="bp-gmi r-${m.role||'none'}" ${u?`style="background-image:url('${esc(cssu(u))}')"`:''}>${u?'':esc(n.slice(0,1))}</i><em>${esc(n)}</em></span>`}).join('')}</div>${g.desc?`<p class="bp-gd">${esc(String(g.desc).slice(0,120))}${String(g.desc).length>120?'…':''}</p>`:''}</div>`}
+ const grpBlock=aid=>{const G=grpsOf(aid);return G.length?`<div class="bp-grps">${G.map(grpCard).join('')}</div>`:''};
+ const allStrip=()=>{const G=grpsOf('_all');return G.length?`<div class="bp-allg"><span class="bp-allk"><small>ALWAYS</small><b>상시</b></span>${G.map(grpCard).join('')}</div>`:''};
  const txtNames=s=>String(s||'').split(/[,·\n]/).map(x=>x.trim()).filter(Boolean);
  function goTo(k,id){panelClose();if(k==='dgs'){if(window.NT_DG&&NT_DG.openEd)return NT_DG.openEd(id);return N().go('map')}if(k==='routes'){N().go('scen');setTimeout(()=>{if(window.NT_SCEN&&NT_SCEN.write)NT_SCEN.write(id)},60);return}if(window.NT_FAV)NT_FAV.go({kind:k,id})}
  /* 화 번호 */
@@ -68,6 +74,7 @@
   el.innerHTML=`<div class="toolbar"><h2>도안</h2><span class="note">큰 사건 ${A.length}개 · ${tot}화 / 목표 ${tgt}화</span><span class="sp"></span>${A.length?`<button class="btn sm" data-b="arcnew">＋ 큰 사건</button><button class="btn sm ghost" data-b="copy" title="도안 전체를 글(마크다운)로 복사 — 다른 곳에 붙이거나 검토를 맡길 때">⧉ 글로 복사</button>`:''}<button class="btn sm ghost" data-b="meta">캠페인 설정</button></div>
    ${metaHtml(M,tot,tgt,A,no)}
    ${A.length?nowHtml(A,M,no):''}
+   ${A.length?allStrip():''}
    ${A.length?drawerHtml():''}
    ${A.length?`<div class="bp-wrap"><div class="bp-board" style="--n:${A.length}">${A.map((a,i)=>arcCol(a,i,A.length,no)).join('')}</div></div>${extraHtml(M,no)}${checkHtml(A,M,tot,tgt)}`:emptyHtml()}`;
   bind(el);panelSync();clueSync()}
@@ -134,7 +141,7 @@
     <div class="bp-ahk"><span class="bp-no">${String(c).padStart(2,'0')}</span><span class="bp-ahm"><small>CASE ${c}</small><em class="bp-st st-${a.st||'none'}">${AST[a.st||'']}</em></span>${eps.length?`<span class="bp-prog" title="끝난 화 ${dn} / ${eps.length}"><i style="width:${Math.round(dn/eps.length*100)}%"></i></span><small class="bp-progn">${dn}/${eps.length}</small>`:''}</div>
     <b class="bp-an">${esc(a.name||'(이름 없음)')}</b>${a.line?`<p class="bp-al">${esc(a.line)}</p>`:''}
     ${a.theme?`<div class="bp-theme"><small>주제</small>${esc(a.theme)}</div>`:''}
-    <div class="bp-tags">${tags.join('')}</div>${stage.length?`<div class="bp-tags bp-stage">${stage.join('')}</div>`:''}${forksHtml(a.forks,no)}</div>`;
+    <div class="bp-tags">${tags.join('')}</div>${stage.length?`<div class="bp-tags bp-stage">${stage.join('')}</div>`:''}${grpBlock(a.id)}${forksHtml(a.forks,no)}</div>`;
   const clues=cl.length?`<div class="bp-clues"><div class="bp-ch"><small>단서</small><span class="bp-cbar"><i style="width:${Math.round(ok/cl.length*100)}%"></i></span><small>${ok} / ${cl.length}</small></div>${cl.map((x,j)=>`<div class="bp-clue ${x.ok?'ok':''}"><label><input type="checkbox" data-clue="${esc(a.id)}|${j}" ${x.ok?'checked':''}><span title="${esc(x.d||'')}">${esc(x.t||'(단서)')}${x.d||x.img?' <em>⋯</em>':''}</span></label><button type="button" class="bp-mini" data-b="cshow" data-id="${esc(a.id)}" data-j="${j}" title="웹툴 방에 지금 공개 (모두의 화면에 단서 카드)">🔍</button></div>`).join('')}</div>`:`<div class="bp-clues none" data-b="arc" data-id="${esc(a.id)}"><small>단서 없음 — 눌러서 적어요</small></div>`;
   return cell(1,'bp-t',head,`data-drop="arc" data-id="${esc(a.id)}"`)+cell(2,'bp-m',clues)
    +PH.map(([k,lab,tip],pi)=>{const L=eps.filter(e=>e.ph===k);return cell(3+pi,'bp-m bp-p ph-'+k,`<div class="bp-phh" title="${esc(tip)}"><span class="bp-phl"><i class="bp-phi">${PHI[k]}</i>${lab}<small>${PHE[k]}</small></span><button type="button" class="bp-add" data-b="epnew" data-id="${esc(a.id)}" data-ph="${k}" title="${lab}에 화 더하기">＋</button></div>${L.map(e=>epCard(a.id,e,no)).join('')||'<div class="bp-none">비어 있음</div>'}`,`data-dropph="${esc(a.id)}|${k}"`)}).join('')
@@ -176,7 +183,7 @@
   const epOut=(e,lab)=>{L.push('',`### ${no[e.id]}화 · ${lab}${e.title?' — '+e.title:''}${e.st?` [${EST[e.st]}]`:''}`);if(e.goal)L.push('- 목표: '+e.goal);if(e.beats)L.push('- 진행: '+String(e.beats).replace(/\n/g,'\n  '));
    const who=[...names('pc',e.pcs),...names('npc',e.npcs),...txtNames(e.npcTxt)];if(who.length)L.push('- 인물: '+who.join(', '));const sp=names('spots',e.spots);if(sp.length)L.push('- 장소: '+sp.join(', '));if(e.dg&&nmK('dgs',e.dg))L.push('- 던전: '+nmK('dgs',e.dg));const en=names('ents',e.ents);if(en.length)L.push('- 항목: '+en.join(', '));(e.forks||[]).forEach(f=>L.push('- 분기: '+fk(f)))};
   A.forEach((a,i)=>{L.push('',`## 사건 ${i+1}. ${a.name||''}${a.st?` [${AST[a.st]}]`:''}`);if(a.line)L.push(a.line);if(a.theme)L.push('- 주제: '+a.theme);const sp=a.pc&&nm('pc',a.pc);if(sp)L.push('- 스포트라이트 PC: '+sp);
-   const b=[...names('npc',a.boss),...txtNames(a.bossTxt)];if(b.length)L.push('- 주역: '+b.join(', '));const c=[...names('npc',a.cast),...txtNames(a.castTxt),...names('ents',a.ents)];if(c.length)L.push('- 인물 · 항목: '+c.join(', '));const s=names('spots',a.spots);if(s.length)L.push('- 무대: '+s.join(', '));if(a.dg&&nmK('dgs',a.dg))L.push('- 던전: '+nmK('dgs',a.dg));
+   const b=[...names('npc',a.boss),...txtNames(a.bossTxt)];if(b.length)L.push('- 주역: '+b.join(', '));const c=[...names('npc',a.cast),...txtNames(a.castTxt),...names('ents',a.ents)];if(c.length)L.push('- 인물 · 항목: '+c.join(', '));const s=names('spots',a.spots);if(s.length)L.push('- 무대: '+s.join(', '));grpsOf(a.id).forEach(g=>L.push(`- 조직 「${g.name||''}」${g.line?' — '+g.line:''}: ${(g.mem||[]).map(m=>(CG().nameOf(m)||'(이름)')+(m.role&&(CG().roles||{})[m.role]?'('+CG().roles[m.role]+')':'')).join(', ')}`));if(a.dg&&nmK('dgs',a.dg))L.push('- 던전: '+nmK('dgs',a.dg));
    (a.clues||[]).forEach(q=>L.push(`- 단서 [${q.ok?'x':' '}] ${q.t||''}${q.ep&&no[q.ep]?` (${no[q.ep]}화)`:''}${q.d?' — '+q.d:''}`));(a.forks||[]).forEach(f=>L.push('- 결말 갈래: '+fk(f)));if(a.note)L.push('- 메모: '+a.note);
    for(const [k,lab] of PH)for(const e of (a.eps||[]))if(e.ph===k)epOut(e,lab)});
   if((M.extra||[]).length){L.push('','## 여유 · 최종장');M.extra.forEach(e=>epOut(e,'여유'))}return L.join('\n')}
@@ -329,6 +336,7 @@
  let DRAG=null;
  function bind(el){el.addEventListener('click',async e=>{const t=e.target;
    const rm=t.closest('[data-rm]');if(rm&&el.contains(rm)){e.stopPropagation();const p=rm.dataset.rm.split('|');const tg=p[0]==='ep'?{kind:'ep',aid:p[1],eid:p[2]}:{kind:'arc',aid:p[1]};const f=p[p.length-2],v=p[p.length-1];await link(tg,f,v,false);if(P)panelDraw();return}
+   const cgm=t.closest('[data-cgm]'),cg=t.closest('[data-cg]');if((cgm||cg)&&el.contains(cgm||cg)&&CG()){e.stopPropagation();panelClose();if(cgm){const [gid,mid]=cgm.dataset.cgm.split('|');CG().open({gid,mid})}else CG().open({gid:cg.dataset.cg});return}
    const g=t.closest('[data-go],.bp-dr');if(g&&el.contains(g)){e.stopPropagation();const [k,id]=g.dataset.go?g.dataset.go.split('|'):[g.dataset.dk,g.dataset.did];return goTo(k,id)}
    const dt=t.closest('[data-dt]');if(dt){dSet(dt.dataset.dt);return N().render()}
    const dn=t.closest('[data-dnew]');if(dn)return drawerNew(dn.dataset.dnew);
