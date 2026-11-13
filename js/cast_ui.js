@@ -27,6 +27,15 @@
  const ROLE=[['face','얼굴','말을 걸어오는 쪽 — 그룹의 첫인상'],['info','정보통','단서 · 사정을 쥔 쪽'],['con','갈등','그룹 안에서 마찰을 만드는 쪽'],['','없음','']];
  const RL=Object.fromEntries(ROLE.map(r=>[r[0],r[1]]));
  const MIN=3;
+ /* 11-13 19:01 망령 「조직 쪽에 애들 예상 성별 좀 나오게 — 헷갈리네」: 인물 칸에 성별(sex 'f' | 'm' | '').
+    비워 두면 이름으로 예상(11-13 12:07 ~ 12:19 성비 결정, 노트 76) — 판에는 점선 「예상」으로, 직접 고르면 실선. */
+ const SEXGUESS=[['m',['학생회장','회장','육성','통솔','순경','청년','묘지기','사제','교주','의사']],['f',['학장','지시','능력','서기','풍기','기자','경위','선장','뱃사공','리더','수녀','소녀','관리인']]];
+ const sexGuess=n=>{const k=normName(n);if(!k)return '';for(const [x,L] of SEXGUESS)if(L.some(w=>k.includes(w)))return x;return ''};
+ const sexOf=m=>m.sex||sexGuess(nameOf(m));
+ const SXL={f:'여',m:'남'};
+ const sexTag=(m,cls)=>{const x=sexOf(m);if(!x)return '';const g=!m.sex;return `<i class="${cls} sx-${x} ${g?'guess':''}" title="${g?'예상 성별 (이름으로 짐작 — 옆 창에서 직접 고를 수 있어요)':'성별'}">${x==='f'?'♀':'♂'}${SXL[x]}${g?'<small>?</small>':''}</i>`};
+ const sexCount=M=>{let f=0,m=0,u=0;M.filter(x=>!blankMem(x)).forEach(x=>{const k=sexOf(x);if(k==='f')f++;else if(k==='m')m++;else u++});return {f,m,u}};
+ const sexSum=(M,cls)=>{const c=sexCount(M);if(!c.f&&!c.m&&!c.u)return '';return `<small class="${cls}" title="예상 포함 성비">♀${c.f} · ♂${c.m}${c.u?` · ?${c.u}`:''}</small>`};
  const clone=o=>JSON.parse(JSON.stringify(o==null?null:o));
  const cssu=u=>N().cssu?N().cssu(u):String(u).replace(/'/g,'%27');
  const arcs=()=>window.NT_BLUE?NT_BLUE.arcs():N().list('arcs').sort((a,b)=>(a.order||0)-(b.order||0));
@@ -46,7 +55,7 @@
  const charByName=n=>{const k=normName(n);if(!k)return null;return chars().find(x=>normName(x.title)===k)||null};
  const chars=()=>N().list('ents').filter(x=>x&&x.title&&String(x.type||'')==='인물').sort((a,b)=>String(a.title).localeCompare(String(b.title),'ko'));
  const npcs=()=>N().list('npc').filter(x=>x&&x.name).sort((a,b)=>String(a.name).localeCompare(String(b.name),'ko'));
- const newMem=o=>Object.assign({id:N().uid('m'),name:'',role:'',img:'',face:'',line:'',pub:'',note:'',ent:'',npc:''},o||{});
+ const newMem=o=>Object.assign({id:N().uid('m'),name:'',role:'',sex:'',img:'',face:'',line:'',pub:'',note:'',ent:'',npc:''},o||{});
  const isPub=id=>{if(!id||!ent(id))return false;const d=N().doc('ents',id);return !!d&&d.vis==='pub'};
  const blankMem=m=>!(m.name||m.img||m.face||m.ent||m.npc||m.line||m.note||m.pub);
  const realArc=g=>g&&g.arc&&N().data('arcs',g.arc)?g.arc:'';
@@ -176,7 +185,7 @@
   if(!G){panelClose();el.innerHTML=`<div class="toolbar"><h2>조직</h2></div><div class="empty">조직 판은 GM만 봐요.</div>`;return}
   const A=arcs(),L=grps();const nm=L.reduce((s,g)=>s+(g.mem||[]).filter(m=>!blankMem(m)).length,0);const ni=L.reduce((s,g)=>s+(g.mem||[]).filter(m=>imgOf(m)).length,0);const nc=L.reduce((s,g)=>s+clues(g.id).length,0);
   const cols=[{id:ALL,a:null,i:-1,all:1},...A.map((a,i)=>({id:a.id,a,i})),{id:'',a:null,i:A.length}];const showNone=!A.length||L.some(g=>colOf(g)==='');const C=showNone?cols:cols.slice(0,-1);
-  el.innerHTML=`<div class="toolbar"><h2>조직</h2><span class="note">그룹 ${L.length}개 · 인물 ${nm}명 · 그림 ${ni}장 · 단서 ${nc}개</span><span class="sp"></span>${L.length?`<button class="btn sm" data-c="gnew" data-arc="">＋ 그룹</button><button class="btn sm ghost" data-c="link" title="이름이 같은 자료의 「인물」 항목을 아직 안 이은 인물에 잇는다 (「(가칭)」 · 빈칸 · 가운뎃점은 빼고 비교)">📇 같은 이름 항목 잇기</button><button class="btn sm ghost" data-c="copy" title="조직 판 전체를 글(마크다운)로 복사">⧉ 글로 복사</button>`:''}</div>
+  el.innerHTML=`<div class="toolbar"><h2>조직</h2><span class="note">그룹 ${L.length}개 · 인물 ${nm}명 · 그림 ${ni}장 · 단서 ${nc}개</span>${sexSum(L.flatMap(g=>g.mem||[]),'cg-sxsum')}<span class="sp"></span>${L.length?`<button class="btn sm" data-c="gnew" data-arc="">＋ 그룹</button><button class="btn sm ghost" data-c="link" title="이름이 같은 자료의 「인물」 항목을 아직 안 이은 인물에 잇는다 (「(가칭)」 · 빈칸 · 가운뎃점은 빼고 비교)">📇 같은 이름 항목 잇기</button><button class="btn sm ghost" data-c="copy" title="조직 판 전체를 글(마크다운)로 복사">⧉ 글로 복사</button>`:''}</div>
    <div class="cg-tip small dim"><b>누르면</b> 옆 창에서 자세히 · 이름을 <b>두 번 누르면</b> 그 자리에서 고치기 · <b>우클릭</b>(휴대폰은 길게 누르기) 메뉴 · 그림 파일이나 서랍의 인물을 <b>끌어 놓기</b> · 인물 · 그룹 머리를 끌어 옮기기.</div>
    ${L.length?drawerHtml():''}
    ${L.length?`<div class="cg-wrap"><div class="cg-board" style="--n:${C.length}">${C.map(c=>colHtml(c,L)).join('')}</div></div>`:emptyHtml(A)}`;
@@ -191,20 +200,20 @@
  function grpHtml(g,i){const col=grpCol(g,i);const M=g.mem||[];const slots=M.map(m=>memHtml(g,m)).concat(Array.from({length:Math.max(0,MIN-M.length)},(_,k)=>emptySlot(g,k)));
   const sel=P&&P.gid===g.id&&!P.mid?'cg-sel':'';const C=clues(g.id);const ok=C.filter(c=>c.ok).length;const nCard=M.filter(m=>m.ent&&ent(m.ent)).length;const nPub=M.filter(m=>isPub(m.ent)).length;
   return `<article class="cg-grp ${sel}" style="--gc:${esc(col)}" data-g="${esc(g.id)}">
-   <div class="cg-gh" draggable="true" data-c="grp" data-id="${esc(g.id)}" title="누르면 그룹 고치기 · 이름 두 번 누르면 바로 고치기 · 끌어서 옮기기 · 우클릭 메뉴"><button type="button" class="cg-mplus" data-c="mnew" data-id="${esc(g.id)}" title="인물 더하기">＋ 인물</button><b class="cg-gn" data-ed="gname" data-id="${esc(g.id)}">${esc(g.name||'(이름 없음)')}</b>${g.place?`<em>📍 ${esc(g.place)}</em>`:''}${g.line?`<p>${esc(g.line)}</p>`:''}</div>
+   <div class="cg-gh" draggable="true" data-c="grp" data-id="${esc(g.id)}" title="누르면 그룹 고치기 · 이름 두 번 누르면 바로 고치기 · 끌어서 옮기기 · 우클릭 메뉴"><button type="button" class="cg-mplus" data-c="mnew" data-id="${esc(g.id)}" title="인물 더하기">＋ 인물</button><b class="cg-gn" data-ed="gname" data-id="${esc(g.id)}">${esc(g.name||'(이름 없음)')}</b>${sexSum(M,'cg-sxg')}${g.place?`<em>📍 ${esc(g.place)}</em>`:''}${g.line?`<p>${esc(g.line)}</p>`:''}</div>
    <div class="cg-ms">${slots.join('')}</div>
    ${g.pub?`<div class="cg-desc pub" data-c="grp" data-id="${esc(g.id)}" title="공개 소개${isPub(g.ent)?' — 공개 중':' — 아직 GM만'}"><b>${isPub(g.ent)?'👁':'공개 소개'}</b> ${esc(g.pub)}</div>`:''}
    ${g.desc?`<div class="cg-desc" data-c="grp" data-id="${esc(g.id)}" title="GM 설정 — 공개해도 안 나가요"><b>🔒</b> ${esc(g.desc)}</div>`:`<div class="cg-desc none" data-c="grp" data-id="${esc(g.id)}">${g.pub?'🔒 GM 설정':'공개 소개 · GM 설정'} — 눌러서 적어요</div>`}
    <div class="cg-gf">${C.length?`<span class="cg-cl" data-c="grp" data-id="${esc(g.id)}" title="단서 — 도안 사건 단서와 같은 것 (웹툴로 공개 가능)">🔍 ${C.slice(0,4).map(c=>`<i class="${c.ok?'ok':''}">${esc(c.t||'단서')}</i>`).join('')}${C.length>4?`<i>+${C.length-4}</i>`:''}<small>${ok}/${C.length}</small></span>`:`<button type="button" class="cg-mini" data-c="clue" data-id="${esc(g.id)}" title="이 그룹에서 얻는 단서 더하기">＋ 단서</button>`}<span class="sp"></span>${nCard?`<small class="cg-badge" title="자료 탭에 인물 카드(항목)가 있는 인물 · 그중 공개">📇 ${nCard}/${M.filter(m=>!blankMem(m)).length}${nPub?` · 👁 ${nPub}`:''}</small>`:''}${isPub(g.ent)?'<small class="cg-badge pub" title="조직 카드 공개 중 — PL 도 봐요">👁 조직 공개</small>':g.ent&&ent(g.ent)?'<small class="cg-badge" title="조직 카드 있음 · GM만">조직</small>':''}</div></article>`}
  function memHtml(g,m){const u=imgOf(m);const nm=nameOf(m);const sel=P&&P.mid===m.id?'cg-sel':'';const nc=clues(g.id,m.id).length;
   return `<div role="button" tabindex="0" class="cg-m ${u?'has':''} r-${m.role||'none'} ${sel}" draggable="true" data-c="mem" data-id="${esc(g.id)}" data-m="${esc(m.id)}" title="누르면 고치기 · 이름 두 번 누르면 바로 고치기 · 그림 파일을 끌어 놓으면 그림 · 끌어서 옮기기 · 우클릭 메뉴">
-   <div class="cg-pt ${stOf(m)?'':'only-face'}" ${u?`style="--im:url('${esc(cssu(u))}')"`:''}>${u?'':'<span class="cg-ph">그림<br><small>끌어 놓기</small></span>'}${stOf(m)&&faceOf(m)?`<i class="cg-fc" style="background-image:url('${esc(cssu(faceOf(m)))}')" title="포트"></i>`:''}${m.role?`<i class="cg-role">${esc(RL[m.role]||'')}</i>`:''}<span class="cg-mk">${isPub(m.ent)?'<i class="cg-pubk" title="공개 중 — 자료 탭 항목 칸에서 PL 도 봐요">👁</i>':m.ent&&ent(m.ent)?'<i title="인물 카드(자료 항목) 있음 · GM만">📇</i>':''}${m.npc?'<i title="NPC 시트와 이음">🎭</i>':''}${nc?`<i title="이 인물의 단서 ${nc}개">🔍${nc}</i>`:''}</span></div>
+   <div class="cg-pt ${stOf(m)?'':'only-face'}" ${u?`style="--im:url('${esc(cssu(u))}')"`:''}>${u?'':'<span class="cg-ph">그림<br><small>끌어 놓기</small></span>'}${stOf(m)&&faceOf(m)?`<i class="cg-fc" style="background-image:url('${esc(cssu(faceOf(m)))}')" title="포트"></i>`:''}${m.role?`<i class="cg-role">${esc(RL[m.role]||'')}</i>`:''}${sexTag(m,'cg-sx')}<span class="cg-mk">${isPub(m.ent)?'<i class="cg-pubk" title="공개 중 — 자료 탭 항목 칸에서 PL 도 봐요">👁</i>':m.ent&&ent(m.ent)?'<i title="인물 카드(자료 항목) 있음 · GM만">📇</i>':''}${m.npc?'<i title="NPC 시트와 이음">🎭</i>':''}${nc?`<i title="이 인물의 단서 ${nc}개">🔍${nc}</i>`:''}</span></div>
    <b class="cg-mn" data-ed="mname" data-id="${esc(g.id)}" data-m="${esc(m.id)}">${nm?esc(nm):'<span class="dim">(이름)</span>'}</b>${m.line?`<span class="cg-ml">${esc(m.line)}</span>`:''}</div>`}
  const emptySlot=(g,k)=>`<div role="button" tabindex="0" class="cg-m empty" data-c="mnew" data-id="${esc(g.id)}" data-slot="${k}" title="눌러서 인물 더하기 · 그림 파일이나 서랍의 인물을 끌어 놓아도 돼요"><div class="cg-pt"><span class="cg-ph">＋<br><small>인물</small></span></div><b class="cg-mn dim">빈 칸</b></div>`;
 
  /* 글로 복사 */
  function outline(){const A=arcs(),L=grps();const out=['# 조직 (NPC 그룹)'];const sec=(t,G)=>{if(!G.length)return;out.push('',`## ${t}`);G.forEach(g=>{out.push('',`### ${g.name||'(그룹)'}${g.place?` — 📍 ${g.place}`:''}`);if(g.line)out.push(g.line);if(g.pub)out.push('','공개 소개: '+String(g.pub).replace(/\n/g,'\n  '));if(g.desc)out.push('','GM 설정: '+String(g.desc).replace(/\n/g,'\n  '));
-  (g.mem||[]).forEach(m=>{out.push(`- ${nameOf(m)||'(이름)'}${m.role?` [${RL[m.role]}]`:''}${m.line?' — '+m.line:''}`);if(m.pub)out.push('  공개: '+String(m.pub).replace(/\n/g,'\n  '));if(m.note)out.push('  GM: '+String(m.note).replace(/\n/g,'\n  '))});
+  (g.mem||[]).forEach(m=>{out.push(`- ${nameOf(m)||'(이름)'}${sexOf(m)?` (${SXL[sexOf(m)]}${m.sex?'':' 예상'})`:''}${m.role?` [${RL[m.role]}]`:''}${m.line?' — '+m.line:''}`);if(m.pub)out.push('  공개: '+String(m.pub).replace(/\n/g,'\n  '));if(m.note)out.push('  GM: '+String(m.note).replace(/\n/g,'\n  '))});
   clues(g.id).forEach(c=>{const w=(g.mem||[]).find(m=>m.id===c.who);out.push(`- 단서 [${c.ok?'x':' '}] ${c.t||''}${w?` (${nameOf(w)})`:''}${c.d?' — '+c.d:''}`)});if(g.note)out.push('','메모: '+g.note)})};
   sec('상시 · 교사진',L.filter(g=>colOf(g)===ALL));A.forEach((a,i)=>sec(`사건 ${i+1}. ${a.name||''}`,L.filter(g=>realArc(g)===a.id)));sec('사건 미정',L.filter(g=>colOf(g)===''));return out.join('\n')}
  async function copyOut(){const t=outline();try{await navigator.clipboard.writeText(t);N().toast('조직 판을 글로 복사했어요')}catch(e){N().openModal(`<div class="mhead"><h2>조직 (글)</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><textarea rows="18" style="width:100%" readonly>${esc(t)}</textarea>`)}}
@@ -219,6 +228,7 @@
  function ctxItems(t){if(t.matches('.cg-m[data-m]')){const gid=t.dataset.id,mid=t.dataset.m;const m=mOf(gid,mid);const g=N().data('grp',gid);if(!m||!g)return [];const i=g.mem.findIndex(x=>x.id===mid);
    return [{t:'고치기 (옆 창)',on:()=>panelOpen({gid,mid})},{t:'이름 바꾸기',on:()=>{const b=document.querySelector(`.cg-mn[data-m="${CSS.escape(mid)}"]`);if(b)inlineEdit(b)}},'-',
     ...ROLE.filter(r=>r[0]).map(([k,l])=>({t:(m.role===k?'● ':'○ ')+'역할: '+l,on:()=>mSave(gid,mid,x=>{x.role=x.role===k?'':k})})),'-',
+    ...[['f','여 ♀'],['m','남 ♂']].map(([k,l])=>({t:(m.sex===k?'● ':'○ ')+'성별: '+l+(!m.sex&&sexGuess(nameOf(m))===k?' (지금 예상)':''),on:()=>mSave(gid,mid,x=>{x.sex=x.sex===k?'':k})})),'-',
     m.ent&&ent(m.ent)?{t:'📇 인물 카드 열기',on:()=>goEnt(m.ent)}:{t:'📇 인물 카드 만들기',on:()=>memCard(gid,mid)},
     isPub(m.ent)?{t:'🔒 GM만 보게 (공개 끄기)',on:()=>pubSet(gid,mid,false)}:{t:'👁 공개로 (자료 탭 항목에)',on:()=>pubSet(gid,mid,true)},
     {t:'🔍 이 인물의 단서 더하기',on:()=>panelOpen({gid,mid,focus:'clue'})},'-',
@@ -309,7 +319,7 @@
       +row('커뮤 장소',inp('place',g.place,'PL 이 이 그룹을 만나러 가는 곳 — 예: 대성당 회랑')))
     +pubBox(g,null)
     +gmBox('desc',g.desc,'분위기 · 목적 · 세 사람의 관계 · 비밀','예: 겉으로는 자선 · 안에서는 교리 싸움. 수녀는 교주를 존경하지만 사제는 …')
-    +sec(`인물 <small class="cg-cnt">${(g.mem||[]).length}명</small>`,'이름을 누르면 그 인물로',`<div class="cg-pml">${(g.mem||[]).map((m,j)=>{const u=faceOf(m);return `<div class="cg-pmr"><i class="cg-pav" ${u?`style="background-image:url('${esc(cssu(u))}')"`:''}></i><button type="button" class="linkbtn" data-p="mopen" data-m="${esc(m.id)}">${nameOf(m)?esc(nameOf(m)):'(이름)'}</button>${m.role?`<small class="cg-prl r-${m.role}">${RL[m.role]}</small>`:''}${isPub(m.ent)?'<small class="cg-prl pub">공개</small>':m.ent&&ent(m.ent)?'<small title="인물 카드 있음">📇</small>':''}<span class="sp"></span><button type="button" class="bp-pclose" data-p="mup" data-m="${esc(m.id)}" ${j?'':'disabled'} title="앞으로">▲</button><button type="button" class="bp-pclose" data-p="mdn" data-m="${esc(m.id)}" ${j<g.mem.length-1?'':'disabled'} title="뒤로">▼</button></div>`}).join('')||'<span class="bp-nil">없음</span>'}</div>`,'',`<button type="button" class="bp-plus" data-p="mnew">＋ 인물</button>`)
+    +sec(`인물 <small class="cg-cnt">${(g.mem||[]).length}명</small>`,'이름을 누르면 그 인물로',`<div class="cg-pml">${(g.mem||[]).map((m,j)=>{const u=faceOf(m);return `<div class="cg-pmr"><i class="cg-pav" ${u?`style="background-image:url('${esc(cssu(u))}')"`:''}></i><button type="button" class="linkbtn" data-p="mopen" data-m="${esc(m.id)}">${nameOf(m)?esc(nameOf(m)):'(이름)'}</button>${sexTag(m,'cg-psx')}${m.role?`<small class="cg-prl r-${m.role}">${RL[m.role]}</small>`:''}${isPub(m.ent)?'<small class="cg-prl pub">공개</small>':m.ent&&ent(m.ent)?'<small title="인물 카드 있음">📇</small>':''}<span class="sp"></span><button type="button" class="bp-pclose" data-p="mup" data-m="${esc(m.id)}" ${j?'':'disabled'} title="앞으로">▲</button><button type="button" class="bp-pclose" data-p="mdn" data-m="${esc(m.id)}" ${j<g.mem.length-1?'':'disabled'} title="뒤로">▼</button></div>`}).join('')||'<span class="bp-nil">없음</span>'}</div>`,'',`<button type="button" class="bp-plus" data-p="mnew">＋ 인물</button>`)
     +clueSec(g,'')
     +sec('📇 카드 · 연동','자료 탭 항목 — 관계도 · 도안 · 검색 · 웹툴 무대가 써요',`<div class="cg-acts"><button type="button" class="btn sm" data-p="cards">📇 인물 카드 한꺼번에</button>${oc?'<button type="button" class="btn sm ghost" data-p="org">📇 조직 카드 열기</button>':''}<button type="button" class="btn sm ghost" data-p="stage" title="인물 카드가 있는 셋까지 웹툴 방 무대에">▶ 웹툴 무대로</button></div>`)
     +sec('메모','',txa('note',g.note,3,''));
@@ -321,6 +331,7 @@
     +`<input type="text" class="bp-title" data-f="name" value="${esc(m.name||'')}" placeholder="${esc(nameOf(m)||'이름 — 예: 대성당 수녀')}">`
     +sec('기본','',
       row('역할',`<div class="bp-seg" data-seg="role">${ROLE.map(([k,l,t])=>`<button type="button" data-v="${k}" class="${(m.role||'')===k?'on':''}" title="${esc(t)}">${l}</button>`).join('')}</div>`,(ROLE.find(r=>r[0]===(m.role||''))||[])[2]||'')
+      +row('성별',`<div class="bp-seg" data-seg="sex">${[['f','여 ♀'],['m','남 ♂'],['','예상대로']].map(([k,l])=>`<button type="button" data-v="${k}" class="${(m.sex||'')===k?'on':''}">${l}</button>`).join('')}</div>`,m.sex?'직접 고름':sexGuess(nameOf(m))?`이름으로 예상: ${SXL[sexGuess(nameOf(m))]} — 판에 「?」로 보여요`:'예상 못 함 — 골라 주세요')
       +row('한 줄',inp('line',m.line,'첫인상 · 말버릇 — 예: 늘 웃지만 눈은 안 웃는다'),'판에만 보여요'))
     +pubBox(g,m)
     +gmBox('note',m.note,'정체 · 원하는 것 · 비밀 · 그룹 안의 자리')
