@@ -229,6 +229,7 @@
   const e=N().data('ents',P.id);if(!e)return '';const t=window.NT_ENTS?NT_ENTS.tc(e.type):['','','#888'];const rows=(e.rows||[]).filter(r=>r.k&&r.v).slice(0,4);
   return `<div class="mph ent" style="--c:${e.color||t[2]}"><span class="mpbig" style="${e.face?`background-image:url('${cssu(e.face)}')`:''}">${e.face?'':esc((e.title||'?')[0])}</span><div style="min-width:0;flex:1"><h4>${esc(e.title||'인물')}</h4><div class="mpm">${esc(e.type||'')}${e.sub?' · '+esc(e.sub):''}</div></div><button type="button" class="mpx" data-pop="close" title="닫기">✕</button></div>
    ${e.body?`<p class="mps">${esc(e.body)}</p>`:''}
+   ${(()=>{/* 11-15 망령 「NPC 들은 지도에서 클릭해도 멘트 수정 안 뜨는데」: 인물 항목 카드에도 감정 · 상태 칸 (시트 카드와 같은 것) */const px=personOf('ents:'+P.id);return px?stPane(px,'ents:'+P.id):''})()}
    ${rows.length?`<dl class="mpr">${rows.map(r=>`<dt>${esc(r.k)}</dt><dd>${esc(r.v)}</dd>`).join('')}</dl>`:''}
    <div class="mpa">${G?N().visBadge(N().doc('ents',P.id).vis,'ents',P.id):''}${window.NT_FAV?NT_FAV.btn('ents',P.id,e.title):''}<span class="sp"></span><button type="button" class="btn xs" data-pop="openent" data-id="${esc(P.id)}">항목에서 보기</button>${G?`<button type="button" class="btn xs ghost" data-pop="editent" data-id="${esc(P.id)}">고치기</button>`:''}${P.at&&N().data('spots',P.at)?`<button type="button" class="btn xs ghost" data-pop="spot" data-id="${esc(P.at)}">📍 ${esc(N().data('spots',P.at).name||'')}</button>`:''}</div>`}
  /* 10-26 감우: 좁은 화면(#mapWrap 너비 < 520)에서는 말풍선을 지도 안이 아니라 화면 아래 시트(body 자식, .mpop.sheet)로 띄운다 — 작은 지도를 가리지 않게. 넓은 화면은 핀 옆에 그대로. */
