@@ -785,7 +785,8 @@ button.awb-tend:hover,button.awb-tend:focus-visible{border-color:#f1d58e;backgro
 .pmbns .pmbn{margin:0;flex:none;padding:0 8px}
 .pmc:has(.pmbns) .pmnr{padding-right:62px}
 /* 11-15 망령 「이름이랑 대기/서브/숨기기가 겹침 · 타입 2개는 한 줄 · 대기/서브는 그림 아래 빈칸에, 숨기기만 오른쪽 위」 */
-.pmpc{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px}
-.pmbnc{display:flex;flex-direction:column;gap:3px;width:100%}
-.pmbnc .pmbn{margin:0;flex:none;width:100%;padding:0 4px;justify-content:center;text-align:center}
+/* 03:32 망령 「그림 아래는 줄이 웃김 — 아래쪽 고치기 줄에 단추」: 대기 · 서브 = 카드 아래 「소지품 고치기 · 포켓몬 고치기 · 한 장 보기」 줄 오른쪽 끝 */
+.ux-itbs{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px}
+.pmbnc{display:inline-flex;gap:4px;margin-left:auto;flex:none}
+.pmbnc .pmbn{margin:0;flex:none;padding:0 8px}
 .pmtys{display:inline-flex;gap:4px;flex-wrap:nowrap;white-space:nowrap}
