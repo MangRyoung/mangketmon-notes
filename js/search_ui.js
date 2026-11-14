@@ -12,7 +12,7 @@ window.NT_SEARCH=(()=>{
  const rowsTxt=r=>(r||[]).map(x=>(x.k||'')+' '+(x.v||'')).join(' ');
  /* 색인: {kind, id, title, sub, body, go} */
  function index(){const L=[];const G=N().gm();
-  for(const e of N().list('ents'))L.push({kind:'ents',id:e.id,title:e.title||'',sub:[e.type,e.sub].filter(Boolean).join(' · '),body:[e.body,rowsTxt(e.rows),txt(e.tags),txt(e.teams)].join(' ')});
+  for(const e of N().list('ents'))L.push({kind:'ents',id:e.id,title:e.title||'',sub:[e.type,e.sub].filter(Boolean).join(' · '),body:[e.body,rowsTxt(N().gm()&&window.NT_ENTS&&NT_ENTS.rowsAll?NT_ENTS.rowsAll(e):e.rows),txt(e.tags),txt(e.teams)].join(' ')});
   for(const s of N().list('spots'))L.push({kind:'spots',id:s.id,title:(s.num?s.num+'. ':'')+(s.name||''),sub:[s.area,s.kind].filter(Boolean).join(' · '),body:[s.summary,s.items,txt((s.imgs||[]).map(x=>x.t))].join(' ')});
   for(const m of N().list('maps'))L.push({kind:'maps',id:m.id,title:m.name||'지도',sub:'',body:m.d||''});
   for(const r of N().list('routes')){L.push({kind:'routes',id:r.id,title:r.name||'루트',sub:r.group||'',body:[r.entry,r.goal,r.note].join(' ')});
