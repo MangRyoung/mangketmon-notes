@@ -137,7 +137,7 @@ window.NT_SPLAT=() => SPLAT;
   if(G){it.push('-');it.push({t:'🗑 지우기',danger:true,on:()=>act('del',{dataset:{id}})})}
   return it}
  function card(e){const t=tc(ety(e));return `<button type="button" class="entcard ${e.id===U.sel?'on':''}" data-sel="${esc(e.id)}" data-id="${esc(e.id)}" data-drag style="--c:${e.color||t[2]}"><span class="face" style="${e.face?`background-image:url('${cssu(e.face)}')`:''}">${e.face?'':t[0][0]}</span><span class="eb"><b>${esc(e.title||'(제목 없음)')}</b><small>${esc(e.sub||'')}</small><span class="etags">${vt(e).slice(0,3).map(x=>`<em>${esc(x)}</em>`).join('')}${vt(e).length>3?`<em class="more">+${vt(e).length-3}</em>`:''}${N().visBadge(e._vis,'ents',e.id)}${linkIcons(e)}</span></span></button>`}
- const linkIcons=e=>(N().gm()&&secRows(e.id).length?`<i class="lki lkn" title="GM만 보는 칸 ${secRows(e.id).length}개 — 공개해도 PL 에게 안 보여요">🗝${secRows(e.id).length}</i>`:'')+(e.rb&&e.rb.ch?'<i class="lki" title="룰북과 이어져 있어요">📖</i>':'')+(e.mk?'<i class="lki" title="제작기 트레이너와 이어져 있어요">🎴</i>':'')+((e.files||[]).length?`<i class="lki" title="첨부 ${e.files.length}개">📎${e.files.length}</i>`:'');
+ const linkIcons=e=>(N().gm()&&secRows(e.id).length?`<i class="lki lkn" title="GM만 보는 칸 ${secRows(e.id).length}개 — 공개해도 PL 에게 안 보여요">🗝${secRows(e.id).length}</i>`:'')+(e.rb&&e.rb.ch?'<i class="lki" title="룰북과 이어져 있어요">📖</i>':'')+(e.mk&&N().gm()?'<i class="lki" title="제작기 트레이너와 이어져 있어요">🎴</i>':'')+((e.files||[]).length?`<i class="lki" title="첨부 ${e.files.length}개">📎${e.files.length}</i>`:'');
  /* ----- 11-02 카드 모양: 세계관 = 지도첩 카드(넓게), 설정 = 규칙 카드, 인물 = 학생증 · 교원증 · 신분증, 나머지 = 예전 카드. 「목록」 보기는 모두 예전 한 줄 ----- */
  const gridCls=t=>U.dense?'dense':t==='세계관'?'eg-w':t==='인물'?'eg-id':t==='설정'?'eg-l':'';
  /* 11-04 망령 「칼데아 소속 인물(서번트 제외)에게만 신분증」: 캠페인 설정 「신분증 줄 팀」(data.idTeams)이 있으면 그 팀 인물만 신분증,
@@ -209,6 +209,8 @@ window.NT_SPLAT=() => SPLAT;
  function mkBox(tid){const MK=window.NT_MAKER;if(!MK)return '';const t=MK.trainer(tid);const G=N().gm();
   if(!t)return `<div class="mkx"><span class="small dim">🎴 ${MK.M.at?'제작기에서 이 트레이너를 찾지 못했어요 ('+esc(tid)+')':'제작기 트레이너를 읽는 중이에요…'}</span></div>`;
   if(t.priv&&!G&&t.id!==N().me())return '';
+  /* 11-15 망령 「인물을 공개했다고 NPC 시트(배틀 데이터)를 볼 수 있으면 안 된다」: GM 이 아니면 자기 트레이너이거나 그 시트가 보이는(공개된) 때만 */
+  if(!G&&t.id!==N().me()&&!N().data('pc',tid)&&!N().data('npc',tid))return '';
   const ms=MK.mons(tid).filter(m=>!m.priv||G||t.id===N().me()),rk=t.ranks||{};   /* 11-12 숨긴 포켓몬은 주인 · GM 만 */const sheet=N().data('pc',tid)?'pc':N().data('npc',tid)?'npc':'';
   return `<div class="mkx"><span class="por" style="${t.image?`background-image:url('${cssu(t.image)}')`:''}"></span><div class="mb"><div class="row" style="gap:6px"><b>🎴 ${esc(t.name||tid)}</b><small class="dim">제작기 ${t.kind==='npc'?'NPC':'PC'}${t.folder?' · '+esc(MK.folderName(t.folder)):''}</small></div>
    <div class="rk">${['지시','육성','통솔','능력'].map(k=>`<span>${k} <b>${esc(rk[k]||'-')}</b></span>`).join('')}</div>${ms.length?`<div class="mons">${ms.slice(0,6).map(m=>`<i title="${esc(m.name||'')}" style="${MK.img(m)?`background-image:url('${cssu(MK.img(m))}')`:''}">${MK.img(m)?'':esc((m.name||'?')[0])}</i>`).join('')}</div>`:''}</div>
