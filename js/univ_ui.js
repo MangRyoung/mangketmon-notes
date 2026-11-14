@@ -19,7 +19,7 @@ window.NT_UNIV=(()=>{
 
  /* ===== 고유 포텐셜 ===== */
  /* 11-14 망령 「세션 노트 쪽엔 어디에 있음? 기능 확장이랑 폼체인지」: 제작기 트레이너의 기능 확장(t.ext) · 공유 폼체인지(t.sforms)를 고유 포텐셜 아래에 읽기 전용으로 (고치기는 제작기 트레이너 카드) */
- function extraSec(t){if(!t)return '';const ST=['HP','공격','방어','특공','특방','스피드'];const mons=t.pokemon||[];
+ function extraSec(t){if(!t)return '';const ST=['HP','공격','방어','특공','특방','스피드'];let mons=t.pokemon||[];if(!mons.length&&t.id){try{mons=(window.NT_MAKER&&NT_MAKER.mons?NT_MAKER.mons(t.id):[])||[]}catch(e){mons=[]}}
   const X=(t.ext||[]).filter(x=>x&&x.mv);const F=(t.sforms||[]).filter(f=>f&&(f.name||f.ability||(f.base||[]).some(v=>v!==''&&v!=null)||(f.t1&&f.t1!=='-')||(f.pots||[]).some(x=>x&&x.name)||(f.mvs||[]).some(x=>x&&x.to)));
   const xr=x=>{const who=x.who?((mons.find(m=>m&&m.id===x.who)||{}).name||'지정 포켓몬'):'PT 전원';return `<article class="ux-uc"><div class="ux-ub"><div class="ux-un"><i class="ux-gem" aria-hidden="true"></i><b>「기능 확장 : ${esc(x.mv)}」</b></div><div class="ux-ue small">${+x.lim?`【${+x.lim}/시】`:'횟수 제한 없음'} · ${x.kind==='extra'?'추가 행동':'행동으로'} · ${esc(who)}${x.src?` · 출처 ${esc(x.src)}`:''}</div></div></article>`};
   const fr=f=>{const ty=[f.t1,f.t2].filter(v=>v&&v!=='-');const bs=(f.base||[]).map((v,i)=>v!==''&&v!=null?ST[i]+' '+v:'').filter(Boolean);const L=[];if(ty.length)L.push('타입 '+ty.join('/'));if(f.ability)L.push('특성 '+f.ability);if(bs.length)L.push('종족치 '+bs.join(' · '));
