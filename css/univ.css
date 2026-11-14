@@ -788,5 +788,6 @@ button.awb-tend:hover,button.awb-tend:focus-visible{border-color:#f1d58e;backgro
 /* 03:32 망령 「그림 아래는 줄이 웃김 — 아래쪽 고치기 줄에 단추」: 대기 · 서브 = 카드 아래 「소지품 고치기 · 포켓몬 고치기 · 한 장 보기」 줄 오른쪽 끝 */
 .ux-itbs{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px}
 .pmbnc{display:inline-flex;gap:4px;margin-left:auto;flex:none}
+.pmc .fldrow{display:flex;align-items:center;gap:8px}
 .pmbnc .pmbn{margin:0;flex:none;padding:0 8px}
 .pmtys{display:inline-flex;gap:4px;flex-wrap:nowrap;white-space:nowrap}
