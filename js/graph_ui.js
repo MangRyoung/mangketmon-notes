@@ -27,7 +27,9 @@
  const ttl=id=>(pn(id)||{}).title||'?';
  const patchPos=(id,gx,gy)=>N().patch(kOf(id),id,d=>{d.gx=Math.round(gx);d.gy=Math.round(gy)});
  const toSheet=id=>{const k=kOf(id);N().go('pc');setTimeout(()=>window.NT_PC&&NT_PC.select&&NT_PC.select(k,id),0)};
- const nodes=()=>N().list('ents').concat(sheetNodes()).filter(e=>(!plView()||e._vis==='pub')&&C().shown('graph',clsOfNode(e))&&(!U.type||e.type===U.type)&&(!U.tag||(e.tags||[]).includes(U.tag))&&(!U.team||(e.teams||[]).includes(U.team)));
+ /* 11-14: 인물 항목이 제작기 트레이너(mk)로 이어 둔 시트는 같은 사람이라 보드에 한 번만 — 그 시트에 직접 걸린 실이 있으면 그대로 둔다 */
+ const dupSheet=()=>{const L=new Set(N().list('ents').map(e=>e.mk).filter(Boolean));if(!L.size)return L;for(const r of N().list('rels')){L.delete(r.a);L.delete(r.b)}return L};
+ const nodes=()=>{const D=dupSheet();return N().list('ents').concat(sheetNodes().filter(x=>!D.has(x.id))).filter(e=>(!plView()||e._vis==='pub')&&C().shown('graph',clsOfNode(e))&&(!U.type||e.type===U.type)&&(!U.tag||(e.tags||[]).includes(U.tag))&&(!U.team||(e.teams||[]).includes(U.team)))};
  const rels=()=>N().list('rels').filter(r=>!plView()||r._vis==='pub');
  const W=1600,H=1000;const BW=2200,BH=1400;/* 11-03: 보드 실 종류 — 보통 · 우호 · 적대 · 애정 · 비밀 저마다 색 · 점선 (board.css .str.*) */const BK=k=>k==='rival'?'doubt':k==='secret'?'secret':k==='ally'?'ally':k==='love'?'love':'tie';
  let BOARD=null;
@@ -131,7 +133,9 @@
   /* 처음 자리: 무리 중심 둘레 작은 원 (씨앗 고정) */
   let seed=7;for(const e of list)for(const ch of e.id)seed=(seed*31+ch.charCodeAt(0))%2147483647;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
   const P={};for(const [k,L] of G){const n=L.length;const rr=n>1?70+38*Math.sqrt(n):0;L.forEach((e,i)=>{const a=i/n*Math.PI*2+rnd()*.5;P[e.id]={x:C[k].x+Math.cos(a)*rr,y:C[k].y+Math.sin(a)*rr*.8,k}})}
-  const NS=Object.keys(P);const linkL=300;const SX=CW+38,SY=CH+34,GAP=46;
+  const NS=Object.keys(P);const linkL=300;
+  /* 카드가 많으면 간격을 줄인다 (보드 넓이의 절반쯤만 카드가 차지하게) */
+  const dens=Math.min(1,Math.sqrt((BW-2*M)*(BH-2*M)*.52/(NS.length*(CW+38)*(CH+34))));const SX=CW+Math.max(10,38*dens*dens),SY=CH+Math.max(20,34*dens*dens),GAP=Math.max(8,46*dens*dens*dens);
   /* 네모 겹침 풀기: 가로 · 세로 중 덜 겹친 쪽으로 민다 (다른 무리끼리는 GAP 만큼 더 띄움) */
   const sep=(F,str)=>{let hit=0;for(let i=0;i<NS.length;i++)for(let j=i+1;j<NS.length;j++){const A=P[NS[i]],B=P[NS[j]];const g=A.k===B.k?0:GAP;let dx=B.x-A.x,dy=B.y-A.y;if(Math.abs(dx)<.5&&Math.abs(dy)<.5){dx=rnd()-.5;dy=rnd()-.5}
     const ox=SX+g-Math.abs(dx),oy=SY+g-Math.abs(dy);if(ox<=0||oy<=0)continue;hit++;const a=F[NS[i]],b=F[NS[j]];
@@ -142,7 +146,13 @@
    for(const r of E){const A=P[r.a],B=P[r.b];const dx=B.x-A.x,dy=B.y-A.y,d=Math.hypot(dx,dy)||1;if(d<=linkL)continue;const f=(d-linkL)*.04/d;F[r.a].x+=dx*f;F[r.a].y+=dy*f;F[r.b].x-=dx*f;F[r.b].y-=dy*f}
    for(const id of NS){const p=P[id],c=C[p.k];F[id].x+=(c.x-p.x)*.03;F[id].y+=(c.y-p.y)*.03}
    for(const id of NS){const p=P[id],f=F[id];const mv=Math.hypot(f.x,f.y),cap=40*t+4;const s=mv>cap?cap/mv:1;p.x+=f.x*s;p.y+=f.y*s;clampP(p)}}
-  for(let it=0;it<200;it++){const F={};NS.forEach(id=>F[id]={x:0,y:0});if(!sep(F,.5))break;for(const id of NS){P[id].x+=F[id].x;P[id].y+=F[id].y;clampP(P[id])}}
+  let left=1;for(let it=0;it<500&&left;it++){const F={};NS.forEach(id=>F[id]={x:0,y:0});left=sep(F,.5);if(!left)break;for(const id of NS){P[id].x+=F[id].x;P[id].y+=F[id].y;clampP(P[id])}}
+  /* 그래도 겹치면(카드가 아주 많을 때): 무리마다 작은 격자로 묶어 줄지어 놓는다 — 겹침 없음이 먼저 */
+  left=0;for(let i=0;i<NS.length&&!left;i++)for(let j=i+1;j<NS.length;j++){const A=P[NS[i]],B=P[NS[j]];if(Math.abs(A.x-B.x)<CW+8&&Math.abs(A.y-B.y)<CH+8){left=1;break}}
+  if(left){const order=[...mid,...ring];const blocks=order.map(k=>{const L=G.get(k);const c=Math.ceil(Math.sqrt(L.length*1.4));return {k,L,c,r:Math.ceil(L.length/c)}});
+   const fit=(sx,sy,gap)=>{let x=M,y=M,rh=0;const out=[];for(const b of blocks){const w=b.c*sx,h=b.r*sy;if(x>M&&x+w>BW-M){x=M;y+=rh+gap;rh=0}out.push({b,x,y});x+=w+gap;rh=Math.max(rh,h)}return {out,h:y+rh}};
+   let sx=CW+26,sy=CH+30,gap=40,R=fit(sx,sy,gap);while(R.h>BH-M&&sx>CW+6){sx-=4;sy-=3;gap=Math.max(6,gap-5);R=fit(sx,sy,gap)}
+   const off=Math.max(0,(BH-M-R.h)/2);const offX=Math.max(0,(BW-M-Math.max(...R.out.map(o=>o.x+o.b.c*sx)))/2);for(const {b,x,y} of R.out)b.L.forEach((e,i)=>{const p=P[e.id];p.x=offX+x+(i%b.c)*sx+CW/2;p.y=off+y+Math.floor(i/b.c)*sy+CH/2;clampP(p)})}
   const rows=[],undo=[];for(const e of list){const k=e._k||'ents';const dd=N().doc(k,e.id);const p=P[e.id];if(!dd||!p)continue;const gx=Math.round((p.x-CW/2)*W/BW),gy=Math.round((p.y-CH/2)*H/BH);if(dd.data.gx===gx&&dd.data.gy===gy)continue;
    undo.push({kind:k,id:e.id,data:N().clone(dd.data),vis:dd.vis});rows.push({kind:k,id:e.id,data:Object.assign(N().clone(dd.data),{gx,gy}),vis:dd.vis})}
   if(!rows.length)return N().toast('이미 정리돼 있어요');
