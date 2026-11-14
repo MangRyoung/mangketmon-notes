@@ -113,7 +113,9 @@
     살짝 힘 배치(카드끼리 밀어내기 · 실은 당기기 · 무리 중심으로 모으기)로 다듬는다. NPC 무리는 가운데. 같은 카드 · 실이면 늘 같은 자리(씨앗 고정). 실행 취소 = 옛 자리로 */
  async function tidyBoard(list){if(!list||!list.length)return N().toast('정리할 카드가 없어요');
   const CW=136,CH=190,M=70;const ids=new Set(list.map(e=>e.id));const E=rels().filter(r=>ids.has(r.a)&&ids.has(r.b)&&r.a!==r.b);
-  const MK=window.NT_MAKER;const keyOf=e=>{if(clsOfNode(e)==='npc')return 'cls:npc';if(e._k&&e._k!=='ents'){const d=N().data(e._k,e.id)||{};const t=MK&&MK.trainer&&MK.trainer(e.id);const pl=String(d.player||(t&&t.pl)||'').trim();return pl?'pl:'+pl:'cls:'+clsOfNode(e)}return 'ent:'+((e.teams&&e.teams[0])||e.type||'기타')};
+  const MK=window.NT_MAKER;/* 11-14 망령 「정리 눌렀는데 꼴이 이게 뭐야」: 미사그 인물 21명이 전부 NPC 분류라 한 무리(cls:npc)로 가운데에 뭉쳤고, 밀어내기가 둥근 거리(205)라 세로로 긴 카드(136×190)가 위아래로 겹쳤다.
+     → 편(소속)이 있는 카드는 편마다 한 무리 · 밀어내기는 카드 네모 크기대로 · 마지막에 겹침만 푸는 손질 · 끝나면 화면 맞춤 */
+  const keyOf=e=>{if(e.teams&&e.teams[0])return 'team:'+e.teams[0];if(clsOfNode(e)==='npc')return 'cls:npc';if(e._k&&e._k!=='ents'){const d=N().data(e._k,e.id)||{};const t=MK&&MK.trainer&&MK.trainer(e.id);const pl=String(d.player||(t&&t.pl)||'').trim();return pl?'pl:'+pl:'cls:'+clsOfNode(e)}return 'ent:'+((e.teams&&e.teams[0])||e.type||'기타')};
   const G=new Map();for(const e of list){const k=keyOf(e);if(!G.has(k))G.set(k,[]);G.get(k).push(e)}
   const kOfId={};for(const [k,L] of G)for(const e of L)kOfId[e.id]=k;
   const W2={};const wk=(a,b)=>a<b?a+'|'+b:b+'|'+a;for(const r of E){const a=kOfId[r.a],b=kOfId[r.b];if(a!==b)W2[wk(a,b)]=(W2[wk(a,b)]||0)+1}
@@ -129,17 +131,22 @@
   /* 처음 자리: 무리 중심 둘레 작은 원 (씨앗 고정) */
   let seed=7;for(const e of list)for(const ch of e.id)seed=(seed*31+ch.charCodeAt(0))%2147483647;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
   const P={};for(const [k,L] of G){const n=L.length;const rr=n>1?70+38*Math.sqrt(n):0;L.forEach((e,i)=>{const a=i/n*Math.PI*2+rnd()*.5;P[e.id]={x:C[k].x+Math.cos(a)*rr,y:C[k].y+Math.sin(a)*rr*.8,k}})}
-  const NS=Object.keys(P);const minD=205,linkL=250;
+  const NS=Object.keys(P);const linkL=300;const SX=CW+38,SY=CH+34,GAP=46;
+  /* 네모 겹침 풀기: 가로 · 세로 중 덜 겹친 쪽으로 민다 (다른 무리끼리는 GAP 만큼 더 띄움) */
+  const sep=(F,str)=>{let hit=0;for(let i=0;i<NS.length;i++)for(let j=i+1;j<NS.length;j++){const A=P[NS[i]],B=P[NS[j]];const g=A.k===B.k?0:GAP;let dx=B.x-A.x,dy=B.y-A.y;if(Math.abs(dx)<.5&&Math.abs(dy)<.5){dx=rnd()-.5;dy=rnd()-.5}
+    const ox=SX+g-Math.abs(dx),oy=SY+g-Math.abs(dy);if(ox<=0||oy<=0)continue;hit++;const a=F[NS[i]],b=F[NS[j]];
+    if(ox/(SX+g)<oy/(SY+g)){const f=ox*str*(dx<0?-1:1);a.x-=f;b.x+=f}else{const f=oy*str*(dy<0?-1:1);a.y-=f;b.y+=f}}return hit};
+  const clampP=p=>{p.x=Math.max(M+CW/2,Math.min(BW-M-CW/2,p.x));p.y=Math.max(M+CH/2,Math.min(BH-M-CH/2,p.y))};
   for(let it=0;it<360;it++){const t=1-it/360;const F={};NS.forEach(id=>F[id]={x:0,y:0});
-   for(let i=0;i<NS.length;i++)for(let j=i+1;j<NS.length;j++){const A=P[NS[i]],B=P[NS[j]];let dx=B.x-A.x,dy=(B.y-A.y)*1.15,d=Math.hypot(dx,dy);if(d<1){dx=rnd()-.5;dy=rnd()-.5;d=1}
-    const want=A.k===B.k?minD:minD*1.25;if(d<want){const f=(want-d)*.5/d;F[NS[i]].x-=dx*f;F[NS[i]].y-=dy*f;F[NS[j]].x+=dx*f;F[NS[j]].y+=dy*f}}
+   sep(F,.5);
    for(const r of E){const A=P[r.a],B=P[r.b];const dx=B.x-A.x,dy=B.y-A.y,d=Math.hypot(dx,dy)||1;if(d<=linkL)continue;const f=(d-linkL)*.04/d;F[r.a].x+=dx*f;F[r.a].y+=dy*f;F[r.b].x-=dx*f;F[r.b].y-=dy*f}
    for(const id of NS){const p=P[id],c=C[p.k];F[id].x+=(c.x-p.x)*.03;F[id].y+=(c.y-p.y)*.03}
-   for(const id of NS){const p=P[id],f=F[id];const mv=Math.hypot(f.x,f.y),cap=40*t+4;const s=mv>cap?cap/mv:1;p.x=Math.max(M+CW/2,Math.min(BW-M-CW/2,p.x+f.x*s));p.y=Math.max(M+CH/2,Math.min(BH-M-CH/2,p.y+f.y*s))}}
+   for(const id of NS){const p=P[id],f=F[id];const mv=Math.hypot(f.x,f.y),cap=40*t+4;const s=mv>cap?cap/mv:1;p.x+=f.x*s;p.y+=f.y*s;clampP(p)}}
+  for(let it=0;it<200;it++){const F={};NS.forEach(id=>F[id]={x:0,y:0});if(!sep(F,.5))break;for(const id of NS){P[id].x+=F[id].x;P[id].y+=F[id].y;clampP(P[id])}}
   const rows=[],undo=[];for(const e of list){const k=e._k||'ents';const dd=N().doc(k,e.id);const p=P[e.id];if(!dd||!p)continue;const gx=Math.round((p.x-CW/2)*W/BW),gy=Math.round((p.y-CH/2)*H/BH);if(dd.data.gx===gx&&dd.data.gy===gy)continue;
    undo.push({kind:k,id:e.id,data:N().clone(dd.data),vis:dd.vis});rows.push({kind:k,id:e.id,data:Object.assign(N().clone(dd.data),{gx,gy}),vis:dd.vis})}
   if(!rows.length)return N().toast('이미 정리돼 있어요');
-  const n=await N().putMany(rows);if(!n)return;
+  const n=await N().putMany(rows);if(!n)return;setTimeout(()=>{try{N().fitView&&N().fitView()}catch(e){}},80);
   N().toast(`카드 ${rows.length}장을 묶음별로 정리했어요 (${G.size}무리)`,{undo:async()=>{const m=await N().putMany(undo);N().toast(m?'옛 자리로 되돌렸어요':'되돌리지 못했어요')}})}
  function renderBoard(el){const G=N().gm();const all=N().list('ents');const list=nodes().filter(e=>e._cls||['인물','조직','기타','이벤트','PC','NPC'].includes(e.type)||e.face);const types=window.NT_ENTS?NT_ENTS.TYPES:[];
   const tags=[...new Set(all.flatMap(e=>e.tags||[]))].sort((a,b)=>a.localeCompare(b,'ko')),teams=[...new Set(all.flatMap(e=>e.teams||[]))].sort((a,b)=>a.localeCompare(b,'ko'));
