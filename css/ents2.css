@@ -142,3 +142,28 @@ html[data-skin="univ"] .enti.el{background:linear-gradient(160deg,#efe6d2,#e4d8b
 .enti.eid.eid-alum{--hd1:#5a4614;--hd2:#2e2408}
 .enti.eid.eid-visit{--hd1:#a8521a;--hd2:#5e2a08}
 .enti.eid.eid-visit .eid-h{background:repeating-linear-gradient(135deg,rgba(0,0,0,.12) 0 6px,transparent 6px 12px),linear-gradient(90deg,var(--hd1),var(--hd2))}
+/* ----- 11-14 망령 「세계관 · 설정 · 인물이 일자로 있어서 보기 힘들다, 특히 인물」: 목록 쪽을 넓게(카드 3열) · 칸 건너뛰기 띠 · 묶음 접기 ----- */
+.split.entsplit{grid-template-columns:minmax(0,1fr) clamp(380px,36vw,560px)}
+@media(max-width:1000px){.split.entsplit{grid-template-columns:1fr}}
+.entjump{position:sticky;top:58px;z-index:5;display:flex;gap:6px;flex-wrap:wrap;padding:6px 8px;margin:0 0 -4px;background:color-mix(in srgb,var(--bg,#111) 88%,transparent);backdrop-filter:blur(4px);border:1px solid var(--line);border-radius:6px}
+.entjump button{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--fg);font-family:var(--lab);font-size:13px;cursor:pointer}
+.entjump button:hover{border-color:var(--c);background:color-mix(in srgb,var(--c) 16%,transparent)}
+.entjump .kdot{width:8px;height:8px;border-radius:50%;background:var(--c);display:inline-block}
+.entjump small{font-family:var(--mono);font-size:11px;color:var(--mute)}
+.entsec>h3{scroll-margin-top:110px}
+.entsubh{cursor:pointer;user-select:none}
+.entsubh em{font-style:normal;font-size:11px;color:var(--mute);margin-left:8px}
+.entsub.fold .entsubh{margin-bottom:0;opacity:.75}
+@media(max-width:1000px){.entjump{top:0}}
+body.present .entjump{display:none}
+/* ----- 11-14 칸마다 🔒 (GM만 칸) ----- */
+.etrow.lkable{grid-template-columns:110px minmax(0,1fr) 30px 28px}
+.etrow.lk input[data-k],.etrow.lk textarea{border-style:dashed;border-color:var(--red,#e4002b);background:rgba(228,0,43,.06)}
+.etrow .lkb{padding:0;height:30px;font-size:14px;line-height:1;opacity:.55}
+.etrow .lkb.on{opacity:1;border-color:var(--red,#e4002b);background:rgba(228,0,43,.1)}
+@media(max-width:560px){.etrow.lkable{grid-template-columns:minmax(0,1fr) 34px 30px}.etrow.lkable input[data-k]{grid-column:1/-1}}
+.entd .kv b.lk{color:var(--red2,#c2253c)}
+.entd .kv b .lkm{font-style:normal;margin-right:4px;font-size:.9em}
+.entd .kv span.lk{border-left:2px dashed var(--red,#e4002b);padding-left:8px;background:rgba(228,0,43,.05)}
+.kvnote{margin-top:6px;font-size:12px;color:var(--red2,#c2253c)}
+body.present .kv .lk,body.present .kvnote{display:none!important}

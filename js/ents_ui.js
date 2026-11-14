@@ -1,7 +1,9 @@
 /* ---------- 항목 탭 (인물 · 설정 · 이벤트 · 아이템 · 조직) ----------
    ents: {type, title, sub, body, rows[{k,v}], tags[], teams[], face, photo, at[장소 id], gx, gy, color, created}
    10-29 망령: rb {ch, h[]} = 제작기 룰북 장(절) 잇기 · mk = 제작기 트레이너 id · files [{n, k:img|txt|link, u, x(글 파일 내용), s}] = 첨부
-   sec 'ent:<id>' = {t} GM 메모(GM만). 관계(rels)는 graph_ui. */
+   sec 'ent:<id>' = {t, rows[{k,v,at}]} GM 메모 + 잠근 칸(GM만). 관계(rels)는 graph_ui.
+   11-14 망령 「정체 · 원하는 것 · 비밀 칸이 공개로 돌리면 다 보인다 — 인물 공개는 어떻게 하냐」: 칸마다 🔒. 잠근 칸은 ents 가 아니라 sec(GM만) rows 에 {k,v,at(합친 순서의 자리)} 로 둔다 → 공개해도 PL 에게는 내려가지 않는다.
+   ents.lkv=1 = 잠금을 한 번 정한 항목. lkv 가 없는 GM만 항목은 「비밀」 · 「숨긴 것」 칸을 기본으로 잠근다(lockMig · edit). 이미 공개된 옛 항목은 건드리지 않는다. */
 "use strict";
 (()=>{
  const N=()=>window.NT;const {$,$$,esc,cssu}=window.NT;
@@ -34,26 +36,39 @@ window.NT_SPLAT=() => SPLAT;
  const gsort=a=>{const G=grpT();if(!G.length)return a;return a.map((e,i)=>[e,i]).sort((x,y)=>gIdx(x[0],G)-gIdx(y[0],G)||x[1]-y[1]).map(x=>x[0])};
  const ety=e=>e.type==='설정'&&(e.tags||[]).some(x=>WTAG.includes(String(x).trim()))?'세계관':(TYPES.some(x=>x[0]===e.type)?e.type:'기타');
  const VK='nt_ent_view';
- const U={pv:'id',sel:'',type:'',tag:'',q:'',tagsOpen:false,fold:{},dense:(()=>{try{return localStorage.getItem(VK)==='list'}catch(e){return false}})(),ids:[]};
+ const U={pv:'id',sel:'',type:'',tag:'',q:'',tagsOpen:false,fold:{},sfold:{},dense:(()=>{try{return localStorage.getItem(VK)==='list'}catch(e){return false}})(),ids:[]};
  /* 10-29: 종류마다 기본 칸 (새 항목에 미리 깔고, 고치기 창의 「칸 틀」 로 빠진 것만 더한다. 빈 칸은 저장하지 않는다) */
  const TPL={'세계관':['개요','지리 · 위치','역사','분위기','주요 장소'],'인물':['정체','외모','성격 · 말투','원하는 것','비밀'],'조직':['목적','구성원','거점','가진 것','숨긴 것'],'설정':['요약','규칙','예외 · 주의'],'이벤트':['언제','어디서','무슨 일','결과'],'아이템':['효과','출처','값 · 구하는 법'],'기타':[]};
  const TAGMAX=10;
+ const SECK=['비밀','숨긴 것'];const isSK=k=>SECK.includes(String(k||'').trim());
+ const secRows=id=>{const x=N().data('sec','ent:'+id);return x&&Array.isArray(x.rows)?x.rows:[]};
+ /* 공개 칸 + 잠근 칸을 원래 순서로 합친 목록 [{k,v,lk}] — GM 화면 전용 */
+ function rowsAll(e,id){const R=(e.rows||[]).filter(Boolean).map(r=>({k:r.k||'',v:r.v||'',lk:false}));const L=secRows(id||e.id).filter(Boolean).slice().sort((a,b)=>(a.at||0)-(b.at||0));for(const r of L)R.splice(Math.min(Math.max(0,r.at|0),R.length),0,{k:r.k||'',v:r.v||'',lk:true});return R}
+ const splitRows=A=>({pub:A.filter(r=>!r.lk).map(r=>({k:r.k,v:r.v})),sec:A.map((r,i)=>r.lk?{k:r.k,v:r.v,at:i}:null).filter(Boolean)});
+ async function putSec(id,t,rows){const o={};if(t)o.t=t;if(rows&&rows.length)o.rows=rows;if(o.t||o.rows)return N().put('sec','ent:'+id,o,'gm');if(N().doc('sec','ent:'+id))return N().del('sec','ent:'+id);return true}
+ /* GM만 항목에 예전부터 적혀 있던 「비밀」 · 「숨긴 것」 칸을 잠근 칸으로 옮긴다 (캠페인마다 한 번, GM 이 항목 탭을 열 때). sec 를 먼저 쓰고 ents 에서 뺀다 */
+ let MIGC='';
+ async function lockMig(){const c=N().ST.camp;if(!c||MIGC===c||!N().gm()||N().ST.plView)return;MIGC=c;
+  for(const e of N().list('ents')){const d=N().doc('ents',e.id);if(!d||d.vis!=='gm'||d.data.lkv)continue;if(!(d.data.rows||[]).some(r=>r&&r.v&&isSK(r.k)))continue;
+   const A=rowsAll(d.data,e.id).map(r=>!r.lk&&r.v&&isSK(r.k)?Object.assign(r,{lk:true}):r);const S=splitRows(A);const x=N().data('sec','ent:'+e.id)||{};
+   if(!await putSec(e.id,x.t||'',S.sec))return;await N().put('ents',e.id,Object.assign({},d.data,{rows:S.pub,lkv:1}),'gm')}}
+ const FK='nt_ent_fold';const foldLoad=()=>{try{return JSON.parse(localStorage.getItem(FK)||'{}')||{}}catch(e){return {}}};const foldSave=()=>{try{localStorage.setItem(FK,JSON.stringify(U.fold))}catch(e){}};
  const ents=()=>N().list('ents').sort((a,b)=>(a.order||0)-(b.order||0)||String(a.title||'').localeCompare(String(b.title||''),'ko'));
  const tags=()=>[...new Set(ents().flatMap(e=>e.tags||[]))].sort((a,b)=>a.localeCompare(b,'ko'));
  const spotName=id=>{const s=N().data('spots',id);return s?(s.num?s.num+'. ':'')+s.name:''};
 
  function subG(t,g){if(t==='인물'&&nestOn()){const S=pvSplit(g);const ext=U.pv==='ext';const tabs=`<div class="eptabs"><button type="button" data-pv="id" class="${ext?'':'on'}">출입증<small>${S.id.length}</small></button><button type="button" data-pv="ext" class="${ext?'on':''}">외부 인물 기록<small>${S.ext.length}</small></button></div>`;return tabs+(subG0(t,ext?S.ext:S.id)||'<div class="empty">항목이 없어요.</div>')}return subG0(t,g)}
  function subG0(t,g){if(!g.length)return '';const G=grpT();const grid=a=>`<div class="entgrid ${gridCls(t)}" data-bin="${t}">${a.map(cardOf).join('')}</div>`;if(!G.length||!g.some(e=>gIdx(e,G)<G.length))return grid(g);
-  return [...G,'그 밖'].map((nm,i)=>[nm,g.filter(e=>gIdx(e,G)===i)]).filter(x=>x[1].length).map(([nm,a])=>`<div class="entsub"><h4 class="entsubh"><span>${esc(nm)}</span><small>${a.length}</small></h4>${grid(a)}</div>`).join('')}
- function render(el){const G=N().gm();const all=ents();NEST=nestMap();const q=U.q.trim().toLowerCase();
-  const L=all.filter(e=>(!U.type||ety(e)===U.type)&&(!U.tag||(e.tags||[]).includes(U.tag))&&(!q||[e.title,e.sub,e.body,(e.tags||[]).join(' '),(e.rows||[]).map(r=>r.k+' '+r.v).join(' ')].join(' ').toLowerCase().includes(q)));
+  return [...G,'그 밖'].map((nm,i)=>[nm,g.filter(e=>gIdx(e,G)===i)]).filter(x=>x[1].length).map(([nm,a])=>{const fk=t+'/'+nm,f=!!U.fold[fk];return `<div class="entsub ${f?'fold':''}"><h4 class="entsubh" data-fold="${esc(fk)}" title="누르면 접고 펴요"><span>${esc(nm)}</span><small>${a.length}</small><em>${f?'▾':'▴'}</em></h4>${f?'':grid(a)}</div>`}).join('')}
+ function render(el){const G=N().gm();const all=ents();NEST=nestMap();const q=U.q.trim().toLowerCase();if(!U._fl){U._fl=1;U.fold=foldLoad()}if(G)lockMig();
+  const L=all.filter(e=>(!U.type||ety(e)===U.type)&&(!U.tag||(e.tags||[]).includes(U.tag))&&(!q||[e.title,e.sub,e.body,(e.tags||[]).join(' '),(G?rowsAll(e):e.rows||[]).map(r=>r.k+' '+r.v).join(' ')].join(' ').toLowerCase().includes(q)));
   U.ids=(U.type==='인물'&&!q&&!U.tag&&nestOn()?visT('인물',L):U.type||q||U.tag?L:TYPES.flatMap(([t])=>U.fold[t]?[]:visT(t,L.filter(e=>ety(e)===t)))).map(e=>e.id);
   const sel=U.sel&&N().data('ents',U.sel)?Object.assign({id:U.sel,_vis:(N().doc('ents',U.sel)||{}).vis},N().data('ents',U.sel)):null;
   el.innerHTML=`${window.NT_SHELF?NT_SHELF.bar():''}<div class="toolbar"><h2>항목</h2><div class="seg" id="enTypes"><button data-t="" class="${!U.type?'on':''}">전체 ${all.length}</button>${TYPES.map(([t,,c])=>{const n=all.filter(e=>ety(e)===t).length;return n||G?`<button data-t="${t}" class="${U.type===t?'on':''}" style="--c:${c}"><i class="kdot"></i>${tl(t)} ${n}</button>`:''}).join('')}</div>
    <input type="search" id="enQ" placeholder="찾기" title="제목 · 한 줄 · 본문 · 상세 칸 · 태그에서 찾아요" value="${esc(U.q)}" style="width:160px"><div class="entview" title="카드로 보기 · 한 줄씩 보기"><button type="button" data-ev="card" class="${U.dense?'':'on'}">카드</button><button type="button" data-ev="list" class="${U.dense?'on':''}">목록</button></div><span class="sp"></span>${N().bulkBtns('ents',null,'항목')}${G?'<button class="btn sm pri" data-e="new">＋ 항목</button>':''}</div>
    ${(()=>{const T=tags();if(!T.length)return '';const cnt=t=>all.filter(e=>(e.tags||[]).includes(t)).length;const sorted=[...T].sort((a,b)=>cnt(b)-cnt(a)||a.localeCompare(b,'ko'));const show=U.tagsOpen||U.tag?sorted:sorted.slice(0,TAGMAX);
     return `<div class="tagbar">${U.tag?`<button class="chip on" data-tag="">${esc(U.tag)} ×</button>`:''}${show.filter(t=>t!==U.tag).map(t=>`<button class="chip" data-tag="${esc(t)}">${esc(t)}<small>${cnt(t)}</small></button>`).join('')}${sorted.length>TAGMAX&&!U.tag?`<button class="chip ghost" data-tagmore>${U.tagsOpen?'접기':'+'+(sorted.length-TAGMAX)+' 태그'}</button>`:''}</div>`})()}
-   <div class="split wideR entsplit"><div class="entcol">${U.type==='인물'&&!q&&!U.tag&&nestOn()?subG('인물',L):U.type||q||U.tag?`<div class="entgrid ${gridCls(U.type)}" data-bin="${U.type||''}">${L.map(cardOf).join('')||emptyBox(G)}</div>`:TYPES.map(([t,,c])=>{const g=L.filter(e=>ety(e)===t);if(!g.length)return '';const fold=U.fold[t];return `<section class="entsec es-${tc(t)[1]} ${fold?'fold':''}" style="--c:${c}"><h3 data-fold="${t}" data-ebin="${t}"><i class="kdot"></i>${tl(t)}<small>${g.length}</small><span class="sp"></span>${G?`<button type="button" class="btn xs ghost esadd" data-e="new" data-t="${t}" title="${esc(tl(t))} 새로 만들기">＋</button>`:''}<em>${fold?'펼치기 ▾':'접기 ▴'}</em></h3>${fold?'':subG(t,g)}</section>`}).join('')||emptyBox(G)}</div><aside class="side" id="entSide">${sel?detail(sel):'<div class="card dim small">항목을 누르면 여기에 자세히 나와요.</div>'}</aside></div>`;
+   <div class="split wideR entsplit"><div class="entcol">${!U.type&&!q&&!U.tag?(()=>{const J=TYPES.map(([t,,c])=>[t,c,L.filter(e=>ety(e)===t).length]).filter(x=>x[2]);return J.length>1?`<div class="entjump" title="누르면 그 칸으로 내려가요">${J.map(([t,c,n])=>`<button type="button" data-ejump="${t}" style="--c:${c}"><i class="kdot"></i>${tl(t)}<small>${n}</small></button>`).join('')}</div>`:''})():''}${U.type==='인물'&&!q&&!U.tag&&nestOn()?subG('인물',L):U.type||q||U.tag?`<div class="entgrid ${gridCls(U.type)}" data-bin="${U.type||''}">${L.map(cardOf).join('')||emptyBox(G)}</div>`:TYPES.map(([t,,c])=>{const g=L.filter(e=>ety(e)===t);if(!g.length)return '';const fold=U.fold[t];return `<section class="entsec es-${tc(t)[1]} ${fold?'fold':''}" style="--c:${c}"><h3 data-fold="${t}" data-ebin="${t}"><i class="kdot"></i>${tl(t)}<small>${g.length}</small><span class="sp"></span>${G?`<button type="button" class="btn xs ghost esadd" data-e="new" data-t="${t}" title="${esc(tl(t))} 새로 만들기">＋</button>`:''}<em>${fold?'펼치기 ▾':'접기 ▴'}</em></h3>${fold?'':subG(t,g)}</section>`}).join('')||emptyBox(G)}</div><aside class="side" id="entSide">${sel?detail(sel):'<div class="card dim small">항목을 누르면 여기에 자세히 나와요.</div>'}</aside></div>`;
   const qi=$('#enQ',el);qi.oncompositionend=()=>qi.oninput({isComposing:false});qi.oninput=e=>{if(e.isComposing)return;U.q=qi.value;const v=qi.value;N().render();const q2=$('#enQ');if(q2){q2.focus();q2.setSelectionRange(v.length,v.length)}};
   el.addEventListener('click',e=>{const t=e.target;if(t.closest('[data-rbtab]')){e.preventDefault();N().go('rb');return}   /* 11-04 서가의 「룰북 전권 →」 = 룰북 탭 */const shb=t.closest('[data-shelf]');if(shb){NT_SHELF.open(shb.dataset.shelf);return}   /* 10-31 룰북 서가 (꾸밈 「대학」) */
    const tb=t.closest('#enTypes button');if(tb){U.type=tb.dataset.t;N().render();return}
@@ -62,7 +77,8 @@ window.NT_SPLAT=() => SPLAT;
    const ap=t.closest('[data-appear]');if(ap){const [rid,i]=ap.dataset.appear.split('|');if(window.NT_SCEN){if(N().gm())NT_SCEN.write(rid,'ws'+i+'n');else N().go('scen')}return}
    const pv=t.closest('[data-pv]');if(pv){U.pv=pv.dataset.pv;N().render();return}
    const tm=t.closest('[data-tagmore]');if(tm){U.tagsOpen=!U.tagsOpen;N().render();return}
-   const fd=t.closest('[data-fold]');if(fd&&!t.closest('[data-e]')){U.fold[fd.dataset.fold]=!U.fold[fd.dataset.fold];N().render();return}
+   const fd=t.closest('[data-fold]');if(fd&&!t.closest('[data-e]')){U.fold[fd.dataset.fold]=!U.fold[fd.dataset.fold];foldSave();N().render();return}
+   const jp=t.closest('[data-ejump]');if(jp){const k=jp.dataset.ejump;if(U.fold[k]){U.fold[k]=false;foldSave();N().render()}const h=[...document.querySelectorAll('.entsec>h3[data-fold]')].find(x=>x.dataset.fold===k);if(h)h.scrollIntoView({behavior:'smooth',block:'start'});return}
    const tg=t.closest('[data-tag]');if(tg){U.tag=tg.dataset.tag===U.tag?'':tg.dataset.tag;N().render();return}
    const c=t.closest('[data-sel]');if(c&&!t.closest('button.btn')){U.sel=c.dataset.sel;N().render();const s=$('#entSide');if(s&&innerWidth<1000)s.scrollIntoView({behavior:'smooth',block:'start'});return}
    const go=t.closest('[data-spot]');if(go){N().go('map');setTimeout(()=>{window.NT_MAP.select(go.dataset.spot);N().render()},0);return}
@@ -106,9 +122,12 @@ window.NT_SPLAT=() => SPLAT;
   root.addEventListener('pointerup',end);root.addEventListener('pointercancel',end);
   root.addEventListener('click',e=>{if(root.dataset.sorted){e.stopPropagation();e.preventDefault()}},true)}
  const emptyBox=G=>`<div class="empty">항목이 없어요.${G?' <button type="button" class="btn sm pri" data-e="new" style="margin-left:8px">＋ 항목</button>':''}</div>`;
+ /* 공개하기 전에 PL 에게 무엇이 나가는지 한 번 보여 준다 */
+ function pubMsg(e,id,l){const A=rowsAll(e,id).filter(r=>r.v);const P=A.filter(r=>!r.lk).map(r=>r.k||'(이름 없는 칸)'),S=A.filter(r=>r.lk).map(r=>r.k||'(이름 없는 칸)');
+  return `「${e.title||''}」 을(를) ${l.replace(/^\S+\s/,'')} 공개할까요?\n\nPL 에게 보이는 것\n· 이름${e.sub?` · 한 줄 소개 「${e.sub}」`:''}${e.body?' · 본문':''}${(e.tags||[]).length?' · 태그':''}\n· 칸: ${P.length?P.join(', '):'없음'}\n\n🔒 GM만 (안 나가요)\n· ${S.length?S.join(', '):'잠근 칸 없음'}${N().data('sec','ent:'+id)&&N().data('sec','ent:'+id).t?' · GM 메모':''}`}
  function ctxItems(id){const d=N().doc('ents',id);if(!d)return null;const e=d.data;const G=N().gm();const it=[];const cur=d.vis||'pub';
   if(G){const vis=[['pub','👥 모두에게'],['gm','🔒 GM만']].concat((N().ST.seats||[]).map(s=>['pl:'+s.seat,'👤 '+(N().seatName(s.seat)||s.seat)+' 에게만']));
-   vis.forEach(([v,l])=>it.push({t:l+(v===cur?' ✓':''),on:async()=>{if(v===cur)return;await N().put('ents',id,N().clone(e),v);N().toast('공개 범위: '+N().visLabel(v))}}));it.push('-');
+   vis.forEach(([v,l])=>it.push({t:l+(v===cur?' ✓':''),on:async()=>{if(v===cur)return;if(cur==='gm'&&v!=='gm'&&!await N().confirmBox(pubMsg(e,id,l),'공개'))return;await N().put('ents',id,N().clone(e),v);N().toast('공개 범위: '+N().visLabel(v))}}));it.push('-');
    it.push({t:'✎ 고치기',on:()=>edit(id)})}
   if(window.NT_FAV)it.push({t:(NT_FAV.has('ents',id)?'★ 즐겨찾기에서 빼기':'☆ 즐겨찾기'),on:()=>NT_FAV.toggle('ents',id,e.title)});
   it.push({t:'🕸 관계도에서 보기',on:()=>{N().go('graph');setTimeout(()=>window.NT_GRAPH&&NT_GRAPH.focus&&NT_GRAPH.focus(id),0)}});
@@ -157,14 +176,14 @@ window.NT_SPLAT=() => SPLAT;
  function nestBox(e){const S=NEST.sv[e.id]||[],M=NEST.m[e.id];if(!S.length&&!M)return '';
   if(M)return `<div class="svmaster"><span class="small dim">마스터</span><button type="button" class="svm mini" data-sel="${esc(M.id)}"><span class="svf" style="${M.face?`background-image:url('${cssu(M.face)}')`:''}">${M.face?'':esc([...String(M.title||'?')][0])}</span><span class="svt"><b>${esc(M.title||'')}</b><small>${esc(M.sub||'')}</small></span><em>←</em></button></div>`;
   return `<div class="sec">휘하 서번트 <small class="dim">${S.length}</small></div><div class="svlist">${S.map(s=>`<button type="button" class="svm ${/퇴거/.test(s.sub||'')?'gone':''}" data-sel="${esc(s.id)}" style="--c:${esc(s.color||tc('인물')[2])}"><span class="svf" style="${s.face?`background-image:url('${cssu(s.face)}')`:''}">${s.face?'':esc([...String(s.title||'?')][0])}</span><span class="svt"><b>${esc(s.title||'')}</b><small>${esc(String(s.sub||'').replace(/\s*\([^)]*\)/,''))}</small></span>${/퇴거/.test(s.sub||'')?'<em>퇴거</em>':''}</button>`).join('')}</div>`}
- function detail(e){const G=N().gm(),ty=ety(e),t=tc(ty);const sec=N().data('sec','ent:'+e.id);const rels=N().list('rels').filter(r=>r.a===e.id||r.b===e.id);
+ function detail(e){const G=N().gm(),ty=ety(e),t=tc(ty);const sec=N().data('sec','ent:'+e.id);const KV=(G?rowsAll(e):(e.rows||[]).map(r=>({k:r.k,v:r.v,lk:false}))).filter(r=>r.v);const nlk=KV.filter(r=>r.lk).length;const rels=N().list('rels').filter(r=>r.a===e.id||r.b===e.id);
   return `<div class="card entd" style="--c:${e.color||t[2]}"><div class="row" style="gap:6px"><span class="chip static" style="border-color:var(--c);color:var(--c)">${esc(tl(ty))}</span>${window.NT_FAV?NT_FAV.btn('ents',e.id,e.title):''}${N().visBadge(e._vis,'ents',e.id)}${window.NT_HIST?NT_HIST.btn('ents',e.id):''}<span class="sp"></span>${U.ids.length>1&&U.ids.includes(e.id)?`<span class="entnav"><button class="btn xs ghost" data-enav="-1" ${U.ids[0]===e.id?'disabled':''} title="앞 항목">◀</button><button class="btn xs ghost" data-enav="1" ${U.ids[U.ids.length-1]===e.id?'disabled':''} title="다음 항목">▶</button></span>`:''}${G?`<button class="btn xs" data-e="edit" data-id="${esc(e.id)}">고치기</button><button class="btn xs ghost danger" data-e="del" data-id="${esc(e.id)}">지우기</button>`:''}</div>
    ${ty==='인물'&&idOk(e)?`<div class="eidwrap">${cardId(e,true)}</div>`:`<div class="enthead ${ty==='세계관'?'ewh':''}">${e.face?`<img class="face" src="${esc(e.face)}" alt="" data-big="${esc(e.face)}">`:''}<div><h3>${esc(e.title||'')}</h3>${e.sub?`<div class="dim">${esc(e.sub)}</div>`:''}${(e.tags||[]).length?`<div class="etags">${e.tags.map(x=>`<em>${esc(x)}</em>`).join('')}</div>`:''}</div></div>`}
    ${ty==='인물'?nestBox(e):''}
    ${e.photo&&!(ty==='인물'&&!e.face)?`<img class="photo" src="${esc(e.photo)}" alt="" data-big="${esc(e.photo)}" loading="lazy">`:''}
    ${e.body?`<p class="pre">${esc(e.body)}</p>`:''}
    ${e.mk?mkBox(e.mk):''}${e.rb&&e.rb.ch&&window.NT_RB?NT_RB.box(e.rb):''}${(e.files||[]).length?filesBox(e):''}
-   ${(e.rows||[]).some(r=>r.v)?`<div class="kv">${e.rows.filter(r=>r.v).map(r=>`<b>${esc(r.k)}</b><span class="pre">${esc(r.v)}</span>`).join('')}</div>`:''}
+   ${KV.length?`<div class="kv">${KV.map(r=>`<b class="${r.lk?'lk':''}">${r.lk?'<i class="lkm" title="GM 에게만 보이는 칸">🔒</i>':''}${esc(r.k)}</b><span class="pre ${r.lk?'lk':''}">${esc(r.v)}</span>`).join('')}</div>${nlk?`<div class="kvnote">🔒 ${nlk}칸은 GM 에게만 보여요 — 공개해도 PL 화면에는 나가지 않아요</div>`:''}`:''}
    ${(e.at||[]).length?`<div class="sec">장소</div><div class="row">${e.at.map(id=>`<button class="chip" data-spot="${esc(id)}">📍 ${esc(spotName(id)||id)}</button>`).join('')}</div>`:''}
    ${(e.teams||[]).length?`<div class="sec">소속 · 편</div><div class="row">${e.teams.map(x=>`<span class="chip static">${esc(x)}</span>`).join('')}</div>`:''}
    ${rels.length?`<div class="sec">관계</div><ul class="lnk">${rels.map(r=>{const oid=r.a===e.id?r.b:r.a;const o=N().data('ents',oid);return `<li><button class="linkbtn" data-sel="${esc(oid)}">${esc(o?o.title:'?')}</button> <span class="small dim">${r.a===e.id?'→':'←'} ${esc(r.label||'')}</span></li>`}).join('')}</ul><button class="btn xs ghost" data-e="graph" data-id="${esc(e.id)}">관계도에서 보기</button>`:''}
@@ -203,7 +222,7 @@ window.NT_SPLAT=() => SPLAT;
   if(k==='graph'){const id=U.sel;N().go('graph');setTimeout(()=>window.NT_GRAPH&&NT_GRAPH.focus&&NT_GRAPH.focus(id),0);return}
   if(k==='del'){const e=N().data('ents',id);if(!e||!await N().confirmBox(`「${e.title}」 항목을 지울까요? 관계선도 같이 지워져요. (설정 탭 「🗑 최근 지운 것」에서 되살릴 수 있어요)`,'지우기'))return;for(const r of N().list('rels').filter(r=>r.a===id||r.b===id))await N().del('rels',r.id);await N().del('ents',id);if(N().doc('sec','ent:'+id))await N().del('sec','ent:'+id);U.sel='';N().toastUndo('지웠어요');return}}
  function edit(id){const e=N().data('ents',id);if(!e)return;const sec=N().data('sec','ent:'+id)||{};const spots=N().list('spots');
-  const rows=N().clone(e.rows||[]);let face=e.face||'',photo=e.photo||'';let files=N().clone(e.files||[]),rb=e.rb&&e.rb.ch?N().clone(e.rb):null;
+  const auto=!e.lkv&&(N().doc('ents',id)||{}).vis==='gm';const rows=rowsAll(e,id).map(r=>auto&&isSK(r.k)?Object.assign(r,{lk:true}):r);let face=e.face||'',photo=e.photo||'';let files=N().clone(e.files||[]),rb=e.rb&&e.rb.ch?N().clone(e.rb):null;
   const md=N().openModal(`<div class="mhead" style="border-color:${esc(e.color||tc(e.type)[2])}"><h2>항목 고치기 <small class="dim" style="font-size:13px;font-family:var(--body)">${esc(e.title||'')}</small></h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
    <div class="ed2">
     <div class="edL">
@@ -218,7 +237,7 @@ window.NT_SPLAT=() => SPLAT;
      <label class="lbl">제목<input id="etTitle" type="text" value="${esc(e.title||'')}" class="big"></label>
      <label class="lbl">한 줄 소개<input id="etSub" type="text" value="${esc(e.sub||'')}"></label>
      <label class="lbl">본문<textarea id="etBody" rows="5">${esc(e.body||'')}</textarea></label>
-     <div class="sec">상세 칸 <small class="dim">내용이 빈 칸은 저장하지 않아요</small><span class="sp"></span><button class="btn xs ghost" id="etTpl" title="이 종류의 기본 칸 중 빠진 것을 더해요">칸 틀</button><button class="btn xs" id="etRowAdd">＋ 칸</button></div><div id="etRows" class="rowsed"></div>
+     <div class="sec">상세 칸 <small class="dim">내용이 빈 칸은 저장하지 않아요 · 🔒 = GM만 (공개해도 PL 에게 안 보여요)</small><span class="sp"></span><button class="btn xs ghost" id="etTpl" title="이 종류의 기본 칸 중 빠진 것을 더해요">칸 틀</button><button class="btn xs" id="etRowAdd">＋ 칸</button></div><div id="etRows" class="rowsed"></div><div class="small dim" id="etLkSum"></div>
      <div class="sec">태그 · 소속</div>
      <div class="mrow"><label class="lbl">태그 (쉼표로)<input id="etTags" type="text" value="${esc((e.tags||[]).join(', '))}"></label><label class="lbl">소속 · 편 (쉼표로)<input id="etTeams" type="text" value="${esc((e.teams||[]).join(', '))}"></label></div>
      <div class="row" style="gap:4px;flex-wrap:wrap">${tags().slice(0,24).map(t=>`<button type="button" class="chip xs" data-addtag="${esc(t)}">${esc(t)}</button>`).join('')}</div>
@@ -234,10 +253,10 @@ window.NT_SPLAT=() => SPLAT;
    </div>
    <div class="mfoot"><button class="btn ghost" data-x>취소</button><span class="sp"></span><button class="btn pri" id="etOk">저장</button></div>`,'wide');
   $$('[data-addtag]',md).forEach(b=>b.onclick=()=>{const i=$('#etTags',md);const cur=i.value.split(',').map(x=>x.trim()).filter(Boolean);if(!cur.includes(b.dataset.addtag))cur.push(b.dataset.addtag);i.value=cur.join(', ')});
-  const drawRows=()=>{$('#etRows',md).innerHTML=rows.map((r,i)=>`<div class="etrow" data-i="${i}"><input type="text" data-k value="${esc(r.k)}" placeholder="칸 이름"><textarea data-v rows="1" placeholder="내용">${esc(r.v)}</textarea><button class="btn xs ghost danger" data-del title="칸 빼기">×</button></div>`).join('');$$('#etRows textarea',md).forEach(t=>{const g=()=>{t.style.height='auto';t.style.height=Math.min(160,t.scrollHeight+2)+'px'};t.oninput=g;g()});
-   $$('.etrow',md).forEach(r=>{const i=+r.dataset.i;r.querySelector('[data-k]').oninput=ev=>rows[i].k=ev.target.value;r.querySelector('[data-v]').oninput=ev=>rows[i].v=ev.target.value;r.querySelector('[data-del]').onclick=()=>{rows.splice(i,1);drawRows()}})};
-  $('#etTpl',md).onclick=()=>{const have=new Set(rows.map(r=>r.k.trim()));const add=(TPL[$('#etType',md).value]||[]).filter(k=>!have.has(k));if(!add.length)return N().toast('기본 칸이 이미 다 있어요');add.forEach(k=>rows.push({k,v:''}));drawRows()};
-  drawRows();$('#etRowAdd',md).onclick=()=>{rows.push({k:'',v:''});drawRows();const last=$$('.etrow [data-k]',md).pop();if(last)last.focus()};
+  const drawRows=()=>{$('#etRows',md).innerHTML=rows.map((r,i)=>`<div class="etrow lkable ${r.lk?'lk':''}" data-i="${i}"><input type="text" data-k value="${esc(r.k)}" placeholder="칸 이름"><textarea data-v rows="1" placeholder="${r.lk?'내용 (GM만)':'내용'}">${esc(r.v)}</textarea><button type="button" class="btn xs ghost lkb ${r.lk?'on':''}" data-lk aria-pressed="${r.lk?'true':'false'}" title="${r.lk?'GM만 보는 칸이에요 — 누르면 공개 칸으로':'공개 칸이에요 — 누르면 GM만 보는 칸으로'}">${r.lk?'🔒':'👁'}</button><button class="btn xs ghost danger" data-del title="칸 빼기">×</button></div>`).join('');{const f=rows.filter(r=>String(r.v||'').trim());const a=f.filter(r=>r.lk).length;$('#etLkSum',md).textContent=f.length?`PL 에게 보이는 칸 ${f.length-a}개 · 🔒 GM만 ${a}개`:''}$$('#etRows textarea',md).forEach(t=>{const g=()=>{t.style.height='auto';t.style.height=Math.min(160,t.scrollHeight+2)+'px'};t.oninput=g;g()});
+   $$('.etrow',md).forEach(r=>{const i=+r.dataset.i;r.querySelector('[data-k]').oninput=ev=>rows[i].k=ev.target.value;r.querySelector('[data-v]').addEventListener('input',ev=>{rows[i].v=ev.target.value});r.querySelector('[data-lk]').onclick=()=>{rows[i].lk=!rows[i].lk;drawRows()};r.querySelector('[data-del]').onclick=()=>{rows.splice(i,1);drawRows()}})};
+  $('#etTpl',md).onclick=()=>{const have=new Set(rows.map(r=>r.k.trim()));const add=(TPL[$('#etType',md).value]||[]).filter(k=>!have.has(k));if(!add.length)return N().toast('기본 칸이 이미 다 있어요');add.forEach(k=>rows.push({k,v:'',lk:isSK(k)}));drawRows()};
+  drawRows();$('#etRowAdd',md).onclick=()=>{rows.push({k:'',v:'',lk:false});drawRows();const last=$$('.etrow [data-k]',md).pop();if(last)last.focus()};
   $$('#etAt input',md).forEach(c=>c.onchange=()=>c.closest('label').classList.toggle('on',c.checked));
   N().bindDrop($('#etFace',md),async fs=>{try{face=await N().upload(fs[0],'face','face');$('#etFace .pv',md).style.backgroundImage=`url('${cssu(face)}')`}catch(x){N().toast('올리기 실패: '+x.message)}});
   N().bindDrop($('#etPhoto',md),async fs=>{try{photo=await N().upload(fs[0],'photo','photo');$('#etPhoto .pv',md).style.backgroundImage=`url('${cssu(photo)}')`}catch(x){N().toast('올리기 실패: '+x.message)}});
@@ -259,10 +278,11 @@ window.NT_SPLAT=() => SPLAT;
    N().bindDrop($('#etFiles',md),async fs=>{for(const f of fs){try{files.push(await attach(f))}catch(x){N().toast(x.message)}drawFiles()}},true,'image/*,.txt,.md,.markdown,.csv,text/plain,text/markdown');
    $('#etLinkAdd',md).onclick=async()=>{const u=((await N().promptBox('링크 주소','','https://…'))||'').trim();if(!u)return;if(!/^https?:\/\/\S+$/i.test(u))return N().toast('https:// 로 시작하는 주소를 적어 주세요');
     const n=await N().promptBox('보일 이름',(()=>{try{return new URL(u).host}catch(x){return ''}})(),'');files.push({k:'link',u,n:(n||'').trim()||u});drawFiles()};
-  $('#etOk',md).onclick=async()=>{const split=v=>v.split(',').map(x=>x.trim()).filter(Boolean);
-   const n=Object.assign({},e,{type:$('#etType',md).value,title:$('#etTitle',md).value.trim()||'항목',sub:$('#etSub',md).value.trim(),body:$('#etBody',md).value.trim(),rows:rows.map(r=>({k:r.k.trim(),v:r.v.trim()})).filter(r=>r.v),tags:split($('#etTags',md).value),teams:split($('#etTeams',md).value),color:$('#etColor',md).value,at:$$('#etAt input:checked',md).map(c=>c.value),face,photo,rb:rb&&rb.ch?{ch:rb.ch,h:rb.h||[]}:null,mk:$('#etMk',md).value||'',files});
-   await N().put('ents',id,n,$('#etVis',md).value);const t=$('#etSec',md).value.trim();if(t)await N().put('sec','ent:'+id,{t},'gm');else if(N().doc('sec','ent:'+id))await N().del('sec','ent:'+id);N().closeModal()}}
+  $('#etOk',md).onclick=async()=>{const split=v=>v.split(',').map(x=>x.trim()).filter(Boolean);const SR=splitRows(rows.map(r=>({k:String(r.k||'').trim(),v:String(r.v||'').trim(),lk:!!r.lk})).filter(r=>r.v));
+   const n=Object.assign({},e,{type:$('#etType',md).value,title:$('#etTitle',md).value.trim()||'항목',sub:$('#etSub',md).value.trim(),body:$('#etBody',md).value.trim(),rows:SR.pub,lkv:1,tags:split($('#etTags',md).value),teams:split($('#etTeams',md).value),color:$('#etColor',md).value,at:$$('#etAt input:checked',md).map(c=>c.value),face,photo,rb:rb&&rb.ch?{ch:rb.ch,h:rb.h||[]}:null,mk:$('#etMk',md).value||'',files});
+   /* 잠근 칸(sec)을 먼저 쓰고 ents 를 쓴다 — 잠그는 칸이 한순간도 공개 문서에 남지 않게, 저장이 실패하면 ents 는 그대로 */
+   const t=$('#etSec',md).value.trim();if(!await putSec(id,t,SR.sec))return;await N().put('ents',id,n,$('#etVis',md).value);N().closeModal()}}
 
  N().MOD.ents={render};
- window.NT_ENTS={TYPES,tc,ety,tl,select:id=>{U.sel=id;N().render()},edit};
+ window.NT_ENTS={TYPES,tc,ety,tl,rowsAll,select:id=>{U.sel=id;N().render()},edit};
 })();

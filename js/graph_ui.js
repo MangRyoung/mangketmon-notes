@@ -162,7 +162,7 @@
    onLink:(a,b)=>newRel(a,b),onEdge:id=>{if(G)editRel(id);else{const r=N().data('rels',id);if(r)N().toast(ttl(r.a)+' → '+ttl(r.b)+' : '+(r.label||''))}},
    onNew:(x,y)=>newNode({x:x*W/BW,y:y*H/BH}),
    onEmpty:()=>`<p class="empty">보드에서 인물 한 명을 골라 주세요.<br>이어진 실을 정리해 드릴게요.${G?'<br><small style="font-family:var(--font);font-size:12px">끌어서 옮기기 · 빈 곳 두 번 누르면 새 인물 · 「실 잇기」로 관계 추가 · 실을 누르면 고치기</small>':''}</p>`,
-   dossier:(id,ctx)=>{const sh=isSheet(id);const e=pn(id)||{};const d=N().doc(kOf(id),id)||{};const sec=G?N().data('sec','ent:'+id):null;const rows=(e.rows||[]).filter(r=>r.k||r.v);
+   dossier:(id,ctx)=>{const sh=isSheet(id);const e=pn(id)||{};const d=N().doc(kOf(id),id)||{};const sec=G?N().data('sec','ent:'+id):null;const rows=(G&&!sh&&window.NT_ENTS&&NT_ENTS.rowsAll?NT_ENTS.rowsAll(e,id).map(r=>r.lk?{k:'🔒 '+r.k,v:r.v}:r):(e.rows||[])).filter(r=>r.k||r.v);
     let h=`<h2>${esc(e.title||'?')}${d.vis!=='pub'?'<span class="lock">GM만</span>':''}</h2><p class="rl">${esc([e.type,e.sub].filter(Boolean).join(' · '))}${(e.teams||[]).length?' · '+esc(e.teams.join(' · ')):''}</p>`;
     if(e.body)h+=`<h3>관찰 기록</h3><p>${esc(e.body)}</p>`;
     if(rows.length)h+=`<div class="kv">${rows.map(r=>`<b>${esc(r.k)}</b><span>${esc(r.v)}</span>`).join('')}</div>`;
