@@ -783,4 +783,9 @@ button.awb-tend:hover,button.awb-tend:focus-visible{border-color:#f1d58e;backgro
 .pmc{position:relative}
 .pmbns{position:absolute;top:8px;right:8px;display:flex;gap:4px;z-index:2}
 .pmbns .pmbn{margin:0;flex:none;padding:0 8px}
-.pmc:has(.pmbns) .pmt{padding-right:92px}
+.pmc:has(.pmbns) .pmnr{padding-right:62px}
+/* 11-15 망령 「이름이랑 대기/서브/숨기기가 겹침 · 타입 2개는 한 줄 · 대기/서브는 그림 아래 빈칸에, 숨기기만 오른쪽 위」 */
+.pmpc{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px}
+.pmbnc{display:flex;flex-direction:column;gap:3px;width:100%}
+.pmbnc .pmbn{margin:0;flex:none;width:100%;padding:0 4px;justify-content:center;text-align:center}
+.pmtys{display:inline-flex;gap:4px;flex-wrap:nowrap;white-space:nowrap}
