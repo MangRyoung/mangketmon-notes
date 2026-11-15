@@ -175,7 +175,7 @@ window.NT_SPLAT=() => SPLAT;
    case 'grad':return ROM(C-2-(q%5))+'-'+n3;
    case 'alum':return ROM(1+(q%(C-1)))+'-'+n3;
    case 'exch':return 'EX-'+ROM(C)+'-'+String(h%99+1).padStart(2,'0');
-   case 'staff':return 'No.'+String(h%99+1).padStart(3,'0');
+   case 'staff':return 'No.'+n3;
    case 'res':return 'R-'+n3;
    case 'visit':return 'V-'+String(h%9999+1).padStart(4,'0');
    default:return 'No.'+String(h%9999+1).padStart(4,'0')}};
