@@ -162,7 +162,25 @@ window.NT_SPLAT=() => SPLAT;
  function idKind(e){{const tg=e.tags||[];const hit=Object.keys(IDKS).find(k=>tg.includes(IDKS[k][0])||(k==='staff'&&tg.includes('교원증')));if(hit)return hit}const tx=[e.sub,(e.tags||[]).join(' '),(e.rows||[]).map(r=>r.k+' '+r.v).join(' '),e.title].join(' ');
   if(STAFF.test(tx))return 'staff';if(STU.test(tx))return 'stu';return document.documentElement.getAttribute('data-skin')==='univ'?'stu':'gen'}
  const IDK=IDKS;
- const idNo=id=>{let h=7;for(const ch of String(id))h=(h*31+ch.charCodeAt(0))>>>0;return '2026-'+String(h%10000).padStart(4,'0')};
+ /* 11-15 망령 「미사그 대학 시트 쪽 번호 — 2026 으로 시작할 필요 없지」: 꾸밈 「대학」(미사그 · 작중 1787학년도 · 이번 입학 = 제XVII기, 추천서 「제ⅩⅦ기 · 추천 제031호」와 맞춤)은 기수-번호.
+    학생 = 기수-번호(NPC 학생은 XIV ~ XVII기, PC 는 pc_ui 에서 XVII기 고정) · 대학원 XI ~ XV기 · 졸업생 I ~ XVI기 · 교직원 No.007 · 연구원 R-012 · 교환 EX-XVII-04 · 방문 V-0412.
+    다른 꾸밈(칼데아 등)은 예전 그대로. pc_ui 도 window.NT_IDNO 를 같이 쓴다 */
+ const UNIV={year:1787,coh:17};
+ const ROM=n=>{let r='',x=Math.max(1,n|0);for(const [v,c] of [[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']])while(x>=v){r+=c;x-=v}return r};
+ const idHash=id=>{let h=7;for(const ch of String(id))h=(h*31+ch.charCodeAt(0))>>>0;return h};
+ const idNoOf=(id,kind,o={})=>{const h=idHash(id);const univ=document.documentElement.getAttribute('data-skin')==='univ';if(!univ)return '2026-'+String(h%10000).padStart(4,'0');
+  const n3=String(h%999+1).padStart(3,'0'),q=(h>>>10);const C=UNIV.coh;
+  switch(kind){
+   case 'stu':return ROM(o.pc?C:C-(q%4))+'-'+n3;
+   case 'grad':return ROM(C-2-(q%5))+'-'+n3;
+   case 'alum':return ROM(1+(q%(C-1)))+'-'+n3;
+   case 'exch':return 'EX-'+ROM(C)+'-'+String(h%99+1).padStart(2,'0');
+   case 'staff':return 'No.'+String(h%99+1).padStart(3,'0');
+   case 'res':return 'R-'+n3;
+   case 'visit':return 'V-'+String(h%9999+1).padStart(4,'0');
+   default:return 'No.'+String(h%9999+1).padStart(4,'0')}};
+ window.NT_IDNO=idNoOf;window.NT_IDYEAR=()=>document.documentElement.getAttribute('data-skin')==='univ'?UNIV.year:2026;
+ const idNo=(id,kind)=>idNoOf(id,kind);
  const idCrest='<svg viewBox="0 0 40 46" aria-hidden="true"><path d="M20 2 37 8v14c0 11-7.5 18.5-17 22C10.5 40.5 3 33 3 22V8Z" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M11 16h18v14H11zM20 16v14" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="20" cy="9.5" r="2.2" fill="currentColor"/></svg>';
  function idOrg(){const c=(N().ST&&N().ST.campInfo)||{};const nm=c.name||'';const univ=document.documentElement.getAttribute('data-skin')==='univ';
   return univ?['MISAG UNIVERSITY',/대학/.test(nm)?nm.replace(/대학$/,'대학교'):'미사그 대학교']:[nm||'CAMPAIGN','캠페인 인물 기록']}
@@ -173,7 +191,7 @@ window.NT_SPLAT=() => SPLAT;
    <span class="eid-b"><span class="eid-p ${img?'':'noimg'}" style="${img?`background-image:url('${cssu(img)}')`:''}" ${big&&img?`data-big="${esc(img)}"`:''}>${img?'':ini}</span>
     <span class="eid-f"><span class="eid-l">성명</span><b class="eid-n">${esc(e.title||'(이름 없음)')}</b>
      <span class="eid-l">${K[2]}</span><span class="eid-v">${esc(e.sub||'—')}</span>
-     <span class="eid-l">${K[3]}</span><span class="eid-v eid-no">${esc(idNo(e.id))}</span>
+     <span class="eid-l">${K[3]}</span><span class="eid-v eid-no">${esc((rowsV(e).find(r=>r.v&&r.k===K[3])||{}).v||idNo(e.id,k))}</span>
      ${(big?[]:R.slice(0,1)).map(r=>`<span class="eid-l">${esc(clip(r.k,6))}</span><span class="eid-v">${esc(clip(r.v,big?60:22))}</span>`).join('')}</span></span>
    <span class="eid-ft"><span class="eid-bar" aria-hidden="true"></span>${!big&&(NEST.sv[e.id]||[]).length?`<span class="eid-svn" title="누르면 오른쪽에 휘하 서번트가 펼쳐져요">서번트 ${NEST.sv[e.id].length}</span>`:''}${vt(e).length?`<span class="eid-tg">${vt(e).slice(0,big?6:2).map(x=>`<em>${esc(x)}</em>`).join('')}</span>`:'<span class="sp"></span>'}${big?'':N().visBadge(e._vis,'ents',e.id)+linkIcons(e)}<span class="eid-seal" aria-hidden="true">${isDead(e)?'사망':isMiss(e)?'실종':K[4]}</span></span>${isDead(e)?`<span class="eid-dead" aria-label="사망">${SPLAT}<span class="eid-dstamp">사망<small>DECEASED</small></span></span>`:isMiss(e)?`<span class="eid-dead eid-miss" aria-label="실종"><span class="eid-dstamp">실종<small>MISSING</small></span></span>`:''}</${tag}>`}
  function nestBox(e){const S=NEST.sv[e.id]||[],M=NEST.m[e.id];if(!S.length&&!M)return '';
