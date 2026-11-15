@@ -179,8 +179,8 @@
    <div class="rpbox" style="margin-top:10px"><h4>세션 기록<span class="sp"></span>${E?`<button class="btn xs ghost" data-p="logadd" data-id="${esc(id)}">＋ 기록</button>`:''}</h4><div class="sesslog">${(p.log||[]).slice().reverse().map((x,i)=>`<div class="ent"><b>${esc(x.s||'')}</b>${esc(x.t||'')}${E?` <button class="linkbtn small" data-p="logdel" data-id="${esc(id)}" data-i="${(p.log||[]).length-1-i}">지우기</button>`:''}</div>`).join('')||'<span class="dim small">세션마다 한 줄씩 남겨요</span>'}</div></div></div>`}
  /* 10-29 망령: 꾸밈 「대학」 — PC 시트 머리를 학생증(NPC 는 교직원증)으로. 버튼 · 파티 · 제작기 안내는 오른쪽(heroIn 그대로) */
  const CREST='<svg viewBox="0 0 40 46" aria-hidden="true"><path d="M20 2 37 8v14c0 11-7.5 18.5-17 22C10.5 40.5 3 33 3 22V8Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M11 16h18v14H11z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 16v14M11 16c3-2 6-2 9 0 3-2 6-2 9 0" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="20" cy="9.5" r="2.2" fill="currentColor"/></svg>';
- /* 11-15: 번호는 ents_ui 의 NT_IDNO (꾸밈 「대학」 = 기수-번호 · PC 학생은 이번 입학 기수) */
- const stuNo=(id,kind,pc)=>window.NT_IDNO?NT_IDNO(id,kind,{pc}):(()=>{let h=7;for(const ch of String(id))h=(h*31+ch.charCodeAt(0))>>>0;return '2026-'+String(h%10000).padStart(4,'0')})();
+  /* 11-15 망령 「바꾸는 건 NPC 만」: PC 학생증은 예전 그대로(2026-0000 · 2026학년도), NPC 시트만 기수-번호 · 1787학년도 */
+ const stuNo=(id,kind,pc)=>!pc&&window.NT_IDNO?NT_IDNO(id,kind):(()=>{let h=7;for(const ch of String(id))h=(h*31+ch.charCodeAt(0))>>>0;return '2026-'+String(h%10000).padStart(4,'0')})();
  /* 11-07 망령 「사망 · 실종 두 개」 · 「학생증 · 교직원증 … 몇 개 더 — 학생증 고치기에서 바꿀 수 있게」: p.idKind(증 종류) · p.idStat(dead | miss). 종류 표는 ents_ui NT_IDKS 와 같이 쓴다 */
  const IDKS0={stu:['학생증','STUDENT ID','소속','학번','총장'],staff:['교직원증','STAFF','직위','번호','교무'],gen:['신분증','IDENTIFICATION','소속','번호','확인']};
  const IDKS=()=>window.NT_IDKS||IDKS0,IDST=()=>window.NT_IDST||{dead:['사망','DECEASED'],miss:['실종','MISSING']};
@@ -196,7 +196,7 @@
    ${(()=>{/* 10-29 망령 「학생증 지시 체계까지 라인 맞도록 세로로 늘려서 뭔가 적을만한 걸」: 기재 사항 (기숙사 · 동아리 · 한마디 · 비고) — 남는 높이는 줄 친 비고 칸이 채운다 */
     const L=[[LB[0],p.dorm],[LB[1],p.club],['한마디',p.motto]];
     return `<div class="idc-ex"><h5>기재 사항<small>${npc?'REMARKS':'REMARKS'}</small></h5><dl class="idc-exf">${L.map(([k,v])=>`<dt>${k}</dt><dd>${esc(v||'')||'<span class="idc-blank">—</span>'}</dd>`).join('')}</dl><div class="idc-note"><span class="idc-nl">비고</span>${esc(p.idNote||'')}</div></div>`})()}
-   <div class="idc-foot"><span class="idc-bar" aria-hidden="true"></span><span class="idc-yr">${window.NT_IDYEAR?NT_IDYEAR():2026}학년도</span><span class="idc-seal" aria-hidden="true">${S?S[0]:kk==='stu'?'미사그<br>대학인':esc(K[4])}</span></div>${st==='dead'?`<span class="idc-st dead" aria-hidden="true">${window.NT_SPLAT?NT_SPLAT():''}<span class="idc-stamp">${S[0]}<small>${S[1]}</small></span></span>`:st?`<span class="idc-st ${st}" aria-hidden="true"><span class="idc-stamp">${S[0]}<small>${S[1]}</small></span></span>`:''}
+   <div class="idc-foot"><span class="idc-bar" aria-hidden="true"></span><span class="idc-yr">${npc&&window.NT_IDYEAR?NT_IDYEAR():2026}학년도</span><span class="idc-seal" aria-hidden="true">${S?S[0]:kk==='stu'?'미사그<br>대학인':esc(K[4])}</span></div>${st==='dead'?`<span class="idc-st dead" aria-hidden="true">${window.NT_SPLAT?NT_SPLAT():''}<span class="idc-stamp">${S[0]}<small>${S[1]}</small></span></span>`:st?`<span class="idc-st ${st}" aria-hidden="true"><span class="idc-stamp">${S[0]}<small>${S[1]}</small></span></span>`:''}
   </div><div class="idside">${heroIn}</div></div>`}
  const T2C={'노말':'#9aa','불꽃':'#f08030','물':'#6890f0','풀':'#78c850','전기':'#f8d030','얼음':'#98d8d8','격투':'#c03028','독':'#a040a0','땅':'#e0c068','비행':'#a890f0','에스퍼':'#f85888','벌레':'#a8b820','바위':'#b8a038','고스트':'#705898','드래곤':'#7038f8','악':'#705848','강철':'#b8b8d0','페어리':'#ee99ac'};
  /* 11-07 망령 「알그룹도 타입처럼 꾸며줘」: 알그룹마다 색 (모르는 이름은 글자로 색을 정한다) · 알 모양 둥근 칩 */

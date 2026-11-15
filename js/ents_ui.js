@@ -163,7 +163,7 @@ window.NT_SPLAT=() => SPLAT;
   if(STAFF.test(tx))return 'staff';if(STU.test(tx))return 'stu';return document.documentElement.getAttribute('data-skin')==='univ'?'stu':'gen'}
  const IDK=IDKS;
  /* 11-15 망령 「미사그 대학 시트 쪽 번호 — 2026 으로 시작할 필요 없지」: 꾸밈 「대학」(미사그 · 작중 1787학년도 · 이번 입학 = 제XVII기, 추천서 「제ⅩⅦ기 · 추천 제031호」와 맞춤)은 기수-번호.
-    학생 = 기수-번호(NPC 학생은 XIV ~ XVII기, PC 는 pc_ui 에서 XVII기 고정) · 대학원 XI ~ XV기 · 졸업생 I ~ XVI기 · 교직원 No.007 · 연구원 R-012 · 교환 EX-XVII-04 · 방문 V-0412.
+    인물 칸 · NPC 시트만(PC 학생증은 예전 그대로 — 망령 「바꾸는 건 NPC 만」). 학생 = 기수-번호(XIV ~ XVII기) · 대학원 XI ~ XV기 · 졸업생 I ~ XVI기 · 교직원 No.007 · 연구원 R-012 · 교환 EX-XVII-04 · 방문 V-0412.
     다른 꾸밈(칼데아 등)은 예전 그대로. pc_ui 도 window.NT_IDNO 를 같이 쓴다 */
  const UNIV={year:1787,coh:17};
  const ROM=n=>{let r='',x=Math.max(1,n|0);for(const [v,c] of [[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']])while(x>=v){r+=c;x-=v}return r};
