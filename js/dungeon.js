@@ -78,10 +78,11 @@ window.NT_DG=(()=>{
   const st=idOf[(rs.find(x=>x.t==='entry')||rs[0]||{}).id]||Object.keys(R)[0];
   return {n:String(dg.name||'시뮬레이터 던전').slice(0,60),o:dg.owner?`(자동 생성) ${dg.owner}`:'',a:THEME_A[dg.theme]||dg.theme||'',wn:dg.wn||2,st,r:R,l:L,src:{from:'sim',id:dg.id||'',tier:(dg.gen||{}).tier||'',seed:(dg.gen||{}).seed||'',theme:dg.theme||'',note:String(dg.note||'').slice(0,300)}}}
  /* 웹툴 꼴(r · l) 은 칸만 걸러 그대로 */
- const RF=['n','t','x','y','m','b','sk','rk','rmany','cl','e','eh'];
+ const RF=['n','t','x','y','m','b','sk','rk','rmany','cl','e','eh','w'];   /* 11-16 w = 야생 시트 설계(제작기 「던전 생성」 · 웹툴 가져오기 형식) */
+ const TOPF=['o','a','wn','noal','mq'];   /* 11-16 mq = 미궁 포텐셜 */
  function fromOm(j){const R={};for(const [k,x] of Object.entries(j.r||{})){const id=String(k).replace(/[^A-Za-z0-9_]/g,'').slice(0,12)||rid();const o={};for(const f of RF)if(x[f]!=null&&x[f]!=='')o[f]=x[f];o.n=String(o.n||'방').slice(0,40);o.t=TY[o.t]?o.t:'room';o.x=clamp(Math.round(+o.x||110),30,970);o.y=clamp(Math.round(+o.y||80),30,600);R[id]=o}
   const L={};for(const k of Object.keys(j.l||{})){const [a,b]=String(k).split('~');if(R[a]&&R[b]&&a!==b)L[lk(a,b)]=1}
-  const o={n:String(j.n||'가져온 던전').slice(0,60),st:R[j.st]?j.st:(Object.keys(R).find(id=>R[id].t==='entry')||Object.keys(R)[0]),r:R,l:L,src:{from:'json'}};for(const f of ['o','a','wn','noal'])if(j[f]!=null&&j[f]!=='')o[f]=j[f];if(j.gen)o.src=Object.assign(o.src,{tier:j.gen.tier||'',seed:j.gen.seed||'',theme:j.gen.theme||''});return o}
+  const o={n:String(j.n||'가져온 던전').slice(0,60),st:R[j.st]?j.st:(Object.keys(R).find(id=>R[id].t==='entry')||Object.keys(R)[0]),r:R,l:L,src:{from:'json'}};for(const f of TOPF)if(j[f]!=null&&j[f]!=='')o[f]=j[f];if(j.gen)o.src=Object.assign(o.src,{tier:j.gen.tier||'',seed:j.gen.seed||'',theme:j.gen.theme||''});return o}
  async function fromAny(txt,wild){let j;try{j=JSON.parse(String(txt||'').trim())}catch(e){throw new Error('JSON 을 읽지 못했어요 — '+e.message)}
   const L=Array.isArray(j)?j:(j&&Array.isArray(j.dungeons)?j.dungeons:[j]);const out=[];
   for(const x of L){if(!x||typeof x!=='object')continue;if(Array.isArray(x.rooms)){out.push(fromSim(x,wild||await wildNames()))}else if(x.r&&typeof x.r==='object')out.push(fromOm(x))}
@@ -97,11 +98,38 @@ window.NT_DG=(()=>{
   SIM.list=L.filter(x=>x&&x.d&&Array.isArray(x.d.rooms));SIM.at=Date.now();return SIM.list}
  const TIER={easy:'쉬움',normal:'보통',hard:'어려움',vhard:'아주 어려움'};
 
+ /* ----- 제작기 「던전 생성」 탭의 던전 (11-16 망령 「던전 제작기랑 연결 가능하게 해」) -----
+    제작기 공유 DB kind 'dungeon' 문서 {d: 웹툴 가져오기 형식(방마다 w = 야생 시트 · mq = 미궁 포텐셜), tier s1|s2|s3, ownerName, pub, at, seed, theme}.
+    가져온 던전은 src {from:'maker', mk: 제작기 문서 id, mtier, mkAt, owner} — 「제작기에서 다시 받기」로 방 · 통로 · 체크 · 야생 시트를 다시 받는다 (장소 · 판 그림 · 방 그림 · 숨김 · 단서는 노트 것을 남김).
+    웹툴로 보내면 웹툴이 w 로 야생 시트를 만든다 (oremas notes_link dgPull). */
+ const MTIER={s1:'사건 1',s2:'사건 2',s3:'사건 3'};
+ const mkSrc=x=>{const D=x.data||{};return {from:'maker',mk:x.id,mtier:D.tier||'',mkAt:+D.at||0,owner:D.ownerName||'',seed:D.seed||'',theme:D.theme||''}};
+ function fromMaker(x){const D=(x&&x.data)||{};if(!D.d||!D.d.r)throw new Error('제작기 던전을 읽지 못했어요');const o=fromOm(D.d);o.src=mkSrc(x);return o}
+ async function mkList(){const L=await N().DBS().makerDocs('dungeon');return (L||[]).filter(x=>x&&x.data&&x.data.d&&!x.data.del).sort((a,b)=>(+b.data.at||0)-(+a.data.at||0))}
+ const wSame=(a,b)=>JSON.stringify(a||null)===JSON.stringify(b||null);
+ /* 다시 받기: 제작기 것으로 방 · 통로 · 시작 방 · 미궁 포텐셜을 바꾸고, 노트에서 넣은 방 그림 · 단서 · 숨김과 (야생 시트가 그대로인 방의) 웹툴 시트 이음(e)은 남긴다 */
+ async function mkRefresh(){const src=(E.d&&E.d.src)||{};if(!canEd()||src.from!=='maker'||!src.mk)return;let x;try{x=await N().DBS().makerGet('dungeon',src.mk)}catch(e){return N().toast('제작기에서 읽지 못했어요: '+e.message)}
+  if(!x||!x.data||!x.data.d||x.data.del)return N().toast('제작기에 그 던전이 없어요 (지웠거나 옮겼어요)');let nd;try{nd=fromMaker(x)}catch(e){return N().toast(e.message)}
+  const old=E.d.r||{};const add=Object.keys(nd.r).filter(id=>!old[id]).length,del=Object.keys(old).filter(id=>!nd.r[id]).length;
+  if(!confirm(`제작기의 「${x.data.d.n||''}」 를 다시 받을까요?\n방 · 통로 · 체크 · 야생 시트 · 방 자리는 제작기 것으로 바뀌어요${add||del?` (새 방 ${add} · 없어지는 방 ${del})`:''}.\n노트에서 넣은 장소 · 판 그림 · 방 그림 · 단서 · 숨김 · 던전 이름은 그대로 둬요.`))return;
+  for(const [id,r] of Object.entries(nd.r)){const o=old[id];if(!o)continue;if(o.b)r.b=o.b;if(o.cl&&!r.cl)r.cl=o.cl;if(o.e&&wSame(o.w,r.w)){r.e=o.e;if(o.eh)r.eh=o.eh}}
+  E.d.r=nd.r;E.d.l=nd.l;E.d.st=nd.st;if(nd.mq)E.d.mq=nd.mq;else delete E.d.mq;if(!E.d.a&&nd.a)E.d.a=nd.a;E.d.src=nd.src;if(Array.isArray(E.d.hide))E.d.hide=E.d.hide.filter(id=>nd.r[id]);E.sel='';
+  await save(true);draw();N().toast('제작기에서 다시 받았어요')}
+ /* 야생 시트 보기 (읽기 전용 — 고치기는 제작기 「던전」 탭) */
+ const RL={pre:'사전 몹',esc:'졸개',boss:'보스'};
+ function wildHTML(w){if(!w||!Array.isArray(w.mons)||!w.mons.length)return '';const pot=(k,x)=>x&&(x.name||x.eff)?`<div class="dgwp"><u>${k}</u> <b>${esc(x.name||'(이름 없음)')}</b>${x.eff?' — '+esc(x.eff):''}</div>`:'';
+  return `<div class="dgw"><div class="dgwh">⚔ ${esc(w.name||'야생')} · ${w.mons.length}체</div>${w.mons.map(m=>{const ty=[m.t1,m.t2].filter(t=>t&&t!=='-').join(' / ');const lv=+m.dist||0;const tags=(m.pots||[]).filter(Boolean);
+   return `<div class="dgwm${m.name?'':' emp'}"><div class="dgwn"><i>${esc(RL[m.role]||(m.boss?'보스':'야생'))}</i><b>${esc(m.name||'(포켓몬 미정)')}</b><span>${[ty,m.pride?'프라이드 '+esc(m.pride):'','Lv '+(lv>=0?'+':'')+lv].filter(Boolean).join(' · ')}</span></div>
+    ${m.ability||(m.moves||[]).length?`<div class="dgwl">${m.ability?'특성 '+esc(m.ability):''}${m.ability&&(m.moves||[]).length?' · ':''}${(m.moves||[]).length?'기술 '+esc(m.moves.join(', ')):''}</div>`:''}${tags.length?`<div class="dgwl dim">${tags.map(t=>'『'+esc(t)+'』').join(' ')}</div>`:''}
+    ${(m.gye||[]).map((g,i)=>pot('『계제』'+(i+1),g)).join('')}${pot('야생 포텐셜',m.wp)}${pot('전용',m.excl)}${(m.exclX||[]).map(g=>pot('전용',g)).join('')}</div>`}).join('')}</div>`}
+ const mkHref=()=>((window.NT_CONFIG||{}).makerUrl||'')+'?tab=dg';
+
  /* ----- 새 던전 ----- */
  async function create(spot,d){const id=N().uid('d');const o=Object.assign({spot:spot||''},d);if(!N().gm())return;if(!await N().put('dgs',id,o,'gm'))return;N().toast(`던전 「${o.n||''}」 를 붙였어요`);openEd(id)}
  function blank(){const a=rid(),b=rid();return {n:'새 던전',st:a,r:{[a]:{n:'입구',t:'entry',x:120,y:520},[b]:{n:'심층부',t:'boss',x:860,y:150}},l:{[lk(a,b)]:1},src:{from:'new'}}}
  function newFor(spot){if(!N().gm())return;const m=N().openModal(`<div class="mhead"><h2>⛩ 「${esc(spotName(spot)||'장소')}」 에 던전 붙이기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
    <div class="dgnew"><button type="button" class="dgopt" data-k="sim"><b>🧪 시뮬레이터에서</b><small>시뮬레이터에 저장한 던전(oremas/sim/data/dungeons)을 골라요. 방 · 통로 · 체크 · 야생이 그대로 들어와요.</small></button>
+   <button type="button" class="dgopt" data-k="maker"><b>🛠 제작기에서</b><small>제작기 「던전」 탭에서 만든 던전을 골라요. 방 · 통로 · 체크와 야생 시트(포켓몬 · 기술 · 『계제』 · 야생 포텐셜)가 들어오고, 나중에 다시 받을 수 있어요.</small></button>
    <button type="button" class="dgopt" data-k="file"><b>📄 파일 · 붙여넣기</b><small>시뮬레이터 던전 파일, 「자동 생성 → 웹툴로」 파일, 웹툴 「JSON 내보내기」 글.</small></button>
    <button type="button" class="dgopt" data-k="blank"><b>✏ 빈 던전</b><small>입구와 심층부만 놓고 시작해요.</small></button>
    ${all().filter(d=>d.spot!==spot).length?`<button type="button" class="dgopt" data-k="move"><b>↪ 다른 던전 옮겨 오기</b><small>다른 장소나 장소 없이 둔 던전을 여기로 붙여요.</small></button>`:''}</div><div id="dgNewBody"></div>`,'wide');
@@ -112,6 +140,11 @@ window.NT_DG=(()=>{
    if(k==='file'){box.innerHTML=`<div class="dgfile"><div class="dgdrop" id="dgDrop">여기에 .json 파일을 끌어 놓거나 눌러서 골라요<input type="file" accept=".json,application/json,text/plain" multiple hidden></div><textarea id="dgTxt" rows="6" data-nodirty placeholder="또는 JSON 글을 붙여 넣어요"></textarea><div class="row" style="justify-content:flex-end;margin-top:8px"><button type="button" class="btn pri" id="dgGo">가져오기</button></div></div>`;
     const go=async txts=>{try{const L=[];for(const t of txts)L.push(...await fromAny(t));N().closeModal();for(const d of L.slice(0,10))await create(spot,d)}catch(err){N().toast(err.message)}};
     N().bindDrop(box.querySelector('#dgDrop'),async fs=>go(await Promise.all([...fs].map(f=>f.text()))),true,'.json,application/json,text/plain');box.querySelector('#dgGo').onclick=()=>go([box.querySelector('#dgTxt').value]);return}
+   if(k==='maker'){box.innerHTML='<div class="small dim" style="padding:10px 2px">제작기 던전 목록을 받는 중…</div>';
+    try{const L=await mkList();if(!box.isConnected)return;const have=new Set(all().map(d=>(d.src||{}).mk).filter(Boolean));
+     box.innerHTML=L.length?`<div class="dgpick">${L.map((x,i)=>{let d;try{d=fromMaker(x)}catch(e){return ''}const D=x.data;const mobs=Object.values(D.d.r||{}).reduce((n,r)=>n+((r.w&&r.w.mons)||[]).length,0);return `<button type="button" class="dgcard" data-mk="${i}">${mini(d)}<span class="dgcap"><b>${esc(D.d.n||'(이름 없음)')}</b><small>${esc(MTIER[D.tier]||'')} · 방 ${Object.keys(D.d.r||{}).length} · 야생 ${mobs}체${D.ownerName?' · '+esc(D.ownerName):''}${D.pub?'':' · 비공개'}${have.has(x.id)?' · <b>이미 가져옴</b>':''}</small></span></button>`}).join('')}</div><div class="small dim" style="margin-top:6px">제작기 「던전」 탭에 저장된 던전이에요. 이미 가져온 던전은 그 던전을 열어 「↻ 제작기에서 다시 받기」로 맞춰요.</div>`:`<div class="small dim">제작기에 만든 던전이 없어요. <a href="${esc(mkHref())}" target="_blank" rel="noopener">제작기 「던전」 탭</a>에서 먼저 만들어 주세요.</div>`;
+     box.onclick=async ev=>{const c=ev.target.closest('[data-mk]');if(!c)return;const x=L[+c.dataset.mk];if(have.has(x.id)&&!confirm('이 던전은 이미 노트에 있어요. 하나 더 가져올까요?\n(맞추려면 그 던전을 열어 「↻ 제작기에서 다시 받기」)'))return;let d;try{d=fromMaker(x)}catch(err){return N().toast(err.message)}N().closeModal();await create(spot,d)}}
+    catch(err){box.innerHTML=`<div class="small" style="color:var(--yel)">${esc(err.message)}</div>`}return}
    if(k==='sim'){box.innerHTML='<div class="small dim" style="padding:10px 2px">시뮬레이터 던전 목록을 받는 중…</div>';
     try{const [L,wild]=await Promise.all([simList(),wildNames()]);if(!box.isConnected)return;
      box.innerHTML=L.length?`<div class="dgpick">${L.map((x,i)=>{const d=fromSim(x.d,wild);return `<button type="button" class="dgcard" data-sim="${i}">${mini(d)}<span class="dgcap"><b>${esc(x.d.name||x.file)}</b><small>${esc(TIER[(x.d.gen||{}).tier]||'')}${x.d.theme?' · '+esc(x.d.theme):''} · 방 ${x.d.rooms.length}${x.d.owner?' · 주인 '+esc(x.d.owner):''}</small></span></button>`}).join('')}</div><div class="small dim" style="margin-top:6px">시뮬레이터에서 저장하고 저장소에 올린 던전만 보여요. 아직 안 올린 던전은 「파일 · 붙여넣기」로 그 파일을 넣어요.</div>`:'<div class="small dim">올라간 시뮬레이터 던전이 없어요.</div>';
@@ -181,7 +214,8 @@ window.NT_DG=(()=>{
     <div class="dgimg" id="dgImg">${r.b?`<img src="${esc(r.b)}" alt="">`:'<span>🖼 방 그림을 끌어 놓거나 눌러서 올려요<br><small>웹툴에서 이 방에 들어가면 배경으로 떠요</small></span>'}<input type="file" accept="image/*" hidden></div>
     <div class="row" style="gap:6px;margin-top:4px">${r.b?'<button type="button" class="btn xs ghost" data-de="imgdel">그림 빼기</button>':''}<input type="text" data-rf="b" spellcheck="false" autocomplete="off" value="${esc(r.b||'')}" placeholder="또는 그림 주소 https://…" style="flex:1;min-width:0"></div>
     <label>GM 메모<textarea data-rf="m" rows="6">${esc(r.m||'')}</textarea></label>
-    ${r.sk?`<div class="dgsk small">${skLine(r.sk)}<br><span class="dim">체크 칸은 웹툴 던전 탭에서 고쳐요</span></div>`:''}
+    ${r.sk?`<div class="dgsk small">${skLine(r.sk)}<br><span class="dim">체크 칸은 ${(E.d.src||{}).from==='maker'?'제작기 「던전」 탭':'웹툴 던전 탭'}에서 고쳐요</span></div>`:''}
+    ${r.w?wildHTML(r.w)+`<div class="small dim" style="margin:2px 0 6px">야생 시트는 <a href="${esc(mkHref())}" target="_blank" rel="noopener">제작기 「던전」 탭</a>에서 고치고 「↻ 제작기에서 다시 받기」${r.e?' · 웹툴 시트와 이어져 있어요':''}</div>`:''}
     <label>단서 제목<input type="text" data-rf="cl.t" spellcheck="false" autocomplete="off" value="${esc((r.cl||{}).t||'')}" placeholder="보물 · 단서 방에서 보여 줄 것"></label><label>단서 내용<textarea data-rf="cl.d" rows="3">${esc((r.cl||{}).d||'')}</textarea></label>
     <label>휴식<select data-rf="rk"><option value="">없음</option>${Object.entries(RK).map(([k,v])=>`<option value="${k}" ${k===r.rk?'selected':''}>${v}</option>`).join('')}</select></label>
     <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px"><button type="button" class="btn xs" data-de="start" ${E.d.st===E.sel?'disabled':''}>${E.d.st===E.sel?'★ 시작 방':'시작 방으로'}</button><button type="button" class="btn xs ${hid?'pri':'ghost'}" data-de="hide" title="공개한 던전이라도 PL 미리 보기에서 이 방을 숨겨요">${hid?'🙈 PL 에게 숨김':'PL 에게 숨기기'}</button><span class="sp"></span><button type="button" class="btn xs ghost danger" data-de="rdel">방 지우기</button></div>`;
@@ -190,8 +224,8 @@ window.NT_DG=(()=>{
   const n=Object.keys(R()).length,nl=Object.keys(E.d.l).length,sp=E.d.spot;const src=E.d.src||{};
   p.innerHTML=G?`<h3>던전</h3><label>장소<select data-df="spot"><option value="">(장소 없음)</option>${N().list('spots').sort((a,b)=>String(a.num||'').localeCompare(String(b.num||''),'ko',{numeric:true})).map(s=>`<option value="${esc(s.id)}" ${s.id===sp?'selected':''}>${esc((s.num?s.num+'. ':'')+(s.name||''))}</option>`).join('')}</select></label>
     <label>주인<input type="text" data-df="o" spellcheck="false" autocomplete="off" value="${esc(E.d.o||'')}" placeholder="던전의 주인 (보스)"></label><label>분위기<input type="text" data-df="a" spellcheck="false" autocomplete="off" value="${esc(E.d.a||'')}" placeholder="어둠 · 동굴"></label>
-    <div class="small dim" style="margin-top:8px">방 ${n} · 통로 ${nl}${src.from==='sim'?` · 시뮬레이터 ${esc(TIER[src.tier]||src.tier||'')}${src.seed?' 씨앗 '+esc(src.seed):''}`:src.from==='om'?' · 웹툴에서 받음':''}</div>${src.note?`<div class="small dim pre" style="margin-top:4px">${esc(src.note)}</div>`:''}
-    <div class="small dim" style="margin-top:10px">방을 누르면 이름 · 종류 · 그림 · 메모를 고쳐요. 체크 · 야생 배치처럼 전투 쪽은 웹툴 던전 탭에서 고치고 「📓 던전을 노트로」로 돌려보내요.</div>`
+    <div class="small dim" style="margin-top:8px">방 ${n} · 통로 ${nl}${src.from==='sim'?` · 시뮬레이터 ${esc(TIER[src.tier]||src.tier||'')}${src.seed?' 씨앗 '+esc(src.seed):''}`:src.from==='om'?' · 웹툴에서 받음':src.from==='maker'?` · 제작기 ${esc(MTIER[src.mtier]||'')}${src.owner?' · '+esc(src.owner):''}`:''}</div>${src.from==='maker'?`<div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px"><button type="button" class="btn xs pri" data-de="mkre" title="제작기에서 고친 방 · 체크 · 야생 시트를 다시 받아요">↻ 제작기에서 다시 받기</button><a class="btn xs ghost" href="${esc(mkHref())}" target="_blank" rel="noopener">제작기 「던전」 탭 열기</a></div>${(()=>{const ms=Object.values(R()).flatMap(r=>(r.w&&r.w.mons)||[]);const emp=ms.filter(m=>!m.name).length;return ms.length?`<div class="small dim" style="margin-top:6px">야생 ${ms.length}체${emp?` · <span style="color:var(--yel)">포켓몬 미정 ${emp}칸</span>`:''}${(E.d.mq||[]).filter(q=>q&&q.name).length?' · 미궁 포텐셜 '+E.d.mq.filter(q=>q&&q.name).map(q=>'『'+esc(q.name)+'』').join(' '):''}</div>`:''})()}`:''}${src.note?`<div class="small dim pre" style="margin-top:4px">${esc(src.note)}</div>`:''}
+    <div class="small dim" style="margin-top:10px">방을 누르면 이름 · 종류 · 그림 · 메모를 고쳐요. ${src.from==='maker'?'체크 · 야생 시트는 제작기 「던전」 탭에서 고치고 「↻ 제작기에서 다시 받기」로 맞춰요.':'체크 · 야생 배치처럼 전투 쪽은 웹툴 던전 탭에서 고치고 「📓 던전을 노트로」로 돌려보내요.'}</div>`
    :`<h3>${esc(E.d.n||'')}</h3>${E.d.a?`<div class="small dim">${esc(E.d.a)}</div>`:''}<div class="small dim" style="margin-top:8px">방을 누르면 이름 · 그림을 봐요.</div>`}
  async function upImg(f,k){if(!f)return;try{const u=await N().upload(f,k==='bg'?'map':'photo','dg');if(!u)return;if(k==='bg')E.d.bg=u;else if(R()[E.sel])R()[E.sel].b=u;save(true);if(k==='bg'){openEd(E.id)}else draw()}catch(e){N().toast('그림을 올리지 못했어요: '+e.message)}}
  function setPath(o,path,v){const ks=path.split('.');let x=o;for(let i=0;i<ks.length-1;i++){x[ks[i]]=x[ks[i]]&&typeof x[ks[i]]==='object'?x[ks[i]]:{};x=x[ks[i]]}const k=ks[ks.length-1];if(v===''||v==null)delete x[k];else x[k]=v}
@@ -209,6 +243,7 @@ window.NT_DG=(()=>{
    if(k.startsWith('v:')){setView(k.slice(2));m.querySelectorAll('[data-de^="v:"]').forEach(x=>x.classList.toggle('on',x===b));E.from='';draw();return}
    if(k==='add'){const id=rid();const n=Object.keys(R()).length+1;R()[id]={n:'방 '+n,t:'room',x:clamp(500+((n*53)%300)-150,30,970),y:clamp(320+((n*97)%220)-110,30,600)};E.sel=id;save();draw();return}
    if(k==='desel'){E.sel='';draw();return}
+   if(k==='mkre')return mkRefresh();
    if(k==='ldel'){delete E.d.l[E.sel.slice(2)];E.sel='';save();draw();return}
    if(k==='rdel'){const id=E.sel;if(!await N().confirmBox(`방 「${(R()[id]||{}).n||''}」 를 지울까요? 이어진 통로도 같이 지워요.`,'지우기'))return;delete R()[id];for(const x of Object.keys(E.d.l))if(x.split('~').includes(id))delete E.d.l[x];if(E.d.st===id)E.d.st=Object.keys(R())[0]||'';E.d.hide=(E.d.hide||[]).filter(x=>x!==id);E.sel='';save();draw();return}
    if(k==='start'){E.d.st=E.sel;save();draw();return}
@@ -238,8 +273,8 @@ window.NT_DG=(()=>{
   c.addEventListener('pointerup',end);c.addEventListener('pointercancel',()=>{P=null})}
  function toggleLink(a,b){const k=lk(a,b);if(E.d.l[k]){delete E.d.l[k];N().toast('통로를 지웠어요')}else{E.d.l[k]=1;N().toast('통로를 이었어요')}save()}
  /* 웹툴 「JSON 가져오기」 꼴 */
- function toOm(d){const r={};for(const [id,x] of Object.entries(d.r||{})){const o={};for(const f of RF)if(x[f]!=null&&x[f]!=='')o[f]=x[f];r[id]=o}const o={n:d.n||'',st:d.st,r,l:Object.assign({},d.l||{})};for(const f of ['o','a','wn','noal'])if(d[f]!=null&&d[f]!=='')o[f]=d[f];return o}
+ function toOm(d){const r={};for(const [id,x] of Object.entries(d.r||{})){const o={};for(const f of RF)if(x[f]!=null&&x[f]!=='')o[f]=x[f];r[id]=o}const o={n:d.n||'',st:d.st,r,l:Object.assign({},d.l||{})};for(const f of TOPF)if(d[f]!=null&&d[f]!=='')o[f]=d[f];return o}
 
  document.addEventListener('click',e=>{const a=e.target.closest('[data-dgo]');if(a){e.preventDefault();e.stopPropagation();return openEd(a.dataset.dgo)}const b=e.target.closest('[data-dgnew]');if(b){e.preventDefault();e.stopPropagation();return newFor(b.dataset.dgnew)}},true);
- return {all,at,has,spotSec,pinMark,mini,openEd,newFor,fromSim,fromAny,toOm,simList,TY};
+ return {all,at,has,spotSec,pinMark,mini,openEd,newFor,fromSim,fromAny,fromMaker,mkList,toOm,simList,TY};
 })();

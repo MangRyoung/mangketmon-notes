@@ -30,7 +30,7 @@
  const layN=s=>String(s||'').split(/[+＋,\s]+/).map(x=>parseInt(x,10)).filter(x=>x>0);
 
  /* ---- 던전 읽기: 배틀 방 · 몹 수 (시뮬레이터에서 온 방은 메모 「⚔ 야생 N체 / ♛ 보스방 N체」, 웹툴에서 온 방은 e 배열) ---- */
- function battles(d){const out=[];for(const [id,r] of Object.entries(d.r||{})){if(r.t!=='battle'&&r.t!=='boss')continue;let n=0;if(Array.isArray(r.e))n=r.e.length;else if(r.e&&typeof r.e==='object')n=Object.keys(r.e).length;
+ function battles(d){const out=[];for(const [id,r] of Object.entries(d.r||{})){if(r.t!=='battle'&&r.t!=='boss')continue;let n=0;if(r.w&&Array.isArray(r.w.mons))n=r.w.mons.length;   /* 11-16 제작기 던전의 야생 시트 */else if(Array.isArray(r.e))n=r.e.length;else if(r.e&&typeof r.e==='object')n=Object.keys(r.e).length;
    if(!n){const m=String(r.m||'').match(/(?:⚔ 야생|♛ 보스방)\s*(\d+)\s*체/);if(m)n=+m[1]}out.push({id,n:r.n||'',boss:r.t==='boss'||/♛/.test(r.m||''),cnt:n})}return out}
  const dgName=id=>(N().data('dgs',id)||{}).n||'';
  const spotName=id=>{const s=N().data('spots',id);return s?(s.num?s.num+'. ':'')+(s.name||''):''};
