@@ -3,12 +3,12 @@
    확인: 처음 8초 뒤 · 탭으로 돌아올 때(1분에 한 번까지) · 5분마다(보고 있을 때) */
 "use strict";
 (()=>{
- const key=u=>u.replace(/^.*\/(?=[^/]+\?)/,'').replace(/\?.*?v=(\d+).*$/,'@$1');
- const HAVE=()=>[...document.scripts,...document.querySelectorAll('link[rel=stylesheet]')].map(s=>s.src||s.href||'').filter(u=>/[?&]v=\d+/.test(u)&&u.startsWith(location.origin)).map(key);
+ const key=u=>u.replace(/^.*\/(?=[^/]+\?)/,'').replace(/\?.*?v=([\w.-]+).*$/,'@$1');
+ const HAVE=()=>[...document.scripts,...document.querySelectorAll('link[rel=stylesheet]')].map(s=>s.src||s.href||'').filter(u=>/[?&]v=[\w.-]+/.test(u)&&u.startsWith(location.origin)).map(key);
  let T=0,shown=false;
  async function check(force){if(shown||(!force&&Date.now()-T<60000))return;T=Date.now();
   try{const r=await fetch(location.pathname.replace(/[^/]*$/,'')+'index.html',{cache:'reload'});if(!r.ok)return;const t=await r.text();const have=new Set(HAVE());if(!have.size)return;
-   const want=[...t.matchAll(/(?:src|href)="([^"]+\?v=\d+)"/g)].map(m=>m[1]).filter(u=>!/^https?:/.test(u)).map(key);
+   const want=[...t.matchAll(/(?:src|href)="([^"]+\?v=[\w.-]+)"/g)].map(m=>m[1]).filter(u=>!/^https?:/.test(u)).map(key);
    if(want.some(w=>!have.has(w)))bar()}catch(e){}}
  function bar(){if(shown)return;shown=true;const d=document.createElement('button');d.id='ntVerbar';d.type='button';d.textContent='세션 노트 새 버전이 올라왔어요 · 눌러서 새로고침';
   d.style.cssText='position:fixed;left:50%;top:max(8px,env(safe-area-inset-top));transform:translateX(-50%);z-index:9999;background:#2b7;color:#fff;border:2px solid #000;box-shadow:3px 3px 0 #000;padding:7px 16px;font-size:13px;font-weight:700;border-radius:8px;cursor:pointer;max-width:calc(100vw - 32px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:inherit';
