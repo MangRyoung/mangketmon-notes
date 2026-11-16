@@ -492,7 +492,8 @@ window.NT_SHELF=(()=>{
 ---
 > 출처 · 웹툴 오레마스 배틀 규칙(battle_ui.js 날씨 배율 · 효과 카드 요약, engine/field.js 설치기 · 철거 규칙)과 제작기 상태 변화 DB(js/fx/states.js) 기본값. 제작기 DB 관리에서 상태 변화를 고쳤다면 그쪽이 웹툴 배틀에 쓰입니다 — 이 책은 11-01 기본값입니다.`;
  /* 11-05 18:00 망령 「은열쇠는 여기(서가)에도 추가」: 룰북 「은열쇠 (카드)」 장 + 시작 카드 그림 모음 (rb_ui cardWall) */
- const LATER=[{id:'silverkey',no:'MR-240',c:'plum',t:'은열쇠 카드',en:'SILVER KEY',sub:'세 칸 · 바치기 · 시작 카드 24장',src:'제작기 룰북 「은열쇠 (카드)」 장 · 카드 DB 시작 카드에서 바로 읽어요',parts:[{rb:{ch:'silverkey',h:[]}}]},{id:'field',no:'MR-420',c:'teal',t:'필드 · 상태 변화 편람',en:'FIELD AND STATUS',sub:'날씨 · 필드 · 룸 · 설치물 · 상태 변화',src:'웹툴 배틀 규칙 표(날씨 배율 · 효과 카드 요약 · 설치기 철거) · 제작기 상태 변화 DB 기본값(11-01)을 모았어요',parts:[{md:FIELDBOOK}]}];
+ const LATER=[{id:'silverkey',no:'MR-240',c:'plum',t:'은열쇠 카드',en:'SILVER KEY',sub:'세 칸 · 바치기 · 시작 카드 24장',src:'제작기 룰북 「은열쇠 (카드)」 장 · 카드 DB 시작 카드에서 바로 읽어요',parts:[{rb:{ch:'silverkey',h:[]}}]},{id:'field',no:'MR-420',c:'teal',t:'필드 · 상태 변화 편람',en:'FIELD AND STATUS',sub:'날씨 · 필드 · 룸 · 설치물 · 상태 변화',src:'웹툴 배틀 규칙 표(날씨 배율 · 효과 카드 요약 · 설치기 철거) · 제작기 상태 변화 DB 기본값(11-01)을 모았어요',parts:[{md:FIELDBOOK}]},{id:'origmon',no:'MR-150',c:'ink',t:'오리지널 포켓몬 메이킹 가이드',en:'ORIGINAL POKEMON',sub:'포트레이트 · 타입 · 포텐셜 소켓 기준',src:'제작기 룰북 「포켓몬 제작」 장 「오리지널 포켓몬 메이킹 가이드」 절에서 바로 읽어요',parts:[{rb:{ch:'pokemon',h:['오리지널 포켓몬 메이킹 가이드']}}]}];
+ /* 11-16 망령 「오리지널 포켓몬 메이킹 가이드 — 룰북이랑 미사그 쪽에도」: 룰북 「포켓몬 제작」 장의 새 절을 그대로 읽는 책 (사본 없음) */
  const COLORS=[['crim','진홍'],['navy','남색'],['moss','녹색'],['ochre','황토'],['plum','자주'],['teal','청록'],['ink','먹색']];
  const K='shelf',INIT='_init';
  const seeded=()=>!!N().doc(K,INIT);
