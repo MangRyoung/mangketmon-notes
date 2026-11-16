@@ -170,3 +170,4 @@
 .dgcd-gm{font-style:italic}
 .dgcd-r .dgw{margin:2px 0}
 @media (max-width:760px){.dgcd-top,.dgcd-rs{grid-template-columns:minmax(0,1fr)}}
+.modal.dgcdm .mhead{flex-wrap:wrap;gap:6px}.modal.dgcdm .mhead h2{white-space:nowrap}.modal.dgcdm .mhead label{white-space:nowrap}
