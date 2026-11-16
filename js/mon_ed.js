@@ -54,7 +54,7 @@ window.NT_MONED=(()=>{
  document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-moned],[data-monadd],[data-monnew]');if(!b)return;e.preventDefault();
   if(b.dataset.monnew!=null)return make(b.dataset.monnew||'misag');
   const id=b.dataset.id||'';
-  /* 11-08: 「▤ 한 장 보기」(data-ro) 는 고칠 권한이 없어도 연다 — 제작기에서 비공개로 잠근 트레이너만 막는다 */if(b.dataset.ro&&b.dataset.moned!=null&&!canEd(id)){const t=MK().trainer(id);if(locked(t))return N().toast('비공개로 잠근 시트예요');return open(id,b.dataset.moned||'',b.dataset.sec||'pcard',true)}
+  /* 11-08: 「▤ 한 장 보기」(data-ro) 는 고칠 권한이 없어도 연다 — 제작기에서 비공개로 잠근 트레이너만 막는다 */if(b.dataset.ro&&b.dataset.moned!=null&&(!canEd(id)||b.dataset.sec==='tcard')){   /* 11-17 트레이너 한 장 요약은 늘 보기 창으로 */const t=MK().trainer(id);if(!canEd(id)&&locked(t))return N().toast('비공개로 잠근 시트예요');return open(id,b.dataset.moned||'',b.dataset.sec||'pcard',true)}
   if(!canEd(id))return N().toast('이 시트는 고칠 수 없어요');
   if(b.dataset.monadd!=null)return add(id,b.dataset.monadd);
   open(id,b.dataset.moned||'',b.dataset.sec||'')});

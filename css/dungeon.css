@@ -145,3 +145,28 @@
 .dgwn span{opacity:.75;font-size:.76rem}
 .dgwl{font-size:.78rem;word-break:keep-all}
 .dgwp{font-size:.78rem}.dgwp u{text-decoration:none;opacity:.7}
+/* 11-17 던전 한 장 요약 (js/dungeon.js cardHTML · js/cardshot.js) */
+.modal.dgcdm{width:min(1200px,96vw)}
+.dgcd-wrap{padding:8px 10px 10px;overflow:auto}
+.dgcd{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:14px;background:var(--card,var(--bg));border:1px solid var(--line,rgba(128,128,128,.3))}
+.dgcd-hd{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.dgcd-nm{font-size:1.4rem;font-weight:700;line-height:1.2}
+.dgcd-st{display:flex;gap:10px;flex-wrap:wrap;font-size:.8rem;opacity:.8}.dgcd-st b{font-size:.95rem}
+.dgcd-top{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:10px;align-items:start}
+.dgcd-map{background:#14161c;border-radius:10px;padding:4px}
+.dgcd-svg{display:block;width:100%;height:auto;max-height:440px}
+.dgcd-svg line{stroke:#7d8596;stroke-width:6;stroke-linecap:round}
+.dgcd-svg circle{stroke:#0b0c10;stroke-width:3}
+.dgcd-svg text{text-anchor:middle;font-family:inherit;font-weight:700;paint-order:stroke;stroke:#0b0c10;stroke-width:4px}
+.dgcd-svg .no{fill:#fff;font-size:17px}.dgcd-svg .nm{fill:#e8ebf2;font-size:14px}
+.dgcd-all{display:flex;flex-direction:column;gap:3px;padding:8px 10px;border-radius:10px;border:1px solid var(--line,rgba(128,128,128,.3))}
+.dgcd-h{font-size:.76rem;font-weight:700;letter-spacing:.05em;opacity:.7;margin:4px 0 2px;display:flex;gap:6px;align-items:center}
+.dgcd-h::after{content:"";flex:1;height:1px;background:var(--line,rgba(128,128,128,.3))}
+.dgcd-rs{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px}
+.dgcd-r{display:flex;flex-direction:column;gap:4px;padding:8px 10px;border-radius:10px;border:1px solid var(--line,rgba(128,128,128,.3));border-left:4px solid var(--c)}
+.dgcd-rh{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.dgcd-no{font:700 11px/18px monospace;min-width:18px;text-align:center;border-radius:5px;border:1px solid var(--line,rgba(128,128,128,.3))}
+.dgcd-ic{display:inline-flex;color:var(--c)}.dgcd-ic svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.4}.dgcd-ic svg .f{fill:currentColor;stroke:none}
+.dgcd-gm{font-style:italic}
+.dgcd-r .dgw{margin:2px 0}
+@media (max-width:760px){.dgcd-top,.dgcd-rs{grid-template-columns:minmax(0,1fr)}}
