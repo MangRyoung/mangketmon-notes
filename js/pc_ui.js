@@ -270,7 +270,7 @@
  function radar(bs){const R=22,cx=26,cy=26;const pt=(i,r)=>{const a=-Math.PI/2+i*Math.PI/3;return (cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1)};
   const ring=f=>[0,1,2,3,4,5].map(i=>pt(i,R*f)).join(' ');const v=RORD.map(i=>Math.min(1,(+bs[i]||0)/180));const any=v.some(x=>x>0);
   return `<svg class="mkr-rd" viewBox="0 0 52 52" aria-hidden="true"><polygon points="${ring(1)}" class="rg"/><polygon points="${ring(.5)}" class="rg"/>${[0,1,2,3,4,5].map(i=>`<line x1="${cx}" y1="${cy}" x2="${pt(i,R).split(',')[0]}" y2="${pt(i,R).split(',')[1]}" class="rg"/>`).join('')}${any?`<polygon points="${v.map((x,i)=>pt(i,Math.max(1.5,x*R))).join(' ')}" class="rv"/>`:''}</svg>`}
- function monInfo(t,m){const E=m.effTxt||{};const rk=(t.ranks||{})['육성'];const lv=MK().baseLv(rk)+(Math.round(+m.dist)||0);
+ function monInfo(t,m){const E=m.effTxt||{};const rk=(t.ranks||{})['육성'];const lv=MK().baseLv(rk)+(Math.round(+m.dist)||0)+(Math.round(+(m.lvUp&&m.lvUp.n))||0);   /* 11-18 【준비】 「LV : +N」 (제작기 lvUp) */
   const b0=(m.base||[]).map(v=>+v||0),bu=m.baseUp&&Array.isArray(m.baseUp.base)?m.baseUp.base.map(v=>+v||0):null,bs=bu||b0;
   const types=[m.t1,m.t2,m.t3].filter(x=>x&&x!=='-');const mv=(m.moves||[]).map((x,i)=>typeof x==='string'?{name:x,_i:i}:x&&typeof x==='object'?Object.assign({},x,{_i:i}):x).filter(x=>x&&x.name);   /* 11-09 _i = 제작기 기술 칸 번호 (카드에서 눌러 고치기) */
   const pots=(m.pots||[]).map((n,i)=>({n:String(n||'').replace(/[『』]/g,''),i})).filter(x=>x.n&&x.n!=='-');
