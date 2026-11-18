@@ -85,7 +85,7 @@ window.NT_AWK=(()=>{
  const subName=sid=>{const x=slot(sid);return `${pcName(x.pc)} · 각성체 ${x.n}${x.mname?' ('+x.mname+')':''}`};
  const canSend=id=>N().gm()||N().me()===sidPc(id);
  /* 프라이드 → 격 (룰북 미사그 「각성체와 대가」: C · C+ 대가 없음, B · B+ 는 B, A 는 A — 파워 차이만큼 원전의 격도 다르다) */
- const gradeOf=pr=>{const v=String(pr||'').toUpperCase();return /^EX/.test(v)?'EX':/^A/.test(v)?'A':/^B/.test(v)?'B':/^C/.test(v)?'C':''};
+ const gradeOf=pr=>{const v=String(pr||'').toUpperCase();return /^EX/.test(v)?'EX':/^A/.test(v)?'A':/^B/.test(v)?'B':/^[CD]/.test(v)?'C':''};/* 11-18 D(통솔 D 보조) = 격 낮음 */
  const GRADE={C:{f:[1,2],max:3,t:'격 낮음 — 이름만 남은 사람 · 민담의 조연 · 한 마을의 이야기 (지명도 1~2)',cost:'대가 없음'},
   B:{f:[2,3],max:3,t:'격 중간 — 한 고장 전설 · 야사의 주인공, 이름난 장인 · 무인 (지명도 2~3)',cost:'대가 B — 분류 하나 (지시 『6령』 2개 빼기 · 육성 분배레벨 −15 · 통솔 B-1 또는 B-2 · 능력 『전용 포텐셜』 −1)'},
   A:{f:[3,4],max:4,t:'격 높음 — 한 나라에 알려진 인물 · 신화의 조연급, 유명 인물이라면 열화된 한 시절 (지명도 3~4)',cost:'대가 A — B 에 더해 (지시 『4식』 1개 더 · 육성 −20 더 · 통솔 B 1택 + A-1 또는 A-2 · 능력 고유 포텐셜 점수 −0.5)'},
@@ -440,9 +440,9 @@ window.NT_AWK=(()=>{
     칸마다 「메인 (대가)」 하나 + 프라이드. 노트 사본 = pcp/<pc>.awk[n-1].main · .pride (PL 본인 · GM).
     그 칸에 제작기 각성체 시트가 있으면 제작기 값(awaken 'free' = 대가 · 'c' = 보조, pride)을 보이고, 고치면 제작기에도 넣는다.
     시트가 아직 없으면 「⇪ 제작기 각성체로」로 만들 때 이 값으로 만든다 */
- const PRIDES=['C','C+','B','B+','A','EX'];
+ const PRIDES=['D','C','C+','B','B+','A','EX'];/* 11-18 망령 「프라이드 칸에 D 가 없네」 — 통솔 D 트레이너의 보조 = D (제작기 0.5점 계단 455) */
  /* 10-31: 프라이드별 종족치 합 · 하한 (룰북 「포켓몬 제작」 — 계산 종족치 기준) · 종족치 6칸 이름 */
- const BUDGET={C:[480,40],'C+':[503,43],B:[525,45],'B+':[548,48],A:[570,50],EX:[630,55]};
+ const BUDGET={D:[455,0],C:[480,40],'C+':[503,43],B:[525,45],'B+':[548,48],A:[570,50],EX:[630,55]};
  const BASEN=['HP','공격','방어','특공','특방','스피드'];
  /* 10-31 망령 「종족치는 랭크도 보여 줘야」: 등급 구간 = 제작기 기본 표(data/db.js grade) — pc_ui 와 같은 값 */
  const GRD=[[0,'-'],[1,'E-'],[11,'E'],[31,'E+'],[40,'D-'],[46,'D'],[55,'D+'],[60,'C-'],[70,'C'],[81,'C+'],[90,'B-'],[96,'B'],[105,'B+'],[110,'A-'],[120,'A'],[131,'A+'],[140,'AA-'],[150,'AA'],[161,'AA+'],[170,'AAA-'],[180,'AAA'],[191,'AAA+'],[200,'S'],[256,'EX'],[999,'-']];
@@ -552,8 +552,8 @@ window.NT_AWK=(()=>{
  let abW=0;const abWait=()=>{if(abW||!MK())return;abW=1;MK().db().then(()=>N().render()).catch(()=>{})};
  /* 11-01 망령 「감우 종족치랑 특성 추천에서 우리 제작 룰 반영이 안 돼 있다 — 할증 · 특성 점수」: 제작기 customCalc(룰북 「포켓몬 제작」) 와 같은 계산 종족치.
     = 실제 합 + 하한분(공격 · 특공 · 스피드 계단 하한, 약한 쪽 공격은 주력의 40%) + 내구 할증 + HP 할증 + 화력·스피드 할증 + 특성 TO 조정 (쌍두 할인 · 선공 하한은 기술이 있어야 해서 뺌) */
- const PSTEP={C:[480,40,1],'C+':[503,43,1],B:[525,45,1],'B+':[548,48,1],A:[570,50,1.5]};
- const stepOf=sid=>{const x=slot(sid);if(x.kind==='c')return 'C';const p=String(x.pride||'').trim();if(PSTEP[p])return p;const g=slotGrade(sid);return PSTEP[g]?g:''};
+ const PSTEP={D:[455,0,1],C:[480,40,1],'C+':[503,43,1],B:[525,45,1],'B+':[548,48,1],A:[570,50,1.5]};
+ const stepOf=sid=>{const x=slot(sid);if(x.kind==='c')return String(x.pride||'').trim().toUpperCase()==='D'?'D':'C';const p=String(x.pride||'').trim();if(PSTEP[p])return p;const g=slotGrade(sid);return PSTEP[g]?g:''};
  const pTwo=(x,lo,hi,k1,k2)=>k1*Math.max(0,Math.min(x,hi)-lo)+k2*Math.max(0,x-hi);
  function pCalc(b,to,g){const S0=PSTEP[g]||PSTEP.C;const [cap,fl,st]=S0;const real=b.reduce((a,c)=>a+c,0),main=Math.max(b[1],b[3]),opp=Math.round(main*0.4);
   const fa=Math.max(0,Math.max(fl,b[1]<main?opp:0)-b[1]),fc=Math.max(0,Math.max(fl,b[3]<main?opp:0)-b[3]),fsp=Math.max(0,fl-b[5]);
