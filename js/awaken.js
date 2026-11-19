@@ -556,10 +556,10 @@ window.NT_AWK=(()=>{
  const stepOf=sid=>{const x=slot(sid);if(x.kind==='c')return String(x.pride||'').trim().toUpperCase()==='D'?'D':'C';const p=String(x.pride||'').trim();if(PSTEP[p])return p;const g=slotGrade(sid);return PSTEP[g]?g:''};
  const pTwo=(x,lo,hi,k1,k2)=>k1*Math.max(0,Math.min(x,hi)-lo)+k2*Math.max(0,x-hi);
  function pCalc(b,to,g){const S0=PSTEP[g]||PSTEP.C;const [cap,fl,st]=S0;const real=b.reduce((a,c)=>a+c,0),main=Math.max(b[1],b[3]),opp=Math.round(main*0.4);
-  const fa=Math.max(0,Math.max(fl,b[1]<main?opp:0)-b[1]),fc=Math.max(0,Math.max(fl,b[3]<main?opp:0)-b[3]),fsp=Math.max(0,fl-b[5]);
+  const fa=Math.max(0,Math.max(fl,b[1]<main?opp:0)-b[1]),fc=Math.max(0,Math.max(fl,b[3]<main?opp:0)-b[3]),fsp=Math.max(0,fl-b[5]),fdur=Math.max(0,150-(b[0]+b[2]+b[4]));   /* 11-19 망령: HP · 방어 · 특방 합 하한 150 (제작기 durMin) */
   const bulk=pTwo(Math.min(b[2],b[4]),85,105,.5,.75),hp=pTwo(b[0],95,120,.5,.75),fs=pTwo(main,105,120,.5,1)*Math.max(0,Math.min(1,(Math.min(b[5],140)-90)/50));
-  const toAdj=to==null?0:90*Math.max(0,to-st)-50*Math.max(0,1-Math.max(to,0.5));   /* 11-01 망령: 0특은 0.5특과 같은 −25 까지만 */const ct=Math.round((real+fa+fc+fsp+bulk+hp+fs+toAdj)*100)/100;
-  const P=[['하한',fa+fc+fsp],['내구',bulk],['HP',hp],['화력·스피드',fs],['특성 TO',toAdj]].filter(x=>Math.abs(x[1])>1e-9).map(([k,v])=>`${k} ${v>0?'+':''}${Math.round(v*100)/100}`);
+  const toAdj=to==null?0:90*Math.max(0,to-st)-50*Math.max(0,1-Math.max(to,0.5));   /* 11-01 망령: 0특은 0.5특과 같은 −25 까지만 */const ct=Math.round((real+fa+fc+fsp+fdur+bulk+hp+fs+toAdj)*100)/100;
+  const P=[['하한',fa+fc+fsp+fdur],['내구',bulk],['HP',hp],['화력·스피드',fs],['특성 TO',toAdj]].filter(x=>Math.abs(x[1])>1e-9).map(([k,v])=>`${k} ${v>0?'+':''}${Math.round(v*100)/100}`);
   return {ct,cap,real,P,ok:ct<=cap+1e-9,g:g&&PSTEP[g]?g:''}}
  const toOf=(r,so)=>{const v=String(r?r[0]:so||'').trim();const m=v.match(/^(\d+(?:\.\d+)?)/);return m?+m[1]:null};
  const calcLine=(b,to,g)=>{if(!b)return '';const c=pCalc(b,to,g);return `<div class="awspk-calc ${g&&!c.ok?'over':''}" title="제작기 계산 종족치 (쌍두 할인 · 선공 하한은 기술을 넣은 뒤 제작기에서)"><small>계산 종족치</small><b>${c.ct}${g?` / ${c.cap}`:''}</b>${g?`<span>${c.ok?'✓ '+g+' 안':'✕ '+g+' 넘음'}</span>`:''}${c.P.length?`<em>합 ${c.real} · ${esc(c.P.join(' · '))}</em>`:''}${to==null?'<em>특성 TO 모름</em>':''}</div>`};
