@@ -9,7 +9,8 @@
  const F=L.concat([['ent','항목','#8e8e8e']]);
  const ok=c=>L.some(x=>x[0]===c);
  /* k = 문서 종류 ('pc' | 'npc' | 'ents'), p = 문서 내용 */
- const of=(k,p)=>k==='ents'?'ent':(p&&ok(p.cls)?p.cls:(k==='npc'?'npc':'pc'));
+ /* 11-19 망령 「NPC 되게 많이 배치돼 있는데 왜 0개」 → 「1번(인물 항목을 NPC 로 세기)」: 항목 탭의 「인물」 종류는 NPC 로 센다 · 「항목」은 조직 등 나머지 */
+ const of=(k,p)=>k==='ents'?(p&&String(p.type||'').trim()==='인물'?'npc':'ent'):(p&&ok(p.cls)?p.cls:(k==='npc'?'npc':'pc'));
  const row=c=>F.find(x=>x[0]===c)||F[0];
  const camp=()=>(window.NT&&NT.ST&&NT.ST.camp)||'';
  const key=t=>'nt-clsf:'+t+':'+camp();

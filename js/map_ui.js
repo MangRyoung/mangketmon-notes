@@ -30,7 +30,7 @@
  const clsName=c=>CL()?CL().name(c):({pc:'PC',guest:'객원',npc:'NPC'})[c]||'항목';
  const clsShown=x=>!CL()||CL().shown('map',x.cls);
  function people(){const MK=window.NT_MAKER;const out=[];
-  for(const e of N().list('ents'))if(isPerson(e))out.push({k:'ents',cls:'ent',id:e.id,name:e.title||'',img:e.face||'',sub:[e.type,e.sub].filter(Boolean).join(' · '),at:e.at||[],pos:e.atPos||{},vis:e._vis,st:e.st||null});
+  for(const e of N().list('ents'))if(isPerson(e))out.push({k:'ents',cls:clsOf('ents',e),id:e.id,name:e.title||'',img:e.face||'',sub:[e.type,e.sub].filter(Boolean).join(' · '),at:e.at||[],pos:e.atPos||{},vis:e._vis,st:e.st||null});
   for(const k of ['pc','npc'])for(const p of N().list(k).sort((a,b)=>(a.order||0)-(b.order||0))){const t=MK&&MK.trainer(p.id);const c=clsOf(k,p);out.push({k,cls:c,id:p.id,name:(t&&t.name)||p.name||'',img:(t&&t.image)||p.image||'',sub:clsName(c)+(p.player?' · '+p.player:'')+(p.sub?' · '+p.sub:''),at:p.at||[],pos:p.atPos||{},vis:p._vis,st:p.st||null})}
   return out}
  const clsCount=m=>{const ids=new Set(m?spots(m.id).map(s=>s.id):[]);const o={pc:0,guest:0,npc:0,ent:0};for(const x of people())if(x.at.some(a=>ids.has(a))&&(x.img||x.k!=='ents'))o[x.cls]=(o[x.cls]||0)+1;return o};

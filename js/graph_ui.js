@@ -19,7 +19,7 @@
  /* 11-05 망령 「새 트레이너는 안 뜨게」: 이름을 아직 안 지은 빈 시트(「새 트레이너」)는 관계도에 그리지 않는다 — 시트는 그대로 */
  const blankName=n=>/^\s*새 트레이너\s*\d*\s*$/.test(String(n||''));
  function sheetNodes(){const MK=window.NT_MAKER;return SK.flatMap(k=>N().list(k).filter(p=>{const t=MK&&MK.trainer&&MK.trainer(p.id);return !blankName((t&&t.name)||p.name)}).map(p=>{const t=MK&&MK.trainer&&MK.trainer(p.id);const c=C().of(k,p);return {id:p.id,_k:k,_cls:c,title:(t&&t.name)||p.name||'?',type:C().name(c),sub:[p.player,p.sub].filter(Boolean).join(' · '),face:(t&&t.image)||p.image||p.face||'',gx:p.gx,gy:p.gy,sx:p.sx,sy:p.sy,_vis:p._vis,tags:[],teams:[],color:C().color(c)}}))}
- const clsOfNode=e=>e._cls||'ent';
+ const clsOfNode=e=>e._cls||(C().of?C().of('ents',e):'ent');   /* 11-19: 「인물」 항목은 NPC 로 (cls.js) */
  const clsCount=()=>{const o={pc:0,guest:0,npc:0,ent:0};for(const e of N().list('ents').concat(sheetNodes()))if(!plView()||e._vis==='pub')o[clsOfNode(e)]=(o[clsOfNode(e)]||0)+1;return o};
  const isSheet=id=>!N().doc('ents',id)&&SK.some(k=>N().doc(k,id));
  const kOf=id=>N().doc('ents',id)?'ents':SK.find(k=>N().doc(k,id))||'ents';
