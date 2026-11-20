@@ -34,7 +34,7 @@ window.NT_RB=(()=>{
  const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
  function inl(s){let h=esc(s);
   h=h.replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
-  h=h.replace(/【([^】]*)】/g,'<span class="tg">$1</span>').replace(/『([^』]*)』/g,'<span class="pt">『$1』</span>').replace(/「([^」]*)」/g,'<span class="tm">「$1」</span>').replace(/&lt;br\s*\/?&gt;/g,'<br>');
+  h=h.replace(/【((?:[^【】]|【[^【】]*】)*)】/g,'<span class="tg">$1</span>').replace(/『([^』]*)』/g,'<span class="pt">『$1』</span>').replace(/「([^」]*)」/g,'<span class="tm">「$1」</span>').replace(/&lt;br\s*\/?&gt;/g,'<br>');
   return h}
  const rank=c=>/^(AA|A|B-|B|C|D)$/.test(String(c).trim())?`<span class="rk">${esc(String(c).trim())}</span>`:null;
  function cont(t){let m=t.match(/^([①-⑳])\s*(.*)$/);if(m)return `<div class="dc"><b>${m[1]}</b> ${inl(m[2])}</div>`;if(/^ㄴ\s*/.test(t))return `<div class="dc sub">↳ ${inl(t.replace(/^ㄴ\s*/,''))}</div>`;return `<div class="dc">${inl(t)}</div>`}
@@ -52,9 +52,9 @@ window.NT_RB=(()=>{
  function render(md){const L=String(md||'').replace(/\r/g,'').split('\n');let i=0;const out=[];let defs=[];const flush=()=>{if(defs.length){out.push(`<div class="defs">${defs.join('')}</div>`);defs=[]}};
   while(i<L.length){const line=L[i];if(!line.trim()){i++;continue}let m;
    if(!/^『[^』]+』(과|와|은|는|을|를|이|가|의|에|로|으로|도|만)/.test(line)&&(m=line.match(/^『([^』]+)』\s*:?\s*(.*)$/))){let rest=m[2].trim(),tags='',eff=rest;const cs=[];i++;
-    const tm=rest.match(/^((?:【[^】]*】\s*)+)(?:\/\s*([\s\S]*))?$/);if(tm){tags=tm[1];eff=tm[2]||''}
+    const tm=rest.match(/^((?:【(?:[^【】]|【[^【】]*】)*】\s*)+)(?:\/\s*([\s\S]*))?$/);if(tm){tags=tm[1];eff=tm[2]||''}
     while(i<L.length&&L[i].trim()&&!BLOCK.test(L[i])){cs.push(L[i].trim());i++}
-    defs.push(`<div class="def"><div class="dn">『${inl(m[1])}』</div><div class="dm">${tags?`<div>${(tags.match(/【[^】]*】/g)||[]).map(t=>`<span class="tg">${inl(t.slice(1,-1))}</span>`).join('')}</div>`:''}${eff?`<div class="dc">${inl(eff)}</div>`:''}${cs.map(cont).join('')}</div></div>`);continue}
+    defs.push(`<div class="def"><div class="dn">『${inl(m[1])}』</div><div class="dm">${tags?`<div>${(tags.match(/【(?:[^【】]|【[^【】]*】)*】/g)||[]).map(t=>`<span class="tg">${inl(t.slice(1,-1))}</span>`).join('')}</div>`:''}${eff?`<div class="dc">${inl(eff)}</div>`:''}${cs.map(cont).join('')}</div></div>`);continue}
    flush();
    if((m=line.match(/^:::\s*(\w+)\s*$/))){const k=m[1],inner=[];i++;while(i<L.length&&!/^:::\s*$/.test(L[i])){inner.push(L[i]);i++}i++;out.push(vx(k,inner));continue}
    if((m=line.match(/^(#{2,4})\s+(.*)$/))){const lv=Math.min(6,m[1].length+2);out.push(`<h${lv}>${inl(m[2])}</h${lv}>`);i++;continue}
