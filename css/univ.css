@@ -791,3 +791,9 @@ button.awb-tend:hover,button.awb-tend:focus-visible{border-color:#f1d58e;backgro
 .pmc .fldrow{display:flex;align-items:center;gap:8px}
 .pmbnc .pmbn{margin:0;flex:none;padding:0 8px}
 .pmtys{display:inline-flex;gap:4px;flex-wrap:nowrap;white-space:nowrap}
+
+/* 11-22 기능 확장 카드의 기술 설명 */
+.ux-xm{margin-top:7px;padding-top:7px;border-top:1px dashed var(--line2)}
+.ux-xmn{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ux-xme{margin-top:5px;white-space:pre-wrap;line-height:1.6}
+html[data-skin="univ"] .ux-xm{border-top-color:#b9a77f}
