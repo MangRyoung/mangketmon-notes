@@ -18,7 +18,10 @@
  const C=()=>window.NT_CLS||CL;
  /* 11-05 망령 「새 트레이너는 안 뜨게」: 이름을 아직 안 지은 빈 시트(「새 트레이너」)는 관계도에 그리지 않는다 — 시트는 그대로 */
  const blankName=n=>/^\s*새 트레이너\s*\d*\s*$/.test(String(n||''));
- function sheetNodes(){const MK=window.NT_MAKER;return SK.flatMap(k=>N().list(k).filter(p=>{const t=MK&&MK.trainer&&MK.trainer(p.id);return !blankName((t&&t.name)||p.name)}).map(p=>{const t=MK&&MK.trainer&&MK.trainer(p.id);const c=C().of(k,p);return {id:p.id,_k:k,_cls:c,title:(t&&t.name)||p.name||'?',type:C().name(c),sub:[p.player,p.sub].filter(Boolean).join(' · '),face:(t&&t.image)||p.image||p.face||'',gx:p.gx,gy:p.gy,sx:p.sx,sy:p.sy,_vis:p._vis,tags:[],teams:[],color:C().color(c)}}))}
+ /* 11-22 망령 「객원이랑 PC 들은 다 캠퍼스 소속이고 학생회도 캠퍼스 소속인데」 → 「둘 다로」: 시트 소속 = 시트 문서의 teams(그 시트 「소속」 칸)가 있으면 그것, 없으면 캠페인 설정 「분류별 기본 소속」(campInfo.data.defTeams[pc · guest · npc]) */
+ const defTeams=()=>(((N().ST.campInfo||{}).data||{}).defTeams)||{};
+ const sheetTeams=(p,c)=>{const own=(p&&Array.isArray(p.teams)?p.teams:[]).map(x=>String(x||'').trim()).filter(Boolean);if(own.length)return own;const d=String(defTeams()[c]||'').trim();return d?d.split(/[,，]/).map(x=>x.trim()).filter(Boolean):[]};
+ function sheetNodes(){const MK=window.NT_MAKER;return SK.flatMap(k=>N().list(k).filter(p=>{const t=MK&&MK.trainer&&MK.trainer(p.id);return !blankName((t&&t.name)||p.name)}).map(p=>{const t=MK&&MK.trainer&&MK.trainer(p.id);const c=C().of(k,p);return {id:p.id,_k:k,_cls:c,title:(t&&t.name)||p.name||'?',type:C().name(c),sub:[p.player,p.sub].filter(Boolean).join(' · '),face:(t&&t.image)||p.image||p.face||'',gx:p.gx,gy:p.gy,sx:p.sx,sy:p.sy,_vis:p._vis,tags:[],teams:sheetTeams(p,c),ownTeams:(p.teams||[]).length>0,color:C().color(c)}}))}
  const clsOfNode=e=>e._cls||(C().of?C().of('ents',e):'ent');   /* 11-19: 「인물」 항목은 NPC 로 (cls.js) */
  const clsCount=()=>{const o={pc:0,guest:0,npc:0,ent:0};for(const e of N().list('ents').concat(sheetNodes()))if(!plView()||e._vis==='pub')o[clsOfNode(e)]=(o[clsOfNode(e)]||0)+1;return o};
  const isSheet=id=>!N().doc('ents',id)&&SK.some(k=>N().doc(k,id));
@@ -28,9 +31,11 @@
  const patchPos=(id,gx,gy)=>N().patch(kOf(id),id,d=>{d.gx=Math.round(gx);d.gy=Math.round(gy)});
  const toSheet=id=>{const k=kOf(id);N().go('pc');setTimeout(()=>window.NT_PC&&NT_PC.select&&NT_PC.select(k,id),0)};
  /* 11-14: 인물 항목이 제작기 트레이너(mk)로 이어 둔 시트는 같은 사람이라 보드에 한 번만 — 그 시트에 직접 걸린 실이 있으면 그대로 둔다 */
- const dupSheet=()=>{const L=new Set(N().list('ents').map(e=>e.mk).filter(Boolean));if(!L.size)return L;for(const r of N().list('rels')){L.delete(r.a);L.delete(r.b)}return L};
+ /* 11-22: 예전엔 시트에 직접 걸린 실이 있으면 시트도 그려 같은 사람이 둘 나왔다 → 이어 둔 시트는 늘 숨기고, 시트에 걸린 실은 그 인물 항목으로 옮겨 그린다(rels) */
+ const dupMap=()=>{const M=new Map();for(const e of N().list('ents'))if(e.mk&&!M.has(e.mk))M.set(e.mk,e.id);return M};
+ const dupSheet=()=>new Set(dupMap().keys());
  const nodes=()=>{const D=dupSheet();return N().list('ents').concat(sheetNodes().filter(x=>!D.has(x.id))).filter(e=>(!plView()||e._vis==='pub')&&C().shown('graph',clsOfNode(e))&&(!U.type||e.type===U.type)&&(!U.tag||(e.tags||[]).includes(U.tag))&&(!U.team||(e.teams||[]).includes(U.team)))};
- const rels=()=>N().list('rels').filter(r=>!plView()||r._vis==='pub');
+ const rels=()=>{const M=dupMap();return N().list('rels').filter(r=>!plView()||r._vis==='pub').map(r=>M.has(r.a)||M.has(r.b)?Object.assign({},r,{a:M.get(r.a)||r.a,b:M.get(r.b)||r.b}):r)};
  const W=1600,H=1000;const BW=2200,BH=1400;/* 11-03: 보드 실 종류 — 보통 · 우호 · 적대 · 애정 · 비밀 저마다 색 · 점선 (board.css .str.*) */const BK=k=>k==='rival'?'doubt':k==='secret'?'secret':k==='ally'?'ally':k==='love'?'love':'tie';
  let BOARD=null;
  /* 11-14 망령 「선도 갔다 왔더니 보드 지랄남」 · 「룰이나 학칙은 빼고, 지역은 원에 넣지 말고 원 바깥에서 인물들에게 뻗어 나가야」:
@@ -38,28 +43,62 @@
     ② 선도에 나오는 것 = 인물 · 조직 · 이벤트 · 기타 항목 + 시트. 세계관 · 설정 · 아이템은 빼되, 소속 인물이 있는 항목(지역 · 조직 문서)은 「허브」로 원 바깥에 놓고 인물에게 살을 뻗는다.
     ③ 자리를 정한 적 없는 노드는 그릴 때마다 계산한다(같은 편끼리 붙여 둥글게 · 저장하지 않음). 허브는 끌어 둔 자리가 없으면 소속 인물들 바깥쪽 */
  const patchPosS=(id,x,y)=>N().patch(kOf(id),id,d=>{d.sx=Math.round(x);d.sy=Math.round(y)});
- function svgPrep(all){const ety=e=>window.NT_ENTS?NT_ENTS.ety(e):e.type;const isEnt=e=>!e._k||e._k==='ents';
-  const mem=h=>{const K=new Set([h.title].concat(h.teams||[]).map(x=>String(x||'').trim()).filter(Boolean));return all.filter(p=>p.id!==h.id&&isEnt(p)&&ety(p)==='인물'&&(p.teams||[]).some(t=>K.has(String(t).trim())))};
-  const HM=new Map();for(const e of all)if(isEnt(e)&&ety(e)!=='인물'){const m=mem(e);if(m.length)HM.set(e.id,m)}
+ /* 11-22 망령 「객원이랑 PC 는 캠퍼스 소속이고 학생회도 캠퍼스 소속인데 — 이 형태론 문제」: 원 하나 대신 「소속 무리」.
+    허브 = 소속 인물이 있는 항목(지역 · 조직). 소속 = 인물 · 시트의 teams 에 허브 제목(또는 허브의 다른 이름)이 있는 것.
+    허브 안의 허브: 허브의 소속(teams)이나 장소(at)에 다른 허브가 있으면 그 허브의 하위(학생회 → 미사그 캠퍼스). 없으면 소속 인물이 다른 허브의 진부분집합일 때 하위.
+    사람은 자기가 속한 허브 중 가장 깊은 곳 무리에 서고, 다른 소속에도 점선이 간다. 무리는 허브를 가운데 두고 둘레에 사람 · 하위 무리를 돌려 놓는다.
+    소속 없는 사람은 같은 PL · 분류끼리 작은 무리. 무리끼리는 실로 많이 이어진 쪽 가까이(나선으로 빈자리, 겹침 없음). 끌어 둔 자리(sx · sy)가 있으면 그대로 */
+ function svgPrep(all){const ety=e=>window.NT_ENTS?NT_ENTS.ety(e):e.type;const isEnt=e=>!e._k||e._k==='ents';const tr=x=>String(x||'').trim();
+  const isPerson=e=>!isEnt(e)||ety(e)==='인물';
+  const cand=all.filter(e=>isEnt(e)&&ety(e)!=='인물');const candT=new Set(cand.map(e=>tr(e.title)).filter(Boolean));
+  const keyS=h=>new Set([tr(h.title)].concat((h.teams||[]).map(tr).filter(t=>t&&!candT.has(t))).filter(Boolean));
+  const people=all.filter(isPerson);
+  const memOf=h=>{const K=keyS(h);return people.filter(p=>p.id!==h.id&&(p.teams||[]).some(t=>K.has(tr(t))))};
+  const HM=new Map();for(const h of cand){const m=memOf(h);if(m.length)HM.set(h.id,m)}
+  /* 하위 허브만 있고 사람이 없는 허브도 허브로 (캠퍼스 ← 학생회만 있는 경우) */
+  const parentRef=h=>{const T=(h.teams||[]).map(tr);const A=(h.at||[]).map(String);return cand.filter(p=>p.id!==h.id&&(T.includes(tr(p.title))||A.includes(String(p.id))))};
+  for(let k=0;k<3;k++)for(const h of [...HM.keys()].map(id=>cand.find(e=>e.id===id)))for(const p of parentRef(h))if(!HM.has(p.id))HM.set(p.id,[]);
   const list=all.filter(e=>!isEnt(e)||HM.has(e.id)||['인물','조직','이벤트','기타'].includes(ety(e)));
-  const body=list.filter(e=>!HM.has(e.id));
-  /* 같은 편 · 같은 PL 끼리 이웃하게 */
-  const MK=window.NT_MAKER;const keyOf=e=>{if(e.teams&&e.teams[0])return 'a:'+e.teams[0];if(!isEnt(e)){const d=N().data(e._k,e.id)||{};const t=MK&&MK.trainer&&MK.trainer(e.id);const pl=String(d.player||(t&&t.pl)||'').trim();return pl?'c:'+pl:'d:'+clsOfNode(e)}return 'b:'+(e.type||'')};
-  const ord=[];body.forEach(e=>{const k=keyOf(e);if(!ord.includes(k))ord.push(k)});ord.sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0);
-  const sorted=body.map((e,i)=>[e,i]).sort((x,y)=>ord.indexOf(keyOf(x[0]))-ord.indexOf(keyOf(y[0]))||x[1]-y[1]).map(x=>x[0]);
-  const n=sorted.length||1;const ry=Math.max(340,n*126/8.01),rx=ry*1.5,cx=W/2,cy=H/2;
-  sorted.forEach((e,i)=>{const a=i/n*Math.PI*2-Math.PI/2;e._ax=Math.round(cx+Math.cos(a)*rx);e._ay=Math.round(cy+Math.sin(a)*ry)});
-  for(const e of body){e.gx=e.sx!=null?e.sx:e._ax;e.gy=e.sy!=null?e.sy:e._ay}
-  const C=body.length?{x:body.reduce((s,e)=>s+e.gx,0)/body.length,y:body.reduce((s,e)=>s+e.gy,0)/body.length}:{x:cx,y:cy};
-  const hubs=list.filter(e=>HM.has(e.id));const SP=[];const sets=hubs.map(h=>new Set(HM.get(h.id).map(m=>m.id)));
-  hubs.forEach((h,hi)=>{const M=HM.get(h.id).map(m=>body.find(b=>b.id===m.id)).filter(Boolean);for(const m of M)SP.push({a:h.id,b:m.id});
-   if(h.sx!=null&&h.sy!=null){h.gx=h.sx;h.gy=h.sy;return}if(!M.length){h.gx=cx;h.gy=cy;return}
-   const mx=M.reduce((s,e)=>s+e.gx,0)/M.length,my=M.reduce((s,e)=>s+e.gy,0)/M.length;let dx=mx-C.x,dy=my-C.y,L=Math.hypot(dx,dy);if(L<20){dx=0;dy=-1;L=1}dx/=L;dy/=L;
-   const far=Math.max(...M.map(e=>(e.gx-C.x)*dx+(e.gy-C.y)*dy));const wide=sets.some((S2,j)=>j!==hi&&S2.size<sets[hi].size&&[...S2].every(x=>sets[hi].has(x)));
-   h.gx=Math.round(C.x+dx*(far+190+(wide?150:0)));h.gy=Math.round(C.y+dy*(far+190+(wide?150:0)))});
+  const body=list.filter(e=>!HM.has(e.id));const hubs=list.filter(e=>HM.has(e.id));const byId=Object.fromEntries(list.map(e=>[e.id,e]));
+  const mset={};for(const h of hubs)mset[h.id]=new Set(HM.get(h.id).map(m=>m.id));
+  /* 부모 허브 */
+  const par={};for(const h of hubs){const ex=parentRef(h).filter(p=>HM.has(p.id));if(ex.length){par[h.id]=ex[0].id;continue}
+   const S=mset[h.id];if(!S.size)continue;let best=null;for(const q of hubs){if(q.id===h.id)continue;const Q=mset[q.id];if(Q.size>S.size&&[...S].every(x=>Q.has(x))&&(!best||Q.size<mset[best].size))best=q.id}if(best)par[h.id]=best}
+  /* 고리 끊기 */
+  for(const h of hubs){const seen=new Set([h.id]);let x=par[h.id];while(x){if(seen.has(x)){delete par[h.id];break}seen.add(x);x=par[x]}}
+  const depth=id=>{let d=0,x=par[id];while(x&&d<20){d++;x=par[x]}return d};
+  /* 하위 허브 사람은 부모 허브 사람이기도 하다 (점선은 가장 가까운 허브에만) */
+  const prim={};for(const e of body){let best=null;for(const h of hubs){if(!mset[h.id].has(e.id))continue;if(!best||depth(h.id)>depth(best)||(depth(h.id)===depth(best)&&mset[h.id].size<mset[best].size))best=h.id}if(best)prim[e.id]=best}
+  const MK=window.NT_MAKER;const keyOf=e=>{if(!isEnt(e)){const d=N().data(e._k,e.id)||{};const t=MK&&MK.trainer&&MK.trainer(e.id);const pl=String(d.player||(t&&t.pl)||'').trim();return pl?'c:'+pl:'d:'+clsOfNode(e)}return 'b:'+(e.type||'')};
+  /* 무리 나무 */
+  const CL={};const mk=(id,hub)=>CL[id]||(CL[id]={id,hub,mem:[],kids:[]});
+  for(const h of hubs)mk(h.id,h);for(const h of hubs)if(par[h.id])mk(par[h.id]).kids.push(CL[h.id]);
+  for(const e of body){if(prim[e.id])CL[prim[e.id]].mem.push(e);else mk('_'+keyOf(e),null).mem.push(e)}
+  const tops=Object.values(CL).filter(c=>!(c.hub&&par[c.hub.id]));
+  const MW=128;   /* 사람 한 칸 폭 (원 88 + 이름) */
+  const size=c=>{if(c._r!=null)return c._r;c.kids.forEach(size);const items=c.mem.map(e=>({e,w:MW,r:MW/2})).concat(c.kids.map(k=>({k,w:2*k._r+44,r:k._r})));c.items=items;
+   if(!items.length){c._ring=0;return c._r=c.hub?70:0}
+   const P=items.reduce((s2,x)=>s2+x.w,0);const maxK=c.kids.reduce((m,k)=>Math.max(m,k._r),0);
+   let ring=Math.max(c.hub?175:(items.length>1?95:0),P/(2*Math.PI),c.kids.length?maxK+(c.hub?120:60):0);if(!c.hub&&items.length===1)ring=0;
+   c._ring=ring;return c._r=ring+items.reduce((m,x)=>Math.max(m,x.r),0)};
+  tops.forEach(size);
+  const place=(c,x,y)=>{c.x=x;c.y=y;if(c.hub){c.hub._ax=Math.round(x);c.hub._ay=Math.round(y)}const its=c.items||[];if(!its.length)return;
+   if(c._ring===0){const it=its[0];if(it.e){it.e._ax=Math.round(x);it.e._ay=Math.round(y)}else place(it.k,x,y);return}
+   const P=its.reduce((s2,q)=>s2+q.w,0);let a=-Math.PI/2;for(const it of its){const da=it.w/P*Math.PI*2;const m=a+da/2;const px=x+Math.cos(m)*c._ring*1.18,py=y+Math.sin(m)*c._ring;if(it.e){it.e._ax=Math.round(px);it.e._ay=Math.round(py)}else place(it.k,px,py);a+=da}};
+  /* 무리끼리 실 무게 */
+  const topOf={};const mark=(c,t)=>{c.mem.forEach(e=>topOf[e.id]=t);if(c.hub)topOf[c.hub.id]=t;c.kids.forEach(k=>mark(k,t))};tops.forEach(t=>mark(t,t.id));
+  const W2={};for(const r of rels()){const a=topOf[r.a],b=topOf[r.b];if(a&&b&&a!==b){const k=a<b?a+'|'+b:b+'|'+a;W2[k]=(W2[k]||0)+1}}const wOf=(a,b)=>W2[a<b?a+'|'+b:b+'|'+a]||0;
+  const ord=tops.slice().sort((a,b)=>b._r-a._r||String(a.id).localeCompare(String(b.id)));const placed=[];
+  for(const c of ord){let ax=0,ay=0;const lk=placed.map(o=>({o,w:wOf(o.id,c.id)})).filter(z=>z.w>0);if(lk.length){const sw=lk.reduce((s2,z)=>s2+z.w,0);ax=lk.reduce((s2,z)=>s2+z.o.x*z.w,0)/sw;ay=lk.reduce((s2,z)=>s2+z.o.y*z.w,0)/sw}
+   let pos=null;const R0=Math.max(c._r,40);for(let rr=0;!pos&&rr<20000;rr+=20){const n=rr?Math.max(10,Math.round(rr/12)):1;for(let t=0;t<n;t++){const an=t/n*Math.PI*2+rr*.01;const x=ax+Math.cos(an)*rr*1.35,y=ay+Math.sin(an)*rr;if(placed.every(o=>Math.hypot((o.x-x)/1.18,o.y-y)>=o.R+R0+70)){pos={x,y};break}}}
+   c.x=pos.x;c.y=pos.y;c.R=R0;placed.push(c)}
+  /* 전체를 가운데로 */
+  if(placed.length){const x0=Math.min(...placed.map(c=>c.x-c.R*1.18)),x1=Math.max(...placed.map(c=>c.x+c.R*1.18)),y0=Math.min(...placed.map(c=>c.y-c.R)),y1=Math.max(...placed.map(c=>c.y+c.R));const ox=W/2-(x0+x1)/2,oy=H/2-(y0+y1)/2;for(const c of placed)place(c,c.x+ox,c.y+oy)}
+  for(const e of list){e.gx=e.sx!=null?e.sx:(e._ax!=null?e._ax:W/2);e.gy=e.sy!=null?e.sy:(e._ay!=null?e._ay:H/2)}
+  const SP=[];for(const h of hubs){for(const m of HM.get(h.id)){if(!byId[m.id])continue;/* 하위 허브에 이미 이어진 사람은 부모 허브 점선을 생략 */let x=prim[m.id],skip=false;while(x&&x!==h.id){x=par[x];if(x===h.id)skip=true}if(!skip)SP.push({a:h.id,b:m.id})}if(par[h.id])SP.push({a:par[h.id],b:h.id,nest:1})}
   const xs=list.map(e=>e.gx),ys=list.map(e=>e.gy);const vb=list.length?[Math.min(0,Math.min(...xs)-130),Math.min(0,Math.min(...ys)-110),0,0]:[0,0,W,H];
   if(list.length){vb[2]=Math.max(W,Math.max(...xs)+130)-vb[0];vb[3]=Math.max(H,Math.max(...ys)+130)-vb[1]}
-  return {list,HM,SP,vb}}
+  return {list,HM,SP,vb,par}}
  function render(el){if(U.gview!=='svg')return renderBoard(el);const G=N().gm();const all=N().list('ents');const SV=svgPrep(nodes());const list=SV.list,SP=SV.SP,HM=SV.HM;const ids=new Set(list.map(e=>e.id));const rs=rels().filter(r=>ids.has(r.a)&&ids.has(r.b));
   const tags=[...new Set(all.flatMap(e=>e.tags||[]))].sort((a,b)=>a.localeCompare(b,'ko')),teams=[...new Set(all.flatMap(e=>e.teams||[]))].sort((a,b)=>a.localeCompare(b,'ko'));
   const types=window.NT_ENTS?NT_ENTS.TYPES:[];
@@ -70,7 +109,7 @@
    ${C().chips('graph',clsCount())}<select id="grType"><option value="">모든 종류</option>${types.map(([t])=>`<option ${U.type===t?'selected':''}>${t}</option>`).join('')}</select>
    ${tags.length?`<select id="grTag"><option value="">모든 태그</option>${tags.map(t=>`<option ${U.tag===t?'selected':''}>${esc(t)}</option>`).join('')}</select>`:''}
    ${teams.length?`<select id="grTeam"><option value="">모든 편</option>${teams.map(t=>`<option ${U.team===t?'selected':''}>${esc(t)}</option>`).join('')}</select>`:''}
-   ${G?`<div class="seg"><button data-gm="move" class="${U.mode==='move'?'on':''}">끌기</button><button data-gm="link" class="${U.mode==='link'?'on':''}">선 잇기${U.from?' · 두 번째 고르기':''}</button></div><button class="btn xs" data-g="newnode">＋ 인물</button><button class="btn xs ghost" data-g="auto">자동 배치</button>`:''}
+   ${G?`<div class="seg"><button data-gm="move" class="${U.mode==='move'?'on':''}">끌기</button><button data-gm="link" class="${U.mode==='link'?'on':''}">선 잇기${U.from?' · 두 번째 고르기':''}</button></div><button class="btn xs" data-g="newnode">＋ 인물</button><button class="btn xs ghost" data-g="auto">자동 배치</button><button class="btn xs ghost" data-g="defteam" title="소속 칸이 빈 시트를 분류(PC · 객원 · NPC)마다 어느 소속으로 볼지">기본 소속</button>`:''}
    <span class="sp"></span>${N().bulkBtns('rels',null,'관계선')}<span class="note">${list.length}명 · ${rs.length}선 · 휠 확대${G&&U.view==='pl'?' · <b style="color:var(--yel)">PL 이 보는 그대로</b>':''}</span><div class="legend">${RK.map(([k,l,c])=>`<span><i style="background:${c}"></i>${l}</span>`).join('')}</div></div>
    <div class="split"><div class="graphwrap" id="grWrap"><svg id="grSvg" viewBox="${SV.vb.join(' ')}" style="transform:translate(${U.px}px,${U.py}px) scale(${U.zoom})">
     <defs>${RK.map(([k,,c])=>`<marker id="ar_${k||'n'}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5 0 10z" fill="${c}"/></marker>`).join('')}</defs>
@@ -82,7 +121,12 @@
    </svg>${!list.length?'<div class="empty" style="position:absolute;inset:40%">항목 탭에서 인물을 만들면 여기에 나와요.</div>':''}</div>
    <aside class="side" id="grSide">${sel?relPanel(sel):(U.hl&&pn(U.hl)?nodePanel(pn(U.hl)):`<div class="card dim small">인물을 누르면 그 사람의 관계만 밝게 보여요.${G?' 선을 누르면 고칠 수 있어요. 「선 잇기」에서 두 사람을 차례로 누르면 새 관계가 생겨요.':''}</div>`)}</aside></div>`;
   bind(el,byId)}
- function nodePanel(e){const rs=rels().filter(r=>r.a===e.id||r.b===e.id);return `<div class="card"><div class="row"><h3>${esc(e.title)}</h3>${N().visBadge(e._vis,e._k||'ents',e.id)}<span class="sp"></span>${e._k&&e._k!=='ents'?`<button class="btn xs" data-g="tosheet" data-id="${esc(e.id)}">📋 시트 보기</button>`:`<button class="btn xs" data-g="toent" data-id="${esc(e.id)}">항목 보기</button>${N().gm()?`<button class="btn xs" data-g="editent" data-id="${esc(e.id)}">✎ 고치기</button><button class="btn xs ghost danger" data-g="delent" data-id="${esc(e.id)}">🗑 지우기</button>`:''}`}<button class="btn xs ghost" data-g="unhl">닫기</button></div>${e.sub?`<div class="dim small">${esc(e.sub)}</div>`:''}
+ /* 11-22: 분류별 기본 소속 (GM) · 시트 소속 칸 (GM · 그 자리 PL) */
+ function defTeamBox(){if(!N().gm())return;const D=defTeams();const opts=[...new Set(N().list('ents').filter(e=>(window.NT_ENTS?NT_ENTS.ety(e):e.type)!=='인물').map(e=>String(e.title||'').trim()).concat(N().list('ents').flatMap(e=>e.teams||[])).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
+  const m=N().openModal(`<div class="mhead"><h2>기본 소속</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><p class="small dim" style="margin:0 0 10px">시트의 「소속」 칸이 비어 있으면 분류마다 여기 적은 소속으로 봐요(선도 · 보드 무리). 여럿이면 쉼표. 시트에 소속을 적으면 그쪽이 먼저예요.</p><datalist id="dtOpts">${opts.map(o=>`<option value="${esc(o)}">`).join('')}</datalist>${C().L.map(([c,n])=>`<label class="lbl" style="display:block;margin-bottom:6px">${esc(n)}<input type="text" data-dt="${c}" list="dtOpts" value="${esc(D[c]||'')}" style="width:100%" placeholder="예: 미사그 캠퍼스"></label>`).join('')}<div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn pri" id="dtOk">저장</button></div>`);
+  $('#dtOk',m).onclick=async()=>{const v={};$$('[data-dt]',m).forEach(i=>{const x=i.value.trim();if(x)v[i.dataset.dt]=x});try{await N().campPatch({defTeams:v});N().closeModal();N().toast('기본 소속을 저장했어요');N().render()}catch(e){N().toast('저장 실패: '+e.message)}}}
+ async function sheetTeamEdit(id){const k=kOf(id);if(!N().canEdit(k,id))return;const d=N().data(k,id)||{};const v=await N().promptBox('소속 (쉼표로 여럿 · 비우면 분류 기본)',(d.teams||[]).join(', '),'예: 미사그 캠퍼스, 학생회');if(v==null)return;const L=String(v).split(/[,，]/).map(x=>x.trim()).filter(Boolean);await N().patch(k,id,x=>{if(L.length)x.teams=L;else delete x.teams});N().render()}
+ function nodePanel(e){const rs=rels().filter(r=>r.a===e.id||r.b===e.id);const sh=e._k&&e._k!=='ents';const tl=(e.teams||[]).join(' · ');const teamRow=sh?`<div class="small" style="margin-top:6px">소속 <b>${esc(tl||'없음')}</b>${tl&&!e.ownTeams?' <span class="dim">(분류 기본)</span>':''}${N().canEdit(e._k,e.id)?` <button class="linkbtn small" data-g="sheetteam" data-id="${esc(e.id)}">✎ 소속</button>`:''}</div>`:'';return `<div class="card"><div class="row"><h3>${esc(e.title)}</h3>${N().visBadge(e._vis,e._k||'ents',e.id)}<span class="sp"></span>${e._k&&e._k!=='ents'?`<button class="btn xs" data-g="tosheet" data-id="${esc(e.id)}">📋 시트 보기</button>`:`<button class="btn xs" data-g="toent" data-id="${esc(e.id)}">항목 보기</button>${N().gm()?`<button class="btn xs" data-g="editent" data-id="${esc(e.id)}">✎ 고치기</button><button class="btn xs ghost danger" data-g="delent" data-id="${esc(e.id)}">🗑 지우기</button>`:''}`}<button class="btn xs ghost" data-g="unhl">닫기</button></div>${e.sub?`<div class="dim small">${esc(e.sub)}</div>`:''}${teamRow}
   <ul class="lnk" style="margin-top:8px">${rs.map(r=>{const oid=r.a===e.id?r.b:r.a;const k=rk(r.kind);return `<li><i class="kdot" style="background:${k[2]}"></i><button class="linkbtn" data-g="hl" data-id="${esc(oid)}">${esc(ttl(oid))}</button> <span class="small dim">${r.a===e.id?'→':'←'} ${esc(r.label||'')}</span>${r._vis!=='pub'?' 🔒':''}${N().gm()?` <button class="linkbtn small" data-g="editrel" data-id="${esc(r.id)}">고치기</button>`:''}</li>`}).join('')||'<li class="dim small">관계가 없어요</li>'}</ul>${N().gm()&&rs.length?`<div class="row" style="gap:4px;margin-top:8px"><button class="btn xs ghost" data-g="relsall" data-id="${esc(e.id)}" data-v="pub">이 사람 관계 모두 공개</button><button class="btn xs ghost" data-g="relsall" data-id="${esc(e.id)}" data-v="gm">모두 비공개</button></div>`:''}</div>`}
  function relPanel(r){const a=pn(r.a),b=pn(r.b);const k=rk(r.kind);return `<div class="card"><div class="row"><h3>관계</h3><span class="sp"></span>${N().gm()?`<button class="btn xs ${r._vis==='pub'?'':'ghost'}" data-g="visrel" data-id="${esc(r.id)}">${r._vis==='pub'?'👁 공개':'🔒 비공개'}</button><button class="btn xs" data-g="editrel" data-id="${esc(r.id)}">고치기</button>`:''}<button class="btn xs ghost" data-g="unsel">닫기</button></div>
   <div class="relline"><b>${esc(a?a.title:'?')}</b> <span style="color:${k[2]}">${r.two?'↔':'→'}</span> <b>${esc(b?b.title:'?')}</b></div><div><span class="chip static" style="border-color:${k[2]};color:${k[2]}">${k[1]}</span> ${esc(r.label||'')}</div>${r.note?`<p class="pre small" style="margin-top:6px">${esc(r.note)}</p>`:''}${N().visBadge(r._vis,'rels',r.id)}</div>`}
@@ -93,7 +137,7 @@
   $$('[data-gv]',el).forEach(b=>b.onclick=()=>{U.view=b.dataset.gv;U.sel='';N().render()});
   $$('[data-gview]',el).forEach(b=>b.onclick=()=>{U.gview=b.dataset.gview;N().render()});
   el.addEventListener('click',e=>{const b=e.target.closest('[data-g]');if(!b)return;const k=b.dataset.g,id=b.dataset.id;
-   if(k==='newnode')return newNode();if(k==='auto')return autoLayout();
+   if(k==='newnode')return newNode();if(k==='auto')return autoLayout();if(k==='defteam')return defTeamBox();if(k==='sheetteam')return sheetTeamEdit(id);
    if(k==='visent'){const d=N().doc('ents',id);if(d)N().put('ents',id,d.data,d.vis==='pub'?'gm':'pub');return}
    if(k==='visrel'){const d=N().doc('rels',id);if(d)N().put('rels',id,d.data,d.vis==='pub'?'gm':'pub');return}
    if(k==='relsall'){const v=b.dataset.v;const rows=N().list('rels').filter(r=>(r.a===id||r.b===id)&&r._vis!==v).map(r=>({kind:'rels',id:r.id,data:N().doc('rels',r.id).data,vis:v}));if(rows.length)N().putMany(rows);return}if(k==='toent'){N().go('ents');setTimeout(()=>NT_ENTS.select(id),0);return}if(k==='tosheet')return toSheet(id);
