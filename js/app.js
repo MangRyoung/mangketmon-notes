@@ -107,10 +107,11 @@ window.NT=(()=>{
 
  /* ----- 데이터 ----- */
  const col=k=>D[k]||(D[k]={});
- const doc=(k,id)=>{const d=(D[k]||{})[id]||null;return d&&plEye()&&!canSee(d.vis)?null:d};   /* PL 눈으로 보기: 그 눈에 안 보이는 문서는 없는 것으로 */
+ const doc=(k,id)=>{const d=(D[k]||{})[id]||null;return d&&plEye()&&!canSee(d.vis,k,id)?null:d};   /* PL 눈으로 보기: 그 눈에 안 보이는 문서는 없는 것으로 */
  const data=(k,id)=>{const d=doc(k,id);return d?d.data:null};
- const list=k=>Object.entries(col(k)).filter(([id,d])=>!plEye()||canSee(d.vis)).map(([id,d])=>Object.assign({id,_vis:d.vis,_at:d.updated_at},d.data));
- const canSee=vis=>vis==='pub'||gm()||(me()&&vis==='pl:'+me());
+ const list=k=>Object.entries(col(k)).filter(([id,d])=>!plEye()||canSee(d.vis,k,id)).map(([id,d])=>Object.assign({id,_vis:d.vis,_at:d.updated_at},d.data));
+ /* 11-22 망령 「GM만으로 돌려도 그 자리에 앉아 있는 사람에겐 권한도 있고 보이기도」: 자기 자리 PC 시트(pc · pcp, id = 자리)는 「GM만」이어도 그 자리 PL 이 보고 고친다 (서버 nt_can_see2 와 같은 규칙 · GM 메모 sec 는 그대로 GM만) */
+ const canSee=(vis,k,id)=>vis==='pub'||gm()||(me()&&(vis==='pl:'+me()||((k==='pc'||k==='pcp')&&id===me())));
  const canEdit=(k,id)=>gm()||!!(me()&&(((k==='pc'||k==='pcp')&&id===me())||(k==='avail'&&String(id).endsWith('_'+me()))));
  const VISL={pub:'모두',gm:'GM만'};
  const visLabel=v=>v==='pub'?'모두':v==='gm'?'GM만':v&&v.startsWith('pl:')?'PL 전용 · '+(seatName(v.slice(3))||v.slice(3)):v;
@@ -191,7 +192,7 @@ window.NT=(()=>{
  let unsub=null;
  const MINE=new Map();const mark=(k,id)=>MINE.set(k+'/'+id,Date.now());const recent=(k,id)=>{const t=MINE.get(k+'/'+id);return t&&Date.now()-t<6000};
  function listen(){if(unsub)unsub();unsub=DBS().subscribe(ST.camp,{
-  onDoc(kind,id,dat,vis,at){if(!canSee(vis)){if(doc(kind,id))delete col(kind)[id];render();return}const cur=doc(kind,id);if(cur&&cur.updated_at>=at)return;histPush(kind,id);col(kind)[id]={data:dat||{},vis,updated_at:at};if(at>(ST.since||''))ST.since=at;if(window.NT_NOTICE&&!recent(kind,id))NT_NOTICE.push(kind,id,cur?'edit':'new',dat);render()},
+  onDoc(kind,id,dat,vis,at){if(!canSee(vis,kind,id)){if(doc(kind,id))delete col(kind)[id];render();return}const cur=doc(kind,id);if(cur&&cur.updated_at>=at)return;histPush(kind,id);col(kind)[id]={data:dat||{},vis,updated_at:at};if(at>(ST.since||''))ST.since=at;if(window.NT_NOTICE&&!recent(kind,id))NT_NOTICE.push(kind,id,cur?'edit':'new',dat);render()},
   onDel(kind,id){const had=doc(kind,id);if(had){if(window.NT_NOTICE&&!recent(kind,id))NT_NOTICE.push(kind,id,'del',had.data);delete col(kind)[id];render()}},
   async onPing(p){if(!p)return;if(p.t==='all')return resync();
    if(p.t==='claim'){/* 11-03: 자리 앉기 요청 · 승인 */await refreshCamp();if(realGm()&&p.seat)toast(`🪑 ${p.name||p.uid||'PL'} 님이 「${seatName(p.seat)||p.seat}」 자리를 요청했어요 — 설정 탭에서 승인`);else if(!realGm()&&window.NT_ACCT&&p.uid&&p.uid===((NT_ACCT.get()||{}).uid)&&p.ok!=null){toast(p.ok?'GM 이 자리를 승인했어요':'GM 이 자리 요청을 거절했어요');if(p.ok)open(ST.camp,ST.view)}return}if(p.t==='mk'){if(window.NT_MAKER)try{await NT_MAKER.load(true);render()}catch(e){}return}   /* 10-31: 남이 노트에서 제작기 문서를 고쳤다 → 제작기 사본 다시 받기 */if(p.t==='del'){const had=doc(p.kind,p.id);if(had){if(window.NT_NOTICE&&!recent(p.kind,p.id))NT_NOTICE.push(p.kind,p.id,'del',had.data);delete col(p.kind)[p.id];render()}return}
