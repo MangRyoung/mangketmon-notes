@@ -23,15 +23,18 @@
  const rkScore=v=>{const m=/^\s*(AA|A|B|C|D)\s*([+-]?)/i.exec(String(v||''));if(!m)return -1;return ({D:0,C:1,B:2,A:3,AA:4})[m[1].toUpperCase()]+(m[2]==='+'?.3:m[2]==='-'?-.3:0)};
  function gsubAuto(p){const t=MK()&&MK().trainer(p.id);const rk=(t&&t.ranks)||{};let best='',bv=-1;for(const q of QS){const v=rkScore(rk[q]);if(v>bv){bv=v;best=q}}return best}
  const gsubOf=p=>QS.includes(p&&p.gsub)?p.gsub:gsubAuto(p);
- const groups=L=>clsL().map(([c,n,col])=>{const g={c,n,col,L:L.filter(p=>clsOf(p)===c)};if(c==='guest')g.subs=QS.concat(['']).map(q=>({q,L:g.L.filter(p=>gsubOf(p)===q)})).filter(x=>x.L.length);return g}).filter(g=>g.L.length);
+ /* 11-21 망령 「NPC도 트레이너/민간인 폴더로 구분」: NPC 칸 = 시트 문서의 nsub (GM 이 끌어 옮긴 것), 비어 있으면 제작기 트레이너가 있으면 트레이너 · 없으면 민간인 */
+ const NQS=['트레이너','민간인'];const nsubAuto=p=>MK()&&MK().trainer(p.id)?'트레이너':'민간인';const nsubOf=p=>NQS.includes(p&&p.nsub)?p.nsub:nsubAuto(p);
+ const SUB={guest:{qs:QS.concat(['']),of:gsubOf,auto:gsubAuto,f:'gsub',nm:q=>q||'미정',lab:'객원 칸'},npc:{qs:NQS,of:nsubOf,auto:nsubAuto,f:'nsub',nm:q=>q,lab:'NPC 칸'}};
+ const groups=L=>clsL().map(([c,n,col])=>{const g={c,n,col,L:L.filter(p=>clsOf(p)===c)};const SB=SUB[c];if(SB)g.subs=SB.qs.map(q=>({q,L:g.L.filter(p=>SB.of(p)===q)})).filter(x=>x.L.length);return g}).filter(g=>g.L.length);
  /* 화면에 보이는 순서 그대로의 id 줄 (끌어서 순서 바꿀 때 다른 칸은 그대로 두려고) */
- const binsOf=L=>groups(L).flatMap(g=>g.subs?g.subs.map(x=>({key:'guest:'+x.q,L:x.L})):[{key:g.c,L:g.L}]);
+ const binsOf=L=>groups(L).flatMap(g=>g.subs?g.subs.map(x=>({key:g.c+':'+x.q,L:x.L})):[{key:g.c,L:g.L}]);
  /* 10-30 망령 「드래그해서 폴더별로도 움직일 수 있게」: 비어 있는 칸도 그려 두고(평소엔 숨김) 끄는 동안만 보인다. 칸 열쇠(bin) = pc · npc · guest:<자질> */
- const BIN_ORDER=()=>clsL().flatMap(([c])=>c==='guest'?QS.map(q=>'guest:'+q).concat(['guest:']):[c]);
+ const BIN_ORDER=()=>clsL().flatMap(([c])=>SUB[c]?SUB[c].qs.map(q=>c+':'+q):[c]);
  function folds(L){const f=foldGet();const grid=(key,L)=>`<div class="pcgrid" data-bin="${esc(key)}">${L.map(p=>card(p)).join('')}</div>`;
-  const G0=groups(L);const all=clsL().map(([c,n,col])=>G0.find(g=>g.c===c)||{c,n,col,L:[],subs:c==='guest'?[]:undefined});
-  return `<div class="pcfolds">${all.map(g=>{const off=!!f[g.c];const subs=g.c==='guest'?QS.map(q=>(g.subs||[]).find(x=>x.q===q)||{q,L:[]}).concat((g.subs||[]).filter(x=>x.q==='')):null;
-   return `<section class="pcfold ${off?'off':''} ${g.L.length?'':'pcempty'}" data-cls="${g.c}" style="--c:${g.col}"><button type="button" class="pcfh" data-pfold="${g.c}" data-pbin="${g.c==='guest'?'guest:*':g.c}" aria-expanded="${off?'false':'true'}"><span class="caret">▾</span><i class="kdot"></i><b>${esc(g.n)}</b><small>${g.L.length}명</small></button>${off?'':subs?`<div class="pcsubs">${subs.map(x=>{const k='guest:'+x.q;const so=!!f[k];return `<section class="pcfold pcsub ${so?'off':''} ${x.L.length?'':'pcempty'}" data-q="${esc(x.q)}"><button type="button" class="pcfh" data-pfold="${esc(k)}" data-pbin="${esc(k)}" aria-expanded="${so?'false':'true'}"><span class="caret">▾</span><b>${esc(x.q||'미정')}</b><small>${x.L.length}명</small></button>${so?'':grid(k,x.L)}</section>`}).join('')}</div>`:grid(g.c,g.L)}</section>`}).join('')}</div>`}
+  const G0=groups(L);const all=clsL().map(([c,n,col])=>G0.find(g=>g.c===c)||{c,n,col,L:[],subs:SUB[c]?[]:undefined});
+  return `<div class="pcfolds">${all.map(g=>{const off=!!f[g.c];const SB=SUB[g.c];const subs=SB?SB.qs.filter(q=>q||(g.subs||[]).some(x=>x.q==='')).map(q=>(g.subs||[]).find(x=>x.q===q)||{q,L:[]}):null;
+   return `<section class="pcfold ${off?'off':''} ${g.L.length?'':'pcempty'}" data-cls="${g.c}" style="--c:${g.col}"><button type="button" class="pcfh" data-pfold="${g.c}" data-pbin="${SB?g.c+':*':g.c}" aria-expanded="${off?'false':'true'}"><span class="caret">▾</span><i class="kdot"></i><b>${esc(g.n)}</b><small>${g.L.length}명</small></button>${off?'':subs?`<div class="pcsubs">${subs.map(x=>{const k=g.c+':'+x.q;const so=!!f[k];return `<section class="pcfold pcsub ${so?'off':''} ${x.L.length?'':'pcempty'}" data-q="${esc(x.q)}"><button type="button" class="pcfh" data-pfold="${esc(k)}" data-pbin="${esc(k)}" aria-expanded="${so?'false':'true'}"><span class="caret">▾</span><b>${esc(SB.nm(x.q))}</b><small>${x.L.length}명</small></button>${so?'':grid(k,x.L)}</section>`}).join('')}</div>`:grid(g.c,g.L)}</section>`}).join('')}</div>`}
  /* 끌어 옮기기: 같은 칸 안 = 순서만, 다른 칸 = 분류(cls) · 객원 칸(gsub)도 바꾼다. 접힌 칸 · 폴더 이름 위에 놓으면 그 칸 맨 끝으로 */
  function bindDrag(root){if(!root||root._pcDrag)return;root._pcDrag=1;let d=null;
   const clear=()=>$$('.drop',root).forEach(x=>x.classList.remove('drop','insb','insa'));
@@ -41,7 +44,7 @@
    e.preventDefault();d.ph.style.left=(e.clientX-d.ox)+'px';d.ph.style.top=(e.clientY-d.oy)+'px';
    const el=document.elementFromPoint(e.clientX,e.clientY);clear();d.t=null;if(!el||!root.contains(el))return;
    /* 다른 칸 위: 카드는 제자리에 두고 놓일 자리만 표시한다 (카드가 칸 사이를 뛰어다니면 화면이 흔들려서) */
-   const h=el.closest('.pcfh[data-pbin]');if(h){h.classList.add('drop');let b=h.dataset.pbin;if(b==='guest:*'){const p=N().data(K(),d.it.dataset.id)||{};b='guest:'+gsubAuto(Object.assign({id:d.it.dataset.id},p))}d.t={bin:b,ref:'',before:false};return}
+   const h=el.closest('.pcfh[data-pbin]');if(h){h.classList.add('drop');let b=h.dataset.pbin;if(b.endsWith(':*')){const c0=b.slice(0,-2);const p=N().data(K(),d.it.dataset.id)||{};b=c0+':'+SUB[c0].auto(Object.assign({id:d.it.dataset.id},p))}d.t={bin:b,ref:'',before:false};return}
    const g=el.closest('.pcgrid');if(!g)return;const c=el.closest('.pccard');
    if(g===d.it.parentNode){if(c&&c!==d.it){const r=c.getBoundingClientRect();const before=e.clientX<r.left+r.width/2;g.insertBefore(d.it,before?c:c.nextSibling)}return}
    g.classList.add('drop');if(c){const r=c.getBoundingClientRect();const before=e.clientX<r.left+r.width/2;c.classList.add('drop',before?'insb':'insa');d.t={bin:g.dataset.bin,ref:c.dataset.id,before}}else d.t={bin:g.dataset.bin,ref:'',before:false}});
@@ -57,7 +60,7 @@
  async function moveTo(mid,to,order){const KD=K();const base=KD==='npc'?'npc':'pc';const rows=[];let msg='';
   order.forEach((id,i)=>{const dd=N().doc(KD,id);if(!dd)return;const n=Object.assign({},dd.data);let ch=n.order!==i;n.order=i;
    if(id===mid&&to){const [c,q]=to.split(':');const want=c||base;if(clsOf(n)!==want){if(want===base)delete n.cls;else n.cls=want;ch=true;msg='분류: '+clsName(want)}
-    if(c==='guest'){const tgt=q||'';const me=Object.assign({id},n);if(gsubOf(me)!==tgt){const auto=gsubAuto(me);if(!tgt||tgt===auto)delete n.gsub;else n.gsub=tgt;ch=true;msg=(msg?msg+' · ':'')+'객원 칸: '+(tgt||'미정')}}}
+    const SB=SUB[c];if(SB&&q!=null){const tgt=q||'';const me=Object.assign({id},n);if(SB.of(me)!==tgt){const auto=SB.auto(me);if(!tgt||tgt===auto)delete n[SB.f];else n[SB.f]=tgt;ch=true;msg=(msg?msg+' · ':'')+SB.lab+': '+SB.nm(tgt)}}}
    if(ch)rows.push({kind:KD,id,data:n,vis:dd.vis})});
   if(rows.length){await N().putMany(rows);if(msg)N().toast(msg)}else N().render()}
  async function setGsub(id,q){const KD=K();if(!N().gm()||!N().doc(KD,id))return;const p=N().data(KD,id)||{};if((p.gsub||'')===q)return;
