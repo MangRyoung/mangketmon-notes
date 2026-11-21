@@ -56,7 +56,8 @@
   const memOf=h=>{const K=keyS(h);return people.filter(p=>p.id!==h.id&&(p.teams||[]).some(t=>K.has(tr(t))))};
   const HM=new Map();for(const h of cand){const m=memOf(h);if(m.length)HM.set(h.id,m)}
   /* 하위 허브만 있고 사람이 없는 허브도 허브로 (캠퍼스 ← 학생회만 있는 경우) */
-  const parentRef=h=>{const T=(h.teams||[]).map(tr);const A=(h.at||[]).map(String);return cand.filter(p=>p.id!==h.id&&(T.includes(tr(p.title))||A.includes(String(p.id))))};
+  /* 부모 = 그 허브를 자기 소속(teams)에 적은 허브(미사그 캠퍼스 teams 에 「학생회」 — 지금 노트가 쓰는 방향) · 또는 그 허브가 소속 · 장소로 적은 허브 */
+  const parentRef=h=>{const T=(h.teams||[]).map(tr);const A=(h.at||[]).map(String);const ht=tr(h.title);const P=cand.filter(p=>p.id!==h.id&&(p.teams||[]).map(tr).includes(ht));return P.concat(cand.filter(p=>p.id!==h.id&&!P.includes(p)&&(T.includes(tr(p.title))||A.includes(String(p.id)))))};
   for(let k=0;k<3;k++)for(const h of [...HM.keys()].map(id=>cand.find(e=>e.id===id)))for(const p of parentRef(h))if(!HM.has(p.id))HM.set(p.id,[]);
   const list=all.filter(e=>!isEnt(e)||HM.has(e.id)||['인물','조직','이벤트','기타'].includes(ety(e)));
   const body=list.filter(e=>!HM.has(e.id));const hubs=list.filter(e=>HM.has(e.id));const byId=Object.fromEntries(list.map(e=>[e.id,e]));
