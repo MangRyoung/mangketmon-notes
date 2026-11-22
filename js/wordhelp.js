@@ -59,7 +59,8 @@ window.NT_WORD=(()=>{
  ['보급','필드에 등장하여 1번만. 다시 쓰려면 소지에 들어갔다 나와야 한다.',''],
  ['공유','발동한 턴 종료 시까지 다른 【공유】 효과를 발동할 수 없다.','공유|공유 (『지령』)'],
  ['중첩','조건을 달성할 때마다 같은 효과가 N번까지 누적된다.','중첩 (2회)|중첩 (3회)'],
- ['연동','자신이 특정 조건을 충족했을 때 연동해서 발동한다. (아군)은 아군에게, (상대)는 상대에게 조건을 달성시켰을 때.','연동 (「특성 : ○○」)|연동 (아군)|연동 (상대)']
+ ['연동','자신이 특정 조건을 충족했을 때 연동해서 발동한다. (아군)은 아군에게, (상대)는 상대에게 조건을 달성시켰을 때.','연동 (「특성 : ○○」)|연동 (아군)|연동 (상대)'],
+ ['은폐','시스템 로그에 공개하지 않을 수 있다. 발동한 로그는 주인(NPC 면 GM)에게만 보이고, 주인이 「출력」으로 따로 공개하지 않는 한 모두에게 알리지 않는다.','']
 ];
  function insertAt(ta,v){const a=ta.selectionStart??ta.value.length,b=ta.selectionEnd??a;const wrap=v==='「」'||v==='『』';const ins=wrap?v[0]+ta.value.slice(a,b)+v[1]:v;
   ta.value=ta.value.slice(0,a)+ins+ta.value.slice(b);const pos=wrap&&a===b?a+1:a+ins.length;ta.focus();ta.setSelectionRange(pos,pos);ta.dispatchEvent(new Event('input',{bubbles:true}))}
