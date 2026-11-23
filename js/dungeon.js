@@ -112,7 +112,9 @@ window.NT_DG=(()=>{
  function mkSnap(r){const MK=window.NT_MAKER;if(!r||!r.mk||!MK||!MK.trainer||!MK.mons)return null;const t=MK.trainer(r.mk);if(!t)return null;const P=MK.mons(r.mk)||[];if(!P.length)return null;return {name:t.name||('야생 · '+(r.n||'')),rank:'C',mons:P.map(q=>mkSlot(q,r))}}
  const mkLoad=async()=>{try{if(window.NT_MAKER&&NT_MAKER.load)await NT_MAKER.load()}catch(e){}};
  function fromMaker(x){const D=(x&&x.data)||{};if(!D.d||!D.d.r)throw new Error('제작기 던전을 읽지 못했어요');const o=fromOm(D.d);
-  for(const [k,r] of Object.entries(D.d.r)){if(!r||!r.mk)continue;const id=String(k).replace(/[^A-Za-z0-9_]/g,'').slice(0,12);const w=id&&o.r[id]?mkSnap(r):null;if(w)o.r[id].w=w}
+  for(const [k,r] of Object.entries(D.d.r)){if(!r||!r.mk)continue;const id=String(k).replace(/[^A-Za-z0-9_]/g,'').slice(0,12);const w=id&&o.r[id]?mkSnap(r):null;if(!w)continue;
+   /* 프라이드를 비워 둔 포켓몬(제작기가 자동으로 셈)은 노트가 셈하지 못한다 → 제작기가 적어 둔 사본의 값을 쓰고, 없으면 C */
+   const P=(window.NT_MAKER.mons(r.mk)||[]),sv=(r.w&&r.w.mons)||[];w.mons.forEach((m,i)=>{if(!(P[i]&&P[i].pride)&&sv[i]&&sv[i].name===m.name&&sv[i].pride)m.pride=sv[i].pride});o.r[id].w=w}
   o.src=mkSrc(x);return o}
  async function mkList(){const L=await N().DBS().makerDocs('dungeon');return (L||[]).filter(x=>x&&x.data&&x.data.d&&!x.data.del).sort((a,b)=>(+b.data.at||0)-(+a.data.at||0))}
  const wSame=(a,b)=>JSON.stringify(a||null)===JSON.stringify(b||null);
