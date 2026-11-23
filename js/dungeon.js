@@ -104,12 +104,21 @@ window.NT_DG=(()=>{
     웹툴로 보내면 웹툴이 w 로 야생 시트를 만든다 (oremas notes_link dgPull). */
  const MTIER={s1:'사건 1',s2:'사건 2',s3:'사건 3'};
  const mkSrc=x=>{const D=x.data||{};return {from:'maker',mk:x.id,mtier:D.tier||'',mkAt:+D.at||0,owner:D.ownerName||'',seed:D.seed||'',theme:D.theme||''}};
- function fromMaker(x){const D=(x&&x.data)||{};if(!D.d||!D.d.r)throw new Error('제작기 던전을 읽지 못했어요');const o=fromOm(D.d);o.src=mkSrc(x);return o}
+ /* 11-23 망령 「조우 포켓몬이 연결 안 되어 있다」 뒤처리: 제작기 던전 방의 야생은 r.mk(제작기 트레이너 id)라, 받을 때 그 트레이너의 지금 포켓몬으로 야생 시트 사본(w)을 만든다
+    (제작기 dungen.js pToSlot 과 같은 꼴). 제작기를 못 읽었거나 그 트레이너가 안 보이면 문서에 적힌 사본 w 를 그대로 쓴다. */
+ const potNm=p=>(p.pots||[]).map(v=>String(v||'').trim()).filter(Boolean);
+ function mkSlot(p,r){const boss=r.t==='boss'&&potNm(p).includes('와일드 보스');const ex=[p.excl,...(p.exclX||[])].filter(g=>g&&(g.name||g.eff)).map(g=>({name:g.name||'',eff:String(g.eff||'')}));
+  return {role:r.t==='boss'?(boss?'boss':'esc'):'pre',name:p.nick||p.name||'',t1:p.t1||'-',t2:p.t2||'-',base:(p.base||[]).slice(0,6).map(v=>+v||0),ability:p.ability||'',moves:(p.moves||[]).map(m=>m&&!m.hide&&(m.name||m)).filter(z=>z&&typeof z==='string'),pride:p.pride||'C',dist:+p.dist||0,boss,pots:potNm(p),gye:ex}}
+ function mkSnap(r){const MK=window.NT_MAKER;if(!r||!r.mk||!MK||!MK.trainer||!MK.mons)return null;const t=MK.trainer(r.mk);if(!t)return null;const P=MK.mons(r.mk)||[];if(!P.length)return null;return {name:t.name||('야생 · '+(r.n||'')),rank:'C',mons:P.map(q=>mkSlot(q,r))}}
+ const mkLoad=async()=>{try{if(window.NT_MAKER&&NT_MAKER.load)await NT_MAKER.load()}catch(e){}};
+ function fromMaker(x){const D=(x&&x.data)||{};if(!D.d||!D.d.r)throw new Error('제작기 던전을 읽지 못했어요');const o=fromOm(D.d);
+  for(const [k,r] of Object.entries(D.d.r)){if(!r||!r.mk)continue;const id=String(k).replace(/[^A-Za-z0-9_]/g,'').slice(0,12);const w=id&&o.r[id]?mkSnap(r):null;if(w)o.r[id].w=w}
+  o.src=mkSrc(x);return o}
  async function mkList(){const L=await N().DBS().makerDocs('dungeon');return (L||[]).filter(x=>x&&x.data&&x.data.d&&!x.data.del).sort((a,b)=>(+b.data.at||0)-(+a.data.at||0))}
  const wSame=(a,b)=>JSON.stringify(a||null)===JSON.stringify(b||null);
  /* 다시 받기: 제작기 것으로 방 · 통로 · 시작 방 · 미궁 포텐셜을 바꾸고, 노트에서 넣은 방 그림 · 단서 · 숨김과 (야생 시트가 그대로인 방의) 웹툴 시트 이음(e)은 남긴다 */
  async function mkRefresh(){const src=(E.d&&E.d.src)||{};if(!canEd()||src.from!=='maker'||!src.mk)return;let x;try{x=await N().DBS().makerGet('dungeon',src.mk)}catch(e){return N().toast('제작기에서 읽지 못했어요: '+e.message)}
-  if(!x||!x.data||!x.data.d||x.data.del)return N().toast('제작기에 그 던전이 없어요 (지웠거나 옮겼어요)');let nd;try{nd=fromMaker(x)}catch(e){return N().toast(e.message)}
+  if(!x||!x.data||!x.data.d||x.data.del)return N().toast('제작기에 그 던전이 없어요 (지웠거나 옮겼어요)');await mkLoad();let nd;try{nd=fromMaker(x)}catch(e){return N().toast(e.message)}
   const old=E.d.r||{};const add=Object.keys(nd.r).filter(id=>!old[id]).length,del=Object.keys(old).filter(id=>!nd.r[id]).length;
   if(!confirm(`제작기의 「${x.data.d.n||''}」 를 다시 받을까요?\n방 · 통로 · 체크 · 야생 시트 · 방 자리는 제작기 것으로 바뀌어요${add||del?` (새 방 ${add} · 없어지는 방 ${del})`:''}.\n노트에서 넣은 장소 · 판 그림 · 방 그림 · 단서 · 숨김 · 던전 이름은 그대로 둬요.`))return;
   for(const [id,r] of Object.entries(nd.r)){const o=old[id];if(!o)continue;if(o.b)r.b=o.b;if(o.cl&&!r.cl)r.cl=o.cl;if(o.e&&wSame(o.w,r.w)){r.e=o.e;if(o.eh)r.eh=o.eh}}
@@ -142,8 +151,8 @@ window.NT_DG=(()=>{
     N().bindDrop(box.querySelector('#dgDrop'),async fs=>go(await Promise.all([...fs].map(f=>f.text()))),true,'.json,application/json,text/plain');box.querySelector('#dgGo').onclick=()=>go([box.querySelector('#dgTxt').value]);return}
    if(k==='maker'){box.innerHTML='<div class="small dim" style="padding:10px 2px">제작기 던전 목록을 받는 중…</div>';
     try{const L=await mkList();if(!box.isConnected)return;const have=new Set(all().map(d=>(d.src||{}).mk).filter(Boolean));
-     box.innerHTML=L.length?`<div class="dgpick">${L.map((x,i)=>{let d;try{d=fromMaker(x)}catch(e){return ''}const D=x.data;const mobs=Object.values(D.d.r||{}).reduce((n,r)=>n+((r.w&&r.w.mons)||[]).length,0);return `<button type="button" class="dgcard" data-mk="${i}">${mini(d)}<span class="dgcap"><b>${esc(D.d.n||'(이름 없음)')}</b><small>${esc(MTIER[D.tier]||'')} · 방 ${Object.keys(D.d.r||{}).length} · 야생 ${mobs}체${D.ownerName?' · '+esc(D.ownerName):''}${D.pub?'':' · 비공개'}${have.has(x.id)?' · <b>이미 가져옴</b>':''}</small></span></button>`}).join('')}</div><div class="small dim" style="margin-top:6px">제작기 「던전」 탭에 저장된 던전이에요. 이미 가져온 던전은 그 던전을 열어 「↻ 제작기에서 다시 받기」로 맞춰요.</div>`:`<div class="small dim">제작기에 만든 던전이 없어요. <a href="${esc(mkHref())}" target="_blank" rel="noopener">제작기 「던전」 탭</a>에서 먼저 만들어 주세요.</div>`;
-     box.onclick=async ev=>{const c=ev.target.closest('[data-mk]');if(!c)return;const x=L[+c.dataset.mk];if(have.has(x.id)&&!confirm('이 던전은 이미 노트에 있어요. 하나 더 가져올까요?\n(맞추려면 그 던전을 열어 「↻ 제작기에서 다시 받기」)'))return;let d;try{d=fromMaker(x)}catch(err){return N().toast(err.message)}N().closeModal();await create(spot,d)}}
+     box.innerHTML=L.length?`<div class="dgpick">${L.map((x,i)=>{let d;try{d=fromMaker(x)}catch(e){return ''}const D=x.data;const mobs=Object.values(D.d.r||{}).reduce((n,r)=>n+((mkSnap(r)||r.w||{}).mons||[]).length,0);return `<button type="button" class="dgcard" data-mk="${i}">${mini(d)}<span class="dgcap"><b>${esc(D.d.n||'(이름 없음)')}</b><small>${esc(MTIER[D.tier]||'')} · 방 ${Object.keys(D.d.r||{}).length} · 야생 ${mobs}체${D.ownerName?' · '+esc(D.ownerName):''}${D.pub?'':' · 비공개'}${have.has(x.id)?' · <b>이미 가져옴</b>':''}</small></span></button>`}).join('')}</div><div class="small dim" style="margin-top:6px">제작기 「던전」 탭에 저장된 던전이에요. 이미 가져온 던전은 그 던전을 열어 「↻ 제작기에서 다시 받기」로 맞춰요.</div>`:`<div class="small dim">제작기에 만든 던전이 없어요. <a href="${esc(mkHref())}" target="_blank" rel="noopener">제작기 「던전」 탭</a>에서 먼저 만들어 주세요.</div>`;
+     box.onclick=async ev=>{const c=ev.target.closest('[data-mk]');if(!c)return;const x=L[+c.dataset.mk];if(have.has(x.id)&&!confirm('이 던전은 이미 노트에 있어요. 하나 더 가져올까요?\n(맞추려면 그 던전을 열어 「↻ 제작기에서 다시 받기」)'))return;await mkLoad();let d;try{d=fromMaker(x)}catch(err){return N().toast(err.message)}N().closeModal();await create(spot,d)}}
     catch(err){box.innerHTML=`<div class="small" style="color:var(--yel)">${esc(err.message)}</div>`}return}
    if(k==='sim'){box.innerHTML='<div class="small dim" style="padding:10px 2px">시뮬레이터 던전 목록을 받는 중…</div>';
     try{const [L,wild]=await Promise.all([simList(),wildNames()]);if(!box.isConnected)return;
