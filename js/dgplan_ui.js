@@ -7,7 +7,9 @@
    · 던전 = 노트 문서 kind 'dgs'(지도 장소의 던전, dungeon.js). 사건에 잇기: arc.dg(대표) + arc.dgx[](더). 열기 = 던전 편집기(웹툴로 보내기도 거기서).
    · 「미사그 생성 던전 넣기」: 시뮬레이터 sim/data/dungeons/ld1~ld5(11-11 생성)를 노트 던전으로 가져와 장소에 붙이고, 지금 줄기대로 잇는다
      (사건 1 = 서고 · 사건 2 = 공장 + 수로 · 묘지 · 요양원은 사건 3 후보로 둠). 이미 같은 던전이 있으면 건너뜀.
-   · 하이라이트 시트 = arc.boss(NPC 시트 id). 주역 이름 글(bossTxt)마다 「빈 NPC 시트 만들기」. */
+   · 하이라이트 시트 = arc.boss(NPC 시트 id — 11-23 부터 PC 종류 시트 id 도). 주역 이름 글(bossTxt)마다 「빈 NPC 시트 만들기」.
+   · 11-23 망령 「빈 시트 추가가 아니라 삭제하던가 기존 시트 연결하던가 수정 기능」: 이름 글 줄에 「시트 잇기(있는 NPC · PC 시트)」 · 「✎ 이름 고치기」 · 「× 지우기」,
+     이어 둔 줄에 「⇄ 다른 시트로 바꾸기」 · 「× 빼기」, 비어 있는 하이라이트용 노트 시트에는 「시트 지우기」(휴지통으로). */
 "use strict";
 (()=>{
  const N=()=>window.NT;const {esc}=window.NT;
@@ -51,7 +53,12 @@
 
  /* ---- 하이라이트 시트 ---- */
  const txtNames=s=>(Array.isArray(s)?s.join(','):String(s||'')).split(/[,·\n]/).map(x=>x.trim()).filter(Boolean);
- function sheetInfo(id){const d=N().data('npc',id);if(!d)return null;const t=window.NT_MAKER&&NT_MAKER.trainer&&NT_MAKER.trainer(id);const mons=t&&window.NT_MAKER.mons?(NT_MAKER.mons(id)||[]):[];return {id,name:d.name||(t&&t.name)||'(시트)',img:(t&&t.image)||d.image||'',n:mons.length,mk:!!t}}
+ const kindOf=id=>N().data('npc',id)?'npc':N().data('pc',id)?'pc':'';
+ const bare=s=>String(s||'').replace(/\s*\(.*\)$/,'').trim();
+ const sheetOpts=(skip)=>{const o=(k,lab)=>{const L=N().list(k).filter(x=>x&&x.id&&x.name&&!skip.includes(x.id));return L.length?`<optgroup label="${lab}">${L.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('')}</optgroup>`:''};return o('npc','NPC 시트')+o('pc','PC 종류 시트')};
+ const txtSet=(x,L)=>{x.bossTxt=[...new Set(L.map(v=>String(v).trim()).filter(Boolean))].join(', ')};
+ const emptySheet=id=>{const d=N().data('npc',id);if(!d||d.sub!=='하이라이트')return false;if(window.NT_MAKER&&NT_MAKER.trainer&&NT_MAKER.trainer(id))return false;return !d.image&&!(d.log||[]).length&&!Object.keys(d).some(k=>k!=='id'&&k[0]!=='_'&&!['name','image','player','sub','order','log'].includes(k)&&d[k]!=null&&d[k]!==''&&!(Array.isArray(d[k])&&!d[k].length))};
+ function sheetInfo(id){const k=kindOf(id);const d=k&&N().data(k,id);if(!d)return null;const t=window.NT_MAKER&&NT_MAKER.trainer&&NT_MAKER.trainer(id);const mons=t&&window.NT_MAKER.mons?(NT_MAKER.mons(id)||[]):[];return {id,kind:k,name:d.name||(t&&t.name)||'(시트)',img:(t&&t.image)||d.image||'',n:mons.length,mk:!!t}}
  async function newSheet(aid,name){const nid=N().uid('n');await N().put('npc',nid,{name,image:'',player:'',sub:'하이라이트',order:N().list('npc').length,log:[]},'gm');await N().patch('arcs',aid,x=>{x.boss=[...new Set([...(x.boss||[]),nid])]});N().toast(`빈 NPC 시트 「${name}」 를 만들었어요 (GM만) — 시트 탭에서 채우거나 「⇪ 제작기로」`)}
 
  /* ---- 판 ---- */
@@ -63,7 +70,7 @@
    ${free.length?`<div class="dp-free"><b>사건에 안 이은 던전</b> ${free.map(d=>`<span class="dp-fd" data-g="open" data-id="${esc(d.id)}" title="${esc(spotName(d.spot))}">⛩ ${esc(d.n||'(던전)')}</span>`).join('')}</div>`:''}`;
   bind(el)}
  function colHtml(a,i,free){const col=a.color||PAL[i%PAL.length];const S=scaleOf(a,i);const L=layN(S.lay);const sum=L.reduce((s,x)=>s+x,0);
-  const dgs=linked(a);const bossIds=(a.boss||[]).filter(id=>N().data('npc',id));const named=txtNames(a.bossTxt);
+  const dgs=linked(a);const bossIds=(a.boss||[]).filter(kindOf);const named=txtNames(a.bossTxt);const opts=sheetOpts(a.boss||[]);
   return `<section class="dp-col" style="--ac:${esc(col)}">
    <header class="cg-ch"><span class="cg-no">${String(i+1).padStart(2,'0')}</span><span class="cg-cm"><small>CASE ${i+1}</small><b>${esc(a.name||'')}</b></span></header>
    <div class="dp-sec"><div class="dp-h"><b>스케일링 목표</b><small>${sum?`본길 ${L.join(' + ')} = ${sum}체`:''}</small><button type="button" class="btn xs ghost" data-g="reset" data-id="${esc(a.id)}" title="이 사건을 기본값(11-11 스펙)으로">기본값</button></div>
@@ -71,9 +78,9 @@
    <div class="dp-sec"><div class="dp-h"><b>⛩ 던전</b><small>${dgs.length}개</small>${free.length?`<select data-g="link" data-id="${esc(a.id)}"><option value="">＋ 던전 잇기</option>${free.map(d=>`<option value="${esc(d.id)}">${esc(d.n||'(던전)')}</option>`).join('')}</select>`:''}</div>
     ${dgs.map(id=>dgCard(a,id,S,L)).join('')||'<div class="dp-none">이은 던전이 없어요</div>'}</div>
    <div class="dp-sec"><div class="dp-h"><b>⚔ 하이라이트</b><small>목표 통솔점 ${S.hl}${S.h7?' + 제7체':''}</small></div>
-    ${bossIds.map(id=>{const s=sheetInfo(id);return `<div class="dp-sh" data-g="sheet" data-id="${esc(id)}" title="NPC 시트 열기"><i style="${s.img?`background-image:url('${esc(N().cssu?N().cssu(s.img):s.img)}')`:''}"></i><b>${esc(s.name)}</b><small>${s.mk?`제작기 시트 · 포켓몬 ${s.n}체`:'노트 시트 (제작기 없음)'}</small><button type="button" class="bp-x" data-g="unboss" data-id="${esc(a.id)}" data-n="${esc(id)}" title="하이라이트에서 빼기">×</button></div>`}).join('')}
-    ${named.filter(n=>!bossIds.some(id=>((N().data('npc',id)||{}).name||'').replace(/\s*\(.*\)$/,'')===n.replace(/\s*\(.*\)$/,''))).map(n=>`<div class="dp-sh none"><b>${esc(n)}</b><small>시트 없음</small><button type="button" class="btn xs" data-g="newsheet" data-id="${esc(a.id)}" data-n="${esc(n.replace(/\s*\(.*\)$/,''))}">＋ 빈 NPC 시트</button></div>`).join('')}
-    <select data-g="addboss" data-id="${esc(a.id)}"><option value="">＋ NPC 시트 잇기</option>${N().list('npc').filter(x=>!(a.boss||[]).includes(x.id)).map(x=>`<option value="${esc(x.id)}">${esc(x.name||'(시트)')}</option>`).join('')}</select></div>
+    ${bossIds.map(id=>{const s=sheetInfo(id);return `<div class="dp-sh" data-g="sheet" data-id="${esc(id)}" title="시트 열기"><i style="${s.img?`background-image:url('${esc(N().cssu?N().cssu(s.img):s.img)}')`:''}"></i><b>${esc(s.name)}</b><small>${s.kind==='pc'?'PC 종류 · ':''}${s.mk?`제작기 시트 · 포켓몬 ${s.n}체`:'노트 시트 (제작기 없음)'}</small>${emptySheet(id)?`<button type="button" class="btn xs ghost" data-g="delsheet" data-id="${esc(a.id)}" data-n="${esc(id)}" title="비어 있는 하이라이트용 시트를 지워요 (휴지통에서 되살릴 수 있어요)">시트 지우기</button>`:''}${opts?`<select class="dp-sw" data-g="swap" data-id="${esc(a.id)}" data-n="${esc(id)}" title="다른 시트로 바꾸기"><option value="">⇄</option>${opts}</select>`:''}<button type="button" class="bp-x" data-g="unboss" data-id="${esc(a.id)}" data-n="${esc(id)}" title="하이라이트에서 빼기 (시트는 남아요)">×</button></div>`}).join('')}
+    ${named.filter(n=>!bossIds.some(id=>bare((N().data(kindOf(id),id)||{}).name)===bare(n))).map(n=>`<div class="dp-sh none"><b>${esc(n)}</b><small>시트 없음</small><span class="dp-sa">${opts?`<select data-g="linktxt" data-id="${esc(a.id)}" data-n="${esc(n)}" title="이미 있는 시트를 이 주역에 이어요"><option value="">시트 잇기</option>${opts}</select>`:''}<button type="button" class="btn xs ghost" data-g="edtxt" data-id="${esc(a.id)}" data-n="${esc(n)}" title="이름 고치기">✎</button><button type="button" class="btn xs ghost" data-g="newsheet" data-id="${esc(a.id)}" data-n="${esc(bare(n))}" title="빈 NPC 시트를 새로 만들어 이어요">＋ 빈 시트</button><button type="button" class="bp-x" data-g="rmtxt" data-id="${esc(a.id)}" data-n="${esc(n)}" title="이 이름 지우기">×</button></span></div>`).join('')}
+    <select data-g="addboss" data-id="${esc(a.id)}"><option value="">＋ 시트 잇기 (NPC · PC 종류)</option>${opts}</select></div>
   </section>`}
  function dgCard(a,id,S,L){const d=N().data('dgs',id);const B=battles(d);const bossR=B.filter(b=>b.boss),pre=B.filter(b=>!b.boss);const tot=B.reduce((s,b)=>s+b.cnt,0);const want=L.reduce((s,x)=>s+x,0);const wantBoss=L.length?L[L.length-1]:0;
   const okBoss=!bossR.length||!wantBoss||bossR[0].cnt===wantBoss;const preSeq=pre.map(b=>b.cnt).join(' + ');
@@ -86,13 +93,20 @@
   el.addEventListener('change',async e=>{const t=e.target;
    if(t.dataset.sc){const [aid,k]=t.dataset.sc.split('|');const f=F.find(x=>x[0]===k);let v=f[3]==='chk'?(t.checked?1:0):f[3]==='num'?(t.value===''?null:+t.value):t.value.trim();
     const i=arcs().findIndex(x=>x.id===aid);const def=(DEF[Math.min(i,DEF.length-1)]||{})[k];if(v===def)v=null;await setScale(aid,k,v);N().toast('저장했어요');return}
-   const g=t.dataset.g;if(g==='link'&&t.value){await linkDg(t.dataset.id,t.value);return}if(g==='addboss'&&t.value){await N().patch('arcs',t.dataset.id,x=>{x.boss=[...new Set([...(x.boss||[]),t.value])]});return}});
+   const g=t.dataset.g;if(g==='link'&&t.value){await linkDg(t.dataset.id,t.value);return}if(g==='addboss'&&t.value){await N().patch('arcs',t.dataset.id,x=>{x.boss=[...new Set([...(x.boss||[]),t.value])]});return}
+   if(g==='linktxt'&&t.value){const v=t.value,n=t.dataset.n;await N().patch('arcs',t.dataset.id,x=>{x.boss=[...new Set([...(x.boss||[]),v])];txtSet(x,txtNames(x.bossTxt).filter(y=>y!==n))});N().toast(`「${n}」 에 시트를 이었어요`);return}
+   if(g==='swap'&&t.value){const v=t.value,o=t.dataset.n;await N().patch('arcs',t.dataset.id,x=>{const L=(x.boss||[]).filter(y=>y!==v);const i=L.indexOf(o);if(i<0)L.push(v);else L[i]=v;x.boss=L});N().toast('다른 시트로 바꿨어요 (앞 시트는 남아 있어요)');return}});
   el.addEventListener('click',async e=>{const b=e.target.closest('[data-g]');if(!b||b.tagName==='SELECT'||b.tagName==='INPUT')return;const g=b.dataset.g,id=b.dataset.id;
    if(g==='seed')return seedLd();if(g==='map')return N().go('map');
    if(g==='reset'){if(await N().confirmBox('이 사건의 스케일링을 기본값(11-11 스펙)으로 되돌릴까요?','되돌리기'))await resetScale(id);return}
    if(g==='open'){if(window.NT_DG)NT_DG.openEd(id);return}
    if(g==='unlink'){e.stopPropagation();return unlinkDg(id,b.dataset.d)}
-   if(g==='sheet'){if(e.target.closest('.bp-x'))return;if(window.NT_FAV)NT_FAV.go({kind:'npc',id});return}
+   if(g==='sheet'){if(e.target.closest('.bp-x,select,button'))return;if(window.NT_FAV&&kindOf(id))NT_FAV.go({kind:kindOf(id),id});return}
+   if(g==='rmtxt'){const n=b.dataset.n;return N().patch('arcs',id,x=>{txtSet(x,txtNames(x.bossTxt).filter(y=>y!==n))})}
+   if(g==='edtxt'){const n=b.dataset.n;const v=await N().promptBox('주역 이름 고치기',n,'이름');if(v==null)return;const nv=String(v).replace(/[,·\n]/g,' ').trim();if(!nv||nv===n)return;return N().patch('arcs',id,x=>{txtSet(x,txtNames(x.bossTxt).map(y=>y===n?nv:y))})}
+   if(g==='delsheet'){e.stopPropagation();const sid=b.dataset.n;const nm=(N().data('npc',sid)||{}).name||'(시트)';if(!emptySheet(sid))return N().toast('내용이 있는 시트라 여기서는 지우지 않아요 — 시트 탭에서 지워요');
+    const other=arcs().filter(x=>x.id!==id&&(x.boss||[]).includes(sid)).length;if(!await N().confirmBox(`비어 있는 시트 「${nm}」 를 지울까요?${other?`\n다른 사건 ${other}곳의 하이라이트에서도 빠져요.`:''}\n(휴지통에서 되살릴 수 있어요)`,'지우기'))return;
+    for(const x of arcs())if((x.boss||[]).includes(sid))await N().patch('arcs',x.id,y=>{y.boss=(y.boss||[]).filter(z=>z!==sid)});await N().del('npc',sid);N().toast(`시트 「${nm}」 를 지웠어요`);return}
    if(g==='unboss'){e.stopPropagation();return N().patch('arcs',id,x=>{x.boss=(x.boss||[]).filter(y=>y!==b.dataset.n)})}
    if(g==='newsheet')return newSheet(id,b.dataset.n)})}
 

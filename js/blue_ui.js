@@ -29,6 +29,7 @@
  const nm=(kind,id)=>{const d=N().data(kind,id);return d?(d.name||d.title||''):''};
  const KN={npc:['npc','🎭','인물'],pc:['pc','🧑','PC'],spots:['spots','📍','장소'],dgs:['dgs','⛩','던전'],ents:['ents','📇','항목'],routes:['routes','🧭','루트']};
  const nmS=id=>{const d=N().data('spots',id);return d?(d.num?d.num+'. ':'')+(d.name||''):''};
+ const bK=id=>!N().data('npc',id)&&N().data('pc',id)?'pc':'npc';   /* 11-23 주역(boss)에 PC 종류 시트도 */
  const nmK=(k,id)=>k==='spots'?nmS(id):k==='dgs'?((N().data('dgs',id)||{}).n||''):nm(k,id);
  /* 11-10 재검토: 칩에 얼굴 · 장소 그림을 작게 (시트 그림 · 항목 얼굴 · 장소 대표 그림) */
  const cssu=u=>N().cssu?N().cssu(u):String(u).replace(/'/g,'%27');
@@ -136,7 +137,7 @@
  /* 사건 칸 — 줄(머리 · 단서 · 단계 4 · 발)을 사건끼리 맞춰 그리드에 놓는다 (휴대폰은 사건마다 차례로 쌓음) */
  function arcCol(a,i,n,no){const col=a.color||PAL[i%PAL.length];const eps=a.eps||[];const cl=a.clues||[];const ok=cl.filter(c=>c.ok).length;const c=i+1;const sc='arc|'+a.id;
   const cell=(r,cls,inner,attr)=>`<div class="bp-cell ${cls}" style="--ac:${esc(col)};grid-column:${c};grid-row:${r};--o:${i*10+r}" ${attr||''}>${inner}</div>`;
-  const tags=[a.pc&&nm('pc',a.pc)?goChip('pc',a.pc,'pc',sc,'pc'):chip('스포트라이트 PC 없음','warn'),...(a.boss||[]).map(id=>goChip('npc',id,'boss',sc,'boss')),...txtNames(a.bossTxt).map(x=>txChip(x,'boss',sc,'bossTxt','주역')),...(a.cast||[]).map(id=>goChip('npc',id,'',sc,'cast')),...txtNames(a.castTxt).map(x=>txChip(x,'',sc,'castTxt','연결 인물'))].filter(Boolean);
+  const tags=[a.pc&&nm('pc',a.pc)?goChip('pc',a.pc,'pc',sc,'pc'):chip('스포트라이트 PC 없음','warn'),...(a.boss||[]).map(id=>goChip(bK(id),id,'boss',sc,'boss')),...txtNames(a.bossTxt).map(x=>txChip(x,'boss',sc,'bossTxt','주역')),...(a.cast||[]).map(id=>goChip('npc',id,'',sc,'cast')),...txtNames(a.castTxt).map(x=>txChip(x,'',sc,'castTxt','연결 인물'))].filter(Boolean);
   const stage=[...(a.spots||[]).map(id=>goChip('spots',id,'',sc,'spots')),a.dg?goChip('dgs',a.dg,'dg',sc,'dg'):'',...(a.ents||[]).map(id=>goChip('ents',id,'',sc,'ents'))].filter(Boolean);
   const bg=(a.spots||[]).map(id=>faceOf('spots',id)).find(Boolean);const dn=eps.filter(e=>e.st==='done').length;
   const head=`<div class="bp-ah ${bg?'has-bg':''} ${sel('arc',a.id)}" ${bg?`style="--bg:url('${esc(cssu(bg))}')"`:''} data-b="arc" data-id="${esc(a.id)}" title="눌러서 사건을 고친다 · 서랍에서 끌어 놓으면 사건에 이어진다">
@@ -185,14 +186,14 @@
   const epOut=(e,lab)=>{L.push('',`### ${no[e.id]}화 · ${lab}${e.title?' — '+e.title:''}${e.st?` [${EST[e.st]}]`:''}`);if(e.goal)L.push('- 목표: '+e.goal);if(e.beats)L.push('- 진행: '+String(e.beats).replace(/\n/g,'\n  '));
    const who=[...names('pc',e.pcs),...names('npc',e.npcs),...txtNames(e.npcTxt)];if(who.length)L.push('- 인물: '+who.join(', '));const sp=names('spots',e.spots);if(sp.length)L.push('- 장소: '+sp.join(', '));if(e.dg&&nmK('dgs',e.dg))L.push('- 던전: '+nmK('dgs',e.dg));const en=names('ents',e.ents);if(en.length)L.push('- 항목: '+en.join(', '));(e.forks||[]).forEach(f=>L.push('- 분기: '+fk(f)))};
   A.forEach((a,i)=>{L.push('',`## 사건 ${i+1}. ${a.name||''}${a.st?` [${AST[a.st]}]`:''}`);if(a.line)L.push(a.line);if(a.theme)L.push('- 주제: '+a.theme);const sp=a.pc&&nm('pc',a.pc);if(sp)L.push('- 스포트라이트 PC: '+sp);
-   const b=[...names('npc',a.boss),...txtNames(a.bossTxt)];if(b.length)L.push('- 주역: '+b.join(', '));const c=[...names('npc',a.cast),...txtNames(a.castTxt),...names('ents',a.ents)];if(c.length)L.push('- 인물 · 항목: '+c.join(', '));const s=names('spots',a.spots);if(s.length)L.push('- 무대: '+s.join(', '));grpsOf(a.id).forEach(g=>L.push(`- 조직 「${g.name||''}」${g.line?' — '+g.line:''}: ${(g.mem||[]).map(m=>(CG().nameOf(m)||'(이름)')+(m.role&&(CG().roles||{})[m.role]?'('+CG().roles[m.role]+')':'')).join(', ')}`));if(a.dg&&nmK('dgs',a.dg))L.push('- 던전: '+nmK('dgs',a.dg));
+   const b=[...(a.boss||[]).map(id=>nmK(bK(id),id)).filter(Boolean),...txtNames(a.bossTxt)];if(b.length)L.push('- 주역: '+b.join(', '));const c=[...names('npc',a.cast),...txtNames(a.castTxt),...names('ents',a.ents)];if(c.length)L.push('- 인물 · 항목: '+c.join(', '));const s=names('spots',a.spots);if(s.length)L.push('- 무대: '+s.join(', '));grpsOf(a.id).forEach(g=>L.push(`- 조직 「${g.name||''}」${g.line?' — '+g.line:''}: ${(g.mem||[]).map(m=>(CG().nameOf(m)||'(이름)')+(m.role&&(CG().roles||{})[m.role]?'('+CG().roles[m.role]+')':'')).join(', ')}`));if(a.dg&&nmK('dgs',a.dg))L.push('- 던전: '+nmK('dgs',a.dg));
    (a.clues||[]).forEach(q=>L.push(`- 단서 [${q.ok?'x':' '}] ${q.t||''}${q.ep&&no[q.ep]?` (${no[q.ep]}화)`:''}${q.d?' — '+q.d:''}`));(a.forks||[]).forEach(f=>L.push('- 결말 갈래: '+fk(f)));if(a.note)L.push('- 메모: '+a.note);
    for(const [k,lab] of PH)for(const e of (a.eps||[]))if(e.ph===k)epOut(e,lab)});
   if((M.extra||[]).length){L.push('','## 여유 · 최종장');M.extra.forEach(e=>epOut(e,'여유'))}return L.join('\n')}
  async function copyOut(){const t=outline();try{await navigator.clipboard.writeText(t);N().toast('도안을 글로 복사했어요 — 붙여 넣으면 돼요')}catch(e){N().openModal(`<div class="mhead"><h2>도안 (글)</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><textarea rows="18" style="width:100%" readonly>${esc(t)}</textarea>`)}}
  /* 다른 화면(항목 · 지도 장소)에서 「도안에 나오는 곳」 되짚기 */
- function uses(kind,id){const out=[];if(!N().gm())return out;const A=arcs(),no=numbering(A,meta());const has=(v,id)=>Array.isArray(v)?v.includes(id):v===id;const AF={ents:['ents'],spots:['spots'],npc:['boss','cast'],pc:['pc'],dgs:['dg']}[kind]||[];const EF={ents:['ents'],spots:['spots'],npc:['npcs'],pc:['pcs'],dgs:['dg']}[kind]||[];
-  A.forEach((a,i)=>{const c=a.color||PAL[i%PAL.length];if(AF.some(f=>has(a[f],id)))out.push({aid:a.id,eid:'',c,t:`사건 ${i+1} · ${a.name||''}`,why:kind==='npc'&&has(a.boss,id)?'주역':kind==='pc'?'스포트라이트':'사건'});
+ function uses(kind,id){const out=[];if(!N().gm())return out;const A=arcs(),no=numbering(A,meta());const has=(v,id)=>Array.isArray(v)?v.includes(id):v===id;const AF={ents:['ents'],spots:['spots'],npc:['boss','cast'],pc:['pc','boss'],dgs:['dg']}[kind]||[];const EF={ents:['ents'],spots:['spots'],npc:['npcs'],pc:['pcs'],dgs:['dg']}[kind]||[];
+  A.forEach((a,i)=>{const c=a.color||PAL[i%PAL.length];if(AF.some(f=>has(a[f],id)))out.push({aid:a.id,eid:'',c,t:`사건 ${i+1} · ${a.name||''}`,why:has(a.boss,id)?'주역':kind==='pc'?'스포트라이트':'사건'});
    for(const [k] of PH)for(const e of (a.eps||[]))if(e.ph===k&&EF.some(f=>has(e[f],id)))out.push({aid:a.id,eid:e.id,c,t:`${no[e.id]}화 · ${e.title||PHK[e.ph]}`,why:PHK[e.ph]})});
   (meta().extra||[]).forEach(e=>{if(EF.some(f=>has(e[f],id)))out.push({aid:'_x',eid:e.id,c:'#8a8a8a',t:`${no[e.id]}화 · ${e.title||'여유'}`,why:'여유'})});return out}
  function usesHtml(kind,id){const U=uses(kind,id);return U.length?`<div class="sec">도안에 나오는 곳</div><ul class="appear">${U.map(u=>`<li style="--c:${esc(u.c)}"><i class="dot"></i><button type="button" class="linkbtn" data-bpgo="${esc(u.aid)}|${esc(u.eid)}">${esc(u.t)}</button><span class="small dim">${esc(u.why)}</span></li>`).join('')}</ul>`:''}
