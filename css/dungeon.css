@@ -197,3 +197,4 @@
 .dgcd-pic{height:96px;margin:-8px -10px 2px;border-radius:9px 9px 0 0;background:#14161c center/cover no-repeat}
 .dgcd-r{overflow:hidden}
 @media (max-width:760px){.dgen-bn{height:110px}}
+@media (max-width:760px){.modal.dgcdm .dgcd-wrap{padding:4px 2px}.dgcd.dgen{padding:8px 5px}.dgen-r{padding:6px 4px}.dgen-r.pic{padding-top:0}.dgen-bn{margin:0 -4px 2px}.dgen .pmc{padding:8px 6px}.dgen .pmst{gap:2px}}
