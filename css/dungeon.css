@@ -187,3 +187,8 @@
 .dgen-e{font-size:.76rem;opacity:.82;padding-left:8px;border-left:2px solid rgba(128,128,128,.3);margin:1px 0 2px}
 .dgen-mv{display:flex;flex-direction:column;gap:2px;padding:3px 0;border-top:1px dashed var(--line,rgba(128,128,128,.3));border-bottom:1px dashed var(--line,rgba(128,128,128,.3))}
 @media (max-width:760px){.dgen-ms{grid-template-columns:minmax(0,1fr)}}
+.dgen-live.ptygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:12px;align-items:start}
+.dgen-role{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:.78rem}
+.dgen-role i{font-style:normal;font-weight:700;font-size:.74rem;padding:1px 9px;border-radius:999px;background:#5b6475;color:#fff}
+.dgen-role.esc i{background:#8a5a2a}.dgen-role.boss i{background:#c8362b}.dgen-role span{opacity:.8}
+.dgen .dgen-r{background:rgba(0,0,0,.12)}

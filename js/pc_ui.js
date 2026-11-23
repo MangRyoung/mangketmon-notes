@@ -379,7 +379,8 @@
   return `<div class="awxs">${aw.slice(0,2).map(card).join('')}${aw.length<2?[...Array(2-Math.min(2,aw.length))].map((_,k)=>empty(aw.length+k+1)).join(''):''}</div>${bar}`}
  window.NT_PCX={partySec,monCard,mkRow};
  /* 10-29: 지도의 인물 얼굴 → 이 시트 */
- window.NT_PC={select(k,id){U.mode=k==='npc'?'npc':'pc';U.sel=id;N().go(U.mode);setTimeout(()=>{const sh=$('.pcsheet');if(sh)sh.scrollIntoView({behavior:'smooth',block:'start'})},60)}};   /* 미리보기 · 점검용 */
+ window.NT_PC={monCard:(t,m,o)=>monCard(t||{},m,false,o||{}),   /* 11-23 던전 한 장 요약 「⚔ 조우」 탭이 같은 포켓몬 카드를 쓴다 */
+  select(k,id){U.mode=k==='npc'?'npc':'pc';U.sel=id;N().go(U.mode);setTimeout(()=>{const sh=$('.pcsheet');if(sh)sh.scrollIntoView({behavior:'smooth',block:'start'})},60)}};   /* 미리보기 · 점검용 */
  function monRow(m){const mv=(m.moves||[]).map(x=>typeof x==='string'?x:(x&&(x.name||x.n))||'').filter(Boolean);const pots=(m.pots||[]).filter(Boolean);
   return `<div class="monrow"><i style="${MK().img(m)?`background-image:url('${cssu(MK().img(m))}')`:''}"></i><div class="mb"><div class="row" style="gap:6px"><b>${esc(m.name||'')}</b>${tchip(m.t1)}${tchip(m.t2)}${m.tera&&m.tera!=='-'?`<small class="dim">테라 ${esc(m.tera)}</small>`:''}</div><div class="small">${m.ability?'특성 '+esc(m.ability):''}${m.item?' · 소지품 '+esc(m.item):''}${m.dist?' · 분배 '+esc(m.dist):''}</div>${mv.length?`<div class="small dim">기술 · ${mv.map(esc).join(' · ')}</div>`:''}${pots.length?`<div class="small dim">포텐셜 · ${pots.map(esc).join(' · ')}</div>`:''}${m.memo?`<div class="small pre" style="margin-top:3px">${esc(m.memo)}</div>`:''}</div></div>`}
  /* 10-30 망령 「여기 뜨는 각성체 원전 좀 꾸며봐 — 투박하게」: 포켓몬 메모의 【각성체 원전】 덩어리(awaken.js memoOf 가 쓰는 꼴)를 카드로.
