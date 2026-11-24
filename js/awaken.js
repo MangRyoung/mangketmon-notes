@@ -557,7 +557,7 @@ window.NT_AWK=(()=>{
  const pTwo=(x,lo,hi,k1,k2)=>k1*Math.max(0,Math.min(x,hi)-lo)+k2*Math.max(0,x-hi);
  function pCalc(b,to,g){const S0=PSTEP[g]||PSTEP.C;const [cap,fl,st]=S0;const real=b.reduce((a,c)=>a+c,0),main=Math.max(b[1],b[3]),opp=Math.round(main*0.4);
   const fa=Math.max(0,Math.max(fl,b[1]<main?opp:0)-b[1]),fc=Math.max(0,Math.max(fl,b[3]<main?opp:0)-b[3]),fsp=Math.max(0,fl-b[5]),fdur=Math.max(0,150-(b[0]+b[2]+b[4]));   /* 11-19 망령: HP · 방어 · 특방 합 하한 150 (제작기 durMin) */
-  const bulk=pTwo(Math.min(b[2],b[4]),85,105,.5,.75),hp=pTwo(b[0],95,120,.5,.75),fs=pTwo(main,105,120,.5,1)*Math.max(0,Math.min(1,(Math.min(b[5],140)-90)/50));
+  const bulk=pTwo(Math.min(b[2],b[4]),85,105,.5,.75),hp=pTwo(b[0],95,120,.5,.75)*Math.max(0,Math.min(1,((b[2]+b[4])/2-60)/30))/* 11-24 망령: HP 할증 × 내구 비율(방어·특방 평균 60에서 0, 90에서 1) — 제작기 hp.dlo · dhi */,fs=pTwo(main,105,120,.5,1)*Math.max(0,Math.min(1,(Math.min(b[5],140)-90)/50));
   const toAdj=to==null?0:90*Math.max(0,to-st)-50*Math.max(0,1-Math.max(to,0.5));   /* 11-01 망령: 0특은 0.5특과 같은 −25 까지만 */const ct=Math.round((real+fa+fc+fsp+fdur+bulk+hp+fs+toAdj)*100)/100;
   const P=[['하한',fa+fc+fsp+fdur],['내구',bulk],['HP',hp],['화력·스피드',fs],['특성 TO',toAdj]].filter(x=>Math.abs(x[1])>1e-9).map(([k,v])=>`${k} ${v>0?'+':''}${Math.round(v*100)/100}`);
   return {ct,cap,real,P,ok:ct<=cap+1e-9,g:g&&PSTEP[g]?g:''}}
