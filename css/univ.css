@@ -797,3 +797,12 @@ button.awb-tend:hover,button.awb-tend:focus-visible{border-color:#f1d58e;backgro
 .ux-xmn{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .ux-xme{margin-top:5px;white-space:pre-wrap;line-height:1.6}
 html[data-skin="univ"] .ux-xm{border-top-color:#b9a77f}
+/* 11-25 망령 「세션 노트에도 꾸미기」: 고유 색 u.color (--uc) · 전용 타입 색 x.ty (--exc) */
+.ux-uc.ux-ucc{border-left:4px solid var(--uc)!important;background:linear-gradient(135deg,color-mix(in srgb,var(--uc) 16%,transparent),transparent 60%),var(--panel2)}
+html[data-skin="univ"] .ux-uc.ux-ucc{background:linear-gradient(135deg,color-mix(in srgb,var(--uc) 18%,transparent),transparent 60%),rgba(255,255,255,.4)}
+.ux-uc.ux-ucc .ux-gem{background:var(--uc)!important;box-shadow:0 0 6px var(--uc)!important}
+.ux-sw1{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}.ux-sw1.on{border-color:var(--ink,#fff);box-shadow:0 0 0 2px rgba(0,0,0,.4)}
+.ux-sw0{font-size:11px;padding:1px 8px;border-radius:999px;border:1px solid var(--line2,#888);background:transparent;color:inherit;cursor:pointer}.ux-sw0.on{background:var(--line2,#888)}
+.ux-ty1{border:0;border-radius:5px;padding:1px 7px;font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.45);cursor:pointer}.ux-ty1.on{outline:2px solid var(--ink,#fff);outline-offset:1px}
+.pml.ex[style*="--exc"]{border-left-color:var(--exc)!important}.pml.ex[style*="--exc"] .pmk{background:var(--exc)!important;color:#fff!important;text-shadow:0 1px 1px rgba(0,0,0,.4)}
+.mkr-exn[style*="--exc"] .mkr-k.ex{background:var(--exc)!important;color:#fff!important;text-shadow:0 1px 1px rgba(0,0,0,.4)}
