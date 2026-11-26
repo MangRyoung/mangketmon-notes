@@ -2,348 +2,1954 @@
    주소: #c=<캠페인>&v=<탭>  (비밀구는 localStorage nt_sec_<캠페인> 에 — 주소에 넣지 않는다. 처음엔 ?gm=… / ?pl=… 로 받아 저장하고 지운다)
    역할: 'gm' | 좌석 id(PL) | null(구경). 문서 vis: pub(모두) · gm(GM만) · pl:<좌석>(그 PL 과 GM)
    데이터: D[kind][id] = {data, vis, updated_at}. 처음엔 nt_all 로 전부, 그 뒤엔 실시간(pub) + 알림(broadcast)으로 바뀐 것만 nt_get. */
-"use strict";
-window.NT=(()=>{
- const ST={camp:'',secret:'',role:null,camps:[],campInfo:null,view:'map',online:false,since:null,seats:[],plView:false,plAs:'',plSit:false};
- const D={};
- const $=(s,r)=>(r||document).querySelector(s),$$=(s,r)=>[...(r||document).querySelectorAll(s)];
- const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const uid=p=>(p||'')+Math.random().toString(36).slice(2,8)+Date.now().toString(36).slice(-3);
- const clone=o=>JSON.parse(JSON.stringify(o));
- const cssu=s=>String(s??'').replace(/[\s"'()\\<>]/g,c=>'%'+c.charCodeAt(0).toString(16).padStart(2,'0').toUpperCase());
- const DBS=()=>window.NT_STORE;
- /* 11-03 감우 「PL 눈으로 보기」: 진짜 GM 이 켜면 모든 탭이 구경(또는 고른 좌석) 눈으로 그려진다(gm() = false · me() = 고른 좌석). 저장은 막는다. realGm() 은 켜도 참 */
- const realGm=()=>ST.role==='gm';
- /* 11-07 망령 「세션 노트에서도 GM 이지만 PL 자리에 앉게 · 앉으면 다음 접속 때도 그 자리」: 「🪑 PL 로」(plSit) — PL 눈과 같이 그 자리 PL 처럼 보이고 그리지만 저장은 된다(신분은 GM 그대로).
+'use strict';
+window.NT = (() => {
+  const ST = {
+    camp: '',
+    secret: '',
+    role: null,
+    camps: [],
+    campInfo: null,
+    view: 'map',
+    online: false,
+    since: null,
+    seats: [],
+    plView: false,
+    plAs: '',
+    plSit: false
+  };
+  const D = {};
+  const $ = (s, r) => (r || document).querySelector(s),
+    $$ = (s, r) => [...(r || document).querySelectorAll(s)];
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const uid = p => (p || '') + Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-3);
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const cssu = s => String(s ?? '').replace(/[\s"'()\\<>]/g, c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0').toUpperCase());
+  const DBS = () => window.NT_STORE;
+  /* 11-03 감우 「PL 눈으로 보기」: 진짜 GM 이 켜면 모든 탭이 구경(또는 고른 좌석) 눈으로 그려진다(gm() = false · me() = 고른 좌석). 저장은 막는다. realGm() 은 켜도 참 */
+  const realGm = () => ST.role === 'gm';
+  /* 11-07 망령 「세션 노트에서도 GM 이지만 PL 자리에 앉게 · 앉으면 다음 접속 때도 그 자리」: 「🪑 PL 로」(plSit) — PL 눈과 같이 그 자리 PL 처럼 보이고 그리지만 저장은 된다(신분은 GM 그대로).
     고른 자리는 이 브라우저에 남겨(nt_plsit_<캠페인>) 다음에 열 때 그 자리로. 「GM 으로」를 누르면 잊는다 */
- const plEye=()=>ST.plView||ST.plSit;
- const gm=()=>ST.role==='gm'&&!plEye();
- const me=()=>plEye()?(ST.plAs||''):(ST.role&&ST.role!=='gm'?ST.role:'');
- const PSK=()=>'nt_plsit_'+ST.camp;
- function plSitSet(seat,quiet){if(!realGm())return;ST.plView=false;document.body.classList.remove('plview');ST.plSit=!!seat;ST.plAs=seat||'';document.body.classList.toggle('plsit',ST.plSit);
-  try{if(seat)localStorage.setItem(PSK(),seat);else localStorage.removeItem(PSK())}catch(e){}closeModal(true);if(ST.plSit&&!subOk(ST.view))ST.view=tabOf(ST.view)[2][0];
-  if(!quiet)toast(seat?`「${seatName(seat)||seat}」 자리 PL 로 앉았어요 — 다음에 들어와도 이 자리예요 (GM 화면은 「GM 으로」)`:'GM 으로 돌아왔어요 — 다음에도 GM 으로 들어와요');render()}
- /* 11-07 망령 「PC 추가했는데 왜 자리 없다고 함?」: 계정으로 쓰는 캠페인은 좌석(비밀구) 표가 비어 있다 — PC 시트도 자리로 친다 (PC 시트 id = 자리 id) */
- const sitSeats=()=>[...new Set([...ST.seats.map(x=>x.seat),...Object.keys(col('pc'))])].filter(Boolean);
- function plSitPick(){if(!realGm())return;const SS=sitSeats();if(!SS.length)return toast('아직 PC 시트가 없어요');
-  const m=openModal(`<div class="mhead"><h2>🪑 PL 로 앉기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><p class="small dim" style="margin:0 0 10px">고른 자리 PL 처럼 보이고, 그 자리 PL 이 할 수 있는 것은 저장돼요. 이 브라우저는 다음에 열어도 이 자리로 들어와요 — GM 화면은 위 띠 「GM 으로」.</p><div class="row" style="gap:6px;flex-wrap:wrap">${SS.map(x=>`<button class="btn" data-sit="${esc(x)}">${esc(seatName(x)||x)}</button>`).join('')}</div>`);
-  m.addEventListener('click',e=>{const b=e.target.closest('[data-sit]');if(b)plSitSet(b.dataset.sit)})}
- function plViewSet(on,as){if(!realGm())return;if(on&&ST.plSit){ST.plSit=false;document.body.classList.remove('plsit')}ST.plView=!!on;ST.plAs=on?(as||''):'';document.body.classList.toggle('plview',ST.plView);closeModal(true);if(ST.plView&&!subOk(ST.view))ST.view=tabOf(ST.view)[2][0];render()}
- const PLV_BLOCK='「PL 눈으로 보기」 중에는 저장하지 않아요 — 위 띠에서 끄고 다시';
- const VIEWS=[['rb','룰북'],['map','지도'],['graph','관계도'],['ents','항목'],['pc','PC 시트'],['npc','NPC 시트'],['awk','각성체'],['awdb','각성체 DB'],['blue','도안'],['cast','조직'],['dgp','던전'],['scen','루트'],['plan','일정'],['logs','기록'],['set','설정']];
- /* 10-29 망령: 위 탭은 6개 — 자료(항목 · 관계도) · 지도 · 시트 · 일정(일정 · 기록) · 시나리오 · 설정. 화면(VIEWS)과 주소는 그대로라 예전 링크 · 알림도 그대로 간다 */
- const TABS=[['rb','룰북',['rb']],['ents','자료',['ents']],['map','지도',['map']],['pc','시트',['pc','npc','awk','awdb']],['graph','관계도',['graph']],['plan','일정',['plan','logs']],['scen','시나리오',['blue','cast','dgp','scen']],['set','설정',['set']]];   /* 10-30 망령 「관계도도 시트 옆에」: 자료에서 꺼내 시트 바로 옆 탭으로 (웹툴처럼) */
- const tabOf=v=>TABS.find(t=>t[2].includes(v))||TABS[1];
- /* 11-04 21:52 망령 「미사그 대학에 전체 룰북 탭 옮겨 달래 — 자료 왼쪽에 · 테마에 맞게」: 룰북 탭은 꾸밈 「대학」 캠페인에만 (js/rb_ui.js) */
- const rbOn=()=>skin()==='univ';
- const tabOk=([k])=>k==='rb'?rbOn():(k!=='set'||gm()||me());
- /* 10-29: 각성체 DB 는 GM만. 10-30 망령 「PC 시트 옆에 NPC 시트」: NPC 시트는 GM, 또는 공개된 NPC 가 있을 때만 */
- const subOk=v=>v==='rb'?rbOn():v==='awdb'||v==='cast'||v==='dgp'?gm():v==='npc'?(gm()||list('npc').length>0):true;
- const subGet=t=>{try{const v=localStorage.getItem('nt_sub_'+t[0]);return t[2].includes(v)&&subOk(v)?v:t[2][0]}catch(e){return t[2][0]}};
- /* 묶인 화면은 머리글(h2) 자리에 「항목 · 관계도」 같은 작은 탭을 둔다 */
- function subTabs(main){const t0=tabOf(ST.view);const t=[t0[0],t0[1],t0[2].filter(v=>subOk(v)||v===ST.view)];if(t[2].length<2)return;try{localStorage.setItem('nt_sub_'+t[0],ST.view)}catch(e){}
-  const h=main.querySelector(':scope>.toolbar>h2');const html=`<div class="subtabs" role="tablist">${t[2].map(v=>`<button type="button" data-subv="${v}" class="${v===ST.view?'on':''}">${esc((VIEWS.find(x=>x[0]===v)||[])[1]||v)}</button>`).join('')}</div>`;
-  if(h)h.outerHTML=html;else main.insertAdjacentHTML('afterbegin',`<div class="toolbar">${html}</div>`);
-  const st=main.querySelector('.subtabs');if(st)st.addEventListener('click',e=>{const b=e.target.closest('[data-subv]');if(!b)return;e.stopPropagation();if(b.dataset.subv!==ST.view)go(b.dataset.subv)})}
- const MOD={};  /* view → {render(el), onDoc?} — 각 *_ui.js 가 등록 */
+  const plEye = () => ST.plView || ST.plSit;
+  const gm = () => ST.role === 'gm' && !plEye();
+  const me = () => (plEye() ? ST.plAs || '' : ST.role && ST.role !== 'gm' ? ST.role : '');
+  const PSK = () => 'nt_plsit_' + ST.camp;
+  function plSitSet(seat, quiet) {
+    if (!realGm()) return;
+    ST.plView = false;
+    document.body.classList.remove('plview');
+    ST.plSit = !!seat;
+    ST.plAs = seat || '';
+    document.body.classList.toggle('plsit', ST.plSit);
+    try {
+      if (seat) localStorage.setItem(PSK(), seat);
+      else localStorage.removeItem(PSK());
+    } catch (e) {}
+    closeModal(true);
+    if (ST.plSit && !subOk(ST.view)) ST.view = tabOf(ST.view)[2][0];
+    if (!quiet)
+      toast(
+        seat
+          ? `「${seatName(seat) || seat}」 자리 PL 로 앉았어요 — 다음에 들어와도 이 자리예요 (GM 화면은 「GM 으로」)`
+          : 'GM 으로 돌아왔어요 — 다음에도 GM 으로 들어와요'
+      );
+    render();
+  }
+  /* 11-07 망령 「PC 추가했는데 왜 자리 없다고 함?」: 계정으로 쓰는 캠페인은 좌석(비밀구) 표가 비어 있다 — PC 시트도 자리로 친다 (PC 시트 id = 자리 id) */
+  const sitSeats = () => [...new Set([...ST.seats.map(x => x.seat), ...Object.keys(col('pc'))])].filter(Boolean);
+  function plSitPick() {
+    if (!realGm()) return;
+    const SS = sitSeats();
+    if (!SS.length) return toast('아직 PC 시트가 없어요');
+    const m = openModal(
+      `<div class="mhead"><h2>🪑 PL 로 앉기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><p class="small dim" style="margin:0 0 10px">고른 자리 PL 처럼 보이고, 그 자리 PL 이 할 수 있는 것은 저장돼요. 이 브라우저는 다음에 열어도 이 자리로 들어와요 — GM 화면은 위 띠 「GM 으로」.</p><div class="row" style="gap:6px;flex-wrap:wrap">${SS.map(x => `<button class="btn" data-sit="${esc(x)}">${esc(seatName(x) || x)}</button>`).join('')}</div>`
+    );
+    m.addEventListener('click', e => {
+      const b = e.target.closest('[data-sit]');
+      if (b) plSitSet(b.dataset.sit);
+    });
+  }
+  function plViewSet(on, as) {
+    if (!realGm()) return;
+    if (on && ST.plSit) {
+      ST.plSit = false;
+      document.body.classList.remove('plsit');
+    }
+    ST.plView = !!on;
+    ST.plAs = on ? as || '' : '';
+    document.body.classList.toggle('plview', ST.plView);
+    closeModal(true);
+    if (ST.plView && !subOk(ST.view)) ST.view = tabOf(ST.view)[2][0];
+    render();
+  }
+  const PLV_BLOCK = '「PL 눈으로 보기」 중에는 저장하지 않아요 — 위 띠에서 끄고 다시';
+  const VIEWS = [
+    ['rb', '룰북'],
+    ['map', '지도'],
+    ['graph', '관계도'],
+    ['ents', '항목'],
+    ['pc', 'PC 시트'],
+    ['npc', 'NPC 시트'],
+    ['awk', '각성체'],
+    ['awdb', '각성체 DB'],
+    ['blue', '도안'],
+    ['cast', '조직'],
+    ['dgp', '던전'],
+    ['scen', '루트'],
+    ['plan', '일정'],
+    ['logs', '기록'],
+    ['set', '설정']
+  ];
+  /* 10-29 망령: 위 탭은 6개 — 자료(항목 · 관계도) · 지도 · 시트 · 일정(일정 · 기록) · 시나리오 · 설정. 화면(VIEWS)과 주소는 그대로라 예전 링크 · 알림도 그대로 간다 */
+  const TABS = [
+    ['rb', '룰북', ['rb']],
+    ['ents', '자료', ['ents']],
+    ['map', '지도', ['map']],
+    ['pc', '시트', ['pc', 'npc', 'awk', 'awdb']],
+    ['graph', '관계도', ['graph']],
+    ['plan', '일정', ['plan', 'logs']],
+    ['scen', '시나리오', ['blue', 'cast', 'dgp', 'scen']],
+    ['set', '설정', ['set']]
+  ]; /* 10-30 망령 「관계도도 시트 옆에」: 자료에서 꺼내 시트 바로 옆 탭으로 (웹툴처럼) */
+  const tabOf = v => TABS.find(t => t[2].includes(v)) || TABS[1];
+  /* 11-04 21:52 망령 「미사그 대학에 전체 룰북 탭 옮겨 달래 — 자료 왼쪽에 · 테마에 맞게」: 룰북 탭은 꾸밈 「대학」 캠페인에만 (js/rb_ui.js) */
+  const rbOn = () => skin() === 'univ';
+  const tabOk = ([k]) => (k === 'rb' ? rbOn() : k !== 'set' || gm() || me());
+  /* 10-29: 각성체 DB 는 GM만. 10-30 망령 「PC 시트 옆에 NPC 시트」: NPC 시트는 GM, 또는 공개된 NPC 가 있을 때만 */
+  const subOk = v => (v === 'rb' ? rbOn() : v === 'awdb' || v === 'cast' || v === 'dgp' ? gm() : v === 'npc' ? gm() || list('npc').length > 0 : true);
+  const subGet = t => {
+    try {
+      const v = localStorage.getItem('nt_sub_' + t[0]);
+      return t[2].includes(v) && subOk(v) ? v : t[2][0];
+    } catch (e) {
+      return t[2][0];
+    }
+  };
+  /* 묶인 화면은 머리글(h2) 자리에 「항목 · 관계도」 같은 작은 탭을 둔다 */
+  function subTabs(main) {
+    const t0 = tabOf(ST.view);
+    const t = [t0[0], t0[1], t0[2].filter(v => subOk(v) || v === ST.view)];
+    if (t[2].length < 2) return;
+    try {
+      localStorage.setItem('nt_sub_' + t[0], ST.view);
+    } catch (e) {}
+    const h = main.querySelector(':scope>.toolbar>h2');
+    const html = `<div class="subtabs" role="tablist">${t[2].map(v => `<button type="button" data-subv="${v}" class="${v === ST.view ? 'on' : ''}">${esc((VIEWS.find(x => x[0] === v) || [])[1] || v)}</button>`).join('')}</div>`;
+    if (h) h.outerHTML = html;
+    else main.insertAdjacentHTML('afterbegin', `<div class="toolbar">${html}</div>`);
+    const st = main.querySelector('.subtabs');
+    if (st)
+      st.addEventListener('click', e => {
+        const b = e.target.closest('[data-subv]');
+        if (!b) return;
+        e.stopPropagation();
+        if (b.dataset.subv !== ST.view) go(b.dataset.subv);
+      });
+  }
+  const MOD = {}; /* view → {render(el), onDoc?} — 각 *_ui.js 가 등록 */
 
- /* ----- 알림 · 창 ----- */
- let toastT=0;
- /* 11-03 감우: opt.undo = 「실행 취소」 단추가 붙은 토스트(5초). 단추를 누르면 opt.undo() */
- function toast(t,opt){const el=$('#toast');if(!el)return;opt=opt||{};el.textContent=t;el.classList.toggle('undo',!!opt.undo);if(opt.undo){const b=document.createElement('button');b.type='button';b.className='tundo';b.textContent=opt.undoLabel||'실행 취소';b.onclick=e=>{e.stopPropagation();el.classList.remove('on');clearTimeout(toastT);opt.undo()};el.appendChild(b)}el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('on'),opt.ms||(opt.undo?5000:2200))}
- /* 지운 문서는 잠깐 들고 있다가(TRASH) toastUndo('지웠어요') 가 「실행 취소」 단추로 되살린다 — 되살리기는 put force(휴지통 되살리기와 같은 길) */
- const TRASH=[];
- function toastUndo(msg){const now=Date.now();const L=TRASH.filter(x=>now-x.t<15000);TRASH.length=0;if(!L.length)return toast(msg);
-  toast(msg,{undo:async()=>{const n=await putMany(L.map(x=>({kind:x.kind,id:x.id,data:x.data,vis:x.vis})),{force:true});toast(n?`되살렸어요 (${n}개)`:'되살리지 못했어요')}})}
- /* 10-26 망령: 창을 쌓을 수 있다(확인창이 편집창을 지우지 않게). closeModal 은 맨 위 창만 닫는다. 고친 게 있으면(입력이 있었으면) 바깥 클릭 · Esc 로는 안 닫힌다 — 「닫기」나 저장으로만. */
- function openModal(html,cls,opt){opt=opt||{};if(!opt.stack)closeModal(true);const bg=document.createElement('div');bg.className='modalbg';bg.style.zIndex=String(1000+$$('.modalbg').length);bg.innerHTML=`<div class="modal ${cls||''}" role="dialog">${html}</div>`;document.body.appendChild(bg);
-  bg.addEventListener('input',e=>{if(!e.target.closest('[data-nodirty]'))bg._dirty=1});
-  bg.addEventListener('click',e=>{if(e.target.closest('[data-x]')){closeOne(bg,'x');return}if(e.target===bg){if(bg._dirty){const m=bg.firstElementChild;m.classList.remove('shake');void m.offsetWidth;m.classList.add('shake');toast('고친 내용이 있어요 — 「닫기」나 저장을 눌러 주세요');return}closeOne(bg,'bg')}});
-  document.body.classList.add('modal-open');return bg.firstElementChild}
- function closeOne(bg,how){if(!bg||!bg.isConnected)return;bg.dispatchEvent(new CustomEvent('nt:close',{detail:{how}}));bg.remove();if(!$('.modalbg'))document.body.classList.remove('modal-open')}
- function closeModal(all){const L=$$('.modalbg');if(!L.length)return;if(all)L.forEach(b=>closeOne(b,'all'));else closeOne(L[L.length-1],'code')}
- document.addEventListener('keydown',e=>{if(e.key!=='/'||e.isComposing||e.ctrlKey||e.metaKey||e.altKey)return;const a=document.activeElement;if(a&&(a.matches('input,textarea,select,[contenteditable]')))return;if(!ST.camp||!window.NT_SEARCH)return;e.preventDefault();NT_SEARCH.open()});
- document.addEventListener('keydown',e=>{if(e.key!=='Escape'||e.isComposing)return;const vq=$('.visqm');if(vq){vq.remove();return}if(document.body.classList.contains('favopen')){document.body.classList.remove('favopen');return}const L=$$('.modalbg');if(!L.length){if(document.body.classList.contains('present'))presentSet(false);else if(document.body.classList.contains('topmore'))document.body.classList.remove('topmore');return}const bg=L[L.length-1];if(bg._dirty){toast('고친 내용이 있어요 — 「닫기」나 저장을 눌러 주세요');return}closeOne(bg,'esc')});
- /* 11-03 감우 「단축키」: 1~7 탭 · N 새 항목(항목 탭) · F 지도 · 흐름도 · 보드 맞춤 · Shift+F 발표 모드 · 진행 뷰 N/P. 입력칸 · 창 · 조합 중엔 무시 */
- document.addEventListener('keydown',e=>{if(e.isComposing||e.ctrlKey||e.metaKey||e.altKey||!ST.camp)return;const a=document.activeElement;if(a&&a.matches('input,textarea,select,[contenteditable],[contenteditable] *'))return;if($('.modalbg,.ntctx,.visqm'))return;
-  const k=e.key;
-  if(k==='F'&&e.shiftKey){e.preventDefault();presentSet(!document.body.classList.contains('present'));return}
-  if(e.shiftKey)return;
-  if(/^[1-8]$/.test(k)){const t=TABS.filter(tabOk)[+k-1];if(!t)return;e.preventDefault();const cur=tabOf(ST.view)[0];go(t[0]===cur?ST.view:subGet(t));return}
-  if(k==='f'||k==='F'){if(fitView()){e.preventDefault()}return}
-  if(ST.view==='scen'&&window.NT_SCEN&&NT_SCEN.runKey&&NT_SCEN.runKey(k)){e.preventDefault();return}
-  if((k==='n'||k==='N')&&ST.view==='ents'&&gm()){const b=$('#ntMain .toolbar [data-e="new"]');if(b){e.preventDefault();b.click()}}});
- /* 「맞춤」: 지금 화면의 판을 한눈에 (지도 · 흐름도 · 코르크보드). 맞출 게 있으면 true */
- function fitView(){const m=$('#ntMain');if(!m)return false;if(ST.view==='map'&&window.NT_MAP&&NT_MAP.fit){NT_MAP.fit();return true}const b=$('[data-fm="fit"],[data-cb="fit"]',m);if(b){b.click();return true}return false}
- /* 11-03 감우 「발표 모드」(화면 공유용): 위 띠 · 툴바 · 레일 · 오른쪽 패널을 숨기고 판만 100dvh. GM 전용(🔒) 요소는 css 로 숨긴다(body.present). Esc · Shift+F · ⛶ 로 돌아온다 */
- function presentSet(on){if(on){const ok=ST.view==='map'||ST.view==='graph'||(ST.view==='scen'&&window.NT_SCEN&&NT_SCEN.canPresent&&NT_SCEN.canPresent());if(!ok){toast('발표 모드는 지도 · 관계도 · 흐름도 · 진행 뷰에서 켜요');return}}document.body.classList.toggle('present',!!on);$$('.presx').forEach(x=>x.remove());if(on){toast('발표 모드 — Esc 로 돌아와요',{ms:1800});const b=document.createElement('button');b.type='button';b.className='btn xs ghost presx';b.dataset.present='1';b.title='발표 모드 끝내기 (Esc)';b.textContent='⛶ Esc';document.body.appendChild(b)}setTimeout(()=>{window.dispatchEvent(new Event('resize'));if(on)fitView()},30)}
- const presentBtn=()=>`<button type="button" class="btn xs ghost presb" data-present title="발표 모드 — 이 판만 화면에 가득 (Shift+F · Esc 로 돌아와요)">⛶</button>`;
- document.addEventListener('click',e=>{if(e.target.closest('[data-present]'))presentSet(!document.body.classList.contains('present'))});
- /* 11-03 감우 「휴대폰 툴바가 화면 절반」: 640px 이하에서 지도 · 관계도 · 항목 툴바의 거르기 칩 · 고르기 칸을 「필터 ▾」 한 단추 뒤로 접는다(안내문은 css 로 숨김). 펴 둔 것은 그 탭에서 기억 */
- const FOLD={};
- function foldToolbar(main){if(innerWidth>640||!['map','graph','ents'].includes(ST.view))return;const tb=main.querySelector(':scope>.toolbar');if(!tb||tb.querySelector('.tbfold'))return;
-  const items=[...tb.children].filter(x=>(x.matches('.seg,select,.entview,.legend,input[type=search]')&&!x.matches('.subtabs,#mapSel')));if(!items.length)return;
-  /* 걸러진 게 있으면 단추에 수를 — 거르기 칩(.clsf)은 꺼진 게 있을 때, 다른 seg 는 첫 단추(전체)가 아닌 것이 켜졌을 때, select 는 값이 있을 때 */
-  const n=items.filter(x=>x.matches('.clsf')?!![...x.querySelectorAll('button')].find(b=>!b.classList.contains('on')):x.matches('.seg:not(.bulk)')?(()=>{const B=[...x.querySelectorAll('button')];const on=B.find(b=>b.classList.contains('on'));return !!on&&on!==B[0]&&B[0].dataset.mode==null})():x.matches('select')?!!x.value:x.matches('input')?!!x.value:false).length;
-  const open=!!FOLD[ST.view];const box=document.createElement('div');box.className='tbfold'+(open?' open':'');box.innerHTML=`<button type="button" class="btn xs ${n?'':'ghost'} tbfb" data-tbfold>필터 ${n?`<b>${n}</b>`:''}<i>${open?'▴':'▾'}</i></button><div class="tbfp"></div>`;
-  const p=box.querySelector('.tbfp');items.forEach(x=>p.appendChild(x));const sp=tb.querySelector(':scope>.sp');tb.insertBefore(box,sp||null);
-  box.querySelector('[data-tbfold]').onclick=()=>{FOLD[ST.view]=!FOLD[ST.view];box.classList.toggle('open',!!FOLD[ST.view]);box.querySelector('.tbfb i').textContent=FOLD[ST.view]?'▴':'▾'}}
- let foldW=innerWidth;window.addEventListener('resize',()=>{const was=foldW<=640,now=innerWidth<=640;foldW=innerWidth;if(was!==now&&ST.camp)render()});
- /* 11-03 감우 「새 캠페인 첫 화면이 빈 지도」: PC · 항목 · 지도 · 루트가 다 비었으면 시작 안내 카드(순서대로 체크). 하나라도 생기면 한 줄로 접히고, ✕ 로 치우면 설정 탭에서 다시 켠다 */
- const GK=()=>'nt_guide_off_'+ST.camp;
- const guideOff=()=>{try{return localStorage.getItem(GK())==='1'}catch(e){return false}};
- function guideSet(on){try{if(on)localStorage.removeItem(GK());else localStorage.setItem(GK(),'1')}catch(e){}render()}
- function guideHtml(){if(!gm()||guideOff()||ST.plView)return '';const steps=[['pc','PC 시트 넣기','제작기의 트레이너를 불러와요',list('pc').length],['ents','항목 쓰기','인물 · 조직 · 설정 · 아이템',list('ents').length],['map','지도 올리기','그림을 올리고 장소를 찍어요',list('maps').length],['scen','루트 짜기','장소를 차례로 이어 시나리오를',list('routes').length]];
-  const done=steps.filter(s=>s[3]>0).length;if(done===steps.length)return '';const full=done===0||ST.guideOpen;
-  return `<section class="guide ${full?'':'mini'}"><div class="gh"><b>시작 안내</b><small class="dim">${done}/${steps.length}</small><span class="sp"></span>${done?`<button type="button" class="btn xs ghost" data-guide="${full?'fold':'open'}">${full?'접기':'펴기'}</button>`:''}<button type="button" class="btn xs ghost" data-guide="off" title="치우기 (설정 탭에서 다시)">✕</button></div>
-   ${full?`<ol class="gl">${steps.map(([v,t,d,n])=>`<li class="${n?'ok':''}"><i>${n?'✓':''}</i><button type="button" class="linkbtn" data-v="${v}">${esc(t)}</button><small class="dim">${esc(d)}${n?` · ${n}개`:''}</small></li>`).join('')}</ol><p class="small dim">순서대로 넣으면 지도 위에 인물이 서고, 루트가 선으로 그어져요. 다 넣으면 이 안내는 사라져요.</p>`:''}</section>`}
- document.addEventListener('click',e=>{const g=e.target.closest('[data-guide]');if(g){const k=g.dataset.guide;if(k==='off')return guideSet(false);ST.guideOpen=k==='open';render();return}const v=e.target.closest('.guide [data-v]');if(v)go(v.dataset.v)});
- /* 새로 만든 문서의 편집 창을 저장 없이 닫으면(닫기 · 바깥 · Esc) 손대지 않은 문서는 도로 지운다 */
- function armDraft(kind,id){const snap=JSON.stringify(data(kind,id)||null);setTimeout(()=>{const L=$$('.modalbg');const bg=L[L.length-1];if(!bg)return;bg.addEventListener('nt:close',async e=>{const how=(e.detail||{}).how;if(how==='code'||how==='ok'||how==='all')return;if(JSON.stringify(data(kind,id)||null)!==snap)return;if(!doc(kind,id))return;await del(kind,id);toast('저장하지 않아 새 문서를 지웠어요')})},0)}
- function confirmBox(msg,ok){return new Promise(res=>{const m=openModal(`<div class="mhead"><h2>확인</h2></div><p style="white-space:pre-wrap">${esc(msg)}</p><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn ghost" data-x>취소</button><button class="btn pri" id="cfOk">${esc(ok||'확인')}</button></div>`,'',{stack:true});
-  let done=false;const fin=v=>{if(done)return;done=true;res(v)};$('#cfOk',m).onclick=()=>{fin(true);closeOne(m.parentElement,'ok')};m.parentElement.addEventListener('nt:close',()=>fin(false))})}
- function promptBox(title,def,ph){return new Promise(res=>{const m=openModal(`<div class="mhead"><h2>${esc(title)}</h2></div><input type="text" id="pbIn" data-nodirty style="width:100%" value="${esc(def||'')}" placeholder="${esc(ph||'')}"><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn ghost" data-x>취소</button><button class="btn pri" id="pbOk">확인</button></div>`,'',{stack:true});
-  let done=false;const fin=v=>{if(done)return;done=true;res(v)};const i=$('#pbIn',m);i.focus();i.select();const go=()=>{const v=i.value;fin(v);closeOne(m.parentElement,'ok')};$('#pbOk',m).onclick=go;i.onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing)go()};m.parentElement.addEventListener('nt:close',()=>fin(null))})}
+  /* ----- 알림 · 창 ----- */
+  let toastT = 0;
+  /* 11-03 감우: opt.undo = 「실행 취소」 단추가 붙은 토스트(5초). 단추를 누르면 opt.undo() */
+  function toast(t, opt) {
+    const el = $('#toast');
+    if (!el) return;
+    opt = opt || {};
+    el.textContent = t;
+    el.classList.toggle('undo', !!opt.undo);
+    if (opt.undo) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'tundo';
+      b.textContent = opt.undoLabel || '실행 취소';
+      b.onclick = e => {
+        e.stopPropagation();
+        el.classList.remove('on');
+        clearTimeout(toastT);
+        opt.undo();
+      };
+      el.appendChild(b);
+    }
+    el.classList.add('on');
+    clearTimeout(toastT);
+    toastT = setTimeout(() => el.classList.remove('on'), opt.ms || (opt.undo ? 5000 : 2200));
+  }
+  /* 지운 문서는 잠깐 들고 있다가(TRASH) toastUndo('지웠어요') 가 「실행 취소」 단추로 되살린다 — 되살리기는 put force(휴지통 되살리기와 같은 길) */
+  const TRASH = [];
+  function toastUndo(msg) {
+    const now = Date.now();
+    const L = TRASH.filter(x => now - x.t < 15000);
+    TRASH.length = 0;
+    if (!L.length) return toast(msg);
+    toast(msg, {
+      undo: async () => {
+        const n = await putMany(
+          L.map(x => ({ kind: x.kind, id: x.id, data: x.data, vis: x.vis })),
+          { force: true }
+        );
+        toast(n ? `되살렸어요 (${n}개)` : '되살리지 못했어요');
+      }
+    });
+  }
+  /* 10-26 망령: 창을 쌓을 수 있다(확인창이 편집창을 지우지 않게). closeModal 은 맨 위 창만 닫는다. 고친 게 있으면(입력이 있었으면) 바깥 클릭 · Esc 로는 안 닫힌다 — 「닫기」나 저장으로만. */
+  function openModal(html, cls, opt) {
+    opt = opt || {};
+    if (!opt.stack) closeModal(true);
+    const bg = document.createElement('div');
+    bg.className = 'modalbg';
+    bg.style.zIndex = String(1000 + $$('.modalbg').length);
+    bg.innerHTML = `<div class="modal ${cls || ''}" role="dialog">${html}</div>`;
+    document.body.appendChild(bg);
+    bg.addEventListener('input', e => {
+      if (!e.target.closest('[data-nodirty]')) bg._dirty = 1;
+    });
+    bg.addEventListener('click', e => {
+      if (e.target.closest('[data-x]')) {
+        closeOne(bg, 'x');
+        return;
+      }
+      if (e.target === bg) {
+        if (bg._dirty) {
+          const m = bg.firstElementChild;
+          m.classList.remove('shake');
+          void m.offsetWidth;
+          m.classList.add('shake');
+          toast('고친 내용이 있어요 — 「닫기」나 저장을 눌러 주세요');
+          return;
+        }
+        closeOne(bg, 'bg');
+      }
+    });
+    document.body.classList.add('modal-open');
+    return bg.firstElementChild;
+  }
+  function closeOne(bg, how) {
+    if (!bg || !bg.isConnected) return;
+    bg.dispatchEvent(new CustomEvent('nt:close', { detail: { how } }));
+    bg.remove();
+    if (!$('.modalbg')) document.body.classList.remove('modal-open');
+  }
+  function closeModal(all) {
+    const L = $$('.modalbg');
+    if (!L.length) return;
+    if (all) L.forEach(b => closeOne(b, 'all'));
+    else closeOne(L[L.length - 1], 'code');
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key !== '/' || e.isComposing || e.ctrlKey || e.metaKey || e.altKey) return;
+    const a = document.activeElement;
+    if (a && a.matches('input,textarea,select,[contenteditable]')) return;
+    if (!ST.camp || !window.NT_SEARCH) return;
+    e.preventDefault();
+    NT_SEARCH.open();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape' || e.isComposing) return;
+    const vq = $('.visqm');
+    if (vq) {
+      vq.remove();
+      return;
+    }
+    if (document.body.classList.contains('favopen')) {
+      document.body.classList.remove('favopen');
+      return;
+    }
+    const L = $$('.modalbg');
+    if (!L.length) {
+      if (document.body.classList.contains('present')) presentSet(false);
+      else if (document.body.classList.contains('topmore')) document.body.classList.remove('topmore');
+      return;
+    }
+    const bg = L[L.length - 1];
+    if (bg._dirty) {
+      toast('고친 내용이 있어요 — 「닫기」나 저장을 눌러 주세요');
+      return;
+    }
+    closeOne(bg, 'esc');
+  });
+  /* 11-03 감우 「단축키」: 1~7 탭 · N 새 항목(항목 탭) · F 지도 · 흐름도 · 보드 맞춤 · Shift+F 발표 모드 · 진행 뷰 N/P. 입력칸 · 창 · 조합 중엔 무시 */
+  document.addEventListener('keydown', e => {
+    if (e.isComposing || e.ctrlKey || e.metaKey || e.altKey || !ST.camp) return;
+    const a = document.activeElement;
+    if (a && a.matches('input,textarea,select,[contenteditable],[contenteditable] *')) return;
+    if ($('.modalbg,.ntctx,.visqm')) return;
+    const k = e.key;
+    if (k === 'F' && e.shiftKey) {
+      e.preventDefault();
+      presentSet(!document.body.classList.contains('present'));
+      return;
+    }
+    if (e.shiftKey) return;
+    if (/^[1-8]$/.test(k)) {
+      const t = TABS.filter(tabOk)[+k - 1];
+      if (!t) return;
+      e.preventDefault();
+      const cur = tabOf(ST.view)[0];
+      go(t[0] === cur ? ST.view : subGet(t));
+      return;
+    }
+    if (k === 'f' || k === 'F') {
+      if (fitView()) {
+        e.preventDefault();
+      }
+      return;
+    }
+    if (ST.view === 'scen' && window.NT_SCEN && NT_SCEN.runKey && NT_SCEN.runKey(k)) {
+      e.preventDefault();
+      return;
+    }
+    if ((k === 'n' || k === 'N') && ST.view === 'ents' && gm()) {
+      const b = $('#ntMain .toolbar [data-e="new"]');
+      if (b) {
+        e.preventDefault();
+        b.click();
+      }
+    }
+  });
+  /* 「맞춤」: 지금 화면의 판을 한눈에 (지도 · 흐름도 · 코르크보드). 맞출 게 있으면 true */
+  function fitView() {
+    const m = $('#ntMain');
+    if (!m) return false;
+    if (ST.view === 'map' && window.NT_MAP && NT_MAP.fit) {
+      NT_MAP.fit();
+      return true;
+    }
+    const b = $('[data-fm="fit"],[data-cb="fit"]', m);
+    if (b) {
+      b.click();
+      return true;
+    }
+    return false;
+  }
+  /* 11-03 감우 「발표 모드」(화면 공유용): 위 띠 · 툴바 · 레일 · 오른쪽 패널을 숨기고 판만 100dvh. GM 전용(🔒) 요소는 css 로 숨긴다(body.present). Esc · Shift+F · ⛶ 로 돌아온다 */
+  function presentSet(on) {
+    if (on) {
+      const ok = ST.view === 'map' || ST.view === 'graph' || (ST.view === 'scen' && window.NT_SCEN && NT_SCEN.canPresent && NT_SCEN.canPresent());
+      if (!ok) {
+        toast('발표 모드는 지도 · 관계도 · 흐름도 · 진행 뷰에서 켜요');
+        return;
+      }
+    }
+    document.body.classList.toggle('present', !!on);
+    $$('.presx').forEach(x => x.remove());
+    if (on) {
+      toast('발표 모드 — Esc 로 돌아와요', { ms: 1800 });
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn xs ghost presx';
+      b.dataset.present = '1';
+      b.title = '발표 모드 끝내기 (Esc)';
+      b.textContent = '⛶ Esc';
+      document.body.appendChild(b);
+    }
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+      if (on) fitView();
+    }, 30);
+  }
+  const presentBtn = () =>
+    `<button type="button" class="btn xs ghost presb" data-present title="발표 모드 — 이 판만 화면에 가득 (Shift+F · Esc 로 돌아와요)">⛶</button>`;
+  document.addEventListener('click', e => {
+    if (e.target.closest('[data-present]')) presentSet(!document.body.classList.contains('present'));
+  });
+  /* 11-03 감우 「휴대폰 툴바가 화면 절반」: 640px 이하에서 지도 · 관계도 · 항목 툴바의 거르기 칩 · 고르기 칸을 「필터 ▾」 한 단추 뒤로 접는다(안내문은 css 로 숨김). 펴 둔 것은 그 탭에서 기억 */
+  const FOLD = {};
+  function foldToolbar(main) {
+    if (innerWidth > 640 || !['map', 'graph', 'ents'].includes(ST.view)) return;
+    const tb = main.querySelector(':scope>.toolbar');
+    if (!tb || tb.querySelector('.tbfold')) return;
+    const items = [...tb.children].filter(x => x.matches('.seg,select,.entview,.legend,input[type=search]') && !x.matches('.subtabs,#mapSel'));
+    if (!items.length) return;
+    /* 걸러진 게 있으면 단추에 수를 — 거르기 칩(.clsf)은 꺼진 게 있을 때, 다른 seg 는 첫 단추(전체)가 아닌 것이 켜졌을 때, select 는 값이 있을 때 */
+    const n = items.filter(x =>
+      x.matches('.clsf')
+        ? !![...x.querySelectorAll('button')].find(b => !b.classList.contains('on'))
+        : x.matches('.seg:not(.bulk)')
+          ? (() => {
+              const B = [...x.querySelectorAll('button')];
+              const on = B.find(b => b.classList.contains('on'));
+              return !!on && on !== B[0] && B[0].dataset.mode == null;
+            })()
+          : x.matches('select')
+            ? !!x.value
+            : x.matches('input')
+              ? !!x.value
+              : false
+    ).length;
+    const open = !!FOLD[ST.view];
+    const box = document.createElement('div');
+    box.className = 'tbfold' + (open ? ' open' : '');
+    box.innerHTML = `<button type="button" class="btn xs ${n ? '' : 'ghost'} tbfb" data-tbfold>필터 ${n ? `<b>${n}</b>` : ''}<i>${open ? '▴' : '▾'}</i></button><div class="tbfp"></div>`;
+    const p = box.querySelector('.tbfp');
+    items.forEach(x => p.appendChild(x));
+    const sp = tb.querySelector(':scope>.sp');
+    tb.insertBefore(box, sp || null);
+    box.querySelector('[data-tbfold]').onclick = () => {
+      FOLD[ST.view] = !FOLD[ST.view];
+      box.classList.toggle('open', !!FOLD[ST.view]);
+      box.querySelector('.tbfb i').textContent = FOLD[ST.view] ? '▴' : '▾';
+    };
+  }
+  let foldW = innerWidth;
+  window.addEventListener('resize', () => {
+    const was = foldW <= 640,
+      now = innerWidth <= 640;
+    foldW = innerWidth;
+    if (was !== now && ST.camp) render();
+  });
+  /* 11-03 감우 「새 캠페인 첫 화면이 빈 지도」: PC · 항목 · 지도 · 루트가 다 비었으면 시작 안내 카드(순서대로 체크). 하나라도 생기면 한 줄로 접히고, ✕ 로 치우면 설정 탭에서 다시 켠다 */
+  const GK = () => 'nt_guide_off_' + ST.camp;
+  const guideOff = () => {
+    try {
+      return localStorage.getItem(GK()) === '1';
+    } catch (e) {
+      return false;
+    }
+  };
+  function guideSet(on) {
+    try {
+      if (on) localStorage.removeItem(GK());
+      else localStorage.setItem(GK(), '1');
+    } catch (e) {}
+    render();
+  }
+  function guideHtml() {
+    if (!gm() || guideOff() || ST.plView) return '';
+    const steps = [
+      ['pc', 'PC 시트 넣기', '제작기의 트레이너를 불러와요', list('pc').length],
+      ['ents', '항목 쓰기', '인물 · 조직 · 설정 · 아이템', list('ents').length],
+      ['map', '지도 올리기', '그림을 올리고 장소를 찍어요', list('maps').length],
+      ['scen', '루트 짜기', '장소를 차례로 이어 시나리오를', list('routes').length]
+    ];
+    const done = steps.filter(s => s[3] > 0).length;
+    if (done === steps.length) return '';
+    const full = done === 0 || ST.guideOpen;
+    return `<section class="guide ${full ? '' : 'mini'}"><div class="gh"><b>시작 안내</b><small class="dim">${done}/${steps.length}</small><span class="sp"></span>${done ? `<button type="button" class="btn xs ghost" data-guide="${full ? 'fold' : 'open'}">${full ? '접기' : '펴기'}</button>` : ''}<button type="button" class="btn xs ghost" data-guide="off" title="치우기 (설정 탭에서 다시)">✕</button></div>
+   ${full ? `<ol class="gl">${steps.map(([v, t, d, n]) => `<li class="${n ? 'ok' : ''}"><i>${n ? '✓' : ''}</i><button type="button" class="linkbtn" data-v="${v}">${esc(t)}</button><small class="dim">${esc(d)}${n ? ` · ${n}개` : ''}</small></li>`).join('')}</ol><p class="small dim">순서대로 넣으면 지도 위에 인물이 서고, 루트가 선으로 그어져요. 다 넣으면 이 안내는 사라져요.</p>` : ''}</section>`;
+  }
+  document.addEventListener('click', e => {
+    const g = e.target.closest('[data-guide]');
+    if (g) {
+      const k = g.dataset.guide;
+      if (k === 'off') return guideSet(false);
+      ST.guideOpen = k === 'open';
+      render();
+      return;
+    }
+    const v = e.target.closest('.guide [data-v]');
+    if (v) go(v.dataset.v);
+  });
+  /* 새로 만든 문서의 편집 창을 저장 없이 닫으면(닫기 · 바깥 · Esc) 손대지 않은 문서는 도로 지운다 */
+  function armDraft(kind, id) {
+    const snap = JSON.stringify(data(kind, id) || null);
+    setTimeout(() => {
+      const L = $$('.modalbg');
+      const bg = L[L.length - 1];
+      if (!bg) return;
+      bg.addEventListener('nt:close', async e => {
+        const how = (e.detail || {}).how;
+        if (how === 'code' || how === 'ok' || how === 'all') return;
+        if (JSON.stringify(data(kind, id) || null) !== snap) return;
+        if (!doc(kind, id)) return;
+        await del(kind, id);
+        toast('저장하지 않아 새 문서를 지웠어요');
+      });
+    }, 0);
+  }
+  function confirmBox(msg, ok) {
+    return new Promise(res => {
+      const m = openModal(
+        `<div class="mhead"><h2>확인</h2></div><p style="white-space:pre-wrap">${esc(msg)}</p><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn ghost" data-x>취소</button><button class="btn pri" id="cfOk">${esc(ok || '확인')}</button></div>`,
+        '',
+        { stack: true }
+      );
+      let done = false;
+      const fin = v => {
+        if (done) return;
+        done = true;
+        res(v);
+      };
+      $('#cfOk', m).onclick = () => {
+        fin(true);
+        closeOne(m.parentElement, 'ok');
+      };
+      m.parentElement.addEventListener('nt:close', () => fin(false));
+    });
+  }
+  function promptBox(title, def, ph) {
+    return new Promise(res => {
+      const m = openModal(
+        `<div class="mhead"><h2>${esc(title)}</h2></div><input type="text" id="pbIn" data-nodirty style="width:100%" value="${esc(def || '')}" placeholder="${esc(ph || '')}"><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn ghost" data-x>취소</button><button class="btn pri" id="pbOk">확인</button></div>`,
+        '',
+        { stack: true }
+      );
+      let done = false;
+      const fin = v => {
+        if (done) return;
+        done = true;
+        res(v);
+      };
+      const i = $('#pbIn', m);
+      i.focus();
+      i.select();
+      const go = () => {
+        const v = i.value;
+        fin(v);
+        closeOne(m.parentElement, 'ok');
+      };
+      $('#pbOk', m).onclick = go;
+      i.onkeydown = e => {
+        if (e.key === 'Enter' && !e.isComposing) go();
+      };
+      m.parentElement.addEventListener('nt:close', () => fin(null));
+    });
+  }
 
- /* ----- 데이터 ----- */
- const col=k=>D[k]||(D[k]={});
- const doc=(k,id)=>{const d=(D[k]||{})[id]||null;return d&&plEye()&&!canSee(d.vis,k,id)?null:d};   /* PL 눈으로 보기: 그 눈에 안 보이는 문서는 없는 것으로 */
- const data=(k,id)=>{const d=doc(k,id);return d?d.data:null};
- const list=k=>Object.entries(col(k)).filter(([id,d])=>!plEye()||canSee(d.vis,k,id)).map(([id,d])=>Object.assign({id,_vis:d.vis,_at:d.updated_at},d.data));
- /* 11-22 망령 「GM만으로 돌려도 그 자리에 앉아 있는 사람에겐 권한도 있고 보이기도」: 자기 자리 PC 시트(pc · pcp, id = 자리)는 「GM만」이어도 그 자리 PL 이 보고 고친다 (서버 nt_can_see2 와 같은 규칙 · GM 메모 sec 는 그대로 GM만) */
- const canSee=(vis,k,id)=>vis==='pub'||gm()||(me()&&(vis==='pl:'+me()||((k==='pc'||k==='pcp')&&id===me())));
- const canEdit=(k,id)=>gm()||!!(me()&&(((k==='pc'||k==='pcp')&&id===me())||(k==='avail'&&String(id).endsWith('_'+me()))));
- const visLabel=v=>v==='pub'?'모두':v==='gm'?'GM만':v&&v.startsWith('pl:')?'PL 전용 · '+(seatName(v.slice(3))||v.slice(3)):v;
- const seatName=s=>{const t=data('pc',s);const mk=(window.NT_MAKER&&NT_MAKER.trainer(s))||null;return (mk&&mk.name)||(t&&t.name)||((ST.seats.find(x=>x.seat===s)||{}).name)||''};
- /* 공개 설정 고르기 칸. 값: pub · gm · pl:<seat> */
- function visSelect(cur,id,opt){opt=opt||{};const seats=ST.seats.length?ST.seats:[];cur=cur||'pub';
-  const o=[['pub','👥 모두'],['gm','🔒 GM만']].concat(opt.noPl?[]:seats.map(s=>['pl:'+s.seat,'👤 '+(seatName(s.seat)||s.seat)+' 에게만']));
-  if(cur.startsWith('pl:')&&!o.some(x=>x[0]===cur))o.push([cur,'👤 '+visLabel(cur)]);
-  return `<select class="vissel" ${id?`id="${id}"`:''} data-vis title="공개 설정">${o.map(([v,l])=>`<option value="${v}" ${v===cur?'selected':''}>${l}</option>`).join('')}</select>`}
- const visBadge=(v,kind,id)=>{/* 10-26 망령: GM 은 상세 칸의 이 칩을 눌러 바로 공개 범위(모두 · GM만 · PL 한 명)를 바꾼다 */
-  if(kind&&id&&gm()){v=v||'pub';return `<span role="button" tabindex="0" class="visb visq ${v==='pub'?'pub':v==='gm'?'gm':'pl'}" data-visq="${esc(kind)}|${esc(id)}" title="공개 범위 바꾸기 — 지금: ${esc(visLabel(v))}">${v==='pub'?'👥 모두':v==='gm'?'🔒 GM만':'👤 '+esc(seatName(v.slice(3))||'PL')+'만'} ▾</span>`}
-  return !v||v==='pub'?'':`<span class="visb ${v==='gm'?'gm':'pl'}" title="${esc(visLabel(v))}">${v==='gm'?'🔒 GM':'👤 '+esc(seatName(v.slice(3))||'PL')}</span>`};
- function visMenu(b){document.querySelectorAll('.visqm').forEach(x=>x.remove());const [kind,id]=b.dataset.visq.split('|');const d=doc(kind,id);if(!d)return;const cur=d.vis||'pub';
-  const o=[['pub','👥 모두에게'],['gm','🔒 GM만']].concat(ST.seats.map(x=>['pl:'+x.seat,'👤 '+(seatName(x.seat)||x.seat)+' 에게만']));
-  const m=document.createElement('div');m.className='visqm';m.innerHTML=o.map(([v,l])=>`<button type="button" data-vq="${esc(v)}" class="${v===cur?'on':''}">${esc(l)}${v===cur?' ✓':''}</button>`).join('')+(ST.seats.length?'':'<div class="vqh">PL 한 명에게만 보이게 하려면 「설정」 탭에서 좌석을 먼저 만들어 주세요</div>');
-  document.body.appendChild(m);const r=b.getBoundingClientRect();m.style.left=Math.max(6,Math.min(innerWidth-m.offsetWidth-6,r.left))+'px';m.style.top=(r.bottom+4+m.offsetHeight>innerHeight?Math.max(6,r.top-m.offsetHeight-4):r.bottom+4)+'px';
-  m.addEventListener('click',async e=>{const x=e.target.closest('[data-vq]');if(!x)return;e.stopPropagation();m.remove();const v=x.dataset.vq;if(v===cur)return;await put(kind,id,clone(d.data),v);toast('공개 범위: '+visLabel(v))})}
- document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[data-visq]')){e.preventDefault();visMenu(e.target)}});
- /* 10-29: 창 안에서 Ctrl+S · Ctrl+Enter = 그 창의 저장 단추 */
- document.addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey)||e.isComposing||!(e.key==='s'||e.key==='S'||e.key==='Enter'))return;const L=$$('.modalbg');if(!L.length)return;const m=L[L.length-1];const ok=$('.mfoot .btn.pri',m)||[...$$('.btn.pri',m)].pop();if(!ok||ok.disabled)return;e.preventDefault();const a=document.activeElement;if(a&&a.blur)a.blur();ok.click()});
- document.addEventListener('click',e=>{const b=e.target.closest('[data-visq]');if(b){e.preventDefault();e.stopPropagation();return visMenu(b)}if(!e.target.closest('.visqm'))document.querySelectorAll('.visqm').forEach(x=>x.remove())},true);
+  /* ----- 데이터 ----- */
+  const col = k => D[k] || (D[k] = {});
+  const doc = (k, id) => {
+    const d = (D[k] || {})[id] || null;
+    return d && plEye() && !canSee(d.vis, k, id) ? null : d;
+  }; /* PL 눈으로 보기: 그 눈에 안 보이는 문서는 없는 것으로 */
+  const data = (k, id) => {
+    const d = doc(k, id);
+    return d ? d.data : null;
+  };
+  const list = k =>
+    Object.entries(col(k))
+      .filter(([id, d]) => !plEye() || canSee(d.vis, k, id))
+      .map(([id, d]) => Object.assign({ id, _vis: d.vis, _at: d.updated_at }, d.data));
+  /* 11-22 망령 「GM만으로 돌려도 그 자리에 앉아 있는 사람에겐 권한도 있고 보이기도」: 자기 자리 PC 시트(pc · pcp, id = 자리)는 「GM만」이어도 그 자리 PL 이 보고 고친다 (서버 nt_can_see2 와 같은 규칙 · GM 메모 sec 는 그대로 GM만) */
+  const canSee = (vis, k, id) => vis === 'pub' || gm() || (me() && (vis === 'pl:' + me() || ((k === 'pc' || k === 'pcp') && id === me())));
+  const canEdit = (k, id) => gm() || !!(me() && (((k === 'pc' || k === 'pcp') && id === me()) || (k === 'avail' && String(id).endsWith('_' + me()))));
+  const visLabel = v =>
+    v === 'pub' ? '모두' : v === 'gm' ? 'GM만' : v && v.startsWith('pl:') ? 'PL 전용 · ' + (seatName(v.slice(3)) || v.slice(3)) : v;
+  const seatName = s => {
+    const t = data('pc', s);
+    const mk = (window.NT_MAKER && NT_MAKER.trainer(s)) || null;
+    return (mk && mk.name) || (t && t.name) || (ST.seats.find(x => x.seat === s) || {}).name || '';
+  };
+  /* 공개 설정 고르기 칸. 값: pub · gm · pl:<seat> */
+  function visSelect(cur, id, opt) {
+    opt = opt || {};
+    const seats = ST.seats.length ? ST.seats : [];
+    cur = cur || 'pub';
+    const o = [
+      ['pub', '👥 모두'],
+      ['gm', '🔒 GM만']
+    ].concat(opt.noPl ? [] : seats.map(s => ['pl:' + s.seat, '👤 ' + (seatName(s.seat) || s.seat) + ' 에게만']));
+    if (cur.startsWith('pl:') && !o.some(x => x[0] === cur)) o.push([cur, '👤 ' + visLabel(cur)]);
+    return `<select class="vissel" ${id ? `id="${id}"` : ''} data-vis title="공개 설정">${o.map(([v, l]) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+  }
+  const visBadge = (v, kind, id) => {
+    /* 10-26 망령: GM 은 상세 칸의 이 칩을 눌러 바로 공개 범위(모두 · GM만 · PL 한 명)를 바꾼다 */
+    if (kind && id && gm()) {
+      v = v || 'pub';
+      return `<span role="button" tabindex="0" class="visb visq ${v === 'pub' ? 'pub' : v === 'gm' ? 'gm' : 'pl'}" data-visq="${esc(kind)}|${esc(id)}" title="공개 범위 바꾸기 — 지금: ${esc(visLabel(v))}">${v === 'pub' ? '👥 모두' : v === 'gm' ? '🔒 GM만' : '👤 ' + esc(seatName(v.slice(3)) || 'PL') + '만'} ▾</span>`;
+    }
+    return !v || v === 'pub'
+      ? ''
+      : `<span class="visb ${v === 'gm' ? 'gm' : 'pl'}" title="${esc(visLabel(v))}">${v === 'gm' ? '🔒 GM' : '👤 ' + esc(seatName(v.slice(3)) || 'PL')}</span>`;
+  };
+  function visMenu(b) {
+    document.querySelectorAll('.visqm').forEach(x => x.remove());
+    const [kind, id] = b.dataset.visq.split('|');
+    const d = doc(kind, id);
+    if (!d) return;
+    const cur = d.vis || 'pub';
+    const o = [
+      ['pub', '👥 모두에게'],
+      ['gm', '🔒 GM만']
+    ].concat(ST.seats.map(x => ['pl:' + x.seat, '👤 ' + (seatName(x.seat) || x.seat) + ' 에게만']));
+    const m = document.createElement('div');
+    m.className = 'visqm';
+    m.innerHTML =
+      o
+        .map(([v, l]) => `<button type="button" data-vq="${esc(v)}" class="${v === cur ? 'on' : ''}">${esc(l)}${v === cur ? ' ✓' : ''}</button>`)
+        .join('') + (ST.seats.length ? '' : '<div class="vqh">PL 한 명에게만 보이게 하려면 「설정」 탭에서 좌석을 먼저 만들어 주세요</div>');
+    document.body.appendChild(m);
+    const r = b.getBoundingClientRect();
+    m.style.left = Math.max(6, Math.min(innerWidth - m.offsetWidth - 6, r.left)) + 'px';
+    m.style.top = (r.bottom + 4 + m.offsetHeight > innerHeight ? Math.max(6, r.top - m.offsetHeight - 4) : r.bottom + 4) + 'px';
+    m.addEventListener('click', async e => {
+      const x = e.target.closest('[data-vq]');
+      if (!x) return;
+      e.stopPropagation();
+      m.remove();
+      const v = x.dataset.vq;
+      if (v === cur) return;
+      await put(kind, id, clone(d.data), v);
+      toast('공개 범위: ' + visLabel(v));
+    });
+  }
+  document.addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[data-visq]')) {
+      e.preventDefault();
+      visMenu(e.target);
+    }
+  });
+  /* 10-29: 창 안에서 Ctrl+S · Ctrl+Enter = 그 창의 저장 단추 */
+  document.addEventListener('keydown', e => {
+    if (!(e.ctrlKey || e.metaKey) || e.isComposing || !(e.key === 's' || e.key === 'S' || e.key === 'Enter')) return;
+    const L = $$('.modalbg');
+    if (!L.length) return;
+    const m = L[L.length - 1];
+    const ok = $('.mfoot .btn.pri', m) || [...$$('.btn.pri', m)].pop();
+    if (!ok || ok.disabled) return;
+    e.preventDefault();
+    const a = document.activeElement;
+    if (a && a.blur) a.blur();
+    ok.click();
+  });
+  document.addEventListener(
+    'click',
+    e => {
+      const b = e.target.closest('[data-visq]');
+      if (b) {
+        e.preventDefault();
+        e.stopPropagation();
+        return visMenu(b);
+      }
+      if (!e.target.closest('.visqm')) document.querySelectorAll('.visqm').forEach(x => x.remove());
+    },
+    true
+  );
 
- /* 10-31 망령 「여러 사람이 겹치면? 새로고침 안 하면 안 고쳐지는 곳이 있는데 덮어씌워지는 거 아니지?」:
+  /* 10-31 망령 「여러 사람이 겹치면? 새로고침 안 하면 안 고쳐지는 곳이 있는데 덮어씌워지는 거 아니지?」:
     문서는 통째로 저장된다. 창을 연 뒤 남이 같은 문서를 고쳤거나(실시간이 끊겼던 동안 포함) 옛 사본으로 저장하면 남의 칸이 옛 값으로 돌아갔다.
     → 저장 직전에 DB 의 최신 문서를 읽어 칸 단위로 합친다. 내 값이 「예전에 본 판」 그대로인 칸 = 내가 안 고친 칸 → 최신 값을 둔다.
     내가 바꾼 칸만 내 값으로. 객체 · 같은 길이 배열은 안쪽까지 같은 규칙. 예전 판 = 이 브라우저가 받은 지난 판들(HIST) + 아직 못 받은 판 직전의 사본 */
- const HIST=new Map();const hkey=(k,id)=>k+'/'+id;
- function histPush(kind,id){const c=col(kind)[id];if(!c||!c.data)return;const L=HIST.get(hkey(kind,id))||[];let j;try{j=JSON.stringify(c.data)}catch(e){return}if(L[L.length-1]!==j){L.push(j);while(L.length>6)L.shift();HIST.set(hkey(kind,id),L)}}
- const jeq=(a,b)=>{try{return JSON.stringify(a)===JSON.stringify(b)}catch(e){return false}};
- const isObj=x=>x&&typeof x==='object'&&!Array.isArray(x);
- function mergeVal(m,t,P){if(jeq(m,t))return m;
-  if(isObj(m)&&isObj(t)){const o={};for(const k of new Set(Object.keys(m).concat(Object.keys(t)))){const Pk=P.filter(isObj).map(p=>p[k]);
-    if(!(k in m)){if(Pk.some(v=>v!==undefined&&jeq(v,t[k])))continue;o[k]=t[k];continue}   /* 내가 지운 칸(최신이 예전 그대로) → 지움 · 남이 새로 넣은 칸 → 둠 */
-    if(!(k in t)){if(P.filter(isObj).some(p=>(k in p)&&jeq(p[k],m[k])))continue;o[k]=m[k];continue}   /* 남이 지운 칸을 내가 안 고쳤으면 지운 채로 */
-    o[k]=mergeVal(m[k],t[k],Pk.filter(v=>v!==undefined))}return o}
-  if(Array.isArray(m)&&Array.isArray(t)&&m.length===t.length&&P.length&&P.every(p=>Array.isArray(p)&&p.length===m.length))return m.map((v,i)=>mergeVal(v,t[i],P.map(p=>p[i])));
-  return P.some(p=>jeq(p,m))?t:m}   /* 내 값이 예전 판 그대로 = 안 고친 칸 → 최신 */
- async function fresh3(kind,id,obj){try{if(DBS().mode!=='supabase')return obj;const r=await DBS().get(ST.camp,ST.secret,kind,id);if(!r||!r.data)return obj;const cur=doc(kind,id);
-   if(cur&&cur.updated_at&&r.updated_at&&r.updated_at<=cur.updated_at&&jeq(r.data,cur.data))return obj;   /* 내가 본 판이 최신 → 그대로 */
-   const P=(HIST.get(hkey(kind,id))||[]).map(j=>{try{return JSON.parse(j)}catch(e){return null}}).filter(Boolean);if(cur&&cur.data&&!jeq(cur.data,r.data))P.push(cur.data);
-   if(!P.length)return obj;const m=mergeVal(obj,r.data,P);if(!jeq(m,obj))console.info('[노트] 남이 고친 칸을 살려서 합쳤어요',kind,id);return m}catch(e){return obj}}
- async function put(kind,id,obj,vis,opt){if(!ST.camp)return false;if(ST.plView){toast(PLV_BLOCK);return false}mark(kind,id);const cur=doc(kind,id);const v=vis||(cur?cur.vis:'pub');
-  try{if(cur&&!(opt&&opt.force))obj=await fresh3(kind,id,obj);histPush(kind,id);const t=await DBS().put(ST.camp,ST.secret,kind,id,obj,v);col(kind)[id]={data:clone(obj),vis:v,updated_at:typeof t==='string'?t:new Date().toISOString()};
-   if(v!=='pub')DBS().ping(ST.camp,{t:'doc',kind,id});render();return true}
-  catch(e){toast('저장 실패: '+e.message);return false}}
- async function patch(kind,id,fn,vis){const cur=data(kind,id);if(!cur)return false;const n=clone(cur);const r=fn(n);if(r===false)return false;return put(kind,id,n,vis)}
- async function del(kind,id){if(!ST.camp)return false;if(ST.plView){toast(PLV_BLOCK);return false}mark(kind,id);try{await DBS().del(ST.camp,ST.secret,kind,id);const had=doc(kind,id);if(had){TRASH.push({kind,id,data:clone(had.data),vis:had.vis,t:Date.now()});while(TRASH.length>60)TRASH.shift()}delete col(kind)[id];if(had&&had.vis!=='pub')DBS().ping(ST.camp,{t:'del',kind,id});render();return true}catch(e){toast('지우기 실패: '+e.message);return false}}
- /* GM: 여러 문서의 공개 범위를 한 번에 (vis 'pub'|'gm'). filter(id,doc) 로 고른다 */
- async function bulkVis(kind,vis,filter,label){if(!gm())return;const rows=[];for(const [id,d] of Object.entries(col(kind))){if(filter&&!filter(id,d))continue;if(d.vis===vis)continue;rows.push({kind,id,data:d.data,vis})}
-  if(!rows.length)return toast('바꿀 게 없어요');if(!await confirmBox(`${label||kind} ${rows.length}개를 ${vis==='pub'?'「모두」에게 공개':'「GM만」으로'} 할까요?`,vis==='pub'?'공개':'비공개'))return;await putMany(rows);toast(`${rows.length}개를 바꿨어요`)}
- const bulkBtns=(kind,filter,label)=>gm()?`<span class="seg bulk" title="이 탭의 문서 공개 범위를 한 번에"><button type="button" data-bulk="${kind}|gm" data-bl="${esc(label||'')}">🔒 전부 GM만</button><button type="button" data-bulk="${kind}|pub" data-bl="${esc(label||'')}">👁 전부 공개</button></span>`:'';
- document.addEventListener('click',e=>{const b=e.target.closest('[data-bulk]');if(!b)return;const [kind,vis]=b.dataset.bulk.split('|');const f=BULKF[kind];bulkVis(kind,vis,f&&f(),b.dataset.bl)});
- const BULKF={};
- /* 11-03 감우: 여러 장 저장도 한 장 저장처럼 칸 합치기(fresh3)를 거친다 — 순서 바꾸기 · 한꺼번에 공개 · 관계도 배치가 로컬 사본 전체를 다시 써서 남이 고친 칸을 되돌리던 것. opt.force(가져오기)면 그대로 */
- async function putMany(rows,opt){if(!ST.camp)return 0;if(ST.plView){toast(PLV_BLOCK);return 0}for(const r of rows)mark(r.kind,r.id);
-  try{if(!(opt&&opt.force)){const L=rows.filter(r=>doc(r.kind,r.id));let i=0;const run=async()=>{for(;;){const r=L[i++];if(!r)return;r.data=await fresh3(r.kind,r.id,r.data)}};await Promise.all([run(),run(),run(),run()]);for(const r of rows)histPush(r.kind,r.id)}
-   const n=await DBS().putMany(ST.camp,ST.secret,rows);for(const r of rows)col(r.kind)[r.id]={data:clone(r.data),vis:r.vis||'pub',updated_at:new Date().toISOString()};DBS().ping(ST.camp,{t:'all'});render();return n}catch(e){toast('저장 실패: '+e.message);return 0}}
- /* 11-03 감우: 캠페인 설정(camp.data)은 칸 단위로 합쳐 쓴다 (store.campPatch → nt_camp_patch). null 이면 그 칸을 지운다. 받아 둔 옛 사본으로 통째 덮지 않는다 */
- async function campPatch(patch,name){if(!ST.camp)return null;if(ST.plView){toast(PLV_BLOCK);return null}const d=await DBS().campPatch(ST.camp,ST.secret,patch,name==null?null:name);if(ST.campInfo){if(d)ST.campInfo.data=d;if(name!=null)ST.campInfo.name=name}await refreshCamp();return d}
+  const HIST = new Map();
+  const hkey = (k, id) => k + '/' + id;
+  function histPush(kind, id) {
+    const c = col(kind)[id];
+    if (!c || !c.data) return;
+    const L = HIST.get(hkey(kind, id)) || [];
+    let j;
+    try {
+      j = JSON.stringify(c.data);
+    } catch (e) {
+      return;
+    }
+    if (L[L.length - 1] !== j) {
+      L.push(j);
+      while (L.length > 6) L.shift();
+      HIST.set(hkey(kind, id), L);
+    }
+  }
+  const jeq = (a, b) => {
+    try {
+      return JSON.stringify(a) === JSON.stringify(b);
+    } catch (e) {
+      return false;
+    }
+  };
+  const isObj = x => x && typeof x === 'object' && !Array.isArray(x);
+  function mergeVal(m, t, P) {
+    if (jeq(m, t)) return m;
+    if (isObj(m) && isObj(t)) {
+      const o = {};
+      for (const k of new Set(Object.keys(m).concat(Object.keys(t)))) {
+        const Pk = P.filter(isObj).map(p => p[k]);
+        if (!(k in m)) {
+          if (Pk.some(v => v !== undefined && jeq(v, t[k]))) continue;
+          o[k] = t[k];
+          continue;
+        } /* 내가 지운 칸(최신이 예전 그대로) → 지움 · 남이 새로 넣은 칸 → 둠 */
+        if (!(k in t)) {
+          if (P.filter(isObj).some(p => k in p && jeq(p[k], m[k]))) continue;
+          o[k] = m[k];
+          continue;
+        } /* 남이 지운 칸을 내가 안 고쳤으면 지운 채로 */
+        o[k] = mergeVal(
+          m[k],
+          t[k],
+          Pk.filter(v => v !== undefined)
+        );
+      }
+      return o;
+    }
+    if (Array.isArray(m) && Array.isArray(t) && m.length === t.length && P.length && P.every(p => Array.isArray(p) && p.length === m.length))
+      return m.map((v, i) =>
+        mergeVal(
+          v,
+          t[i],
+          P.map(p => p[i])
+        )
+      );
+    return P.some(p => jeq(p, m)) ? t : m;
+  } /* 내 값이 예전 판 그대로 = 안 고친 칸 → 최신 */
+  async function fresh3(kind, id, obj) {
+    try {
+      if (DBS().mode !== 'supabase') return obj;
+      const r = await DBS().get(ST.camp, ST.secret, kind, id);
+      if (!r || !r.data) return obj;
+      const cur = doc(kind, id);
+      if (cur && cur.updated_at && r.updated_at && r.updated_at <= cur.updated_at && jeq(r.data, cur.data))
+        return obj; /* 내가 본 판이 최신 → 그대로 */
+      const P = (HIST.get(hkey(kind, id)) || [])
+        .map(j => {
+          try {
+            return JSON.parse(j);
+          } catch (e) {
+            return null;
+          }
+        })
+        .filter(Boolean);
+      if (cur && cur.data && !jeq(cur.data, r.data)) P.push(cur.data);
+      if (!P.length) return obj;
+      const m = mergeVal(obj, r.data, P);
+      if (!jeq(m, obj)) console.info('[노트] 남이 고친 칸을 살려서 합쳤어요', kind, id);
+      return m;
+    } catch (e) {
+      return obj;
+    }
+  }
+  async function put(kind, id, obj, vis, opt) {
+    if (!ST.camp) return false;
+    if (ST.plView) {
+      toast(PLV_BLOCK);
+      return false;
+    }
+    mark(kind, id);
+    const cur = doc(kind, id);
+    const v = vis || (cur ? cur.vis : 'pub');
+    try {
+      if (cur && !(opt && opt.force)) obj = await fresh3(kind, id, obj);
+      histPush(kind, id);
+      const t = await DBS().put(ST.camp, ST.secret, kind, id, obj, v);
+      col(kind)[id] = { data: clone(obj), vis: v, updated_at: typeof t === 'string' ? t : new Date().toISOString() };
+      if (v !== 'pub') DBS().ping(ST.camp, { t: 'doc', kind, id });
+      render();
+      return true;
+    } catch (e) {
+      toast('저장 실패: ' + e.message);
+      return false;
+    }
+  }
+  async function patch(kind, id, fn, vis) {
+    const cur = data(kind, id);
+    if (!cur) return false;
+    const n = clone(cur);
+    const r = fn(n);
+    if (r === false) return false;
+    return put(kind, id, n, vis);
+  }
+  async function del(kind, id) {
+    if (!ST.camp) return false;
+    if (ST.plView) {
+      toast(PLV_BLOCK);
+      return false;
+    }
+    mark(kind, id);
+    try {
+      await DBS().del(ST.camp, ST.secret, kind, id);
+      const had = doc(kind, id);
+      if (had) {
+        TRASH.push({ kind, id, data: clone(had.data), vis: had.vis, t: Date.now() });
+        while (TRASH.length > 60) TRASH.shift();
+      }
+      delete col(kind)[id];
+      if (had && had.vis !== 'pub') DBS().ping(ST.camp, { t: 'del', kind, id });
+      render();
+      return true;
+    } catch (e) {
+      toast('지우기 실패: ' + e.message);
+      return false;
+    }
+  }
+  /* GM: 여러 문서의 공개 범위를 한 번에 (vis 'pub'|'gm'). filter(id,doc) 로 고른다 */
+  async function bulkVis(kind, vis, filter, label) {
+    if (!gm()) return;
+    const rows = [];
+    for (const [id, d] of Object.entries(col(kind))) {
+      if (filter && !filter(id, d)) continue;
+      if (d.vis === vis) continue;
+      rows.push({ kind, id, data: d.data, vis });
+    }
+    if (!rows.length) return toast('바꿀 게 없어요');
+    if (
+      !(await confirmBox(
+        `${label || kind} ${rows.length}개를 ${vis === 'pub' ? '「모두」에게 공개' : '「GM만」으로'} 할까요?`,
+        vis === 'pub' ? '공개' : '비공개'
+      ))
+    )
+      return;
+    await putMany(rows);
+    toast(`${rows.length}개를 바꿨어요`);
+  }
+  const bulkBtns = (kind, filter, label) =>
+    gm()
+      ? `<span class="seg bulk" title="이 탭의 문서 공개 범위를 한 번에"><button type="button" data-bulk="${kind}|gm" data-bl="${esc(label || '')}">🔒 전부 GM만</button><button type="button" data-bulk="${kind}|pub" data-bl="${esc(label || '')}">👁 전부 공개</button></span>`
+      : '';
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-bulk]');
+    if (!b) return;
+    const [kind, vis] = b.dataset.bulk.split('|');
+    const f = BULKF[kind];
+    bulkVis(kind, vis, f && f(), b.dataset.bl);
+  });
+  const BULKF = {};
+  /* 11-03 감우: 여러 장 저장도 한 장 저장처럼 칸 합치기(fresh3)를 거친다 — 순서 바꾸기 · 한꺼번에 공개 · 관계도 배치가 로컬 사본 전체를 다시 써서 남이 고친 칸을 되돌리던 것. opt.force(가져오기)면 그대로 */
+  async function putMany(rows, opt) {
+    if (!ST.camp) return 0;
+    if (ST.plView) {
+      toast(PLV_BLOCK);
+      return 0;
+    }
+    for (const r of rows) mark(r.kind, r.id);
+    try {
+      if (!(opt && opt.force)) {
+        const L = rows.filter(r => doc(r.kind, r.id));
+        let i = 0;
+        const run = async () => {
+          for (;;) {
+            const r = L[i++];
+            if (!r) return;
+            r.data = await fresh3(r.kind, r.id, r.data);
+          }
+        };
+        await Promise.all([run(), run(), run(), run()]);
+        for (const r of rows) histPush(r.kind, r.id);
+      }
+      const n = await DBS().putMany(ST.camp, ST.secret, rows);
+      for (const r of rows) col(r.kind)[r.id] = { data: clone(r.data), vis: r.vis || 'pub', updated_at: new Date().toISOString() };
+      DBS().ping(ST.camp, { t: 'all' });
+      render();
+      return n;
+    } catch (e) {
+      toast('저장 실패: ' + e.message);
+      return 0;
+    }
+  }
+  /* 11-03 감우: 캠페인 설정(camp.data)은 칸 단위로 합쳐 쓴다 (store.campPatch → nt_camp_patch). null 이면 그 칸을 지운다. 받아 둔 옛 사본으로 통째 덮지 않는다 */
+  async function campPatch(patch, name) {
+    if (!ST.camp) return null;
+    if (ST.plView) {
+      toast(PLV_BLOCK);
+      return null;
+    }
+    const d = await DBS().campPatch(ST.camp, ST.secret, patch, name == null ? null : name);
+    if (ST.campInfo) {
+      if (d) ST.campInfo.data = d;
+      if (name != null) ST.campInfo.name = name;
+    }
+    await refreshCamp();
+    return d;
+  }
 
- /* 10-29 망령 「변동 사항만 주고받게」: 받은 문서를 이 브라우저에 사본으로 두고(캠페인 · 역할마다), 다음에 열 때는 그 뒤에 바뀐 것만 받는다.
+  /* 10-29 망령 「변동 사항만 주고받게」: 받은 문서를 이 브라우저에 사본으로 두고(캠페인 · 역할마다), 다음에 열 때는 그 뒤에 바뀐 것만 받는다.
     지워진 것 · 볼 수 없게 바뀐 것은 id 목록(nt_ids · 내용 없음)으로 걸러 낸다. 사본이 7일 넘었거나 3MB 를 넘으면 전부 새로 받는다 */
- const CK=()=>'nt_cache_'+ST.camp+'_'+(ST.role||'x')+(me()?'_'+me():'');
- function cacheGet(){try{if(DBS().mode!=='supabase')return null;const j=JSON.parse(localStorage.getItem(CK())||'null');return j&&j.v===1&&j.since&&Date.now()-j.t<7*864e5?j:null}catch(e){return null}}
- /* 11-02 망령 「자리에 앉았을 때 항목 · 지도가 안 보인다」: 저장을 미루는 1.2초 사이에 캠페인을 나가거나 다시 열면(D 를 비움) 빈 D 가 「since 까지 다 받음」으로 저장돼,
+  const CK = () => 'nt_cache_' + ST.camp + '_' + (ST.role || 'x') + (me() ? '_' + me() : '');
+  function cacheGet() {
+    try {
+      if (DBS().mode !== 'supabase') return null;
+      const j = JSON.parse(localStorage.getItem(CK()) || 'null');
+      return j && j.v === 1 && j.since && Date.now() - j.t < 7 * 864e5 ? j : null;
+    } catch (e) {
+      return null;
+    }
+  }
+  /* 11-02 망령 「자리에 앉았을 때 항목 · 지도가 안 보인다」: 저장을 미루는 1.2초 사이에 캠페인을 나가거나 다시 열면(D 를 비움) 빈 D 가 「since 까지 다 받음」으로 저장돼,
     그 뒤로는 바뀐 것만 받아서 영영 비어 보였다 → 저장할 때도 같은 캠페인 · 같은 역할인지 보고, 비었으면 저장하지 않는다. 열 때는 id 목록에 있는데 사본에 없는 게 있으면 전부 다시 받는다 */
- let cacheT=0;function cacheSave(){if(!ST.camp||!ST.since)return;clearTimeout(cacheT);const key=CK();cacheT=setTimeout(()=>{if(key!==CK()||!ST.since)return;let n=0;for(const k in D)n+=Object.keys(D[k]||{}).length;if(!n)return;try{const s=JSON.stringify({v:1,t:Date.now(),since:ST.since,D});if(s.length<3e6)localStorage.setItem(key,s);else localStorage.removeItem(key)}catch(e){try{localStorage.removeItem(key)}catch(e2){}}},1200)}
- const SYNC={full:0,delta:0,last:''};
- function apply(rows){for(const r of rows){histPush(r.kind,r.id);col(r.kind)[r.id]={data:r.data||{},vis:r.vis,updated_at:r.updated_at};if(!ST.since||r.updated_at>ST.since)ST.since=r.updated_at}}
- async function loadAll(){clearTimeout(cacheT);const c=cacheGet();for(const k in D)delete D[k];
-  if(c){Object.assign(D,c.D);ST.since=c.since;try{const ids=await DBS().ids(ST.camp,ST.secret);const rows=await DBS().all(ST.camp,ST.secret,ST.since);const have=new Set(ids.map(x=>x.kind+'/'+x.id).concat(rows.map(x=>x.kind+'/'+x.id)));
-    for(const k in D)for(const id in D[k])if(!have.has(k+'/'+id))delete D[k][id];apply(rows);
-    const lack=ids.filter(x=>!(D[x.kind]&&D[x.kind][x.id]));if(lack.length)throw new Error('사본에 빠진 문서 '+lack.length+'개 — 전부 다시 받기');SYNC.delta++;SYNC.last='바뀐 문서 '+rows.length+'개만 받음';cacheSave();return}catch(e){console.warn('cache',e);for(const k in D)delete D[k];ST.since=null}}
-  const rows=await DBS().all(ST.camp,ST.secret,null);ST.since=null;apply(rows);SYNC.full++;SYNC.last='전부 받음 '+rows.length+'개';cacheSave()}
- /* 다시 맞추기: 바뀐 것만 + 지워진 것 */
- async function resync(){if(!ST.camp)return;try{const ids=await DBS().ids(ST.camp,ST.secret);let rows=await DBS().all(ST.camp,ST.secret,ST.since);apply(rows);if(ids.some(x=>!(D[x.kind]&&D[x.kind][x.id]))){rows=await DBS().all(ST.camp,ST.secret,null);apply(rows)}
-  const have=new Set(ids.map(x=>x.kind+'/'+x.id).concat(rows.map(x=>x.kind+'/'+x.id)));for(const k in D)for(const id in D[k])if(!have.has(k+'/'+id))delete D[k][id];render()}catch(e){console.warn('resync',e)}}
- let unsub=null;
- const MINE=new Map();const mark=(k,id)=>MINE.set(k+'/'+id,Date.now());const recent=(k,id)=>{const t=MINE.get(k+'/'+id);return t&&Date.now()-t<6000};
- function listen(){if(unsub)unsub();unsub=DBS().subscribe(ST.camp,{
-  onDoc(kind,id,dat,vis,at){if(!canSee(vis,kind,id)){if(doc(kind,id))delete col(kind)[id];render();return}const cur=doc(kind,id);if(cur&&cur.updated_at>=at)return;histPush(kind,id);col(kind)[id]={data:dat||{},vis,updated_at:at};if(at>(ST.since||''))ST.since=at;if(window.NT_NOTICE&&!recent(kind,id))NT_NOTICE.push(kind,id,cur?'edit':'new',dat);render()},
-  onDel(kind,id){const had=doc(kind,id);if(had){if(window.NT_NOTICE&&!recent(kind,id))NT_NOTICE.push(kind,id,'del',had.data);delete col(kind)[id];render()}},
-  async onPing(p){if(!p)return;if(p.t==='all')return resync();
-   if(p.t==='claim'){/* 11-03: 자리 앉기 요청 · 승인 */await refreshCamp();if(realGm()&&p.seat)toast(`🪑 ${p.name||p.uid||'PL'} 님이 「${seatName(p.seat)||p.seat}」 자리를 요청했어요 — 설정 탭에서 승인`);else if(!realGm()&&window.NT_ACCT&&p.uid&&p.uid===((NT_ACCT.get()||{}).uid)&&p.ok!=null){toast(p.ok?'GM 이 자리를 승인했어요':'GM 이 자리 요청을 거절했어요');if(p.ok)open(ST.camp,ST.view)}return}if(p.t==='mk'){if(window.NT_MAKER)try{await NT_MAKER.load(true);render()}catch(e){}return}   /* 10-31: 남이 노트에서 제작기 문서를 고쳤다 → 제작기 사본 다시 받기 */if(p.t==='del'){const had=doc(p.kind,p.id);if(had){if(window.NT_NOTICE&&!recent(p.kind,p.id))NT_NOTICE.push(p.kind,p.id,'del',had.data);delete col(p.kind)[p.id];render()}return}
-   if(p.t==='doc'){try{const had=doc(p.kind,p.id);const r=await DBS().get(ST.camp,ST.secret,p.kind,p.id);if(r){if(had&&had.updated_at>=r.updated_at)return;histPush(p.kind,p.id);col(p.kind)[p.id]={data:r.data||{},vis:r.vis,updated_at:r.updated_at};if(window.NT_NOTICE&&!recent(p.kind,p.id))NT_NOTICE.push(p.kind,p.id,had?'edit':'new',r.data)}else delete col(p.kind)[p.id];render()}catch(e){}}},
-  onStatus(st){ST.online=st==='SUBSCRIBED';const b=$('#ntLive');if(b){b.classList.toggle('on',ST.online);b.title=ST.online?'실시간 연결됨':'실시간 끊김 — 새로고침'}if(ST.online&&ST.since)resync()}})}
+  let cacheT = 0;
+  function cacheSave() {
+    if (!ST.camp || !ST.since) return;
+    clearTimeout(cacheT);
+    const key = CK();
+    cacheT = setTimeout(() => {
+      if (key !== CK() || !ST.since) return;
+      let n = 0;
+      for (const k in D) n += Object.keys(D[k] || {}).length;
+      if (!n) return;
+      try {
+        const s = JSON.stringify({ v: 1, t: Date.now(), since: ST.since, D });
+        if (s.length < 3e6) localStorage.setItem(key, s);
+        else localStorage.removeItem(key);
+      } catch (e) {
+        try {
+          localStorage.removeItem(key);
+        } catch (e2) {}
+      }
+    }, 1200);
+  }
+  const SYNC = { full: 0, delta: 0, last: '' };
+  function apply(rows) {
+    for (const r of rows) {
+      histPush(r.kind, r.id);
+      col(r.kind)[r.id] = { data: r.data || {}, vis: r.vis, updated_at: r.updated_at };
+      if (!ST.since || r.updated_at > ST.since) ST.since = r.updated_at;
+    }
+  }
+  async function loadAll() {
+    clearTimeout(cacheT);
+    const c = cacheGet();
+    for (const k in D) delete D[k];
+    if (c) {
+      Object.assign(D, c.D);
+      ST.since = c.since;
+      try {
+        const ids = await DBS().ids(ST.camp, ST.secret);
+        const rows = await DBS().all(ST.camp, ST.secret, ST.since);
+        const have = new Set(ids.map(x => x.kind + '/' + x.id).concat(rows.map(x => x.kind + '/' + x.id)));
+        for (const k in D) for (const id in D[k]) if (!have.has(k + '/' + id)) delete D[k][id];
+        apply(rows);
+        const lack = ids.filter(x => !(D[x.kind] && D[x.kind][x.id]));
+        if (lack.length) throw new Error('사본에 빠진 문서 ' + lack.length + '개 — 전부 다시 받기');
+        SYNC.delta++;
+        SYNC.last = '바뀐 문서 ' + rows.length + '개만 받음';
+        cacheSave();
+        return;
+      } catch (e) {
+        console.warn('cache', e);
+        for (const k in D) delete D[k];
+        ST.since = null;
+      }
+    }
+    const rows = await DBS().all(ST.camp, ST.secret, null);
+    ST.since = null;
+    apply(rows);
+    SYNC.full++;
+    SYNC.last = '전부 받음 ' + rows.length + '개';
+    cacheSave();
+  }
+  /* 다시 맞추기: 바뀐 것만 + 지워진 것 */
+  async function resync() {
+    if (!ST.camp) return;
+    try {
+      const ids = await DBS().ids(ST.camp, ST.secret);
+      let rows = await DBS().all(ST.camp, ST.secret, ST.since);
+      apply(rows);
+      if (ids.some(x => !(D[x.kind] && D[x.kind][x.id]))) {
+        rows = await DBS().all(ST.camp, ST.secret, null);
+        apply(rows);
+      }
+      const have = new Set(ids.map(x => x.kind + '/' + x.id).concat(rows.map(x => x.kind + '/' + x.id)));
+      for (const k in D) for (const id in D[k]) if (!have.has(k + '/' + id)) delete D[k][id];
+      render();
+    } catch (e) {
+      console.warn('resync', e);
+    }
+  }
+  let unsub = null;
+  const MINE = new Map();
+  const mark = (k, id) => MINE.set(k + '/' + id, Date.now());
+  const recent = (k, id) => {
+    const t = MINE.get(k + '/' + id);
+    return t && Date.now() - t < 6000;
+  };
+  function listen() {
+    if (unsub) unsub();
+    unsub = DBS().subscribe(ST.camp, {
+      onDoc(kind, id, dat, vis, at) {
+        if (!canSee(vis, kind, id)) {
+          if (doc(kind, id)) delete col(kind)[id];
+          render();
+          return;
+        }
+        const cur = doc(kind, id);
+        if (cur && cur.updated_at >= at) return;
+        histPush(kind, id);
+        col(kind)[id] = { data: dat || {}, vis, updated_at: at };
+        if (at > (ST.since || '')) ST.since = at;
+        if (window.NT_NOTICE && !recent(kind, id)) NT_NOTICE.push(kind, id, cur ? 'edit' : 'new', dat);
+        render();
+      },
+      onDel(kind, id) {
+        const had = doc(kind, id);
+        if (had) {
+          if (window.NT_NOTICE && !recent(kind, id)) NT_NOTICE.push(kind, id, 'del', had.data);
+          delete col(kind)[id];
+          render();
+        }
+      },
+      async onPing(p) {
+        if (!p) return;
+        if (p.t === 'all') return resync();
+        if (p.t === 'claim') {
+          /* 11-03: 자리 앉기 요청 · 승인 */ await refreshCamp();
+          if (realGm() && p.seat) toast(`🪑 ${p.name || p.uid || 'PL'} 님이 「${seatName(p.seat) || p.seat}」 자리를 요청했어요 — 설정 탭에서 승인`);
+          else if (!realGm() && window.NT_ACCT && p.uid && p.uid === (NT_ACCT.get() || {}).uid && p.ok != null) {
+            toast(p.ok ? 'GM 이 자리를 승인했어요' : 'GM 이 자리 요청을 거절했어요');
+            if (p.ok) open(ST.camp, ST.view);
+          }
+          return;
+        }
+        if (p.t === 'mk') {
+          if (window.NT_MAKER)
+            try {
+              await NT_MAKER.load(true);
+              render();
+            } catch (e) {}
+          return;
+        }
+        /* 10-31: 남이 노트에서 제작기 문서를 고쳤다 → 제작기 사본 다시 받기 */ if (p.t === 'del') {
+          const had = doc(p.kind, p.id);
+          if (had) {
+            if (window.NT_NOTICE && !recent(p.kind, p.id)) NT_NOTICE.push(p.kind, p.id, 'del', had.data);
+            delete col(p.kind)[p.id];
+            render();
+          }
+          return;
+        }
+        if (p.t === 'doc') {
+          try {
+            const had = doc(p.kind, p.id);
+            const r = await DBS().get(ST.camp, ST.secret, p.kind, p.id);
+            if (r) {
+              if (had && had.updated_at >= r.updated_at) return;
+              histPush(p.kind, p.id);
+              col(p.kind)[p.id] = { data: r.data || {}, vis: r.vis, updated_at: r.updated_at };
+              if (window.NT_NOTICE && !recent(p.kind, p.id)) NT_NOTICE.push(p.kind, p.id, had ? 'edit' : 'new', r.data);
+            } else delete col(p.kind)[p.id];
+            render();
+          } catch (e) {}
+        }
+      },
+      onStatus(st) {
+        ST.online = st === 'SUBSCRIBED';
+        const b = $('#ntLive');
+        if (b) {
+          b.classList.toggle('on', ST.online);
+          b.title = ST.online ? '실시간 연결됨' : '실시간 끊김 — 새로고침';
+        }
+        if (ST.online && ST.since) resync();
+      }
+    });
+  }
 
- /* ----- 그림 올리기 (줄여서) ----- */
- async function shrink(f,W,H,q){try{if(!/^image\/(png|jpe?g|webp|bmp|gif)$/i.test(f.type||''))return f;if(/gif/i.test(f.type))return f;const bmp=await createImageBitmap(f);const sc=Math.min(1,W/bmp.width,H/bmp.height);const cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(bmp.width*sc));cv.height=Math.max(1,Math.round(bmp.height*sc));cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);const bl=await new Promise(r=>cv.toBlob(r,'image/webp',q||.85));return bl&&bl.size<f.size?bl:f}catch(e){return f}}
- const SIZES={map:[3200,3200,.86],photo:[1600,1600,.84],face:[512,512,.86],thumb:[900,900,.84]};
- async function upload(f,kind,tag){const [W,H,q]=SIZES[kind]||SIZES.photo;const b=await shrink(f,W,H,q);toast('올리는 중…');const u=await DBS().uploadImage(`notes/${ST.camp}/${tag||kind}`,b);toast('올렸다');return u}
- /* 끌어 놓기 · 클릭 · Ctrl+V 로 파일 받기 */
- function bindDrop(el,onFiles,multi,accept){if(!el||el._dz)return;el._dz=1;const fi=el.querySelector('input[type=file]')||(()=>{const i=document.createElement('input');i.type='file';i.accept=accept||'image/*';i.hidden=true;if(multi)i.multiple=true;el.appendChild(i);return i})();
-  const give=fs=>{fs=[...fs].filter(f=>accept||/^image\//.test(f.type));if(fs.length)onFiles(multi?fs:[fs[0]])};
-  el.addEventListener('click',e=>{if(e.target.closest('button,a,input:not([type=file])'))return;fi.click()});fi.onchange=()=>{give(fi.files);fi.value=''};
-  el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('over')});el.addEventListener('dragleave',()=>el.classList.remove('over'));el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('over');give(e.dataTransfer.files)});
-  el.addEventListener('paste',e=>{const fs=[...(e.clipboardData||{}).files||[]];if(fs.length){e.preventDefault();give(fs)}})}
+  /* ----- 그림 올리기 (줄여서) ----- */
+  async function shrink(f, W, H, q) {
+    try {
+      if (!/^image\/(png|jpe?g|webp|bmp|gif)$/i.test(f.type || '')) return f;
+      if (/gif/i.test(f.type)) return f;
+      const bmp = await createImageBitmap(f);
+      const sc = Math.min(1, W / bmp.width, H / bmp.height);
+      const cv = document.createElement('canvas');
+      cv.width = Math.max(1, Math.round(bmp.width * sc));
+      cv.height = Math.max(1, Math.round(bmp.height * sc));
+      cv.getContext('2d').drawImage(bmp, 0, 0, cv.width, cv.height);
+      const bl = await new Promise(r => cv.toBlob(r, 'image/webp', q || 0.85));
+      return bl && bl.size < f.size ? bl : f;
+    } catch (e) {
+      return f;
+    }
+  }
+  const SIZES = { map: [3200, 3200, 0.86], photo: [1600, 1600, 0.84], face: [512, 512, 0.86], thumb: [900, 900, 0.84] };
+  async function upload(f, kind, tag) {
+    const [W, H, q] = SIZES[kind] || SIZES.photo;
+    const b = await shrink(f, W, H, q);
+    toast('올리는 중…');
+    const u = await DBS().uploadImage(`notes/${ST.camp}/${tag || kind}`, b);
+    toast('올렸다');
+    return u;
+  }
+  /* 끌어 놓기 · 클릭 · Ctrl+V 로 파일 받기 */
+  function bindDrop(el, onFiles, multi, accept) {
+    if (!el || el._dz) return;
+    el._dz = 1;
+    const fi =
+      el.querySelector('input[type=file]') ||
+      (() => {
+        const i = document.createElement('input');
+        i.type = 'file';
+        i.accept = accept || 'image/*';
+        i.hidden = true;
+        if (multi) i.multiple = true;
+        el.appendChild(i);
+        return i;
+      })();
+    const give = fs => {
+      fs = [...fs].filter(f => accept || /^image\//.test(f.type));
+      if (fs.length) onFiles(multi ? fs : [fs[0]]);
+    };
+    el.addEventListener('click', e => {
+      if (e.target.closest('button,a,input:not([type=file])')) return;
+      fi.click();
+    });
+    fi.onchange = () => {
+      give(fi.files);
+      fi.value = '';
+    };
+    el.addEventListener('dragover', e => {
+      e.preventDefault();
+      el.classList.add('over');
+    });
+    el.addEventListener('dragleave', () => el.classList.remove('over'));
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      el.classList.remove('over');
+      give(e.dataTransfer.files);
+    });
+    el.addEventListener('paste', e => {
+      const fs = [...((e.clipboardData || {}).files || [])];
+      if (fs.length) {
+        e.preventDefault();
+        give(fs);
+      }
+    });
+  }
 
- /* ----- 주소 · 비밀구 ----- */
- const SK=c=>'nt_sec_'+c;
- function readHash(){const h=new URLSearchParams(location.hash.replace(/^#/,''));const q=new URLSearchParams(location.search);const o={camp:h.get('c')||q.get('c')||'',view:h.get('v')||'',gm:q.get('gm')||h.get('gm')||'',pl:q.get('pl')||h.get('pl')||''};return o}
- function setHash(){const p=new URLSearchParams();if(ST.camp)p.set('c',ST.camp);if(ST.camp&&ST.view)p.set('v',ST.view);const s='#'+p.toString();if(location.hash!==s)history.replaceState(null,'',location.pathname+s)}
- function cleanQuery(){if(location.search)history.replaceState(null,'',location.pathname+location.hash)}
+  /* ----- 주소 · 비밀구 ----- */
+  const SK = c => 'nt_sec_' + c;
+  function readHash() {
+    const h = new URLSearchParams(location.hash.replace(/^#/, ''));
+    const q = new URLSearchParams(location.search);
+    const o = {
+      camp: h.get('c') || q.get('c') || '',
+      view: h.get('v') || '',
+      gm: q.get('gm') || h.get('gm') || '',
+      pl: q.get('pl') || h.get('pl') || ''
+    };
+    return o;
+  }
+  function setHash() {
+    const p = new URLSearchParams();
+    if (ST.camp) p.set('c', ST.camp);
+    if (ST.camp && ST.view) p.set('v', ST.view);
+    const s = '#' + p.toString();
+    if (location.hash !== s) history.replaceState(null, '', location.pathname + s);
+  }
+  function cleanQuery() {
+    if (location.search) history.replaceState(null, '', location.pathname + location.hash);
+  }
 
- /* ----- 테마 (오레마스 vtheme.js 와 같은 키 om_vt 를 써서 두 툴이 같은 테마) ----- */
- /* 10-29 망령: 망각(mm) 테마 추가. 캠페인 설정의 「기본 테마」(data.theme)가 있으면 그 캠페인을 여는 동안 그 테마로 보여 준다 — 위 띠에서 다른 테마를 고르면 그걸 따른다(이 브라우저에 남는 내 테마는 그대로).
+  /* ----- 테마 (오레마스 vtheme.js 와 같은 키 om_vt 를 써서 두 툴이 같은 테마) ----- */
+  /* 10-29 망령: 망각(mm) 테마 추가. 캠페인 설정의 「기본 테마」(data.theme)가 있으면 그 캠페인을 여는 동안 그 테마로 보여 준다 — 위 띠에서 다른 테마를 고르면 그걸 따른다(이 브라우저에 남는 내 테마는 그대로).
     「꾸밈」(data.skin)은 캠페인 분위기 장식: univ = 대학(학생증 PC 시트 · 도서 목록 카드 항목 · 도면 지도). html[data-skin] 으로 css/skin.css 가 덮는다 */
- const VT=[['p5','P5'],['p3','P3'],['p4','P4'],['mm','망각'],['cd','칼데아']];   /* 11-04 망령: 칼데아(cd) 테마 — css/chaldea.css · 「칼데아 밤을 칼데아로」 — 예전 cdn 은 cd 로 읽는다 (웹툴에는 없어서 웹툴은 P4 로 보임) */
- const SKINS=[['','없음'],['univ','대학 (학생증 · 도서 목록 카드 · 도면)']];
- let vtCamp='';
- const vtMine=()=>{try{let v=localStorage.getItem('om_vt');if(v==='cdn')v='cd';return VT.some(x=>x[0]===v)?v:'p4'}catch(e){return 'p4'}};
- const vtGet=()=>vtCamp||vtMine();
- const vtApply=()=>document.documentElement.setAttribute('data-vt',vtGet());
- const vtSet=v=>{vtCamp='';try{localStorage.setItem('om_vt',v)}catch(e){}vtApply();render()};
- const skin=()=>{const s=ST.campInfo&&ST.campInfo.data&&ST.campInfo.data.skin;return SKINS.some(x=>x[0]===s)?s:''};
- function campLook(c){const t=c&&c.data&&c.data.theme;vtCamp=VT.some(x=>x[0]===t)?t:'';vtApply();const k=c?skin():'';if(k)document.documentElement.setAttribute('data-skin',k);else document.documentElement.removeAttribute('data-skin')}
- vtApply();
+  const VT = [
+    ['p5', 'P5'],
+    ['p3', 'P3'],
+    ['p4', 'P4'],
+    ['mm', '망각'],
+    ['cd', '칼데아']
+  ]; /* 11-04 망령: 칼데아(cd) 테마 — css/chaldea.css · 「칼데아 밤을 칼데아로」 — 예전 cdn 은 cd 로 읽는다 (웹툴에는 없어서 웹툴은 P4 로 보임) */
+  const SKINS = [
+    ['', '없음'],
+    ['univ', '대학 (학생증 · 도서 목록 카드 · 도면)']
+  ];
+  let vtCamp = '';
+  const vtMine = () => {
+    try {
+      let v = localStorage.getItem('om_vt');
+      if (v === 'cdn') v = 'cd';
+      return VT.some(x => x[0] === v) ? v : 'p4';
+    } catch (e) {
+      return 'p4';
+    }
+  };
+  const vtGet = () => vtCamp || vtMine();
+  const vtApply = () => document.documentElement.setAttribute('data-vt', vtGet());
+  const vtSet = v => {
+    vtCamp = '';
+    try {
+      localStorage.setItem('om_vt', v);
+    } catch (e) {}
+    vtApply();
+    render();
+  };
+  const skin = () => {
+    const s = ST.campInfo && ST.campInfo.data && ST.campInfo.data.skin;
+    return SKINS.some(x => x[0] === s) ? s : '';
+  };
+  function campLook(c) {
+    const t = c && c.data && c.data.theme;
+    vtCamp = VT.some(x => x[0] === t) ? t : '';
+    vtApply();
+    const k = c ? skin() : '';
+    if (k) document.documentElement.setAttribute('data-skin', k);
+    else document.documentElement.removeAttribute('data-skin');
+  }
+  vtApply();
 
+  /* ----- 공용 조작 (10-26 망령) ----- */
+  /* 끌어서 순서 바꾸기. container 안의 itemSel 요소들을 pointer 로 끈다(모바일도). 놓으면 onOrder(ids) — ids 는 data-id 순서. 핸들이 있으면 handleSel 안에서만 시작. */
+  function sortable(container, itemSel, onOrder, opt) {
+    opt = opt || {};
+    if (!container || container._ntSort) return;
+    container._ntSort = 1;
+    let d = null;
+    container.addEventListener('pointerdown', e => {
+      if (e.button !== 0) return;
+      const it = e.target.closest(itemSel);
+      if (!it || !container.contains(it)) return;
+      if (opt.handleSel && !e.target.closest(opt.handleSel)) return;
+      if (e.target.closest('input,textarea,select,button:not([data-drag]),a,[data-visq],[data-fav]')) return;
+      d = { it, x: e.clientX, y: e.clientY, id: e.pointerId, moved: false, ph: null };
+    });
+    container.addEventListener('pointermove', e => {
+      if (!d || d.id !== e.pointerId) return;
+      const dx = e.clientX - d.x,
+        dy = e.clientY - d.y;
+      if (!d.moved) {
+        if (Math.hypot(dx, dy) < 6) return;
+        d.moved = true;
+        try {
+          container.setPointerCapture(e.pointerId);
+        } catch (x) {}
+        d.it.classList.add('nt-dragging');
+        d.ph = d.it.cloneNode(true);
+        d.ph.className += ' nt-ghost';
+        d.ph.style.cssText +=
+          ';position:fixed;pointer-events:none;z-index:2000;opacity:.85;width:' +
+          d.it.offsetWidth +
+          'px;left:' +
+          d.it.getBoundingClientRect().left +
+          'px;top:' +
+          d.it.getBoundingClientRect().top +
+          'px;margin:0';
+        document.body.appendChild(d.ph);
+        d.ox = e.clientX - d.it.getBoundingClientRect().left;
+        d.oy = e.clientY - d.it.getBoundingClientRect().top;
+        document.body.classList.add('nt-sorting');
+      }
+      e.preventDefault();
+      d.ph.style.left = e.clientX - d.ox + 'px';
+      d.ph.style.top = e.clientY - d.oy + 'px';
+      const items = $$(itemSel, container).filter(x => x !== d.it);
+      const horiz = opt.horizontal;
+      let before = null;
+      for (const x of items) {
+        const r = x.getBoundingClientRect();
+        const mid = horiz ? r.left + r.width / 2 : r.top + r.height / 2;
+        if ((horiz ? e.clientX : e.clientY) < mid) {
+          before = x;
+          break;
+        }
+      }
+      if (before) before.parentNode.insertBefore(d.it, before);
+      else {
+        const last = items[items.length - 1];
+        if (last) last.parentNode.insertBefore(d.it, last.nextSibling);
+      }
+    });
+    const end = e => {
+      if (!d || d.id !== e.pointerId) return;
+      const was = d;
+      d = null;
+      try {
+        container.releasePointerCapture(e.pointerId);
+      } catch (x) {}
+      if (was.ph) was.ph.remove();
+      was.it.classList.remove('nt-dragging');
+      document.body.classList.remove('nt-sorting');
+      if (!was.moved) return;
+      const ids = $$(itemSel, container)
+        .map(x => x.dataset.id)
+        .filter(Boolean);
+      if (onOrder) onOrder(ids);
+      container.dataset.sorted = '1';
+      setTimeout(() => {
+        delete container.dataset.sorted;
+      }, 0);
+    };
+    container.addEventListener('pointerup', end);
+    container.addEventListener('pointercancel', end);
+    container.addEventListener(
+      'click',
+      e => {
+        if (container.dataset.sorted) {
+          e.stopPropagation();
+          e.preventDefault();
+        }
+      },
+      true
+    );
+  }
+  /* 순서 저장 도우미: kind 문서들의 order 를 ids 순서대로 다시 매긴다 */
+  async function reorder(kind, ids, field) {
+    field = field || 'order';
+    const rows = [];
+    ids.forEach((id, i) => {
+      const dd = doc(kind, id);
+      if (dd && dd.data[field] !== i) rows.push({ kind, id, data: Object.assign({}, dd.data, { [field]: i }), vis: dd.vis });
+    });
+    if (rows.length) await putMany(rows);
+  }
+  /* 우클릭 · 길게 누르기 메뉴. items: [{t:'글', k:'키', danger:true, on:fn}] */
+  function ctxMenu(x, y, items) {
+    $$('.ntctx').forEach(m => m.remove());
+    if (!items || !items.length) return;
+    const m = document.createElement('div');
+    m.className = 'ntctx';
+    m.innerHTML = items
+      .map((it, i) => (it === '-' ? '<hr>' : `<button type="button" data-i="${i}" class="${it.danger ? 'danger' : ''}">${esc(it.t)}</button>`))
+      .join('');
+    document.body.appendChild(m);
+    const W = m.offsetWidth,
+      H = m.offsetHeight;
+    m.style.left = Math.max(4, Math.min(innerWidth - W - 4, x)) + 'px';
+    m.style.top = Math.max(4, Math.min(innerHeight - H - 4, y)) + 'px';
+    m.addEventListener('click', e => {
+      const b = e.target.closest('[data-i]');
+      if (!b) return;
+      e.stopPropagation();
+      m.remove();
+      const it = items[+b.dataset.i];
+      if (it && it.on) it.on();
+    });
+    setTimeout(() => {
+      const off = e => {
+        if (!m.contains(e.target)) {
+          m.remove();
+          document.removeEventListener('pointerdown', off, true);
+        }
+      };
+      document.addEventListener('pointerdown', off, true);
+    }, 0);
+    return m;
+  }
+  /* 요소에 우클릭 + 길게 누르기(500ms) 를 건다. getItems(target,e) 가 items 를 돌려주면 메뉴를 띄운다. */
+  function bindCtx(root, sel, getItems) {
+    if (!root || root._ntCtx) return;
+    root._ntCtx = 1;
+    root.addEventListener('contextmenu', e => {
+      const t = e.target.closest(sel);
+      if (!t || !root.contains(t)) return;
+      const items = getItems(t, e);
+      if (!items || !items.length) return;
+      e.preventDefault();
+      ctxMenu(e.clientX, e.clientY, items);
+    });
+    let lp = null;
+    root.addEventListener(
+      'pointerdown',
+      e => {
+        if (e.pointerType === 'mouse') return;
+        const t = e.target.closest(sel);
+        if (!t) return;
+        const x = e.clientX,
+          y = e.clientY;
+        lp = {
+          t,
+          x,
+          y,
+          tm: setTimeout(() => {
+            lp = null;
+            const items = getItems(t, e);
+            if (items && items.length) {
+              ctxMenu(x, y, items);
+              if (navigator.vibrate)
+                try {
+                  navigator.vibrate(10);
+                } catch (z) {}
+            }
+          }, 500)
+        };
+      },
+      { passive: true }
+    );
+    const cancel = e => {
+      if (lp && (e.type !== 'pointermove' || Math.hypot(e.clientX - lp.x, e.clientY - lp.y) > 8)) {
+        clearTimeout(lp.tm);
+        lp = null;
+      }
+    };
+    root.addEventListener('pointermove', cancel, { passive: true });
+    root.addEventListener('pointerup', cancel);
+    root.addEventListener('pointercancel', cancel);
+  }
+  /* 손가락 두 개 확대. el 에 걸고, get()→{zoom,px,py}, set({zoom,px,py}) 로 상태를 주고받는다. 한 손가락 끌기는 건드리지 않는다. */
+  function pinch(el, get, set, lim) {
+    lim = lim || [0.3, 6];
+    const pts = new Map();
+    let p0 = null;
+    el.addEventListener(
+      'pointerdown',
+      e => {
+        if (e.pointerType !== 'touch') return;
+        pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (pts.size === 2) {
+          const [a, b] = [...pts.values()];
+          const s = get();
+          p0 = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, z: s.zoom, cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2, px: s.px, py: s.py };
+          el.dataset.pinching = '1';
+        }
+      },
+      { passive: true }
+    );
+    el.addEventListener(
+      'pointermove',
+      e => {
+        if (!pts.has(e.pointerId)) return;
+        pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (!p0 || pts.size < 2) return;
+        const [a, b] = [...pts.values()];
+        const d = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+        const z = Math.max(lim[0], Math.min(lim[1], (p0.z * d) / p0.d));
+        const r = el.getBoundingClientRect();
+        const mx = p0.cx - r.left,
+          my = p0.cy - r.top;
+        set({ zoom: z, px: mx - ((mx - p0.px) * z) / p0.z, py: my - ((my - p0.py) * z) / p0.z });
+      },
+      { passive: true }
+    );
+    const up = e => {
+      pts.delete(e.pointerId);
+      if (pts.size < 2) {
+        p0 = null;
+        setTimeout(() => {
+          delete el.dataset.pinching;
+        }, 0);
+      }
+    };
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+  }
 
- /* ----- 공용 조작 (10-26 망령) ----- */
- /* 끌어서 순서 바꾸기. container 안의 itemSel 요소들을 pointer 로 끈다(모바일도). 놓으면 onOrder(ids) — ids 는 data-id 순서. 핸들이 있으면 handleSel 안에서만 시작. */
- function sortable(container,itemSel,onOrder,opt){opt=opt||{};if(!container||container._ntSort)return;container._ntSort=1;let d=null;
-  container.addEventListener('pointerdown',e=>{if(e.button!==0)return;const it=e.target.closest(itemSel);if(!it||!container.contains(it))return;if(opt.handleSel&&!e.target.closest(opt.handleSel))return;if(e.target.closest('input,textarea,select,button:not([data-drag]),a,[data-visq],[data-fav]'))return;
-   d={it,x:e.clientX,y:e.clientY,id:e.pointerId,moved:false,ph:null}});
-  container.addEventListener('pointermove',e=>{if(!d||d.id!==e.pointerId)return;const dx=e.clientX-d.x,dy=e.clientY-d.y;if(!d.moved){if(Math.hypot(dx,dy)<6)return;d.moved=true;try{container.setPointerCapture(e.pointerId)}catch(x){}d.it.classList.add('nt-dragging');d.ph=d.it.cloneNode(true);d.ph.className+=' nt-ghost';d.ph.style.cssText+=';position:fixed;pointer-events:none;z-index:2000;opacity:.85;width:'+d.it.offsetWidth+'px;left:'+(d.it.getBoundingClientRect().left)+'px;top:'+(d.it.getBoundingClientRect().top)+'px;margin:0';document.body.appendChild(d.ph);d.ox=e.clientX-d.it.getBoundingClientRect().left;d.oy=e.clientY-d.it.getBoundingClientRect().top;document.body.classList.add('nt-sorting')}
-   e.preventDefault();d.ph.style.left=(e.clientX-d.ox)+'px';d.ph.style.top=(e.clientY-d.oy)+'px';
-   const items=$$(itemSel,container).filter(x=>x!==d.it);const horiz=opt.horizontal;let before=null;for(const x of items){const r=x.getBoundingClientRect();const mid=horiz?r.left+r.width/2:r.top+r.height/2;if((horiz?e.clientX:e.clientY)<mid){before=x;break}}
-   if(before)before.parentNode.insertBefore(d.it,before);else{const last=items[items.length-1];if(last)last.parentNode.insertBefore(d.it,last.nextSibling)}});
-  const end=e=>{if(!d||d.id!==e.pointerId)return;const was=d;d=null;try{container.releasePointerCapture(e.pointerId)}catch(x){}if(was.ph)was.ph.remove();was.it.classList.remove('nt-dragging');document.body.classList.remove('nt-sorting');
-   if(!was.moved)return;const ids=$$(itemSel,container).map(x=>x.dataset.id).filter(Boolean);if(onOrder)onOrder(ids);container.dataset.sorted='1';setTimeout(()=>{delete container.dataset.sorted},0)};
-  container.addEventListener('pointerup',end);container.addEventListener('pointercancel',end);
-  container.addEventListener('click',e=>{if(container.dataset.sorted){e.stopPropagation();e.preventDefault()}},true)}
- /* 순서 저장 도우미: kind 문서들의 order 를 ids 순서대로 다시 매긴다 */
- async function reorder(kind,ids,field){field=field||'order';const rows=[];ids.forEach((id,i)=>{const dd=doc(kind,id);if(dd&&dd.data[field]!==i)rows.push({kind,id,data:Object.assign({},dd.data,{[field]:i}),vis:dd.vis})});if(rows.length)await putMany(rows)}
- /* 우클릭 · 길게 누르기 메뉴. items: [{t:'글', k:'키', danger:true, on:fn}] */
- function ctxMenu(x,y,items){$$('.ntctx').forEach(m=>m.remove());if(!items||!items.length)return;const m=document.createElement('div');m.className='ntctx';m.innerHTML=items.map((it,i)=>it==='-'?'<hr>':`<button type="button" data-i="${i}" class="${it.danger?'danger':''}">${esc(it.t)}</button>`).join('');document.body.appendChild(m);
-  const W=m.offsetWidth,H=m.offsetHeight;m.style.left=Math.max(4,Math.min(innerWidth-W-4,x))+'px';m.style.top=Math.max(4,Math.min(innerHeight-H-4,y))+'px';
-  m.addEventListener('click',e=>{const b=e.target.closest('[data-i]');if(!b)return;e.stopPropagation();m.remove();const it=items[+b.dataset.i];if(it&&it.on)it.on()});
-  setTimeout(()=>{const off=e=>{if(!m.contains(e.target)){m.remove();document.removeEventListener('pointerdown',off,true)}};document.addEventListener('pointerdown',off,true)},0);return m}
- /* 요소에 우클릭 + 길게 누르기(500ms) 를 건다. getItems(target,e) 가 items 를 돌려주면 메뉴를 띄운다. */
- function bindCtx(root,sel,getItems){if(!root||root._ntCtx)return;root._ntCtx=1;
-  root.addEventListener('contextmenu',e=>{const t=e.target.closest(sel);if(!t||!root.contains(t))return;const items=getItems(t,e);if(!items||!items.length)return;e.preventDefault();ctxMenu(e.clientX,e.clientY,items)});
-  let lp=null;root.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')return;const t=e.target.closest(sel);if(!t)return;const x=e.clientX,y=e.clientY;lp={t,x,y,tm:setTimeout(()=>{lp=null;const items=getItems(t,e);if(items&&items.length){ctxMenu(x,y,items);if(navigator.vibrate)try{navigator.vibrate(10)}catch(z){}}},500)}},{passive:true});
-  const cancel=e=>{if(lp&&(e.type!=='pointermove'||Math.hypot(e.clientX-lp.x,e.clientY-lp.y)>8)){clearTimeout(lp.tm);lp=null}};root.addEventListener('pointermove',cancel,{passive:true});root.addEventListener('pointerup',cancel);root.addEventListener('pointercancel',cancel)}
- /* 손가락 두 개 확대. el 에 걸고, get()→{zoom,px,py}, set({zoom,px,py}) 로 상태를 주고받는다. 한 손가락 끌기는 건드리지 않는다. */
- function pinch(el,get,set,lim){lim=lim||[.3,6];const pts=new Map();let p0=null;
-  el.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pts.size===2){const [a,b]=[...pts.values()];const s=get();p0={d:Math.hypot(a.x-b.x,a.y-b.y)||1,z:s.zoom,cx:(a.x+b.x)/2,cy:(a.y+b.y)/2,px:s.px,py:s.py};el.dataset.pinching='1'}},{passive:true});
-  el.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId))return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});if(!p0||pts.size<2)return;const [a,b]=[...pts.values()];const d=Math.hypot(a.x-b.x,a.y-b.y)||1;const z=Math.max(lim[0],Math.min(lim[1],p0.z*d/p0.d));const r=el.getBoundingClientRect();const mx=p0.cx-r.left,my=p0.cy-r.top;set({zoom:z,px:mx-(mx-p0.px)*z/p0.z,py:my-(my-p0.py)*z/p0.z})},{passive:true});
-  const up=e=>{pts.delete(e.pointerId);if(pts.size<2){p0=null;setTimeout(()=>{delete el.dataset.pinching},0)}};el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up)}
+  /* ----- 화면 ----- */
+  /* 10-26 망령: 다시 그려도 안쪽 스크롤 · 입력 포커스가 안 튄다 (실시간 갱신이 올 때마다 초기화되던 것) */
+  const KEEPSEL = '.flow,.steps,.side,.tblwrap,.loglist,.entlist,.entgrid,.splist,.notes-grid,.pcsheet,.sess-list,[data-keep]';
+  /* 11-04 21:00 망령 「시트 펴 놓은 게 10~15초쯤 지나면 접힌다」: 제작기 · 노트 실시간 갱신마다 화면을 다시 그리면서 펼쳐 둔 <details>(포켓몬 포텐셜 · 메모 · 기술 더 보기 …)가 처음 모양으로 돌아갔다 → 다시 그려도 펼침 · 접힘을 지킨다 */
+  function dKeys(root) {
+    const seen = new Map(),
+      out = [];
+    root.querySelectorAll('details').forEach(d => {
+      const a = d.parentElement && d.parentElement.closest('[id],[data-id],[data-pm],[data-cls]');
+      const s = d.querySelector(':scope>summary');
+      const b =
+        (a ? a.id || a.dataset.id || a.dataset.pm || a.dataset.cls || '' : '') +
+        '|' +
+        (d.className || '') +
+        '|' +
+        (d.dataset.f || d.dataset.fold || '') +
+        '|' +
+        (s ? s.textContent.replace(/\s+/g, ' ').trim().slice(0, 40) : '');
+      const n = seen.get(b) || 0;
+      seen.set(b, n + 1);
+      out.push([b + '#' + n, d]);
+    });
+    return out;
+  }
+  function keepState(root) {
+    if (!root) return null;
+    const sc = [];
+    root.querySelectorAll(KEEPSEL).forEach((e, i) => {
+      if (e.scrollTop || e.scrollLeft) sc.push([e.className, i, e.scrollLeft, e.scrollTop]);
+    });
+    const a = document.activeElement;
+    const f =
+      a && root.contains(a) && a.id
+        ? { id: a.id, s: a.selectionStart, e: a.selectionEnd, v: a.matches && a.matches('[data-live]') ? a.value : null }
+        : null;
+    const dt = new Map();
+    try {
+      for (const [k, d] of dKeys(root)) dt.set(k, d.open);
+    } catch (e) {}
+    return { sc, f, view: ST.view, y: window.scrollY, dt };
+  }
+  function restoreState(root, k) {
+    if (!k || k.view !== ST.view) return;
+    if (k.dt && k.dt.size)
+      try {
+        for (const [kk, d] of dKeys(root)) if (k.dt.has(kk) && d.open !== k.dt.get(kk)) d.open = k.dt.get(kk);
+      } catch (e) {}
+    const L = root.querySelectorAll(KEEPSEL);
+    k.sc.forEach(([cls, i, l, t]) => {
+      const e = L[i];
+      if (e && e.className === cls) {
+        e.scrollLeft = l;
+        e.scrollTop = t;
+      }
+    });
+    if (k.f) {
+      const e = root.querySelector('#' + CSS.escape(k.f.id));
+      if (e && e !== document.activeElement) {
+        try {
+          if (k.f.v != null && e.matches('[data-live]') && e.value !== k.f.v) {
+            e.value = k.f.v;
+            e.dispatchEvent(new Event('input'));
+          }
+          /* 10-29: 쓰고 있던 칸은 다시 그려져도 글을 지킨다 */ e.focus({ preventScroll: true });
+          if (k.f.s != null && e.setSelectionRange) e.setSelectionRange(k.f.s, k.f.e);
+        } catch (x) {}
+      }
+    }
+  }
 
- /* ----- 화면 ----- */
- /* 10-26 망령: 다시 그려도 안쪽 스크롤 · 입력 포커스가 안 튄다 (실시간 갱신이 올 때마다 초기화되던 것) */
- const KEEPSEL='.flow,.steps,.side,.tblwrap,.loglist,.entlist,.entgrid,.splist,.notes-grid,.pcsheet,.sess-list,[data-keep]';
- /* 11-04 21:00 망령 「시트 펴 놓은 게 10~15초쯤 지나면 접힌다」: 제작기 · 노트 실시간 갱신마다 화면을 다시 그리면서 펼쳐 둔 <details>(포켓몬 포텐셜 · 메모 · 기술 더 보기 …)가 처음 모양으로 돌아갔다 → 다시 그려도 펼침 · 접힘을 지킨다 */
- function dKeys(root){const seen=new Map(),out=[];root.querySelectorAll('details').forEach(d=>{const a=d.parentElement&&d.parentElement.closest('[id],[data-id],[data-pm],[data-cls]');const s=d.querySelector(':scope>summary');const b=(a?(a.id||a.dataset.id||a.dataset.pm||a.dataset.cls||''):'')+'|'+(d.className||'')+'|'+(d.dataset.f||d.dataset.fold||'')+'|'+(s?s.textContent.replace(/\s+/g,' ').trim().slice(0,40):'');const n=seen.get(b)||0;seen.set(b,n+1);out.push([b+'#'+n,d])});return out}
- function keepState(root){if(!root)return null;const sc=[];root.querySelectorAll(KEEPSEL).forEach((e,i)=>{if(e.scrollTop||e.scrollLeft)sc.push([e.className,i,e.scrollLeft,e.scrollTop])});const a=document.activeElement;const f=a&&root.contains(a)&&a.id?{id:a.id,s:a.selectionStart,e:a.selectionEnd,v:a.matches&&a.matches('[data-live]')?a.value:null}:null;const dt=new Map();try{for(const [k,d] of dKeys(root))dt.set(k,d.open)}catch(e){}return {sc,f,view:ST.view,y:window.scrollY,dt}}
- function restoreState(root,k){if(!k||k.view!==ST.view)return;if(k.dt&&k.dt.size)try{for(const [kk,d] of dKeys(root))if(k.dt.has(kk)&&d.open!==k.dt.get(kk))d.open=k.dt.get(kk)}catch(e){}const L=root.querySelectorAll(KEEPSEL);k.sc.forEach(([cls,i,l,t])=>{const e=L[i];if(e&&e.className===cls){e.scrollLeft=l;e.scrollTop=t}});if(k.f){const e=root.querySelector('#'+CSS.escape(k.f.id));if(e&&e!==document.activeElement){try{if(k.f.v!=null&&e.matches('[data-live]')&&e.value!==k.f.v){e.value=k.f.v;e.dispatchEvent(new Event('input'))}/* 10-29: 쓰고 있던 칸은 다시 그려져도 글을 지킨다 */e.focus({preventScroll:true});if(k.f.s!=null&&e.setSelectionRange)e.setSelectionRange(k.f.s,k.f.e)}catch(x){}}}}
+  function render() {
+    const app = $('#app');
+    if (!app) return;
+    if (window.NT_ACCT) NT_ACCT.track();
+    /* 10-29 접속자 */ if (!ST.camp) return renderLobby(app);
+    cacheSave();
+    if (ST.view === 'rb' && ST.campInfo && !rbOn()) ST.view = 'ents';
+    let sh = $('#ntShell', app);
+    if (!sh) {
+      app.innerHTML = `<div id="ntShell"><header class="top"></header><div id="ntBody"><div id="ntFavSlot"></div><main id="ntMain"></main></div></div>`;
+      sh = $('#ntShell', app);
+    }
+    renderTop($('.top', sh));
+    const fs = $('#ntFavSlot', sh);
+    if (fs && window.NT_FAV) fs.innerHTML = NT_FAV.rail();
+    const old = $('#ntMain', sh);
+    const keep = keepState(old);
+    const main = old.cloneNode(false);
+    old.replaceWith(main);
+    main.dataset.view = ST.view;
+    /* 탭 모듈이 render 마다 el.addEventListener 를 붙이므로, 매번 새 요소로 바꿔 처리기가 쌓이거나 다른 탭 것과 섞이지 않게 한다 */ const M =
+      MOD[ST.view];
+    try {
+      if (M) M.render(main);
+      else main.innerHTML = '<div class="empty">준비 중</div>';
+      subTabs(main);
+      foldToolbar(main);
+      const gh = guideHtml();
+      if (gh) main.insertAdjacentHTML('afterbegin', gh);
+      restoreState(main, keep);
+    } catch (e) {
+      console.error(e);
+      main.innerHTML = `<div class="empty vfail"><b>「${esc((VIEWS.find(v => v[0] === ST.view) || [])[1] || ST.view)}」 화면을 그리지 못했어요.</b><div class="small dim" style="margin-top:6px;word-break:break-all">${esc((e && e.message) || e)}</div><button class="btn sm" onclick="NT.go('map')">지도로</button></div>`;
+    }
+  }
+  function renderTop(top) {
+    const c = ST.campInfo || {};
+    const role = gm()
+      ? '<span class="badge gm">GM</span>'
+      : me()
+        ? `<span class="badge seat">${esc(seatName(me()) || me())}</span>`
+        : '<span class="badge">구경</span>';
+    const plv = realGm()
+      ? ST.plSit
+        ? `<span class="plvsw on"><button type="button" class="btn xs pri" data-plsit="off" title="GM 화면으로 — 이 브라우저의 자리 기억도 지워요">🪑 GM 으로</button></span>`
+        : `<span class="plvsw ${ST.plView ? 'on' : ''}" title="PL 눈으로 보기 — 모든 탭을 구경(또는 고른 좌석)의 눈으로 그려요. 켜 둔 동안은 저장하지 않아요"><button type="button" class="btn xs ${ST.plView ? 'pri' : 'ghost'}" data-plv="${ST.plView ? 'off' : 'on'}">👁 ${ST.plView ? 'PL 눈 끄기' : 'PL 눈'}</button>${ST.plView ? `<select data-plvas title="누구의 눈으로"><option value="">구경 (링크만)</option>${ST.seats.map(x => `<option value="${esc(x.seat)}" ${x.seat === ST.plAs ? 'selected' : ''}>${esc(seatName(x.seat) || x.seat)}</option>`).join('')}</select>` : ''}</span>`.replace(
+            /<\/span>$/,
+            `<button type="button" class="btn xs ghost" data-plsit="pick" title="PL 로 앉기 — 고른 자리 PL 처럼 보고 써요(저장돼요). 다음에 들어와도 그 자리 · 「GM 으로」를 누르면 잊어요">🪑 PL 로</button></span>`
+          )
+      : '';
+    const cur = tabOf(ST.view)[0];
+    const tabs = TABS.filter(tabOk)
+      .map(t => `<button data-v="${t[0] === cur ? ST.view : subGet(t)}" data-tab="${t[0]}" class="${t[0] === cur ? 'on' : ''}">${t[1]}</button>`)
+      .join('');
+    /* 11-03 감우: 휴대폰(640px 이하)에서는 PL 눈 · 🔍 · 🔔 · 웹툴 · 로그인 · 나가기를 「⋯」 메뉴(.topx) 뒤로 — 위 띠가 두 줄 넘게 늘어나던 것 */
+    top.innerHTML = `<a class="back" href="#" data-lobby>← 캠페인</a><h1 class="camp name"><b>${esc(c.name || '…')}</b>${c.data && c.data.sub ? `<small>${esc(c.data.sub)}</small>` : ''}</h1>${role}<nav class="tabs" id="sceneTabs">${tabs}</nav><span class="sp"></span><button type="button" class="favtop" data-favdrawer title="즐겨찾기">★</button><span id="ntLive" class="live ${ST.online ? 'on' : ''}" title="${ST.online ? '실시간 연결됨' : '연결 중…'}"></span><button type="button" class="btn xs ghost morebtn" data-topmore title="더 보기" aria-expanded="${document.body.classList.contains('topmore')}">⋯</button><div class="topx">${plv}<button type="button" class="btn xs ghost srchbtn" data-search title="전체 검색 (/)">🔍<span class="xl"> 검색</span></button>
+   ${(() => {
+     const r = window.NT_LINK && NT_LINK.cur ? NT_LINK.cur() : ((c.data || {}).om || {}).room;
+     const RL = window.NT_LINK && NT_LINK.rooms ? NT_LINK.rooms() : [];
+     /* 11-03 여러 방: 고른 방(이 브라우저)으로 열고, 둘 이상이면 옆에 방 고르기 */ return r && window.NT_LINK
+       ? `<a class="btn xs omgo" href="${esc(NT_LINK.omUrl(r))}" target="oremas" rel="noopener" title="이 캠페인과 이어진 웹툴 방 열기${RL.length > 1 ? ' — ' + esc(NT_LINK.roomName(r)) : ''}">🎲 웹툴</a>${RL.length > 1 ? `<select class="omsel" data-omsel title="이 브라우저에서 쓰는 웹툴 방 — 휴대폰 · 게시판 · ⚔ 웹툴로 · 장면 보내기가 이 방으로">${RL.map(x => `<option value="${esc(x.id)}" ${x.id === r ? 'selected' : ''}>${esc(x.name || x.id)}${x.main ? ' ★' : ''}</option>`).join('')}</select>` : ''}${gm() && window.NT_PHONE && NT_PHONE.openDc ? '<button type="button" class="btn xs omgo" data-dcset title="이어 둔 웹툴 방의 디스코드 연동 — 학교 게시판 · 시트 카드가 가는 스레드 (GM)">🔗 디스코드</button>' : ''}`
+       : '';
+   })()}${window.NT_NOTICE ? NT_NOTICE.bellHtml() : ''}${!ST.role && ST.acct === 'pl' && window.NT_ACCT ? '<button class="btn xs pri" data-seatpick title="빈 PC 시트를 골라 앉아요">🪑 자리 앉기</button>' : ''}${!ST.role ? `<button class="btn xs" data-login>${window.NT_ACCT && NT_ACCT.tok() ? '비밀구' : '로그인'}</button>` : String(ST.secret).startsWith('u:') && window.NT_ACCT ? `<button class="btn xs ghost acmebtn" data-acme title="웹툴과 같은 계정 · 로그아웃">${esc(NT_ACCT.myName() || '계정')}</button>` : '<button class="btn xs ghost" data-logout title="이 브라우저에서 비밀구 지우기">나가기</button>'}
+   <span class="vtsw compact"><button type="button" class="vtcur">${(VT.find(x => x[0] === vtGet()) || [])[1]}<i>▾</i></button><span class="vtmenu">${VT.map(([k, l]) => `<button type="button" data-vt="${k}" class="${k === vtGet() ? 'on' : ''}">${l}</button>`).join('')}</span></span></div>`;
+    top.onchange = e => {
+      const t = e.target;
+      if (t.matches && t.matches('[data-omsel]') && window.NT_LINK) {
+        NT_LINK.setCur(t.value);
+        toast(`이 브라우저에서는 「${NT_LINK.roomName(t.value)}」 방을 써요`);
+        render();
+      }
+    };
+    top.onclick = e => {
+      const t = e.target;
+      const b = t.closest('button[data-v]');
+      if (b) {
+        go(b.dataset.v);
+        return;
+      }
+      if (t.closest('[data-topmore]')) {
+        document.body.classList.toggle('topmore');
+        t.closest('[data-topmore]').setAttribute('aria-expanded', document.body.classList.contains('topmore'));
+        return;
+      }
+      if (t.closest('.topx') && !t.closest('.vtsw,[data-plvas],.plvsw select,[data-omsel]') && innerWidth <= 640 && !t.closest('[data-bell]'))
+        setTimeout(() => document.body.classList.remove('topmore'), 0);
+      if (t.closest('[data-lobby]')) {
+        e.preventDefault();
+        leave();
+        return;
+      }
+      if (t.closest('[data-search]')) {
+        if (window.NT_SEARCH) NT_SEARCH.open();
+        return;
+      }
+      const pv = t.closest('[data-plv]');
+      if (pv) {
+        plViewSet(pv.dataset.plv === 'on', ST.plSit ? '' : ST.plAs);
+        return;
+      }
+      const ps = t.closest('[data-plsit]');
+      if (ps) {
+        if (ps.dataset.plsit === 'off') plSitSet('');
+        else plSitPick();
+        return;
+      }
+      if (t.closest('[data-dcset]')) {
+        if (window.NT_PHONE && NT_PHONE.openDc) NT_PHONE.openDc();
+        return;
+      }
+      if (t.closest('[data-login]'))
+        return window.NT_ACCT && !NT_ACCT.tok()
+          ? NT_ACCT.loginModal()
+          : loginBox(); /* 10-29: 로그인 안 했으면 계정 로그인(비밀구는 그 창 아래), 계정은 있는데 권한이 없으면 비밀구 */
+      if (t.closest('[data-acme]')) return NT_ACCT.meMenu();
+      if (t.closest('[data-seatpick]')) return NT_ACCT.seatPicker();
+      if (t.closest('[data-logout]')) {
+        try {
+          localStorage.removeItem(SK(ST.camp));
+        } catch (x) {}
+        ST.secret = '';
+        ST.role = null;
+        open(ST.camp);
+        return;
+      }
+      const v = t.closest('button[data-vt]');
+      if (v) {
+        vtSet(v.dataset.vt);
+        return;
+      }
+      if (t.closest('.vtcur')) {
+        const s = t.closest('.vtsw');
+        s.classList.toggle('open');
+        return;
+      }
+    };
+    const pas = $('[data-plvas]', top);
+    if (pas) pas.onchange = () => plViewSet(true, pas.value);
+    if (!window._vtswBound) {
+      window._vtswBound = 1;
+      document.addEventListener(
+        'pointerdown',
+        ev => {
+          if (!ev.target.closest('.vtsw')) $$('.vtsw.open').forEach(x => x.classList.remove('open'));
+        },
+        { capture: true }
+      );
+    }
+  }
+  function go(v) {
+    v = VIEWS.some(x => x[0] === v) ? v : 'map';
+    if (v !== ST.view) {
+      if (window.NT_BLUE && NT_BLUE.close) NT_BLUE.close();
+      if (window.NT_CAST && NT_CAST.close) NT_CAST.close();
+    }
+    /* 11-13 옆 창은 화면을 떠나면 닫는다 */ if (v === 'rb' && !rbOn()) v = 'ents';
+    if (v !== ST.view && window.NT_FLOWMAP && NT_FLOWMAP.markFresh) NT_FLOWMAP.markFresh();
+    if (v !== ST.view) {
+      document.body.classList.remove('topmore');
+      if (document.body.classList.contains('present')) presentSet(false);
+    }
+    ST.view = v;
+    setHash();
+    render();
+    try {
+      localStorage.setItem('nt_view', ST.view);
+    } catch (e) {}
+  }
 
- function render(){const app=$('#app');if(!app)return;if(window.NT_ACCT)NT_ACCT.track();/* 10-29 접속자 */if(!ST.camp)return renderLobby(app);cacheSave();if(ST.view==='rb'&&ST.campInfo&&!rbOn())ST.view='ents';
-  let sh=$('#ntShell',app);if(!sh){app.innerHTML=`<div id="ntShell"><header class="top"></header><div id="ntBody"><div id="ntFavSlot"></div><main id="ntMain"></main></div></div>`;sh=$('#ntShell',app)}
-  renderTop($('.top',sh));const fs=$('#ntFavSlot',sh);if(fs&&window.NT_FAV)fs.innerHTML=NT_FAV.rail();const old=$('#ntMain',sh);const keep=keepState(old);const main=old.cloneNode(false);old.replaceWith(main);main.dataset.view=ST.view;/* 탭 모듈이 render 마다 el.addEventListener 를 붙이므로, 매번 새 요소로 바꿔 처리기가 쌓이거나 다른 탭 것과 섞이지 않게 한다 */const M=MOD[ST.view];
-  try{if(M)M.render(main);else main.innerHTML='<div class="empty">준비 중</div>';subTabs(main);foldToolbar(main);const gh=guideHtml();if(gh)main.insertAdjacentHTML('afterbegin',gh);restoreState(main,keep)}catch(e){console.error(e);main.innerHTML=`<div class="empty vfail"><b>「${esc((VIEWS.find(v=>v[0]===ST.view)||[])[1]||ST.view)}」 화면을 그리지 못했어요.</b><div class="small dim" style="margin-top:6px;word-break:break-all">${esc(e&&e.message||e)}</div><button class="btn sm" onclick="NT.go('map')">지도로</button></div>`}}
- function renderTop(top){const c=ST.campInfo||{};const role=gm()?'<span class="badge gm">GM</span>':me()?`<span class="badge seat">${esc(seatName(me())||me())}</span>`:'<span class="badge">구경</span>';
-  const plv=realGm()?(ST.plSit?`<span class="plvsw on"><button type="button" class="btn xs pri" data-plsit="off" title="GM 화면으로 — 이 브라우저의 자리 기억도 지워요">🪑 GM 으로</button></span>`:`<span class="plvsw ${ST.plView?'on':''}" title="PL 눈으로 보기 — 모든 탭을 구경(또는 고른 좌석)의 눈으로 그려요. 켜 둔 동안은 저장하지 않아요"><button type="button" class="btn xs ${ST.plView?'pri':'ghost'}" data-plv="${ST.plView?'off':'on'}">👁 ${ST.plView?'PL 눈 끄기':'PL 눈'}</button>${ST.plView?`<select data-plvas title="누구의 눈으로"><option value="">구경 (링크만)</option>${ST.seats.map(x=>`<option value="${esc(x.seat)}" ${x.seat===ST.plAs?'selected':''}>${esc(seatName(x.seat)||x.seat)}</option>`).join('')}</select>`:''}</span>`.replace(/<\/span>$/,`<button type="button" class="btn xs ghost" data-plsit="pick" title="PL 로 앉기 — 고른 자리 PL 처럼 보고 써요(저장돼요). 다음에 들어와도 그 자리 · 「GM 으로」를 누르면 잊어요">🪑 PL 로</button></span>`)):'';
-  const cur=tabOf(ST.view)[0];const tabs=TABS.filter(tabOk).map(t=>`<button data-v="${t[0]===cur?ST.view:subGet(t)}" data-tab="${t[0]}" class="${t[0]===cur?'on':''}">${t[1]}</button>`).join('');
-  /* 11-03 감우: 휴대폰(640px 이하)에서는 PL 눈 · 🔍 · 🔔 · 웹툴 · 로그인 · 나가기를 「⋯」 메뉴(.topx) 뒤로 — 위 띠가 두 줄 넘게 늘어나던 것 */
-  top.innerHTML=`<a class="back" href="#" data-lobby>← 캠페인</a><h1 class="camp name"><b>${esc(c.name||'…')}</b>${c.data&&c.data.sub?`<small>${esc(c.data.sub)}</small>`:''}</h1>${role}<nav class="tabs" id="sceneTabs">${tabs}</nav><span class="sp"></span><button type="button" class="favtop" data-favdrawer title="즐겨찾기">★</button><span id="ntLive" class="live ${ST.online?'on':''}" title="${ST.online?'실시간 연결됨':'연결 중…'}"></span><button type="button" class="btn xs ghost morebtn" data-topmore title="더 보기" aria-expanded="${document.body.classList.contains('topmore')}">⋯</button><div class="topx">${plv}<button type="button" class="btn xs ghost srchbtn" data-search title="전체 검색 (/)">🔍<span class="xl"> 검색</span></button>
-   ${(()=>{const r=window.NT_LINK&&NT_LINK.cur?NT_LINK.cur():((c.data||{}).om||{}).room;const RL=window.NT_LINK&&NT_LINK.rooms?NT_LINK.rooms():[];/* 11-03 여러 방: 고른 방(이 브라우저)으로 열고, 둘 이상이면 옆에 방 고르기 */return r&&window.NT_LINK?`<a class="btn xs omgo" href="${esc(NT_LINK.omUrl(r))}" target="oremas" rel="noopener" title="이 캠페인과 이어진 웹툴 방 열기${RL.length>1?' — '+esc(NT_LINK.roomName(r)):''}">🎲 웹툴</a>${RL.length>1?`<select class="omsel" data-omsel title="이 브라우저에서 쓰는 웹툴 방 — 휴대폰 · 게시판 · ⚔ 웹툴로 · 장면 보내기가 이 방으로">${RL.map(x=>`<option value="${esc(x.id)}" ${x.id===r?'selected':''}>${esc(x.name||x.id)}${x.main?' ★':''}</option>`).join('')}</select>`:''}${gm()&&window.NT_PHONE&&NT_PHONE.openDc?'<button type="button" class="btn xs omgo" data-dcset title="이어 둔 웹툴 방의 디스코드 연동 — 학교 게시판 · 시트 카드가 가는 스레드 (GM)">🔗 디스코드</button>':''}`:''})()}${window.NT_NOTICE?NT_NOTICE.bellHtml():''}${!ST.role&&ST.acct==='pl'&&window.NT_ACCT?'<button class="btn xs pri" data-seatpick title="빈 PC 시트를 골라 앉아요">🪑 자리 앉기</button>':''}${!ST.role?`<button class="btn xs" data-login>${window.NT_ACCT&&NT_ACCT.tok()?'비밀구':'로그인'}</button>`:String(ST.secret).startsWith('u:')&&window.NT_ACCT?`<button class="btn xs ghost acmebtn" data-acme title="웹툴과 같은 계정 · 로그아웃">${esc(NT_ACCT.myName()||'계정')}</button>`:'<button class="btn xs ghost" data-logout title="이 브라우저에서 비밀구 지우기">나가기</button>'}
-   <span class="vtsw compact"><button type="button" class="vtcur">${(VT.find(x=>x[0]===vtGet())||[])[1]}<i>▾</i></button><span class="vtmenu">${VT.map(([k,l])=>`<button type="button" data-vt="${k}" class="${k===vtGet()?'on':''}">${l}</button>`).join('')}</span></span></div>`;
-  top.onchange=e=>{const t=e.target;if(t.matches&&t.matches('[data-omsel]')&&window.NT_LINK){NT_LINK.setCur(t.value);toast(`이 브라우저에서는 「${NT_LINK.roomName(t.value)}」 방을 써요`);render()}};
-  top.onclick=e=>{const t=e.target;const b=t.closest('button[data-v]');if(b){go(b.dataset.v);return}
-   if(t.closest('[data-topmore]')){document.body.classList.toggle('topmore');t.closest('[data-topmore]').setAttribute('aria-expanded',document.body.classList.contains('topmore'));return}
-   if(t.closest('.topx')&&!t.closest('.vtsw,[data-plvas],.plvsw select,[data-omsel]')&&innerWidth<=640&&!t.closest('[data-bell]'))setTimeout(()=>document.body.classList.remove('topmore'),0);
-   if(t.closest('[data-lobby]')){e.preventDefault();leave();return}
-   if(t.closest('[data-search]')){if(window.NT_SEARCH)NT_SEARCH.open();return}
-   const pv=t.closest('[data-plv]');if(pv){plViewSet(pv.dataset.plv==='on',ST.plSit?'':ST.plAs);return}
-   const ps=t.closest('[data-plsit]');if(ps){if(ps.dataset.plsit==='off')plSitSet('');else plSitPick();return}
-   if(t.closest('[data-dcset]')){if(window.NT_PHONE&&NT_PHONE.openDc)NT_PHONE.openDc();return}
-   if(t.closest('[data-login]'))return window.NT_ACCT&&!NT_ACCT.tok()?NT_ACCT.loginModal():loginBox();   /* 10-29: 로그인 안 했으면 계정 로그인(비밀구는 그 창 아래), 계정은 있는데 권한이 없으면 비밀구 */
-   if(t.closest('[data-acme]'))return NT_ACCT.meMenu();
-   if(t.closest('[data-seatpick]'))return NT_ACCT.seatPicker();
-   if(t.closest('[data-logout]')){try{localStorage.removeItem(SK(ST.camp))}catch(x){}ST.secret='';ST.role=null;open(ST.camp);return}
-   const v=t.closest('button[data-vt]');if(v){vtSet(v.dataset.vt);return}
-   if(t.closest('.vtcur')){const s=t.closest('.vtsw');s.classList.toggle('open');return}};
-  const pas=$('[data-plvas]',top);if(pas)pas.onchange=()=>plViewSet(true,pas.value);
-  if(!window._vtswBound){window._vtswBound=1;document.addEventListener('pointerdown',ev=>{if(!ev.target.closest('.vtsw'))$$('.vtsw.open').forEach(x=>x.classList.remove('open'))},{capture:true})}}
- function go(v){v=VIEWS.some(x=>x[0]===v)?v:'map';if(v!==ST.view){if(window.NT_BLUE&&NT_BLUE.close)NT_BLUE.close();if(window.NT_CAST&&NT_CAST.close)NT_CAST.close()}/* 11-13 옆 창은 화면을 떠나면 닫는다 */if(v==='rb'&&!rbOn())v='ents';if(v!==ST.view&&window.NT_FLOWMAP&&NT_FLOWMAP.markFresh)NT_FLOWMAP.markFresh();if(v!==ST.view){document.body.classList.remove('topmore');if(document.body.classList.contains('present'))presentSet(false)}ST.view=v;setHash();render();try{localStorage.setItem('nt_view',ST.view)}catch(e){}}
-
- /* ----- 로비 ----- */
- async function renderLobby(app){if(window.NT_ACCT)await NT_ACCT.me();const AC=window.NT_ACCT&&NT_ACCT.tok()&&DBS().acct;
-  app.innerHTML=`<div class="lobby">${window.NT_ACCT?NT_ACCT.lobbyBar():''}<div class="lhead"><div><small>MANGKETMON · SESSION NOTES</small><h1>망켓몬 세션 노트</h1><p>캠페인마다 지도 · 관계도 · 항목 · PC 시트 · 시나리오 · 진행표. 웹툴과 같은 계정으로 로그인하면 받은 권한(GM · PL)대로 보이고, 링크만 있으면 공개한 것만 보인다.</p></div>
-   <span class="vtsw">${VT.map(([k,l])=>`<button type="button" data-vt="${k}" class="${k===vtGet()?'on':''}">${l}</button>`).join('')}</span></div>
+  /* ----- 로비 ----- */
+  async function renderLobby(app) {
+    if (window.NT_ACCT) await NT_ACCT.me();
+    const AC = window.NT_ACCT && NT_ACCT.tok() && DBS().acct;
+    app.innerHTML = `<div class="lobby">${window.NT_ACCT ? NT_ACCT.lobbyBar() : ''}<div class="lhead"><div><small>MANGKETMON · SESSION NOTES</small><h1>망켓몬 세션 노트</h1><p>캠페인마다 지도 · 관계도 · 항목 · PC 시트 · 시나리오 · 진행표. 웹툴과 같은 계정으로 로그인하면 받은 권한(GM · PL)대로 보이고, 링크만 있으면 공개한 것만 보인다.</p></div>
+   <span class="vtsw">${VT.map(([k, l]) => `<button type="button" data-vt="${k}" class="${k === vtGet() ? 'on' : ''}">${l}</button>`).join('')}</span></div>
    <div class="camps" id="campList"><div class="dim">불러오는 중…</div></div>
-   ${AC?`<div class="newcamp"><h3>새 캠페인</h3><div class="row"><input type="text" id="ncName" placeholder="캠페인 이름 (예: 무진)" style="flex:1;min-width:160px"><button class="btn pri" id="ncGo">만들기</button></div><p class="small dim">만든 계정이 그 캠페인의 GM 이 돼요. 플레이어 권한은 「👥 접속자 · 권한」에서 줘요.</p></div>`
-   :`<div class="newcamp"><h3>새 캠페인</h3><div class="row"><input type="text" id="ncName" placeholder="캠페인 이름 (예: 무진)" style="flex:1;min-width:160px"><input type="text" id="ncSec" placeholder="GM 비밀구 (6자 이상 · 잊으면 복구 불가)" style="flex:1;min-width:200px"><button class="btn pri" id="ncGo">만들기</button></div><p class="small dim">로그인하면 비밀구 없이 계정으로 만들어요. 비밀구는 이 브라우저에 저장돼요. 다른 기기에서는 <code>?gm=비밀구</code> 를 주소 뒤에 붙여 한 번 열면 돼요. PL 에게는 <code>?pl=좌석비밀구</code> 링크를 줘요.</p></div>`}
-   ${DBS().mode==='local'?'<p class="small dim">⚠ 공유 DB 설정이 없어 이 브라우저에만 저장돼요 (js/config.js).</p>':''}
-   <p class="small dim foot">오레마스 · 제작기와 같은 Supabase 를 써요. <a href="${esc((window.NT_CONFIG||{}).oremasUrl||'#')}" target="_blank" rel="noopener">웹툴</a> · <a href="${esc((window.NT_CONFIG||{}).makerUrl||'#')}" target="_blank" rel="noopener">제작기</a></p></div>`;
-  app.onclick=e=>{const v=e.target.closest('button[data-vt]');if(v)vtSet(v.dataset.vt)};if(window.NT_ACCT)NT_ACCT.bindBar(app);
-  $('#ncGo',app).onclick=async()=>{const n=$('#ncName',app).value.trim();if(!n)return toast('이름을 적어 줘');
-   if(AC){try{const id=await DBS().acct.campNew(NT_ACCT.tok(),n);toast('캠페인을 만들었다');await NT_ACCT.me(true);ST.camps=[];open(id)}catch(err){toast('만들기 실패: '+err.message)}return}
-   const s=$('#ncSec',app).value.trim();if(s.length<6)return toast('비밀구는 6자 이상');
-   try{const id=await DBS().create(n,s);try{localStorage.setItem(SK(id),s)}catch(x){}toast('캠페인을 만들었다');open(id)}catch(err){toast('만들기 실패: '+err.message)}};
-  try{ST.camps=await DBS().camps()}catch(e){$('#campList',app).innerHTML=`<div class="empty">캠페인 목록을 못 읽었어요: ${esc(e.message)}<br><span class="small dim">Supabase 에 supabase/schema.sql 을 아직 안 넣었다면 먼저 넣어 주세요.</span></div>`;return}
-  const L=$('#campList',app);if(!L)return;
-  L.innerHTML=ST.camps.length?ST.camps.map(c=>{let has=window.NT_ACCT?NT_ACCT.campTag(c.id):'';try{if(!has)has=localStorage.getItem(SK(c.id))?'<span class="tag ok">비밀구 있음</span>':''}catch(e){}const d=c.data||{};return `<button class="campcard" data-c="${esc(c.id)}" style="${d.cover?`--cv:url('${cssu(d.cover)}')`:''}"><span class="cvr"></span><b>${esc(c.name||'이름 없음')}</b><small>${esc(d.sub||'')}</small><span class="meta">${has}<span class="dim">${esc((c.updated_at||'').slice(0,10))}</span></span></button>`}).join(''):'<div class="empty">아직 캠페인이 없어요. 아래에서 만들어요.</div>';
-  L.onclick=e=>{const b=e.target.closest('[data-c]');if(b)open(b.dataset.c)}}
+   ${
+     AC
+       ? `<div class="newcamp"><h3>새 캠페인</h3><div class="row"><input type="text" id="ncName" placeholder="캠페인 이름 (예: 무진)" style="flex:1;min-width:160px"><button class="btn pri" id="ncGo">만들기</button></div><p class="small dim">만든 계정이 그 캠페인의 GM 이 돼요. 플레이어 권한은 「👥 접속자 · 권한」에서 줘요.</p></div>`
+       : `<div class="newcamp"><h3>새 캠페인</h3><div class="row"><input type="text" id="ncName" placeholder="캠페인 이름 (예: 무진)" style="flex:1;min-width:160px"><input type="text" id="ncSec" placeholder="GM 비밀구 (6자 이상 · 잊으면 복구 불가)" style="flex:1;min-width:200px"><button class="btn pri" id="ncGo">만들기</button></div><p class="small dim">로그인하면 비밀구 없이 계정으로 만들어요. 비밀구는 이 브라우저에 저장돼요. 다른 기기에서는 <code>?gm=비밀구</code> 를 주소 뒤에 붙여 한 번 열면 돼요. PL 에게는 <code>?pl=좌석비밀구</code> 링크를 줘요.</p></div>`
+   }
+   ${DBS().mode === 'local' ? '<p class="small dim">⚠ 공유 DB 설정이 없어 이 브라우저에만 저장돼요 (js/config.js).</p>' : ''}
+   <p class="small dim foot">오레마스 · 제작기와 같은 Supabase 를 써요. <a href="${esc((window.NT_CONFIG || {}).oremasUrl || '#')}" target="_blank" rel="noopener">웹툴</a> · <a href="${esc((window.NT_CONFIG || {}).makerUrl || '#')}" target="_blank" rel="noopener">제작기</a></p></div>`;
+    app.onclick = e => {
+      const v = e.target.closest('button[data-vt]');
+      if (v) vtSet(v.dataset.vt);
+    };
+    if (window.NT_ACCT) NT_ACCT.bindBar(app);
+    $('#ncGo', app).onclick = async () => {
+      const n = $('#ncName', app).value.trim();
+      if (!n) return toast('이름을 적어 줘');
+      if (AC) {
+        try {
+          const id = await DBS().acct.campNew(NT_ACCT.tok(), n);
+          toast('캠페인을 만들었다');
+          await NT_ACCT.me(true);
+          ST.camps = [];
+          open(id);
+        } catch (err) {
+          toast('만들기 실패: ' + err.message);
+        }
+        return;
+      }
+      const s = $('#ncSec', app).value.trim();
+      if (s.length < 6) return toast('비밀구는 6자 이상');
+      try {
+        const id = await DBS().create(n, s);
+        try {
+          localStorage.setItem(SK(id), s);
+        } catch (x) {}
+        toast('캠페인을 만들었다');
+        open(id);
+      } catch (err) {
+        toast('만들기 실패: ' + err.message);
+      }
+    };
+    try {
+      ST.camps = await DBS().camps();
+    } catch (e) {
+      $('#campList', app).innerHTML =
+        `<div class="empty">캠페인 목록을 못 읽었어요: ${esc(e.message)}<br><span class="small dim">Supabase 에 supabase/schema.sql 을 아직 안 넣었다면 먼저 넣어 주세요.</span></div>`;
+      return;
+    }
+    const L = $('#campList', app);
+    if (!L) return;
+    L.innerHTML = ST.camps.length
+      ? ST.camps
+          .map(c => {
+            let has = window.NT_ACCT ? NT_ACCT.campTag(c.id) : '';
+            try {
+              if (!has) has = localStorage.getItem(SK(c.id)) ? '<span class="tag ok">비밀구 있음</span>' : '';
+            } catch (e) {}
+            const d = c.data || {};
+            return `<button class="campcard" data-c="${esc(c.id)}" style="${d.cover ? `--cv:url('${cssu(d.cover)}')` : ''}"><span class="cvr"></span><b>${esc(c.name || '이름 없음')}</b><small>${esc(d.sub || '')}</small><span class="meta">${has}<span class="dim">${esc((c.updated_at || '').slice(0, 10))}</span></span></button>`;
+          })
+          .join('')
+      : '<div class="empty">아직 캠페인이 없어요. 아래에서 만들어요.</div>';
+    L.onclick = e => {
+      const b = e.target.closest('[data-c]');
+      if (b) open(b.dataset.c);
+    };
+  }
 
- async function loginBox(){const v=await promptBox('비밀구 (GM 또는 PL 좌석)','','비밀구를 적으면 이 브라우저에 저장돼요');if(v==null)return;const s=v.trim();if(!s)return;
-  try{const w=await DBS().whoami(ST.camp,s);if(!w)return toast('맞는 비밀구가 아니에요');try{localStorage.setItem(SK(ST.camp),s)}catch(e){}toast(w==='gm'?'GM 으로 들어왔어요':'PL 좌석으로 들어왔어요');open(ST.camp)}catch(e){toast('확인 실패: '+e.message)}}
+  async function loginBox() {
+    const v = await promptBox('비밀구 (GM 또는 PL 좌석)', '', '비밀구를 적으면 이 브라우저에 저장돼요');
+    if (v == null) return;
+    const s = v.trim();
+    if (!s) return;
+    try {
+      const w = await DBS().whoami(ST.camp, s);
+      if (!w) return toast('맞는 비밀구가 아니에요');
+      try {
+        localStorage.setItem(SK(ST.camp), s);
+      } catch (e) {}
+      toast(w === 'gm' ? 'GM 으로 들어왔어요' : 'PL 좌석으로 들어왔어요');
+      open(ST.camp);
+    } catch (e) {
+      toast('확인 실패: ' + e.message);
+    }
+  }
 
- async function open(camp,view){const q=readHash();ST.camp=camp;let sec='';try{sec=localStorage.getItem(SK(camp))||''}catch(e){}
-  const given=q.gm||q.pl;if(given){sec=given;try{localStorage.setItem(SK(camp),sec)}catch(e){}cleanQuery()}
-  ST.secret=sec;ST.role=null;ST.plView=false;ST.plAs='';ST.plSit=false;document.body.classList.remove('plview','plsit');ST.view=view||q.view||(()=>{try{return localStorage.getItem('nt_view')}catch(e){return ''}})()||'map';if(!VIEWS.some(x=>x[0]===ST.view))ST.view='map';
-  const app=$('#app');app.innerHTML='<div class="lobby dim">캠페인을 여는 중…</div>';
-  try{if(!ST.camps.length)ST.camps=await DBS().camps();ST.campInfo=ST.camps.find(c=>c.id===camp)||null;if(!ST.campInfo){toast('없는 캠페인이에요');ST.camp='';setHash();return render()}campLook(ST.campInfo);
-   /* 10-29 계정: 링크로 받은 비밀구가 없으면 계정(웹툴과 같은 로그인) 권한을 먼저 — 권한이 없으면 저장된 비밀구 */
-   const tok=!given&&window.NT_ACCT?NT_ACCT.tok():'';
-   ST.acct='';if(tok){/* 10-29 망령 「웹툴처럼 로그인한 PL 은 기본 PL 권한으로 자기가 자리에 앉게」: 열면 PL 권한(자리 없음)을 받는다 (patch_2026-10-29_PL기본.sql) */try{ST.acct=await DBS().acct.join(tok,camp)||''}catch(e){}
-    /* 11-08 망령 「두 자리에 앉아 있는데 나갔다 오니 하나만 보임」: 주소로 바로 열면(새로고침 · 링크) 대기실을 안 거쳐 내 계정 정보(ME · 앉은 자리 전부)가 비어 있었다 → 열 때마다 새로 읽는다 */try{await NT_ACCT.me(true)}catch(e){}
-    try{const w=await DBS().whoami(camp,'u:'+tok);if(w){ST.role=w;ST.secret='u:'+tok}}catch(e){}}
-   if(!ST.role&&sec){ST.secret=sec;ST.role=await DBS().whoami(camp,sec);if(!ST.role){toast('저장된 비밀구가 맞지 않아 구경 모드예요');ST.secret=''}}
-   try{ST.seats=await DBS().seats(camp)||[]}catch(e){ST.seats=[]}
-   await loadAll();
-   /* 11-07: GM 이 지난번 「🪑 PL 로」 앉은 자리 — 아직 있으면 그 자리로 연다 */
-   if(ST.role==='gm'){let ps='';try{ps=localStorage.getItem(PSK())||''}catch(e){}if(ps&&sitSeats().includes(ps)){ST.plSit=true;ST.plAs=ps;document.body.classList.add('plsit');if(!subOk(ST.view))ST.view=tabOf(ST.view)[2][0];setTimeout(()=>toast(`지난번처럼 「${seatName(ps)||ps}」 자리 PL 로 들어왔어요 — GM 화면은 위 띠 「🪑 GM 으로」`),600)}else if(ps){try{localStorage.removeItem(PSK())}catch(e){}}}if(window.NT_MAKER)NT_MAKER.load().then(()=>render()).catch(()=>{});
-   setHash();app.innerHTML='';render();listen();if(window.NT_ACCT)NT_ACCT.afterOpen()}
-  catch(e){app.innerHTML=`<div class="empty">열지 못했어요: ${esc(e.message)} <button class="btn sm" onclick="NT.leave()">캠페인 목록</button></div>`}}
- function leave(){clearTimeout(cacheT);if(unsub){unsub();unsub=null}document.body.classList.remove('present','topmore');ST.guideOpen=false;ST.camp='';ST.role=null;ST.plView=false;ST.plAs='';ST.plSit=false;document.body.classList.remove('plview','plsit');ST.campInfo=null;campLook(null);for(const k in D)delete D[k];setHash();render()}
- async function refreshCamp(){try{ST.camps=await DBS().camps();ST.campInfo=ST.camps.find(c=>c.id===ST.camp)||ST.campInfo;campLook(ST.campInfo)}catch(e){}try{ST.seats=await DBS().seats(ST.camp)||[]}catch(e){}render()}
+  async function open(camp, view) {
+    const q = readHash();
+    ST.camp = camp;
+    let sec = '';
+    try {
+      sec = localStorage.getItem(SK(camp)) || '';
+    } catch (e) {}
+    const given = q.gm || q.pl;
+    if (given) {
+      sec = given;
+      try {
+        localStorage.setItem(SK(camp), sec);
+      } catch (e) {}
+      cleanQuery();
+    }
+    ST.secret = sec;
+    ST.role = null;
+    ST.plView = false;
+    ST.plAs = '';
+    ST.plSit = false;
+    document.body.classList.remove('plview', 'plsit');
+    ST.view =
+      view ||
+      q.view ||
+      (() => {
+        try {
+          return localStorage.getItem('nt_view');
+        } catch (e) {
+          return '';
+        }
+      })() ||
+      'map';
+    if (!VIEWS.some(x => x[0] === ST.view)) ST.view = 'map';
+    const app = $('#app');
+    app.innerHTML = '<div class="lobby dim">캠페인을 여는 중…</div>';
+    try {
+      if (!ST.camps.length) ST.camps = await DBS().camps();
+      ST.campInfo = ST.camps.find(c => c.id === camp) || null;
+      if (!ST.campInfo) {
+        toast('없는 캠페인이에요');
+        ST.camp = '';
+        setHash();
+        return render();
+      }
+      campLook(ST.campInfo);
+      /* 10-29 계정: 링크로 받은 비밀구가 없으면 계정(웹툴과 같은 로그인) 권한을 먼저 — 권한이 없으면 저장된 비밀구 */
+      const tok = !given && window.NT_ACCT ? NT_ACCT.tok() : '';
+      ST.acct = '';
+      if (tok) {
+        /* 10-29 망령 「웹툴처럼 로그인한 PL 은 기본 PL 권한으로 자기가 자리에 앉게」: 열면 PL 권한(자리 없음)을 받는다 (patch_2026-10-29_PL기본.sql) */ try {
+          ST.acct = (await DBS().acct.join(tok, camp)) || '';
+        } catch (e) {}
+        /* 11-08 망령 「두 자리에 앉아 있는데 나갔다 오니 하나만 보임」: 주소로 바로 열면(새로고침 · 링크) 대기실을 안 거쳐 내 계정 정보(ME · 앉은 자리 전부)가 비어 있었다 → 열 때마다 새로 읽는다 */ try {
+          await NT_ACCT.me(true);
+        } catch (e) {}
+        try {
+          const w = await DBS().whoami(camp, 'u:' + tok);
+          if (w) {
+            ST.role = w;
+            ST.secret = 'u:' + tok;
+          }
+        } catch (e) {}
+      }
+      if (!ST.role && sec) {
+        ST.secret = sec;
+        ST.role = await DBS().whoami(camp, sec);
+        if (!ST.role) {
+          toast('저장된 비밀구가 맞지 않아 구경 모드예요');
+          ST.secret = '';
+        }
+      }
+      try {
+        ST.seats = (await DBS().seats(camp)) || [];
+      } catch (e) {
+        ST.seats = [];
+      }
+      await loadAll();
+      /* 11-07: GM 이 지난번 「🪑 PL 로」 앉은 자리 — 아직 있으면 그 자리로 연다 */
+      if (ST.role === 'gm') {
+        let ps = '';
+        try {
+          ps = localStorage.getItem(PSK()) || '';
+        } catch (e) {}
+        if (ps && sitSeats().includes(ps)) {
+          ST.plSit = true;
+          ST.plAs = ps;
+          document.body.classList.add('plsit');
+          if (!subOk(ST.view)) ST.view = tabOf(ST.view)[2][0];
+          setTimeout(() => toast(`지난번처럼 「${seatName(ps) || ps}」 자리 PL 로 들어왔어요 — GM 화면은 위 띠 「🪑 GM 으로」`), 600);
+        } else if (ps) {
+          try {
+            localStorage.removeItem(PSK());
+          } catch (e) {}
+        }
+      }
+      if (window.NT_MAKER)
+        NT_MAKER.load()
+          .then(() => render())
+          .catch(() => {});
+      setHash();
+      app.innerHTML = '';
+      render();
+      listen();
+      if (window.NT_ACCT) NT_ACCT.afterOpen();
+    } catch (e) {
+      app.innerHTML = `<div class="empty">열지 못했어요: ${esc(e.message)} <button class="btn sm" onclick="NT.leave()">캠페인 목록</button></div>`;
+    }
+  }
+  function leave() {
+    clearTimeout(cacheT);
+    if (unsub) {
+      unsub();
+      unsub = null;
+    }
+    document.body.classList.remove('present', 'topmore');
+    ST.guideOpen = false;
+    ST.camp = '';
+    ST.role = null;
+    ST.plView = false;
+    ST.plAs = '';
+    ST.plSit = false;
+    document.body.classList.remove('plview', 'plsit');
+    ST.campInfo = null;
+    campLook(null);
+    for (const k in D) delete D[k];
+    setHash();
+    render();
+  }
+  async function refreshCamp() {
+    try {
+      ST.camps = await DBS().camps();
+      ST.campInfo = ST.camps.find(c => c.id === ST.camp) || ST.campInfo;
+      campLook(ST.campInfo);
+    } catch (e) {}
+    try {
+      ST.seats = (await DBS().seats(ST.camp)) || [];
+    } catch (e) {}
+    render();
+  }
 
- window.addEventListener('hashchange',()=>{const q=readHash();if(q.camp!==ST.camp){if(q.camp)open(q.camp,q.view);else leave()}else if(q.view&&q.view!==ST.view)go(q.view)});
- window.addEventListener('DOMContentLoaded',()=>{const q=readHash();if(q.camp)open(q.camp,q.view);else render()});
- document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&ST.camp)resync()});
+  window.addEventListener('hashchange', () => {
+    const q = readHash();
+    if (q.camp !== ST.camp) {
+      if (q.camp) open(q.camp, q.view);
+      else leave();
+    } else if (q.view && q.view !== ST.view) go(q.view);
+  });
+  window.addEventListener('DOMContentLoaded', () => {
+    const q = readHash();
+    if (q.camp) open(q.camp, q.view);
+    else render();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && ST.camp) resync();
+  });
 
- return {loginBox,ST,D,SYNC,$,$$,esc,uid,clone,cssu,gm,me,realGm,plViewSet,plSitSet,plEye,canSee,canEdit,toast,toastUndo,presentSet,presentBtn,fitView,guideSet,guideOff,openModal,closeModal,confirmBox,promptBox,armDraft,sortable,reorder,ctxMenu,bindCtx,pinch,doc,data,list,put,patch,del,putMany,campPatch,bulkVis,bulkBtns,BULKF,upload,shrink,bindDrop,visSelect,visBadge,visLabel,seatName,render,go,open,leave,refreshCamp,resync,MOD,VIEWS,TABS,DBS,VT,SKINS,skin};
+  return {
+    loginBox,
+    ST,
+    D,
+    SYNC,
+    $,
+    $$,
+    esc,
+    uid,
+    clone,
+    cssu,
+    gm,
+    me,
+    realGm,
+    plViewSet,
+    plSitSet,
+    plEye,
+    canSee,
+    canEdit,
+    toast,
+    toastUndo,
+    presentSet,
+    presentBtn,
+    fitView,
+    guideSet,
+    guideOff,
+    openModal,
+    closeModal,
+    confirmBox,
+    promptBox,
+    armDraft,
+    sortable,
+    reorder,
+    ctxMenu,
+    bindCtx,
+    pinch,
+    doc,
+    data,
+    list,
+    put,
+    patch,
+    del,
+    putMany,
+    campPatch,
+    bulkVis,
+    bulkBtns,
+    BULKF,
+    upload,
+    shrink,
+    bindDrop,
+    visSelect,
+    visBadge,
+    visLabel,
+    seatName,
+    render,
+    go,
+    open,
+    leave,
+    refreshCamp,
+    resync,
+    MOD,
+    VIEWS,
+    TABS,
+    DBS,
+    VT,
+    SKINS,
+    skin
+  };
 })();

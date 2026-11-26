@@ -4,321 +4,1419 @@
    sec 'ent:<id>' = {t, rows[{k,v,at}]} GM 메모 + 잠근 칸(GM만). 관계(rels)는 graph_ui.
    11-14 망령 「정체 · 원하는 것 · 비밀 칸이 공개로 돌리면 다 보인다 — 인물 공개는 어떻게 하냐」: 칸마다 🔒. 잠근 칸은 ents 가 아니라 sec(GM만) rows 에 {k,v,at(합친 순서의 자리)} 로 둔다 → 공개해도 PL 에게는 내려가지 않는다.
    ents.lkv=1 = 잠금을 한 번 정한 항목. lkv 가 없는 GM만 항목은 「비밀」 · 「숨긴 것」 칸을 기본으로 잠근다(lockMig · edit). 이미 공개된 옛 항목은 건드리지 않는다. */
-"use strict";
-(()=>{
- const N=()=>window.NT;const {$,$$,esc,cssu}=window.NT;
- /* 11-02 망령 「세계관 · 지역 따로, 설정 따로, 인물은 학생증 · 교원증 느낌」: 세계관 종류 새로 · 순서 = 세계관 → 설정 → 인물 → … */
- const TYPES=[['세계관','world','#b5832a'],['설정','lore','#00a676'],['인물','person','#1e88e5'],['조직','org','#8e44ad'],['이벤트','event','#f08a00'],['아이템','item','#ffd23f'],['기타','etc','#8e8e8e']];
- const tc=t=>TYPES.find(x=>x[0]===t)||TYPES[TYPES.length-1];
- const TL={'세계관':'세계관 · 지역'};const tl=t=>TL[t]||t;
- /* 종류가 「설정」이어도 세계관 · 지역 태그가 붙어 있으면 세계관 칸에 보인다 (예전 항목을 그대로 두고 나눔) */
- const WTAG=['세계관','지역','지리','역사','장소','세계'];
- /* 11-04 망령 「칼데아 인물 · 휘하 서번트 / 그 밖 따로 한눈에」: 캠페인 설정 entGroups = 묶음 태그 목록. 그 태그를 단 항목은 종류 칸 안에서 묶음별로 나뉘어 보이고, 카드에는 그 태그를 띄우지 않는다 */
- const grpT=()=>(((N().ST.campInfo||{}).data||{}).entGroups)||[];
- const vt=e=>{const G=grpT();return (e.tags||[]).filter(x=>!G.includes(x)&&!['사망','실종','신분증','신분증 없음'].includes(x)&&!Object.values(IDKS).some(k=>k[0]===x))};
- const gIdx=(e,G)=>{const i=G.findIndex(x=>(e.tags||[]).includes(x));return i<0?G.length:i};
- /* 11-04 망령 「서번트는 마스터 카드를 누르면 펼쳐 보이게, 인물 칸엔 출입증만」: 캠페인 설정 entNest. 팀 「서번트」 + 한 줄의 (마스터 이름) 으로 마스터를 찾는다. 출입증이 아닌 인물은 「외부 인물 기록」 칸으로 따로 */
- const nestOn=()=>!!(((N().ST.campInfo||{}).data||{}).entNest);
- let NEST={sv:{},m:{}};
- function nestMap(){const R={sv:{},m:{}};if(!nestOn())return R;const P=ents().filter(e=>ety(e)==='인물');const isSv=e=>(e.teams||[]).includes('서번트');
-  P.filter(isSv).forEach(e=>{const m=String(e.sub||'').match(/\(([^)]+)\)/);if(!m)return;const nm=m[1].trim();const M=P.find(p=>p.id!==e.id&&!isSv(p)&&(p.title===nm||String(p.title||'').split(/\s+/).includes(nm)));if(M){R.m[e.id]=M;(R.sv[M.id]=R.sv[M.id]||[]).push(e)}});return R}
- const isDead=e=>(e.tags||[]).includes('사망');
- /* 11-07 망령 「사망 처리 좋네 — 사망 · 실종 두 개」 · 「신분증도 학생증 · 교직원증 … 몇 개 더」: 태그 「실종」 = 실종 도장, 태그에 증 이름(방문증 · 연구원증 …)이 있으면 그 증으로 */
- const isMiss=e=>!isDead(e)&&(e.tags||[]).includes('실종');
- /* 증 종류 — PC 시트 학생증(pc_ui idHero · 「학생증 고치기」)과 같이 쓴다: [이름, 영문, 칸1, 칸2, 도장 글자] */
- const IDKS={stu:['학생증','STUDENT ID','소속','학번','총장'],staff:['교직원증','STAFF','직위','번호','교무'],grad:['대학원생증','GRADUATE','연구실','학번','원장'],res:['연구원증','RESEARCHER','연구실','번호','연구'],exch:['교환학생증','EXCHANGE','소속 학교','학번','국제'],alum:['졸업생증','ALUMNI','졸업 학과','졸업 번호','동문'],visit:['방문증','VISITOR PASS','방문처','출입 번호','출입'],gen:['신분증','IDENTIFICATION','소속','번호','확인']};
- const IDST={dead:['사망','DECEASED'],miss:['실종','MISSING']};
- window.NT_IDKS=IDKS;window.NT_IDST=IDST;
-window.NT_SPLAT=() => SPLAT;
- const SPLAT='<svg class="eid-splat" viewBox="0 0 220 130" preserveAspectRatio="xMaxYMin meet" aria-hidden="true"><g fill="#7d0a12" opacity=".86"><path d="M180.1 52.0 Q180.1 52.0 173.9 53.1 Q167.7 54.2 173.1 56.7 Q178.5 59.2 172.3 58.7 Q166.1 58.3 169.2 61.3 Q172.3 64.2 173.6 67.2 Q174.9 70.3 170.4 68.8 Q165.9 67.3 164.5 68.0 Q163.1 68.7 165.2 75.5 Q167.4 82.2 163.1 78.2 Q158.8 74.3 156.4 72.0 Q154.1 69.8 152.7 69.4 Q151.3 69.0 149.8 71.0 Q148.4 73.0 146.3 75.0 Q144.2 77.0 143.9 72.6 Q143.6 68.2 141.9 68.6 Q140.2 69.0 138.5 68.9 Q136.8 68.8 136.6 67.0 Q136.3 65.2 130.3 68.0 Q124.2 70.9 127.6 66.6 Q131.0 62.4 129.4 61.5 Q127.8 60.7 122.1 60.6 Q116.4 60.5 116.7 58.3 Q117.1 56.1 124.8 54.0 Q132.5 52.0 129.1 50.5 Q125.7 49.0 125.5 47.4 Q125.3 45.8 126.7 44.6 Q128.1 43.4 129.3 42.4 Q130.5 41.4 130.5 39.5 Q130.4 37.6 132.8 37.7 Q135.2 37.7 137.5 38.3 Q139.8 39.0 139.5 36.1 Q139.2 33.3 140.4 32.0 Q141.6 30.7 143.7 32.1 Q145.7 33.6 147.3 35.0 Q148.8 36.4 150.2 33.1 Q151.7 29.8 154.1 26.9 Q156.5 24.0 156.7 29.1 Q157.0 34.2 157.6 36.0 Q158.3 37.7 160.6 36.6 Q163.0 35.5 165.0 35.5 Q167.1 35.5 166.3 38.1 Q165.4 40.7 166.5 41.5 Q167.6 42.4 174.0 41.2 Q180.4 40.1 178.7 42.7 Q177.1 45.2 177.6 46.8 Q178.1 48.5 179.1 50.3Z"/><path d="M146.6 62.0 Q146.6 62.0 146.8 63.1 Q147.1 64.1 147.0 65.2 Q146.9 66.4 146.1 67.2 Q145.4 68.1 143.6 68.0 Q141.9 67.9 142.0 69.8 Q142.2 71.6 141.0 72.1 Q139.8 72.6 138.7 73.7 Q137.5 74.8 136.1 73.8 Q134.7 72.7 133.9 71.4 Q133.1 70.0 131.6 70.6 Q130.1 71.2 130.0 69.6 Q129.9 68.1 129.4 67.3 Q129.0 66.6 125.8 67.0 Q122.6 67.4 124.3 65.7 Q126.0 63.9 126.4 63.0 Q126.8 62.0 124.9 60.7 Q122.9 59.5 123.1 58.2 Q123.4 56.9 123.9 55.7 Q124.4 54.4 125.6 53.6 Q126.8 52.9 127.7 51.7 Q128.6 50.5 131.0 52.5 Q133.3 54.5 134.0 52.3 Q134.6 50.1 136.1 49.2 Q137.6 48.3 138.3 51.1 Q138.9 54.0 140.2 53.6 Q141.6 53.3 143.6 52.9 Q145.5 52.5 146.2 53.7 Q146.8 54.9 147.1 56.2 Q147.4 57.4 149.4 58.2 Q151.4 59.1 149.0 60.5Z"/><ellipse cx="132.0" cy="71.6" rx="1.7" ry="0.8" transform="rotate(128 132.0 71.6)"/><ellipse cx="146.7" cy="100.4" rx="3.1" ry="1.5" transform="rotate(93 146.7 100.4)"/><ellipse cx="214.1" cy="29.2" rx="1.9" ry="0.9" transform="rotate(337 214.1 29.2)"/><ellipse cx="156.9" cy="83.4" rx="2.0" ry="1.0" transform="rotate(79 156.9 83.4)"/><circle cx="103.2" cy="12.7" r="1.0"/><circle cx="114.7" cy="9.1" r="0.8"/><circle cx="201.3" cy="24.2" r="1.1"/><circle cx="176.5" cy="98.8" r="0.8"/><circle cx="193.9" cy="45.3" r="1.2"/><ellipse cx="144.5" cy="22.5" rx="1.8" ry="0.9" transform="rotate(261 144.5 22.5)"/><circle cx="201.1" cy="22.4" r="0.8"/><circle cx="205.2" cy="46.2" r="0.8"/><circle cx="169.4" cy="69.8" r="2.8"/><circle cx="83.7" cy="42.5" r="0.8"/><ellipse cx="167.0" cy="24.2" rx="2.2" ry="1.1" transform="rotate(297 167.0 24.2)"/><ellipse cx="153.1" cy="96.7" rx="1.7" ry="0.8" transform="rotate(87 153.1 96.7)"/><circle cx="195.0" cy="93.3" r="0.8"/><circle cx="92.9" cy="24.0" r="0.8"/><ellipse cx="99.7" cy="51.6" rx="2.5" ry="1.2" transform="rotate(181 99.7 51.6)"/><circle cx="116.8" cy="63.1" r="0.8"/><circle cx="172.4" cy="88.0" r="1.6"/><circle cx="127.1" cy="89.6" r="1.2"/><ellipse cx="190.5" cy="79.1" rx="1.7" ry="0.8" transform="rotate(38 190.5 79.1)"/><circle cx="156.9" cy="10.5" r="1.3"/><circle cx="189.7" cy="31.3" r="1.4"/><circle cx="93.1" cy="48.3" r="0.9"/><path d="M140.8 66 L141.8 100 Q144.0 107.7 146.2 100 L147.2 66Z"/><path d="M156.6 66 L157.3 88 Q159.0 93.8 160.7 88 L161.4 66Z"/></g><g fill="#a3121c" opacity=".55"><path d="M164.9 49.0 Q164.9 49.0 165.2 50.2 Q165.4 51.4 167.0 53.3 Q168.5 55.2 166.2 55.7 Q164.0 56.2 163.2 57.3 Q162.3 58.3 161.0 58.9 Q159.8 59.5 158.3 59.7 Q156.9 59.8 155.8 61.9 Q154.8 64.1 153.0 63.8 Q151.3 63.4 149.5 63.6 Q147.7 63.8 147.4 60.9 Q147.2 58.1 145.5 58.1 Q143.8 58.2 144.0 56.5 Q144.3 54.7 143.1 54.1 Q142.0 53.4 142.2 52.2 Q142.3 51.0 139.6 50.0 Q136.9 49.0 137.6 47.6 Q138.3 46.2 140.0 45.3 Q141.6 44.4 143.1 44.0 Q144.6 43.5 144.4 41.9 Q144.3 40.3 145.2 39.3 Q146.2 38.4 147.1 36.8 Q148.0 35.2 149.9 36.9 Q151.8 38.5 153.2 36.5 Q154.7 34.5 155.9 36.0 Q157.2 37.4 159.0 37.1 Q160.9 36.7 161.2 38.6 Q161.5 40.5 161.5 42.0 Q161.5 43.5 162.9 43.9 Q164.4 44.4 163.8 45.7 Q163.3 47.0 164.1 48.0Z"/></g></svg>';
- const pvSplit=g=>{const a=g.filter(e=>!NEST.m[e.id]);return {id:a.filter(e=>idOk(e)),ext:a.filter(e=>!idOk(e))}};
- const visT=(t,a)=>{if(t==='인물'&&nestOn()){const S=pvSplit(a);return gsort(U.pv==='ext'?S.ext:S.id)}return gsort(a)};
- const gsort=a=>{const G=grpT();if(!G.length)return a;return a.map((e,i)=>[e,i]).sort((x,y)=>gIdx(x[0],G)-gIdx(y[0],G)||x[1]-y[1]).map(x=>x[0])};
- const ety=e=>e.type==='설정'&&(e.tags||[]).some(x=>WTAG.includes(String(x).trim()))?'세계관':(TYPES.some(x=>x[0]===e.type)?e.type:'기타');
- const VK='nt_ent_view';
- const U={pv:'id',sel:'',type:'',tag:'',q:'',tagsOpen:false,fold:{},sfold:{},dense:(()=>{try{return localStorage.getItem(VK)==='list'}catch(e){return false}})(),ids:[]};
- /* 10-29: 종류마다 기본 칸 (새 항목에 미리 깔고, 고치기 창의 「칸 틀」 로 빠진 것만 더한다. 빈 칸은 저장하지 않는다) */
- const TPL={'세계관':['개요','지리 · 위치','역사','분위기','주요 장소'],'인물':['정체','외모','성격 · 말투','원하는 것','비밀'],'조직':['목적','구성원','거점','가진 것','숨긴 것'],'설정':['요약','규칙','예외 · 주의'],'이벤트':['언제','어디서','무슨 일','결과'],'아이템':['효과','출처','값 · 구하는 법'],'기타':[]};
- const TAGMAX=10;
- const SECK=['비밀','숨긴 것'];const isSK=k=>SECK.includes(String(k||'').trim());
- const secRows=id=>{const x=N().data('sec','ent:'+id);return x&&Array.isArray(x.rows)?x.rows:[]};
- /* 공개 칸 + 잠근 칸을 원래 순서로 합친 목록 [{k,v,lk}] — GM 화면 전용 */
- function rowsAll(e,id){const R=(e.rows||[]).filter(Boolean).map(r=>({k:r.k||'',v:r.v||'',lk:false}));const L=secRows(id||e.id).filter(Boolean).slice().sort((a,b)=>(a.at||0)-(b.at||0));for(const r of L)R.splice(Math.min(Math.max(0,r.at|0),R.length),0,{k:r.k||'',v:r.v||'',lk:true});return R}
- const splitRows=A=>({pub:A.filter(r=>!r.lk).map(r=>({k:r.k,v:r.v})),sec:A.map((r,i)=>r.lk?{k:r.k,v:r.v,at:i}:null).filter(Boolean)});
- async function putSec(id,t,rows){const o={};if(t)o.t=t;if(rows&&rows.length)o.rows=rows;if(o.t||o.rows)return N().put('sec','ent:'+id,o,'gm');if(N().doc('sec','ent:'+id))return N().del('sec','ent:'+id);return true}
- /* GM만 항목에 예전부터 적혀 있던 「비밀」 · 「숨긴 것」 칸을 잠근 칸으로 옮긴다 (캠페인마다 한 번, GM 이 항목 탭을 열 때). sec 를 먼저 쓰고 ents 에서 뺀다 */
- let MIGB=false,MIGF='';
- async function lockMig(){const c=N().ST.camp;if(!c||MIGB||MIGF===c||!N().gm()||N().ST.plView)return;MIGB=true;try{await lockMig0(c)}finally{MIGB=false}}
- async function lockMig0(c){
-  for(const e of N().list('ents')){const d=N().doc('ents',e.id);if(!d||d.vis!=='gm'||d.data.lkv)continue;if(!(d.data.rows||[]).some(r=>r&&r.v&&isSK(r.k)))continue;
-   const A=rowsAll(d.data,e.id).map(r=>!r.lk&&r.v&&isSK(r.k)?Object.assign(r,{lk:true}):r);const S=splitRows(A);const x=N().data('sec','ent:'+e.id)||{};
-   if(!await putSec(e.id,x.t||'',S.sec)||!await N().put('ents',e.id,Object.assign({},d.data,{rows:S.pub,lkv:1}),'gm')){MIGF=c;return}}}
- const FK='nt_ent_fold';const foldLoad=()=>{try{return JSON.parse(localStorage.getItem(FK)||'{}')||{}}catch(e){return {}}};const foldSave=()=>{try{localStorage.setItem(FK,JSON.stringify(U.fold))}catch(e){}};
- const ents=()=>N().list('ents').sort((a,b)=>(a.order||0)-(b.order||0)||String(a.title||'').localeCompare(String(b.title||''),'ko'));
- const tags=()=>[...new Set(ents().flatMap(e=>e.tags||[]))].sort((a,b)=>a.localeCompare(b,'ko'));
- const spotName=id=>{const s=N().data('spots',id);return s?(s.num?s.num+'. ':'')+s.name:''};
+'use strict';
+(() => {
+  const N = () => window.NT;
+  const { $, $$, esc, cssu } = window.NT;
+  /* 11-02 망령 「세계관 · 지역 따로, 설정 따로, 인물은 학생증 · 교원증 느낌」: 세계관 종류 새로 · 순서 = 세계관 → 설정 → 인물 → … */
+  const TYPES = [
+    ['세계관', 'world', '#b5832a'],
+    ['설정', 'lore', '#00a676'],
+    ['인물', 'person', '#1e88e5'],
+    ['조직', 'org', '#8e44ad'],
+    ['이벤트', 'event', '#f08a00'],
+    ['아이템', 'item', '#ffd23f'],
+    ['기타', 'etc', '#8e8e8e']
+  ];
+  const tc = t => TYPES.find(x => x[0] === t) || TYPES[TYPES.length - 1];
+  const TL = { '세계관': '세계관 · 지역' };
+  const tl = t => TL[t] || t;
+  /* 종류가 「설정」이어도 세계관 · 지역 태그가 붙어 있으면 세계관 칸에 보인다 (예전 항목을 그대로 두고 나눔) */
+  const WTAG = ['세계관', '지역', '지리', '역사', '장소', '세계'];
+  /* 11-04 망령 「칼데아 인물 · 휘하 서번트 / 그 밖 따로 한눈에」: 캠페인 설정 entGroups = 묶음 태그 목록. 그 태그를 단 항목은 종류 칸 안에서 묶음별로 나뉘어 보이고, 카드에는 그 태그를 띄우지 않는다 */
+  const grpT = () => ((N().ST.campInfo || {}).data || {}).entGroups || [];
+  const vt = e => {
+    const G = grpT();
+    return (e.tags || []).filter(
+      x => !G.includes(x) && !['사망', '실종', '신분증', '신분증 없음'].includes(x) && !Object.values(IDKS).some(k => k[0] === x)
+    );
+  };
+  const gIdx = (e, G) => {
+    const i = G.findIndex(x => (e.tags || []).includes(x));
+    return i < 0 ? G.length : i;
+  };
+  /* 11-04 망령 「서번트는 마스터 카드를 누르면 펼쳐 보이게, 인물 칸엔 출입증만」: 캠페인 설정 entNest. 팀 「서번트」 + 한 줄의 (마스터 이름) 으로 마스터를 찾는다. 출입증이 아닌 인물은 「외부 인물 기록」 칸으로 따로 */
+  const nestOn = () => !!((N().ST.campInfo || {}).data || {}).entNest;
+  let NEST = { sv: {}, m: {} };
+  function nestMap() {
+    const R = { sv: {}, m: {} };
+    if (!nestOn()) return R;
+    const P = ents().filter(e => ety(e) === '인물');
+    const isSv = e => (e.teams || []).includes('서번트');
+    P.filter(isSv).forEach(e => {
+      const m = String(e.sub || '').match(/\(([^)]+)\)/);
+      if (!m) return;
+      const nm = m[1].trim();
+      const M = P.find(
+        p =>
+          p.id !== e.id &&
+          !isSv(p) &&
+          (p.title === nm ||
+            String(p.title || '')
+              .split(/\s+/)
+              .includes(nm))
+      );
+      if (M) {
+        R.m[e.id] = M;
+        (R.sv[M.id] = R.sv[M.id] || []).push(e);
+      }
+    });
+    return R;
+  }
+  const isDead = e => (e.tags || []).includes('사망');
+  /* 11-07 망령 「사망 처리 좋네 — 사망 · 실종 두 개」 · 「신분증도 학생증 · 교직원증 … 몇 개 더」: 태그 「실종」 = 실종 도장, 태그에 증 이름(방문증 · 연구원증 …)이 있으면 그 증으로 */
+  const isMiss = e => !isDead(e) && (e.tags || []).includes('실종');
+  /* 증 종류 — PC 시트 학생증(pc_ui idHero · 「학생증 고치기」)과 같이 쓴다: [이름, 영문, 칸1, 칸2, 도장 글자] */
+  const IDKS = {
+    stu: ['학생증', 'STUDENT ID', '소속', '학번', '총장'],
+    staff: ['교직원증', 'STAFF', '직위', '번호', '교무'],
+    grad: ['대학원생증', 'GRADUATE', '연구실', '학번', '원장'],
+    res: ['연구원증', 'RESEARCHER', '연구실', '번호', '연구'],
+    exch: ['교환학생증', 'EXCHANGE', '소속 학교', '학번', '국제'],
+    alum: ['졸업생증', 'ALUMNI', '졸업 학과', '졸업 번호', '동문'],
+    visit: ['방문증', 'VISITOR PASS', '방문처', '출입 번호', '출입'],
+    gen: ['신분증', 'IDENTIFICATION', '소속', '번호', '확인']
+  };
+  const IDST = { dead: ['사망', 'DECEASED'], miss: ['실종', 'MISSING'] };
+  window.NT_IDKS = IDKS;
+  window.NT_IDST = IDST;
+  window.NT_SPLAT = () => SPLAT;
+  const SPLAT =
+    '<svg class="eid-splat" viewBox="0 0 220 130" preserveAspectRatio="xMaxYMin meet" aria-hidden="true"><g fill="#7d0a12" opacity=".86"><path d="M180.1 52.0 Q180.1 52.0 173.9 53.1 Q167.7 54.2 173.1 56.7 Q178.5 59.2 172.3 58.7 Q166.1 58.3 169.2 61.3 Q172.3 64.2 173.6 67.2 Q174.9 70.3 170.4 68.8 Q165.9 67.3 164.5 68.0 Q163.1 68.7 165.2 75.5 Q167.4 82.2 163.1 78.2 Q158.8 74.3 156.4 72.0 Q154.1 69.8 152.7 69.4 Q151.3 69.0 149.8 71.0 Q148.4 73.0 146.3 75.0 Q144.2 77.0 143.9 72.6 Q143.6 68.2 141.9 68.6 Q140.2 69.0 138.5 68.9 Q136.8 68.8 136.6 67.0 Q136.3 65.2 130.3 68.0 Q124.2 70.9 127.6 66.6 Q131.0 62.4 129.4 61.5 Q127.8 60.7 122.1 60.6 Q116.4 60.5 116.7 58.3 Q117.1 56.1 124.8 54.0 Q132.5 52.0 129.1 50.5 Q125.7 49.0 125.5 47.4 Q125.3 45.8 126.7 44.6 Q128.1 43.4 129.3 42.4 Q130.5 41.4 130.5 39.5 Q130.4 37.6 132.8 37.7 Q135.2 37.7 137.5 38.3 Q139.8 39.0 139.5 36.1 Q139.2 33.3 140.4 32.0 Q141.6 30.7 143.7 32.1 Q145.7 33.6 147.3 35.0 Q148.8 36.4 150.2 33.1 Q151.7 29.8 154.1 26.9 Q156.5 24.0 156.7 29.1 Q157.0 34.2 157.6 36.0 Q158.3 37.7 160.6 36.6 Q163.0 35.5 165.0 35.5 Q167.1 35.5 166.3 38.1 Q165.4 40.7 166.5 41.5 Q167.6 42.4 174.0 41.2 Q180.4 40.1 178.7 42.7 Q177.1 45.2 177.6 46.8 Q178.1 48.5 179.1 50.3Z"/><path d="M146.6 62.0 Q146.6 62.0 146.8 63.1 Q147.1 64.1 147.0 65.2 Q146.9 66.4 146.1 67.2 Q145.4 68.1 143.6 68.0 Q141.9 67.9 142.0 69.8 Q142.2 71.6 141.0 72.1 Q139.8 72.6 138.7 73.7 Q137.5 74.8 136.1 73.8 Q134.7 72.7 133.9 71.4 Q133.1 70.0 131.6 70.6 Q130.1 71.2 130.0 69.6 Q129.9 68.1 129.4 67.3 Q129.0 66.6 125.8 67.0 Q122.6 67.4 124.3 65.7 Q126.0 63.9 126.4 63.0 Q126.8 62.0 124.9 60.7 Q122.9 59.5 123.1 58.2 Q123.4 56.9 123.9 55.7 Q124.4 54.4 125.6 53.6 Q126.8 52.9 127.7 51.7 Q128.6 50.5 131.0 52.5 Q133.3 54.5 134.0 52.3 Q134.6 50.1 136.1 49.2 Q137.6 48.3 138.3 51.1 Q138.9 54.0 140.2 53.6 Q141.6 53.3 143.6 52.9 Q145.5 52.5 146.2 53.7 Q146.8 54.9 147.1 56.2 Q147.4 57.4 149.4 58.2 Q151.4 59.1 149.0 60.5Z"/><ellipse cx="132.0" cy="71.6" rx="1.7" ry="0.8" transform="rotate(128 132.0 71.6)"/><ellipse cx="146.7" cy="100.4" rx="3.1" ry="1.5" transform="rotate(93 146.7 100.4)"/><ellipse cx="214.1" cy="29.2" rx="1.9" ry="0.9" transform="rotate(337 214.1 29.2)"/><ellipse cx="156.9" cy="83.4" rx="2.0" ry="1.0" transform="rotate(79 156.9 83.4)"/><circle cx="103.2" cy="12.7" r="1.0"/><circle cx="114.7" cy="9.1" r="0.8"/><circle cx="201.3" cy="24.2" r="1.1"/><circle cx="176.5" cy="98.8" r="0.8"/><circle cx="193.9" cy="45.3" r="1.2"/><ellipse cx="144.5" cy="22.5" rx="1.8" ry="0.9" transform="rotate(261 144.5 22.5)"/><circle cx="201.1" cy="22.4" r="0.8"/><circle cx="205.2" cy="46.2" r="0.8"/><circle cx="169.4" cy="69.8" r="2.8"/><circle cx="83.7" cy="42.5" r="0.8"/><ellipse cx="167.0" cy="24.2" rx="2.2" ry="1.1" transform="rotate(297 167.0 24.2)"/><ellipse cx="153.1" cy="96.7" rx="1.7" ry="0.8" transform="rotate(87 153.1 96.7)"/><circle cx="195.0" cy="93.3" r="0.8"/><circle cx="92.9" cy="24.0" r="0.8"/><ellipse cx="99.7" cy="51.6" rx="2.5" ry="1.2" transform="rotate(181 99.7 51.6)"/><circle cx="116.8" cy="63.1" r="0.8"/><circle cx="172.4" cy="88.0" r="1.6"/><circle cx="127.1" cy="89.6" r="1.2"/><ellipse cx="190.5" cy="79.1" rx="1.7" ry="0.8" transform="rotate(38 190.5 79.1)"/><circle cx="156.9" cy="10.5" r="1.3"/><circle cx="189.7" cy="31.3" r="1.4"/><circle cx="93.1" cy="48.3" r="0.9"/><path d="M140.8 66 L141.8 100 Q144.0 107.7 146.2 100 L147.2 66Z"/><path d="M156.6 66 L157.3 88 Q159.0 93.8 160.7 88 L161.4 66Z"/></g><g fill="#a3121c" opacity=".55"><path d="M164.9 49.0 Q164.9 49.0 165.2 50.2 Q165.4 51.4 167.0 53.3 Q168.5 55.2 166.2 55.7 Q164.0 56.2 163.2 57.3 Q162.3 58.3 161.0 58.9 Q159.8 59.5 158.3 59.7 Q156.9 59.8 155.8 61.9 Q154.8 64.1 153.0 63.8 Q151.3 63.4 149.5 63.6 Q147.7 63.8 147.4 60.9 Q147.2 58.1 145.5 58.1 Q143.8 58.2 144.0 56.5 Q144.3 54.7 143.1 54.1 Q142.0 53.4 142.2 52.2 Q142.3 51.0 139.6 50.0 Q136.9 49.0 137.6 47.6 Q138.3 46.2 140.0 45.3 Q141.6 44.4 143.1 44.0 Q144.6 43.5 144.4 41.9 Q144.3 40.3 145.2 39.3 Q146.2 38.4 147.1 36.8 Q148.0 35.2 149.9 36.9 Q151.8 38.5 153.2 36.5 Q154.7 34.5 155.9 36.0 Q157.2 37.4 159.0 37.1 Q160.9 36.7 161.2 38.6 Q161.5 40.5 161.5 42.0 Q161.5 43.5 162.9 43.9 Q164.4 44.4 163.8 45.7 Q163.3 47.0 164.1 48.0Z"/></g></svg>';
+  const pvSplit = g => {
+    const a = g.filter(e => !NEST.m[e.id]);
+    return { id: a.filter(e => idOk(e)), ext: a.filter(e => !idOk(e)) };
+  };
+  const visT = (t, a) => {
+    if (t === '인물' && nestOn()) {
+      const S = pvSplit(a);
+      return gsort(U.pv === 'ext' ? S.ext : S.id);
+    }
+    return gsort(a);
+  };
+  const gsort = a => {
+    const G = grpT();
+    if (!G.length) return a;
+    return a
+      .map((e, i) => [e, i])
+      .sort((x, y) => gIdx(x[0], G) - gIdx(y[0], G) || x[1] - y[1])
+      .map(x => x[0]);
+  };
+  const ety = e =>
+    e.type === '설정' && (e.tags || []).some(x => WTAG.includes(String(x).trim())) ? '세계관' : TYPES.some(x => x[0] === e.type) ? e.type : '기타';
+  const VK = 'nt_ent_view';
+  const U = {
+    pv: 'id',
+    sel: '',
+    type: '',
+    tag: '',
+    q: '',
+    tagsOpen: false,
+    fold: {},
+    sfold: {},
+    dense: (() => {
+      try {
+        return localStorage.getItem(VK) === 'list';
+      } catch (e) {
+        return false;
+      }
+    })(),
+    ids: []
+  };
+  /* 10-29: 종류마다 기본 칸 (새 항목에 미리 깔고, 고치기 창의 「칸 틀」 로 빠진 것만 더한다. 빈 칸은 저장하지 않는다) */
+  const TPL = {
+    '세계관': ['개요', '지리 · 위치', '역사', '분위기', '주요 장소'],
+    '인물': ['정체', '외모', '성격 · 말투', '원하는 것', '비밀'],
+    '조직': ['목적', '구성원', '거점', '가진 것', '숨긴 것'],
+    '설정': ['요약', '규칙', '예외 · 주의'],
+    '이벤트': ['언제', '어디서', '무슨 일', '결과'],
+    '아이템': ['효과', '출처', '값 · 구하는 법'],
+    '기타': []
+  };
+  const TAGMAX = 10;
+  const SECK = ['비밀', '숨긴 것'];
+  const isSK = k => SECK.includes(String(k || '').trim());
+  const secRows = id => {
+    const x = N().data('sec', 'ent:' + id);
+    return x && Array.isArray(x.rows) ? x.rows : [];
+  };
+  /* 공개 칸 + 잠근 칸을 원래 순서로 합친 목록 [{k,v,lk}] — GM 화면 전용 */
+  function rowsAll(e, id) {
+    const R = (e.rows || []).filter(Boolean).map(r => ({ k: r.k || '', v: r.v || '', lk: false }));
+    const L = secRows(id || e.id)
+      .filter(Boolean)
+      .slice()
+      .sort((a, b) => (a.at || 0) - (b.at || 0));
+    for (const r of L) R.splice(Math.min(Math.max(0, r.at | 0), R.length), 0, { k: r.k || '', v: r.v || '', lk: true });
+    return R;
+  }
+  const splitRows = A => ({
+    pub: A.filter(r => !r.lk).map(r => ({ k: r.k, v: r.v })),
+    sec: A.map((r, i) => (r.lk ? { k: r.k, v: r.v, at: i } : null)).filter(Boolean)
+  });
+  async function putSec(id, t, rows) {
+    const o = {};
+    if (t) o.t = t;
+    if (rows && rows.length) o.rows = rows;
+    if (o.t || o.rows) return N().put('sec', 'ent:' + id, o, 'gm');
+    if (N().doc('sec', 'ent:' + id)) return N().del('sec', 'ent:' + id);
+    return true;
+  }
+  /* GM만 항목에 예전부터 적혀 있던 「비밀」 · 「숨긴 것」 칸을 잠근 칸으로 옮긴다 (캠페인마다 한 번, GM 이 항목 탭을 열 때). sec 를 먼저 쓰고 ents 에서 뺀다 */
+  let MIGB = false,
+    MIGF = '';
+  async function lockMig() {
+    const c = N().ST.camp;
+    if (!c || MIGB || MIGF === c || !N().gm() || N().ST.plView) return;
+    MIGB = true;
+    try {
+      await lockMig0(c);
+    } finally {
+      MIGB = false;
+    }
+  }
+  async function lockMig0(c) {
+    for (const e of N().list('ents')) {
+      const d = N().doc('ents', e.id);
+      if (!d || d.vis !== 'gm' || d.data.lkv) continue;
+      if (!(d.data.rows || []).some(r => r && r.v && isSK(r.k))) continue;
+      const A = rowsAll(d.data, e.id).map(r => (!r.lk && r.v && isSK(r.k) ? Object.assign(r, { lk: true }) : r));
+      const S = splitRows(A);
+      const x = N().data('sec', 'ent:' + e.id) || {};
+      if (!(await putSec(e.id, x.t || '', S.sec)) || !(await N().put('ents', e.id, Object.assign({}, d.data, { rows: S.pub, lkv: 1 }), 'gm'))) {
+        MIGF = c;
+        return;
+      }
+    }
+  }
+  const FK = 'nt_ent_fold';
+  const foldLoad = () => {
+    try {
+      return JSON.parse(localStorage.getItem(FK) || '{}') || {};
+    } catch (e) {
+      return {};
+    }
+  };
+  const foldSave = () => {
+    try {
+      localStorage.setItem(FK, JSON.stringify(U.fold));
+    } catch (e) {}
+  };
+  const ents = () =>
+    N()
+      .list('ents')
+      .sort((a, b) => (a.order || 0) - (b.order || 0) || String(a.title || '').localeCompare(String(b.title || ''), 'ko'));
+  const tags = () => [...new Set(ents().flatMap(e => e.tags || []))].sort((a, b) => a.localeCompare(b, 'ko'));
+  const spotName = id => {
+    const s = N().data('spots', id);
+    return s ? (s.num ? s.num + '. ' : '') + s.name : '';
+  };
 
- function subG(t,g){if(t==='인물'&&nestOn()){const S=pvSplit(g);const ext=U.pv==='ext';const tabs=`<div class="eptabs"><button type="button" data-pv="id" class="${ext?'':'on'}">출입증<small>${S.id.length}</small></button><button type="button" data-pv="ext" class="${ext?'on':''}">외부 인물 기록<small>${S.ext.length}</small></button></div>`;return tabs+(subG0(t,ext?S.ext:S.id)||'<div class="empty">항목이 없어요.</div>')}return subG0(t,g)}
- function subG0(t,g){if(!g.length)return '';const G=grpT();const grid=a=>`<div class="entgrid ${gridCls(t)}" data-bin="${t}">${a.map(cardOf).join('')}</div>`;if(!G.length||!g.some(e=>gIdx(e,G)<G.length))return grid(g);
-  return [...G,'그 밖'].map((nm,i)=>[nm,g.filter(e=>gIdx(e,G)===i)]).filter(x=>x[1].length).map(([nm,a])=>{const fk=t+'/'+nm,f=!!U.fold[fk];return `<div class="entsub ${f?'fold':''}"><h4 class="entsubh" data-fold="${esc(fk)}" title="누르면 접고 펴요"><span>${esc(nm)}</span><small>${a.length}</small><em>${f?'▾':'▴'}</em></h4>${f?'':grid(a)}</div>`}).join('')}
- function render(el){const G=N().gm();const all=ents();NEST=nestMap();const q=U.q.trim().toLowerCase();if(!U._fl){U._fl=1;U.fold=foldLoad()}if(G)lockMig();
-  const L=all.filter(e=>(!U.type||ety(e)===U.type)&&(!U.tag||(e.tags||[]).includes(U.tag))&&(!q||[e.title,e.sub,e.body,(e.tags||[]).join(' '),(G?rowsAll(e):e.rows||[]).map(r=>r.k+' '+r.v).join(' ')].join(' ').toLowerCase().includes(q)));
-  U.ids=(U.type==='인물'&&!q&&!U.tag&&nestOn()?visT('인물',L):U.type||q||U.tag?L:TYPES.flatMap(([t])=>U.fold[t]?[]:visT(t,L.filter(e=>ety(e)===t)))).map(e=>e.id);
-  const sel=U.sel&&N().data('ents',U.sel)?Object.assign({id:U.sel,_vis:(N().doc('ents',U.sel)||{}).vis},N().data('ents',U.sel)):null;
-  el.innerHTML=`${window.NT_SHELF?NT_SHELF.bar():''}<div class="toolbar"><h2>항목</h2><div class="seg" id="enTypes"><button data-t="" class="${!U.type?'on':''}">전체 ${all.length}</button>${TYPES.map(([t,,c])=>{const n=all.filter(e=>ety(e)===t).length;return n||G?`<button data-t="${t}" class="${U.type===t?'on':''}" style="--c:${c}"><i class="kdot"></i>${tl(t)} ${n}</button>`:''}).join('')}</div>
-   <input type="search" id="enQ" placeholder="찾기" title="제목 · 한 줄 · 본문 · 상세 칸 · 태그에서 찾아요" value="${esc(U.q)}" style="width:160px"><div class="entview" title="카드로 보기 · 한 줄씩 보기"><button type="button" data-ev="card" class="${U.dense?'':'on'}">카드</button><button type="button" data-ev="list" class="${U.dense?'on':''}">목록</button></div><span class="sp"></span>${N().bulkBtns('ents',null,'항목')}${G?'<button class="btn sm pri" data-e="new">＋ 항목</button>':''}</div>
-   ${(()=>{const T=tags();if(!T.length)return '';const cnt=t=>all.filter(e=>(e.tags||[]).includes(t)).length;const sorted=[...T].sort((a,b)=>cnt(b)-cnt(a)||a.localeCompare(b,'ko'));const show=U.tagsOpen||U.tag?sorted:sorted.slice(0,TAGMAX);
-    return `<div class="tagbar">${U.tag?`<button class="chip on" data-tag="">${esc(U.tag)} ×</button>`:''}${show.filter(t=>t!==U.tag).map(t=>`<button class="chip" data-tag="${esc(t)}">${esc(t)}<small>${cnt(t)}</small></button>`).join('')}${sorted.length>TAGMAX&&!U.tag?`<button class="chip ghost" data-tagmore>${U.tagsOpen?'접기':'+'+(sorted.length-TAGMAX)+' 태그'}</button>`:''}</div>`})()}
-   <div class="split wideR entsplit"><div class="entcol">${!U.type&&!q&&!U.tag?(()=>{const J=TYPES.map(([t,,c])=>[t,c,L.filter(e=>ety(e)===t).length]).filter(x=>x[2]);return J.length>1?`<div class="entjump" title="누르면 그 칸으로 내려가요">${J.map(([t,c,n])=>`<button type="button" data-ejump="${t}" style="--c:${c}"><i class="kdot"></i>${tl(t)}<small>${n}</small></button>`).join('')}</div>`:''})():''}${U.type==='인물'&&!q&&!U.tag&&nestOn()?subG('인물',L):U.type||q||U.tag?`<div class="entgrid ${gridCls(U.type)}" data-bin="${U.type||''}">${L.map(cardOf).join('')||emptyBox(G)}</div>`:TYPES.map(([t,,c])=>{const g=L.filter(e=>ety(e)===t);if(!g.length)return '';const fold=U.fold[t];return `<section class="entsec es-${tc(t)[1]} ${fold?'fold':''}" style="--c:${c}"><h3 data-fold="${t}" data-ebin="${t}"><i class="kdot"></i>${tl(t)}<small>${g.length}</small><span class="sp"></span>${G?`<button type="button" class="btn xs ghost esadd" data-e="new" data-t="${t}" title="${esc(tl(t))} 새로 만들기">＋</button>`:''}<em>${fold?'펼치기 ▾':'접기 ▴'}</em></h3>${fold?'':subG(t,g)}</section>`}).join('')||emptyBox(G)}</div><aside class="side" id="entSide">${sel?detail(sel):'<div class="card dim small">항목을 누르면 여기에 자세히 나와요.</div>'}</aside></div>`;
-  const qi=$('#enQ',el);qi.oncompositionend=()=>qi.oninput({isComposing:false});qi.oninput=e=>{if(e.isComposing)return;U.q=qi.value;const v=qi.value;N().render();const q2=$('#enQ');if(q2){q2.focus();q2.setSelectionRange(v.length,v.length)}};
-  el.addEventListener('click',e=>{const t=e.target;if(t.closest('[data-rbtab]')){e.preventDefault();N().go('rb');return}   /* 11-04 서가의 「룰북 전권 →」 = 룰북 탭 */const shb=t.closest('[data-shelf]');if(shb){NT_SHELF.open(shb.dataset.shelf);return}   /* 10-31 룰북 서가 (꾸밈 「대학」) */
-   const tb=t.closest('#enTypes button');if(tb){U.type=tb.dataset.t;N().render();return}
-   const ev=t.closest('[data-ev]');if(ev){U.dense=ev.dataset.ev==='list';try{localStorage.setItem(VK,U.dense?'list':'card')}catch(x){}N().render();return}
-   const nv=t.closest('[data-enav]');if(nv){const k=U.ids.indexOf(U.sel);const j=k+(+nv.dataset.enav);if(j>=0&&j<U.ids.length){U.sel=U.ids[j];N().render();const c=document.querySelector(`.entgrid [data-sel="${CSS.escape(U.sel)}"]`);if(c)c.scrollIntoView({block:'nearest'})}return}
-   const ap=t.closest('[data-appear]');if(ap){const [rid,i]=ap.dataset.appear.split('|');if(window.NT_SCEN){if(N().gm())NT_SCEN.write(rid,'ws'+i+'n');else N().go('scen')}return}
-   const pv=t.closest('[data-pv]');if(pv){U.pv=pv.dataset.pv;N().render();return}
-   const tm=t.closest('[data-tagmore]');if(tm){U.tagsOpen=!U.tagsOpen;N().render();return}
-   const fd=t.closest('[data-fold]');if(fd&&!t.closest('[data-e]')){U.fold[fd.dataset.fold]=!U.fold[fd.dataset.fold];foldSave();N().render();return}
-   const bk=t.closest('[data-eback]');if(bk){const c=document.querySelector(`.entgrid [data-sel="${CSS.escape(U.sel)}"]`)||document.querySelector('.entcol');if(c)c.scrollIntoView({behavior:'smooth',block:'center'});return}
-   const jp=t.closest('[data-ejump]');if(jp){const k=jp.dataset.ejump;if(U.fold[k]){U.fold[k]=false;foldSave();N().render()}const h=[...document.querySelectorAll('.entsec>h3[data-fold]')].find(x=>x.dataset.fold===k);if(h)h.scrollIntoView({behavior:'smooth',block:'start'});return}
-   const tg=t.closest('[data-tag]');if(tg){U.tag=tg.dataset.tag===U.tag?'':tg.dataset.tag;N().render();return}
-   const c=t.closest('[data-sel]');if(c&&!t.closest('button.btn')){U.sel=c.dataset.sel;N().render();const s=$('#entSide');if(s&&innerWidth<1000)s.scrollIntoView({behavior:'smooth',block:'start'});return}
-   const go=t.closest('[data-spot]');if(go){N().go('map');setTimeout(()=>{window.NT_MAP.select(go.dataset.spot);N().render()},0);return}
-   const gs=t.closest('[data-gosheet]');if(gs){const [k,id]=gs.dataset.gosheet.split('|');const M=N().MOD.pc;if(M&&M.mode){M.mode(k);M.select(id)}N().go('pc');return}
-   const ma=t.closest('[data-mkadd]');if(ma){mkAdd(ma.dataset.mkadd);return}
-   const fo=t.closest('[data-fopen]');if(fo){const [id,i]=fo.dataset.fopen.split('|');openText(id,+i);return}
-   const big=t.closest('img[data-big]');if(big){N().openModal(`<img src="${esc(big.dataset.big)}" style="max-width:100%;max-height:80vh;display:block;margin:auto">`,'wide');return}
-   const b=t.closest('[data-e]');if(b)act(b.dataset.e,b)});
-  /* 10-26 망령: 끌어서 순서 바꾸기(GM) · 우클릭 · 길게 누르기 메뉴 */
-  {const tp=document.querySelector('.top');const ps=tp?getComputedStyle(tp).position:'';el.style.setProperty('--ejtop',(tp&&(ps==='sticky'||ps==='fixed')?Math.round(tp.getBoundingClientRect().height):0)+'px')}
-  if(G)bindDrag(el);
-  if(window.NT_SHELF)NT_SHELF.bind(el);   /* 10-31 룰북 서가: ＋ 책 · 끌어서 순서 */
-  N().bindCtx(el,'.entcard,.enti',c=>ctxItems(c.dataset.id))}
- /* 11-02 망령 「추가 · 수정 · 삭제 편하고 드래그로 이동도」: 같은 칸 = 순서(가로 · 세로 둘 다 봄), 다른 칸 · 칸 제목 위에 놓기 = 종류를 그 칸으로.
+  function subG(t, g) {
+    if (t === '인물' && nestOn()) {
+      const S = pvSplit(g);
+      const ext = U.pv === 'ext';
+      const tabs = `<div class="eptabs"><button type="button" data-pv="id" class="${ext ? '' : 'on'}">출입증<small>${S.id.length}</small></button><button type="button" data-pv="ext" class="${ext ? 'on' : ''}">외부 인물 기록<small>${S.ext.length}</small></button></div>`;
+      return tabs + (subG0(t, ext ? S.ext : S.id) || '<div class="empty">항목이 없어요.</div>');
+    }
+    return subG0(t, g);
+  }
+  function subG0(t, g) {
+    if (!g.length) return '';
+    const G = grpT();
+    const grid = a => `<div class="entgrid ${gridCls(t)}" data-bin="${t}">${a.map(cardOf).join('')}</div>`;
+    if (!G.length || !g.some(e => gIdx(e, G) < G.length)) return grid(g);
+    return [...G, '그 밖']
+      .map((nm, i) => [nm, g.filter(e => gIdx(e, G) === i)])
+      .filter(x => x[1].length)
+      .map(([nm, a]) => {
+        const fk = t + '/' + nm,
+          f = !!U.fold[fk];
+        return `<div class="entsub ${f ? 'fold' : ''}"><h4 class="entsubh" data-fold="${esc(fk)}" title="누르면 접고 펴요"><span>${esc(nm)}</span><small>${a.length}</small><em>${f ? '▾' : '▴'}</em></h4>${f ? '' : grid(a)}</div>`;
+      })
+      .join('');
+  }
+  function render(el) {
+    const G = N().gm();
+    const all = ents();
+    NEST = nestMap();
+    const q = U.q.trim().toLowerCase();
+    if (!U._fl) {
+      U._fl = 1;
+      U.fold = foldLoad();
+    }
+    if (G) lockMig();
+    const L = all.filter(
+      e =>
+        (!U.type || ety(e) === U.type) &&
+        (!U.tag || (e.tags || []).includes(U.tag)) &&
+        (!q ||
+          [e.title, e.sub, e.body, (e.tags || []).join(' '), (G ? rowsAll(e) : e.rows || []).map(r => r.k + ' ' + r.v).join(' ')]
+            .join(' ')
+            .toLowerCase()
+            .includes(q))
+    );
+    U.ids = (
+      U.type === '인물' && !q && !U.tag && nestOn()
+        ? visT('인물', L)
+        : U.type || q || U.tag
+          ? L
+          : TYPES.flatMap(([t]) =>
+              U.fold[t]
+                ? []
+                : visT(
+                    t,
+                    L.filter(e => ety(e) === t)
+                  )
+            )
+    ).map(e => e.id);
+    const sel =
+      U.sel && N().data('ents', U.sel) ? Object.assign({ id: U.sel, _vis: (N().doc('ents', U.sel) || {}).vis }, N().data('ents', U.sel)) : null;
+    el.innerHTML = `${window.NT_SHELF ? NT_SHELF.bar() : ''}<div class="toolbar"><h2>항목</h2><div class="seg" id="enTypes"><button data-t="" class="${!U.type ? 'on' : ''}">전체 ${all.length}</button>${TYPES.map(
+      ([t, , c]) => {
+        const n = all.filter(e => ety(e) === t).length;
+        return n || G ? `<button data-t="${t}" class="${U.type === t ? 'on' : ''}" style="--c:${c}"><i class="kdot"></i>${tl(t)} ${n}</button>` : '';
+      }
+    ).join('')}</div>
+   <input type="search" id="enQ" placeholder="찾기" title="제목 · 한 줄 · 본문 · 상세 칸 · 태그에서 찾아요" value="${esc(U.q)}" style="width:160px"><div class="entview" title="카드로 보기 · 한 줄씩 보기"><button type="button" data-ev="card" class="${U.dense ? '' : 'on'}">카드</button><button type="button" data-ev="list" class="${U.dense ? 'on' : ''}">목록</button></div><span class="sp"></span>${N().bulkBtns('ents', null, '항목')}${G ? '<button class="btn sm pri" data-e="new">＋ 항목</button>' : ''}</div>
+   ${(() => {
+     const T = tags();
+     if (!T.length) return '';
+     const cnt = t => all.filter(e => (e.tags || []).includes(t)).length;
+     const sorted = [...T].sort((a, b) => cnt(b) - cnt(a) || a.localeCompare(b, 'ko'));
+     const show = U.tagsOpen || U.tag ? sorted : sorted.slice(0, TAGMAX);
+     return `<div class="tagbar">${U.tag ? `<button class="chip on" data-tag="">${esc(U.tag)} ×</button>` : ''}${show
+       .filter(t => t !== U.tag)
+       .map(t => `<button class="chip" data-tag="${esc(t)}">${esc(t)}<small>${cnt(t)}</small></button>`)
+       .join(
+         ''
+       )}${sorted.length > TAGMAX && !U.tag ? `<button class="chip ghost" data-tagmore>${U.tagsOpen ? '접기' : '+' + (sorted.length - TAGMAX) + ' 태그'}</button>` : ''}</div>`;
+   })()}
+   <div class="split wideR entsplit"><div class="entcol">${
+     !U.type && !q && !U.tag
+       ? (() => {
+           const J = TYPES.map(([t, , c]) => [t, c, L.filter(e => ety(e) === t).length]).filter(x => x[2]);
+           return J.length > 1
+             ? `<div class="entjump" title="누르면 그 칸으로 내려가요">${J.map(([t, c, n]) => `<button type="button" data-ejump="${t}" style="--c:${c}"><i class="kdot"></i>${tl(t)}<small>${n}</small></button>`).join('')}</div>`
+             : '';
+         })()
+       : ''
+   }${
+     U.type === '인물' && !q && !U.tag && nestOn()
+       ? subG('인물', L)
+       : U.type || q || U.tag
+         ? `<div class="entgrid ${gridCls(U.type)}" data-bin="${U.type || ''}">${L.map(cardOf).join('') || emptyBox(G)}</div>`
+         : TYPES.map(([t, , c]) => {
+             const g = L.filter(e => ety(e) === t);
+             if (!g.length) return '';
+             const fold = U.fold[t];
+             return `<section class="entsec es-${tc(t)[1]} ${fold ? 'fold' : ''}" style="--c:${c}"><h3 data-fold="${t}" data-ebin="${t}"><i class="kdot"></i>${tl(t)}<small>${g.length}</small><span class="sp"></span>${G ? `<button type="button" class="btn xs ghost esadd" data-e="new" data-t="${t}" title="${esc(tl(t))} 새로 만들기">＋</button>` : ''}<em>${fold ? '펼치기 ▾' : '접기 ▴'}</em></h3>${fold ? '' : subG(t, g)}</section>`;
+           }).join('') || emptyBox(G)
+   }</div><aside class="side" id="entSide">${sel ? detail(sel) : '<div class="card dim small">항목을 누르면 여기에 자세히 나와요.</div>'}</aside></div>`;
+    const qi = $('#enQ', el);
+    qi.oncompositionend = () => qi.oninput({ isComposing: false });
+    qi.oninput = e => {
+      if (e.isComposing) return;
+      U.q = qi.value;
+      const v = qi.value;
+      N().render();
+      const q2 = $('#enQ');
+      if (q2) {
+        q2.focus();
+        q2.setSelectionRange(v.length, v.length);
+      }
+    };
+    el.addEventListener('click', e => {
+      const t = e.target;
+      if (t.closest('[data-rbtab]')) {
+        e.preventDefault();
+        N().go('rb');
+        return;
+      }
+      /* 11-04 서가의 「룰북 전권 →」 = 룰북 탭 */ const shb = t.closest('[data-shelf]');
+      if (shb) {
+        NT_SHELF.open(shb.dataset.shelf);
+        return;
+      } /* 10-31 룰북 서가 (꾸밈 「대학」) */
+      const tb = t.closest('#enTypes button');
+      if (tb) {
+        U.type = tb.dataset.t;
+        N().render();
+        return;
+      }
+      const ev = t.closest('[data-ev]');
+      if (ev) {
+        U.dense = ev.dataset.ev === 'list';
+        try {
+          localStorage.setItem(VK, U.dense ? 'list' : 'card');
+        } catch (x) {}
+        N().render();
+        return;
+      }
+      const nv = t.closest('[data-enav]');
+      if (nv) {
+        const k = U.ids.indexOf(U.sel);
+        const j = k + +nv.dataset.enav;
+        if (j >= 0 && j < U.ids.length) {
+          U.sel = U.ids[j];
+          N().render();
+          const c = document.querySelector(`.entgrid [data-sel="${CSS.escape(U.sel)}"]`);
+          if (c) c.scrollIntoView({ block: 'nearest' });
+        }
+        return;
+      }
+      const ap = t.closest('[data-appear]');
+      if (ap) {
+        const [rid, i] = ap.dataset.appear.split('|');
+        if (window.NT_SCEN) {
+          if (N().gm()) NT_SCEN.write(rid, 'ws' + i + 'n');
+          else N().go('scen');
+        }
+        return;
+      }
+      const pv = t.closest('[data-pv]');
+      if (pv) {
+        U.pv = pv.dataset.pv;
+        N().render();
+        return;
+      }
+      const tm = t.closest('[data-tagmore]');
+      if (tm) {
+        U.tagsOpen = !U.tagsOpen;
+        N().render();
+        return;
+      }
+      const fd = t.closest('[data-fold]');
+      if (fd && !t.closest('[data-e]')) {
+        U.fold[fd.dataset.fold] = !U.fold[fd.dataset.fold];
+        foldSave();
+        N().render();
+        return;
+      }
+      const bk = t.closest('[data-eback]');
+      if (bk) {
+        const c = document.querySelector(`.entgrid [data-sel="${CSS.escape(U.sel)}"]`) || document.querySelector('.entcol');
+        if (c) c.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      const jp = t.closest('[data-ejump]');
+      if (jp) {
+        const k = jp.dataset.ejump;
+        if (U.fold[k]) {
+          U.fold[k] = false;
+          foldSave();
+          N().render();
+        }
+        const h = [...document.querySelectorAll('.entsec>h3[data-fold]')].find(x => x.dataset.fold === k);
+        if (h) h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      const tg = t.closest('[data-tag]');
+      if (tg) {
+        U.tag = tg.dataset.tag === U.tag ? '' : tg.dataset.tag;
+        N().render();
+        return;
+      }
+      const c = t.closest('[data-sel]');
+      if (c && !t.closest('button.btn')) {
+        U.sel = c.dataset.sel;
+        N().render();
+        const s = $('#entSide');
+        if (s && innerWidth < 1000) s.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      const go = t.closest('[data-spot]');
+      if (go) {
+        N().go('map');
+        setTimeout(() => {
+          window.NT_MAP.select(go.dataset.spot);
+          N().render();
+        }, 0);
+        return;
+      }
+      const gs = t.closest('[data-gosheet]');
+      if (gs) {
+        const [k, id] = gs.dataset.gosheet.split('|');
+        const M = N().MOD.pc;
+        if (M && M.mode) {
+          M.mode(k);
+          M.select(id);
+        }
+        N().go('pc');
+        return;
+      }
+      const ma = t.closest('[data-mkadd]');
+      if (ma) {
+        mkAdd(ma.dataset.mkadd);
+        return;
+      }
+      const fo = t.closest('[data-fopen]');
+      if (fo) {
+        const [id, i] = fo.dataset.fopen.split('|');
+        openText(id, +i);
+        return;
+      }
+      const big = t.closest('img[data-big]');
+      if (big) {
+        N().openModal(`<img src="${esc(big.dataset.big)}" style="max-width:100%;max-height:80vh;display:block;margin:auto">`, 'wide');
+        return;
+      }
+      const b = t.closest('[data-e]');
+      if (b) act(b.dataset.e, b);
+    });
+    /* 10-26 망령: 끌어서 순서 바꾸기(GM) · 우클릭 · 길게 누르기 메뉴 */
+    {
+      const tp = document.querySelector('.top');
+      const ps = tp ? getComputedStyle(tp).position : '';
+      el.style.setProperty('--ejtop', (tp && (ps === 'sticky' || ps === 'fixed') ? Math.round(tp.getBoundingClientRect().height) : 0) + 'px');
+    }
+    if (G) bindDrag(el);
+    if (window.NT_SHELF) NT_SHELF.bind(el); /* 10-31 룰북 서가: ＋ 책 · 끌어서 순서 */
+    N().bindCtx(el, '.entcard,.enti', c => ctxItems(c.dataset.id));
+  }
+  /* 11-02 망령 「추가 · 수정 · 삭제 편하고 드래그로 이동도」: 같은 칸 = 순서(가로 · 세로 둘 다 봄), 다른 칸 · 칸 제목 위에 놓기 = 종류를 그 칸으로.
     세계관으로 = 종류 「세계관」, 세계관에서 다른 칸으로 = 세계관 · 지역 태그도 뗀다 (태그 때문에 다시 세계관에 보이지 않게). pc_ui bindDrag 와 같은 방식 */
- const CARD='.entcard,.enti';
- function bindDrag(root){if(!root||root._enDrag)return;root._enDrag=1;let d=null;
-  const clear=()=>$$('.drop,.insb,.insa',root).forEach(x=>x.classList.remove('drop','insb','insa'));
-  root.addEventListener('pointerdown',e=>{if(e.button!==0)return;const it=e.target.closest(CARD);if(!it||!root.contains(it)||!it.closest('.entgrid'))return;if(e.target.closest('input,textarea,select,button:not([data-drag]),a,[data-visq],[data-fav]'))return;d={it,x:e.clientX,y:e.clientY,id:e.pointerId,moved:false,ph:null,t:null}});
-  root.addEventListener('pointermove',e=>{if(!d||d.id!==e.pointerId)return;if(!d.moved){if(Math.hypot(e.clientX-d.x,e.clientY-d.y)<6)return;d.moved=true;try{root.setPointerCapture(e.pointerId)}catch(x){}
-    const r=d.it.getBoundingClientRect();d.ox=e.clientX-r.left;d.oy=e.clientY-r.top;d.ph=d.it.cloneNode(true);d.ph.classList.add('nt-ghost');d.ph.style.cssText+=`;position:fixed;pointer-events:none;z-index:2000;opacity:.85;width:${r.width}px;left:${r.left}px;top:${r.top}px;margin:0`;document.body.appendChild(d.ph);d.it.classList.add('nt-dragging');root.classList.add('dragging');document.body.classList.add('nt-sorting')}
-   e.preventDefault();d.ph.style.left=(e.clientX-d.ox)+'px';d.ph.style.top=(e.clientY-d.oy)+'px';
-   const el=document.elementFromPoint(e.clientX,e.clientY);clear();d.t=null;if(!el||!root.contains(el))return;
-   const h=el.closest('[data-ebin]');if(h){h.classList.add('drop');d.t={bin:h.dataset.ebin,ref:'',before:false};return}
-   const g=el.closest('.entgrid');if(!g)return;const c=el.closest(CARD);
-   const place=c2=>{const r=c2.getBoundingClientRect();const one=getComputedStyle(g).gridTemplateColumns.split(' ').length<2;return one?e.clientY<r.top+r.height/2:e.clientX<r.left+r.width/2};
-   if(g===d.it.parentNode){if(c&&c!==d.it){const before=place(c);g.insertBefore(d.it,before?c:c.nextSibling)}return}
-   g.classList.add('drop');if(c){const before=place(c);c.classList.add(before?'insb':'insa');d.t={bin:g.dataset.bin||'',ref:c.dataset.id,before}}else d.t={bin:g.dataset.bin||'',ref:'',before:false}});
-  const end=async e=>{if(!d||d.id!==e.pointerId)return;const w=d;d=null;try{root.releasePointerCapture(e.pointerId)}catch(x){}if(w.ph)w.ph.remove();w.it.classList.remove('nt-dragging');root.classList.remove('dragging');document.body.classList.remove('nt-sorting');clear();
-   if(!w.moved)return;root.dataset.sorted='1';setTimeout(()=>{delete root.dataset.sorted},0);
-   const mid=w.it.dataset.id;const home=(w.it.parentNode&&w.it.parentNode.dataset.bin)||'';const t=w.t&&w.t.bin&&w.t.bin!==home?w.t:null;
-   /* 화면 순서대로 order 를 다시 매긴다 (보이는 칸들 → 숨은 것은 뒤에) */
-   let ids=$$('.entgrid',root).flatMap(g=>$$(CARD,g).map(x=>x.dataset.id)).filter(Boolean);
-   if(t){ids=ids.filter(id=>id!==mid);const tgt=$(`.entgrid[data-bin="${CSS.escape(t.bin)}"]`,root);const L=tgt?$$(CARD,tgt).map(x=>x.dataset.id).filter(id=>id!==mid):[];
-    let at=-1;if(t.ref){at=ids.indexOf(t.ref);if(at>=0&&!t.before)at++}else if(L.length){at=ids.indexOf(L[L.length-1])+1}
-    if(at<0)ids.push(mid);else ids.splice(at,0,mid)}
-   const rest=ents().map(x=>x.id).filter(id=>!ids.includes(id));ids=ids.concat(rest);
-   const rows=[];let msg='';ids.forEach((id,i)=>{const dd=N().doc('ents',id);if(!dd)return;const n=Object.assign({},dd.data);let ch=(n.order||0)!==i;n.order=i;
-    if(id===mid&&t){const to=t.bin;const from=ety(n);if(to!==from){n.type=to;if(to!=='세계관'&&(n.tags||[]).some(x=>WTAG.includes(String(x).trim())))n.tags=(n.tags||[]).filter(x=>!WTAG.includes(String(x).trim()));ch=true;msg=`「${n.title||''}」 → ${tl(to)}`}}
-    if(ch)rows.push({kind:'ents',id,data:n,vis:dd.vis})});
-   if(rows.length){await N().putMany(rows);if(msg)N().toast(msg)}else N().render()};
-  root.addEventListener('pointerup',end);root.addEventListener('pointercancel',end);
-  root.addEventListener('click',e=>{if(root.dataset.sorted){e.stopPropagation();e.preventDefault()}},true)}
- const emptyBox=G=>`<div class="empty">항목이 없어요.${G?' <button type="button" class="btn sm pri" data-e="new" style="margin-left:8px">＋ 항목</button>':''}</div>`;
- /* 공개하기 전에 PL 에게 무엇이 나가는지 한 번 보여 준다 */
- function pubMsg(e,id,l){const A=rowsAll(e,id).filter(r=>r.v);const P=A.filter(r=>!r.lk).map(r=>r.k||'(이름 없는 칸)'),S=A.filter(r=>r.lk).map(r=>r.k||'(이름 없는 칸)');
-  return `「${e.title||''}」 을(를) ${l.replace(/^\S+\s/,'')} 공개할까요?\n\nPL 에게 보이는 것\n· 이름${e.sub?` · 한 줄 소개 「${e.sub}」`:''}${e.body?' · 본문':''}${(e.tags||[]).length?' · 태그':''}\n· 칸: ${P.length?P.join(', '):'없음'}\n\n🔒 GM만 (안 나가요)\n· ${S.length?S.join(', '):'잠근 칸 없음'}${N().data('sec','ent:'+id)&&N().data('sec','ent:'+id).t?' · GM 메모':''}`}
- function ctxItems(id){const d=N().doc('ents',id);if(!d)return null;const e=d.data;const G=N().gm();const it=[];const cur=d.vis||'pub';
-  if(G){const vis=[['pub','👥 모두에게'],['gm','🔒 GM만']].concat((N().ST.seats||[]).map(s=>['pl:'+s.seat,'👤 '+(N().seatName(s.seat)||s.seat)+' 에게만']));
-   vis.forEach(([v,l])=>it.push({t:l+(v===cur?' ✓':''),on:async()=>{if(v===cur)return;if(cur==='gm'&&v!=='gm'&&!await N().confirmBox(pubMsg(e,id,l),'공개'))return;await N().put('ents',id,N().clone(e),v);N().toast('공개 범위: '+N().visLabel(v))}}));it.push('-');
-   it.push({t:'✎ 고치기',on:()=>edit(id)})}
-  if(window.NT_FAV)it.push({t:(NT_FAV.has('ents',id)?'★ 즐겨찾기에서 빼기':'☆ 즐겨찾기'),on:()=>NT_FAV.toggle('ents',id,e.title)});
-  it.push({t:'🕸 관계도에서 보기',on:()=>{N().go('graph');setTimeout(()=>window.NT_GRAPH&&NT_GRAPH.focus&&NT_GRAPH.focus(id),0)}});
-  if(G){it.push('-');it.push({t:'🗑 지우기',danger:true,on:()=>act('del',{dataset:{id}})})}
-  return it}
- function card(e){const t=tc(ety(e));return `<button type="button" class="entcard ${e.id===U.sel?'on':''}" data-sel="${esc(e.id)}" data-id="${esc(e.id)}" data-drag style="--c:${e.color||t[2]}"><span class="face" style="${e.face?`background-image:url('${cssu(e.face)}')`:''}">${e.face?'':t[0][0]}</span><span class="eb"><b>${esc(e.title||'(제목 없음)')}</b><small>${esc(e.sub||'')}</small><span class="etags">${vt(e).slice(0,3).map(x=>`<em>${esc(x)}</em>`).join('')}${vt(e).length>3?`<em class="more">+${vt(e).length-3}</em>`:''}${N().visBadge(e._vis,'ents',e.id)}${linkIcons(e)}</span></span></button>`}
- const linkIcons=e=>(N().gm()&&secRows(e.id).length?`<i class="lki lkn" title="GM만 보는 칸 ${secRows(e.id).length}개 — 공개해도 PL 에게 안 보여요">🗝${secRows(e.id).length}</i>`:'')+(e.rb&&e.rb.ch?'<i class="lki" title="룰북과 이어져 있어요">📖</i>':'')+(e.mk&&N().gm()?'<i class="lki" title="제작기 트레이너와 이어져 있어요">🎴</i>':'')+((e.files||[]).length?`<i class="lki" title="첨부 ${e.files.length}개">📎${e.files.length}</i>`:'');
- /* ----- 11-02 카드 모양: 세계관 = 지도첩 카드(넓게), 설정 = 규칙 카드, 인물 = 학생증 · 교원증 · 신분증, 나머지 = 예전 카드. 「목록」 보기는 모두 예전 한 줄 ----- */
- const gridCls=t=>U.dense?'dense':t==='세계관'?'eg-w':t==='인물'?'eg-id':t==='설정'?'eg-l':'';
- /* 11-04 망령 「칼데아 소속 인물(서번트 제외)에게만 신분증」: 캠페인 설정 「신분증 줄 팀」(data.idTeams)이 있으면 그 팀 인물만 신분증,
+  const CARD = '.entcard,.enti';
+  function bindDrag(root) {
+    if (!root || root._enDrag) return;
+    root._enDrag = 1;
+    let d = null;
+    const clear = () => $$('.drop,.insb,.insa', root).forEach(x => x.classList.remove('drop', 'insb', 'insa'));
+    root.addEventListener('pointerdown', e => {
+      if (e.button !== 0) return;
+      const it = e.target.closest(CARD);
+      if (!it || !root.contains(it) || !it.closest('.entgrid')) return;
+      if (e.target.closest('input,textarea,select,button:not([data-drag]),a,[data-visq],[data-fav]')) return;
+      d = { it, x: e.clientX, y: e.clientY, id: e.pointerId, moved: false, ph: null, t: null };
+    });
+    root.addEventListener('pointermove', e => {
+      if (!d || d.id !== e.pointerId) return;
+      if (!d.moved) {
+        if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 6) return;
+        d.moved = true;
+        try {
+          root.setPointerCapture(e.pointerId);
+        } catch (x) {}
+        const r = d.it.getBoundingClientRect();
+        d.ox = e.clientX - r.left;
+        d.oy = e.clientY - r.top;
+        d.ph = d.it.cloneNode(true);
+        d.ph.classList.add('nt-ghost');
+        d.ph.style.cssText += `;position:fixed;pointer-events:none;z-index:2000;opacity:.85;width:${r.width}px;left:${r.left}px;top:${r.top}px;margin:0`;
+        document.body.appendChild(d.ph);
+        d.it.classList.add('nt-dragging');
+        root.classList.add('dragging');
+        document.body.classList.add('nt-sorting');
+      }
+      e.preventDefault();
+      d.ph.style.left = e.clientX - d.ox + 'px';
+      d.ph.style.top = e.clientY - d.oy + 'px';
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      clear();
+      d.t = null;
+      if (!el || !root.contains(el)) return;
+      const h = el.closest('[data-ebin]');
+      if (h) {
+        h.classList.add('drop');
+        d.t = { bin: h.dataset.ebin, ref: '', before: false };
+        return;
+      }
+      const g = el.closest('.entgrid');
+      if (!g) return;
+      const c = el.closest(CARD);
+      const place = c2 => {
+        const r = c2.getBoundingClientRect();
+        const one = getComputedStyle(g).gridTemplateColumns.split(' ').length < 2;
+        return one ? e.clientY < r.top + r.height / 2 : e.clientX < r.left + r.width / 2;
+      };
+      if (g === d.it.parentNode) {
+        if (c && c !== d.it) {
+          const before = place(c);
+          g.insertBefore(d.it, before ? c : c.nextSibling);
+        }
+        return;
+      }
+      g.classList.add('drop');
+      if (c) {
+        const before = place(c);
+        c.classList.add(before ? 'insb' : 'insa');
+        d.t = { bin: g.dataset.bin || '', ref: c.dataset.id, before };
+      } else d.t = { bin: g.dataset.bin || '', ref: '', before: false };
+    });
+    const end = async e => {
+      if (!d || d.id !== e.pointerId) return;
+      const w = d;
+      d = null;
+      try {
+        root.releasePointerCapture(e.pointerId);
+      } catch (x) {}
+      if (w.ph) w.ph.remove();
+      w.it.classList.remove('nt-dragging');
+      root.classList.remove('dragging');
+      document.body.classList.remove('nt-sorting');
+      clear();
+      if (!w.moved) return;
+      root.dataset.sorted = '1';
+      setTimeout(() => {
+        delete root.dataset.sorted;
+      }, 0);
+      const mid = w.it.dataset.id;
+      const home = (w.it.parentNode && w.it.parentNode.dataset.bin) || '';
+      const t = w.t && w.t.bin && w.t.bin !== home ? w.t : null;
+      /* 화면 순서대로 order 를 다시 매긴다 (보이는 칸들 → 숨은 것은 뒤에) */
+      let ids = $$('.entgrid', root)
+        .flatMap(g => $$(CARD, g).map(x => x.dataset.id))
+        .filter(Boolean);
+      if (t) {
+        ids = ids.filter(id => id !== mid);
+        const tgt = $(`.entgrid[data-bin="${CSS.escape(t.bin)}"]`, root);
+        const L = tgt
+          ? $$(CARD, tgt)
+              .map(x => x.dataset.id)
+              .filter(id => id !== mid)
+          : [];
+        let at = -1;
+        if (t.ref) {
+          at = ids.indexOf(t.ref);
+          if (at >= 0 && !t.before) at++;
+        } else if (L.length) {
+          at = ids.indexOf(L[L.length - 1]) + 1;
+        }
+        if (at < 0) ids.push(mid);
+        else ids.splice(at, 0, mid);
+      }
+      const rest = ents()
+        .map(x => x.id)
+        .filter(id => !ids.includes(id));
+      ids = ids.concat(rest);
+      const rows = [];
+      let msg = '';
+      ids.forEach((id, i) => {
+        const dd = N().doc('ents', id);
+        if (!dd) return;
+        const n = Object.assign({}, dd.data);
+        let ch = (n.order || 0) !== i;
+        n.order = i;
+        if (id === mid && t) {
+          const to = t.bin;
+          const from = ety(n);
+          if (to !== from) {
+            n.type = to;
+            if (to !== '세계관' && (n.tags || []).some(x => WTAG.includes(String(x).trim())))
+              n.tags = (n.tags || []).filter(x => !WTAG.includes(String(x).trim()));
+            ch = true;
+            msg = `「${n.title || ''}」 → ${tl(to)}`;
+          }
+        }
+        if (ch) rows.push({ kind: 'ents', id, data: n, vis: dd.vis });
+      });
+      if (rows.length) {
+        await N().putMany(rows);
+        if (msg) N().toast(msg);
+      } else N().render();
+    };
+    root.addEventListener('pointerup', end);
+    root.addEventListener('pointercancel', end);
+    root.addEventListener(
+      'click',
+      e => {
+        if (root.dataset.sorted) {
+          e.stopPropagation();
+          e.preventDefault();
+        }
+      },
+      true
+    );
+  }
+  const emptyBox = G =>
+    `<div class="empty">항목이 없어요.${G ? ' <button type="button" class="btn sm pri" data-e="new" style="margin-left:8px">＋ 항목</button>' : ''}</div>`;
+  /* 공개하기 전에 PL 에게 무엇이 나가는지 한 번 보여 준다 */
+  function pubMsg(e, id, l) {
+    const A = rowsAll(e, id).filter(r => r.v);
+    const P = A.filter(r => !r.lk).map(r => r.k || '(이름 없는 칸)'),
+      S = A.filter(r => r.lk).map(r => r.k || '(이름 없는 칸)');
+    return `「${e.title || ''}」 을(를) ${l.replace(/^\S+\s/, '')} 공개할까요?\n\nPL 에게 보이는 것\n· 이름${e.sub ? ` · 한 줄 소개 「${e.sub}」` : ''}${e.body ? ' · 본문' : ''}${(e.tags || []).length ? ' · 태그' : ''}\n· 칸: ${P.length ? P.join(', ') : '없음'}\n\n🔒 GM만 (안 나가요)\n· ${S.length ? S.join(', ') : '잠근 칸 없음'}${N().data('sec', 'ent:' + id) && N().data('sec', 'ent:' + id).t ? ' · GM 메모' : ''}`;
+  }
+  function ctxItems(id) {
+    const d = N().doc('ents', id);
+    if (!d) return null;
+    const e = d.data;
+    const G = N().gm();
+    const it = [];
+    const cur = d.vis || 'pub';
+    if (G) {
+      const vis = [
+        ['pub', '👥 모두에게'],
+        ['gm', '🔒 GM만']
+      ].concat((N().ST.seats || []).map(s => ['pl:' + s.seat, '👤 ' + (N().seatName(s.seat) || s.seat) + ' 에게만']));
+      vis.forEach(([v, l]) =>
+        it.push({
+          t: l + (v === cur ? ' ✓' : ''),
+          on: async () => {
+            if (v === cur) return;
+            if (cur === 'gm' && v !== 'gm' && !(await N().confirmBox(pubMsg(e, id, l), '공개'))) return;
+            await N().put('ents', id, N().clone(e), v);
+            N().toast('공개 범위: ' + N().visLabel(v));
+          }
+        })
+      );
+      it.push('-');
+      it.push({ t: '✎ 고치기', on: () => edit(id) });
+    }
+    if (window.NT_FAV) it.push({ t: NT_FAV.has('ents', id) ? '★ 즐겨찾기에서 빼기' : '☆ 즐겨찾기', on: () => NT_FAV.toggle('ents', id, e.title) });
+    it.push({
+      t: '🕸 관계도에서 보기',
+      on: () => {
+        N().go('graph');
+        setTimeout(() => window.NT_GRAPH && NT_GRAPH.focus && NT_GRAPH.focus(id), 0);
+      }
+    });
+    if (G) {
+      it.push('-');
+      it.push({ t: '🗑 지우기', danger: true, on: () => act('del', { dataset: { id } }) });
+    }
+    return it;
+  }
+  function card(e) {
+    const t = tc(ety(e));
+    return `<button type="button" class="entcard ${e.id === U.sel ? 'on' : ''}" data-sel="${esc(e.id)}" data-id="${esc(e.id)}" data-drag style="--c:${e.color || t[2]}"><span class="face" style="${e.face ? `background-image:url('${cssu(e.face)}')` : ''}">${e.face ? '' : t[0][0]}</span><span class="eb"><b>${esc(e.title || '(제목 없음)')}</b><small>${esc(e.sub || '')}</small><span class="etags">${vt(
+      e
+    )
+      .slice(0, 3)
+      .map(x => `<em>${esc(x)}</em>`)
+      .join(
+        ''
+      )}${vt(e).length > 3 ? `<em class="more">+${vt(e).length - 3}</em>` : ''}${N().visBadge(e._vis, 'ents', e.id)}${linkIcons(e)}</span></span></button>`;
+  }
+  const linkIcons = e =>
+    (N().gm() && secRows(e.id).length
+      ? `<i class="lki lkn" title="GM만 보는 칸 ${secRows(e.id).length}개 — 공개해도 PL 에게 안 보여요">🗝${secRows(e.id).length}</i>`
+      : '') +
+    (e.rb && e.rb.ch ? '<i class="lki" title="룰북과 이어져 있어요">📖</i>' : '') +
+    (e.mk && N().gm() ? '<i class="lki" title="제작기 트레이너와 이어져 있어요">🎴</i>' : '') +
+    ((e.files || []).length ? `<i class="lki" title="첨부 ${e.files.length}개">📎${e.files.length}</i>` : '');
+  /* ----- 11-02 카드 모양: 세계관 = 지도첩 카드(넓게), 설정 = 규칙 카드, 인물 = 학생증 · 교원증 · 신분증, 나머지 = 예전 카드. 「목록」 보기는 모두 예전 한 줄 ----- */
+  const gridCls = t => (U.dense ? 'dense' : t === '세계관' ? 'eg-w' : t === '인물' ? 'eg-id' : t === '설정' ? 'eg-l' : '');
+  /* 11-04 망령 「칼데아 소속 인물(서번트 제외)에게만 신분증」: 캠페인 설정 「신분증 줄 팀」(data.idTeams)이 있으면 그 팀 인물만 신분증,
     소속(sub)에 클래스 이름이 있으면 서번트로 보고 뺀다. 태그 「신분증」은 늘 주고 「신분증 없음」은 늘 뺀다. 설정이 없으면 예전처럼 인물 모두(미사그 그대로) */
- const SVT=/(^|[\s·(/,])(세이버|아처|랜서|라이더|캐스터|어쌔신|버서커|룰러|어벤저|문캔서|포리너|얼터 ?에고|프리텐더|실더|서번트|그림 ?리퍼)(?=$|[\s·()/,])/;
- function idOk(e){const tg=e.tags||[];if(tg.includes('신분증 없음'))return false;if(tg.includes('신분증'))return true;const T=(((N().ST.campInfo||{}).data||{}).idTeams)||[];if(!T.length)return true;return (e.teams||[]).some(t=>T.includes(t))&&!SVT.test(e.sub||'')}
- function cardOf(e){if(U.dense)return card(e);const t=ety(e);return t==='세계관'?cardWorld(e):t==='인물'?(idOk(e)?cardId(e,false):card(e)):t==='설정'?cardLore(e):card(e)}
- const rowsV=e=>(e.rows||[]).filter(r=>r&&r.k);
- const clip=(s,n)=>{s=String(s||'').replace(/\s+/g,' ').trim();return s.length>n?s.slice(0,n)+'…':s};
- function cardWorld(e){const R=rowsV(e);return `<button type="button" class="enti ew ${e.id===U.sel?'on':''}" data-sel="${esc(e.id)}" data-id="${esc(e.id)}" data-drag style="--c:${e.color||tc('세계관')[2]}">
-   <span class="ew-band"><i aria-hidden="true">🧭</i>${esc(tl('세계관'))}<span class="sp"></span>${N().visBadge(e._vis,'ents',e.id)}${linkIcons(e)}</span>
-   ${e.photo||e.face?`<span class="ew-img" style="background-image:url('${cssu(e.photo||e.face)}')"></span>`:''}
-   <b class="ew-t">${esc(e.title||'(제목 없음)')}</b>${e.sub?`<small class="ew-s">${esc(e.sub)}</small>`:''}
-   ${e.body?`<span class="ew-b">${esc(clip(e.body,90))}</span>`:''}
-   ${R.length?`<span class="ew-rows">${R.slice(0,6).map(r=>`<em>${esc(r.k)}</em>`).join('')}${R.length>6?`<em class="more">+${R.length-6}</em>`:''}</span>`:''}
-   ${(e.tags||[]).length?`<span class="etags">${e.tags.filter(x=>!WTAG.includes(x)).slice(0,4).map(x=>`<em>${esc(x)}</em>`).join('')}</span>`:''}</button>`}
- function cardLore(e){const R=rowsV(e);return `<button type="button" class="enti el ${e.id===U.sel?'on':''}" data-sel="${esc(e.id)}" data-id="${esc(e.id)}" data-drag style="--c:${e.color||tc('설정')[2]}">
-   <span class="el-k" aria-hidden="true">§</span><span class="el-m"><b>${esc(e.title||'(제목 없음)')}</b>${e.sub?`<small>${esc(e.sub)}</small>`:''}
-   <span class="etags">${(e.tags||[]).slice(0,3).map(x=>`<em>${esc(x)}</em>`).join('')}${R.length?`<em class="cnt">${R.length}칸</em>`:''}${N().visBadge(e._vis,'ents',e.id)}${linkIcons(e)}</span></span></button>`}
- /* 인물 = 신분증. 소속 · 한 줄 · 태그 · 칸에 교수 · 교원 · 직원 … 이 있으면 교원증, 학생 · 학년 … 이면 학생증, 꾸밈 「대학」 캠페인은 기본 학생증, 그 밖은 신분증 */
- const STAFF=/(교수|교원|강사|교직|직원|선생|교사|학장|총장|조교|이사장|사감|사서|연구원)/,STU=/(학생|학부|대학원|신입생|재학|휴학|\d\s*학년|학번)/;
- function idKind(e){{const tg=e.tags||[];const hit=Object.keys(IDKS).find(k=>tg.includes(IDKS[k][0])||(k==='staff'&&tg.includes('교원증')));if(hit)return hit}const tx=[e.sub,(e.tags||[]).join(' '),(e.rows||[]).map(r=>r.k+' '+r.v).join(' '),e.title].join(' ');
-  if(STAFF.test(tx))return 'staff';if(STU.test(tx))return 'stu';return document.documentElement.getAttribute('data-skin')==='univ'?'stu':'gen'}
- const IDK=IDKS;
- /* 11-15 망령 「미사그 대학 시트 쪽 번호 — 2026 으로 시작할 필요 없지」: 꾸밈 「대학」(미사그 · 작중 1787학년도 · 이번 입학 = 제XVII기, 추천서 「제ⅩⅦ기 · 추천 제031호」와 맞춤)은 기수-번호.
+  const SVT =
+    /(^|[\s·(/,])(세이버|아처|랜서|라이더|캐스터|어쌔신|버서커|룰러|어벤저|문캔서|포리너|얼터 ?에고|프리텐더|실더|서번트|그림 ?리퍼)(?=$|[\s·()/,])/;
+  function idOk(e) {
+    const tg = e.tags || [];
+    if (tg.includes('신분증 없음')) return false;
+    if (tg.includes('신분증')) return true;
+    const T = ((N().ST.campInfo || {}).data || {}).idTeams || [];
+    if (!T.length) return true;
+    return (e.teams || []).some(t => T.includes(t)) && !SVT.test(e.sub || '');
+  }
+  function cardOf(e) {
+    if (U.dense) return card(e);
+    const t = ety(e);
+    return t === '세계관' ? cardWorld(e) : t === '인물' ? (idOk(e) ? cardId(e, false) : card(e)) : t === '설정' ? cardLore(e) : card(e);
+  }
+  const rowsV = e => (e.rows || []).filter(r => r && r.k);
+  const clip = (s, n) => {
+    s = String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return s.length > n ? s.slice(0, n) + '…' : s;
+  };
+  function cardWorld(e) {
+    const R = rowsV(e);
+    return `<button type="button" class="enti ew ${e.id === U.sel ? 'on' : ''}" data-sel="${esc(e.id)}" data-id="${esc(e.id)}" data-drag style="--c:${e.color || tc('세계관')[2]}">
+   <span class="ew-band"><i aria-hidden="true">🧭</i>${esc(tl('세계관'))}<span class="sp"></span>${N().visBadge(e._vis, 'ents', e.id)}${linkIcons(e)}</span>
+   ${e.photo || e.face ? `<span class="ew-img" style="background-image:url('${cssu(e.photo || e.face)}')"></span>` : ''}
+   <b class="ew-t">${esc(e.title || '(제목 없음)')}</b>${e.sub ? `<small class="ew-s">${esc(e.sub)}</small>` : ''}
+   ${e.body ? `<span class="ew-b">${esc(clip(e.body, 90))}</span>` : ''}
+   ${
+     R.length
+       ? `<span class="ew-rows">${R.slice(0, 6)
+           .map(r => `<em>${esc(r.k)}</em>`)
+           .join('')}${R.length > 6 ? `<em class="more">+${R.length - 6}</em>` : ''}</span>`
+       : ''
+   }
+   ${
+     (e.tags || []).length
+       ? `<span class="etags">${e.tags
+           .filter(x => !WTAG.includes(x))
+           .slice(0, 4)
+           .map(x => `<em>${esc(x)}</em>`)
+           .join('')}</span>`
+       : ''
+   }</button>`;
+  }
+  function cardLore(e) {
+    const R = rowsV(e);
+    return `<button type="button" class="enti el ${e.id === U.sel ? 'on' : ''}" data-sel="${esc(e.id)}" data-id="${esc(e.id)}" data-drag style="--c:${e.color || tc('설정')[2]}">
+   <span class="el-k" aria-hidden="true">§</span><span class="el-m"><b>${esc(e.title || '(제목 없음)')}</b>${e.sub ? `<small>${esc(e.sub)}</small>` : ''}
+   <span class="etags">${(e.tags || [])
+     .slice(0, 3)
+     .map(x => `<em>${esc(x)}</em>`)
+     .join('')}${R.length ? `<em class="cnt">${R.length}칸</em>` : ''}${N().visBadge(e._vis, 'ents', e.id)}${linkIcons(e)}</span></span></button>`;
+  }
+  /* 인물 = 신분증. 소속 · 한 줄 · 태그 · 칸에 교수 · 교원 · 직원 … 이 있으면 교원증, 학생 · 학년 … 이면 학생증, 꾸밈 「대학」 캠페인은 기본 학생증, 그 밖은 신분증 */
+  const STAFF = /(교수|교원|강사|교직|직원|선생|교사|학장|총장|조교|이사장|사감|사서|연구원)/,
+    STU = /(학생|학부|대학원|신입생|재학|휴학|\d\s*학년|학번)/;
+  function idKind(e) {
+    {
+      const tg = e.tags || [];
+      const hit = Object.keys(IDKS).find(k => tg.includes(IDKS[k][0]) || (k === 'staff' && tg.includes('교원증')));
+      if (hit) return hit;
+    }
+    const tx = [e.sub, (e.tags || []).join(' '), (e.rows || []).map(r => r.k + ' ' + r.v).join(' '), e.title].join(' ');
+    if (STAFF.test(tx)) return 'staff';
+    if (STU.test(tx)) return 'stu';
+    return document.documentElement.getAttribute('data-skin') === 'univ' ? 'stu' : 'gen';
+  }
+  const IDK = IDKS;
+  /* 11-15 망령 「미사그 대학 시트 쪽 번호 — 2026 으로 시작할 필요 없지」: 꾸밈 「대학」(미사그 · 작중 1787학년도 · 이번 입학 = 제XVII기, 추천서 「제ⅩⅦ기 · 추천 제031호」와 맞춤)은 기수-번호.
     인물 칸 · NPC 시트만(PC 학생증은 예전 그대로 — 망령 「바꾸는 건 NPC 만」). 학생 = 기수-번호(XIV ~ XVII기) · 대학원 XI ~ XV기 · 졸업생 I ~ XVI기 · 교직원 No.007 · 연구원 R-012 · 교환 EX-XVII-04 · 방문 V-0412.
     다른 꾸밈(칼데아 등)은 예전 그대로. pc_ui 도 window.NT_IDNO 를 같이 쓴다 */
- const UNIV={year:1787,coh:17};
- const ROM=n=>{let r='',x=Math.max(1,n|0);for(const [v,c] of [[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']])while(x>=v){r+=c;x-=v}return r};
- const idHash=id=>{let h=7;for(const ch of String(id))h=(h*31+ch.charCodeAt(0))>>>0;return h};
- const idNoOf=(id,kind,o={})=>{const h=idHash(id);const univ=document.documentElement.getAttribute('data-skin')==='univ';if(!univ)return '2026-'+String(h%10000).padStart(4,'0');
-  const n3=String(h%999+1).padStart(3,'0'),q=(h>>>10);const C=UNIV.coh;
-  switch(kind){
-   case 'stu':return ROM(o.pc?C:C-(q%4))+'-'+n3;
-   case 'grad':return ROM(C-2-(q%5))+'-'+n3;
-   case 'alum':return ROM(1+(q%(C-1)))+'-'+n3;
-   case 'exch':return 'EX-'+ROM(C)+'-'+String(h%99+1).padStart(2,'0');
-   case 'staff':return 'No.'+n3;
-   case 'res':return 'R-'+n3;
-   case 'visit':return 'V-'+String(h%9999+1).padStart(4,'0');
-   default:return 'No.'+String(h%9999+1).padStart(4,'0')}};
- window.NT_IDNO=idNoOf;window.NT_IDYEAR=()=>document.documentElement.getAttribute('data-skin')==='univ'?UNIV.year:2026;
- const idNo=(id,kind)=>idNoOf(id,kind);
- const idCrest='<svg viewBox="0 0 40 46" aria-hidden="true"><path d="M20 2 37 8v14c0 11-7.5 18.5-17 22C10.5 40.5 3 33 3 22V8Z" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M11 16h18v14H11zM20 16v14" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="20" cy="9.5" r="2.2" fill="currentColor"/></svg>';
- function idOrg(){const c=(N().ST&&N().ST.campInfo)||{};const nm=c.name||'';const univ=document.documentElement.getAttribute('data-skin')==='univ';
-  return univ?['MISAG UNIVERSITY',/대학/.test(nm)?nm.replace(/대학$/,'대학교'):'미사그 대학교']:[nm||'CAMPAIGN','캠페인 인물 기록']}
- function cardId(e,big){const k=idKind(e),K=IDK[k];const mt=e.mk&&window.NT_MAKER&&NT_MAKER.trainer?NT_MAKER.trainer(e.mk):null;const img=e.face||e.photo||(mt&&/^https?:\/\//.test(mt.image||'')?mt.image:'');const org=idOrg();const ini=esc([...String(e.title||'?')][0]||'?');const R=rowsV(e).filter(r=>r.v);
-  const tag=big?'div':'button';
-  return `<${tag} ${big?'':'type="button"'} class="enti eid eid-${k} ${big?'big':''} ${isDead(e)?'dead':isMiss(e)?'missing':''} ${!big&&e.id===U.sel?'on':''}" ${big?'':`data-sel="${esc(e.id)}" data-id="${esc(e.id)}" data-drag`} style="--c:${e.color||tc('인물')[2]}">
+  const UNIV = { year: 1787, coh: 17 };
+  const ROM = n => {
+    let r = '',
+      x = Math.max(1, n | 0);
+    for (const [v, c] of [
+      [10, 'X'],
+      [9, 'IX'],
+      [5, 'V'],
+      [4, 'IV'],
+      [1, 'I']
+    ])
+      while (x >= v) {
+        r += c;
+        x -= v;
+      }
+    return r;
+  };
+  const idHash = id => {
+    let h = 7;
+    for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return h;
+  };
+  const idNoOf = (id, kind, o = {}) => {
+    const h = idHash(id);
+    const univ = document.documentElement.getAttribute('data-skin') === 'univ';
+    if (!univ) return '2026-' + String(h % 10000).padStart(4, '0');
+    const n3 = String((h % 999) + 1).padStart(3, '0'),
+      q = h >>> 10;
+    const C = UNIV.coh;
+    switch (kind) {
+      case 'stu':
+        return ROM(o.pc ? C : C - (q % 4)) + '-' + n3;
+      case 'grad':
+        return ROM(C - 2 - (q % 5)) + '-' + n3;
+      case 'alum':
+        return ROM(1 + (q % (C - 1))) + '-' + n3;
+      case 'exch':
+        return 'EX-' + ROM(C) + '-' + String((h % 99) + 1).padStart(2, '0');
+      case 'staff':
+        return 'No.' + n3;
+      case 'res':
+        return 'R-' + n3;
+      case 'visit':
+        return 'V-' + String((h % 9999) + 1).padStart(4, '0');
+      default:
+        return 'No.' + String((h % 9999) + 1).padStart(4, '0');
+    }
+  };
+  window.NT_IDNO = idNoOf;
+  window.NT_IDYEAR = () => (document.documentElement.getAttribute('data-skin') === 'univ' ? UNIV.year : 2026);
+  const idNo = (id, kind) => idNoOf(id, kind);
+  const idCrest =
+    '<svg viewBox="0 0 40 46" aria-hidden="true"><path d="M20 2 37 8v14c0 11-7.5 18.5-17 22C10.5 40.5 3 33 3 22V8Z" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M11 16h18v14H11zM20 16v14" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="20" cy="9.5" r="2.2" fill="currentColor"/></svg>';
+  function idOrg() {
+    const c = (N().ST && N().ST.campInfo) || {};
+    const nm = c.name || '';
+    const univ = document.documentElement.getAttribute('data-skin') === 'univ';
+    return univ ? ['MISAG UNIVERSITY', /대학/.test(nm) ? nm.replace(/대학$/, '대학교') : '미사그 대학교'] : [nm || 'CAMPAIGN', '캠페인 인물 기록'];
+  }
+  function cardId(e, big) {
+    const k = idKind(e),
+      K = IDK[k];
+    const mt = e.mk && window.NT_MAKER && NT_MAKER.trainer ? NT_MAKER.trainer(e.mk) : null;
+    const img = e.face || e.photo || (mt && /^https?:\/\//.test(mt.image || '') ? mt.image : '');
+    const org = idOrg();
+    const ini = esc([...String(e.title || '?')][0] || '?');
+    const R = rowsV(e).filter(r => r.v);
+    const tag = big ? 'div' : 'button';
+    return `<${tag} ${big ? '' : 'type="button"'} class="enti eid eid-${k} ${big ? 'big' : ''} ${isDead(e) ? 'dead' : isMiss(e) ? 'missing' : ''} ${!big && e.id === U.sel ? 'on' : ''}" ${big ? '' : `data-sel="${esc(e.id)}" data-id="${esc(e.id)}" data-drag`} style="--c:${e.color || tc('인물')[2]}">
    <span class="eid-h"><i class="eid-cr">${idCrest}</i><span class="eid-o"><b>${esc(org[0])}</b><small>${esc(org[1])}</small></span><span class="eid-k">${K[0]}<small>${K[1]}</small></span></span>
-   <span class="eid-b"><span class="eid-p ${img?'':'noimg'}" style="${img?`background-image:url('${cssu(img)}')`:''}" ${big&&img?`data-big="${esc(img)}"`:''}>${img?'':ini}</span>
-    <span class="eid-f"><span class="eid-l">성명</span><b class="eid-n">${esc(e.title||'(이름 없음)')}</b>
-     <span class="eid-l">${K[2]}</span><span class="eid-v">${esc(e.sub||'—')}</span>
-     <span class="eid-l">${K[3]}</span><span class="eid-v eid-no">${esc((rowsV(e).find(r=>r.v&&r.k===K[3])||{}).v||idNo(e.id,k))}</span>
-     ${(big?[]:R.slice(0,1)).map(r=>`<span class="eid-l">${esc(clip(r.k,6))}</span><span class="eid-v">${esc(clip(r.v,big?60:22))}</span>`).join('')}</span></span>
-   <span class="eid-ft"><span class="eid-bar" aria-hidden="true"></span>${!big&&(NEST.sv[e.id]||[]).length?`<span class="eid-svn" title="누르면 오른쪽에 휘하 서번트가 펼쳐져요">서번트 ${NEST.sv[e.id].length}</span>`:''}${vt(e).length?`<span class="eid-tg">${vt(e).slice(0,big?6:2).map(x=>`<em>${esc(x)}</em>`).join('')}</span>`:'<span class="sp"></span>'}${big?'':N().visBadge(e._vis,'ents',e.id)+linkIcons(e)}<span class="eid-seal" aria-hidden="true">${isDead(e)?'사망':isMiss(e)?'실종':K[4]}</span></span>${isDead(e)?`<span class="eid-dead" aria-label="사망">${SPLAT}<span class="eid-dstamp">사망<small>DECEASED</small></span></span>`:isMiss(e)?`<span class="eid-dead eid-miss" aria-label="실종"><span class="eid-dstamp">실종<small>MISSING</small></span></span>`:''}</${tag}>`}
- function nestBox(e){const S=NEST.sv[e.id]||[],M=NEST.m[e.id];if(!S.length&&!M)return '';
-  if(M)return `<div class="svmaster"><span class="small dim">마스터</span><button type="button" class="svm mini" data-sel="${esc(M.id)}"><span class="svf" style="${M.face?`background-image:url('${cssu(M.face)}')`:''}">${M.face?'':esc([...String(M.title||'?')][0])}</span><span class="svt"><b>${esc(M.title||'')}</b><small>${esc(M.sub||'')}</small></span><em>←</em></button></div>`;
-  return `<div class="sec">휘하 서번트 <small class="dim">${S.length}</small></div><div class="svlist">${S.map(s=>`<button type="button" class="svm ${/퇴거/.test(s.sub||'')?'gone':''}" data-sel="${esc(s.id)}" style="--c:${esc(s.color||tc('인물')[2])}"><span class="svf" style="${s.face?`background-image:url('${cssu(s.face)}')`:''}">${s.face?'':esc([...String(s.title||'?')][0])}</span><span class="svt"><b>${esc(s.title||'')}</b><small>${esc(String(s.sub||'').replace(/\s*\([^)]*\)/,''))}</small></span>${/퇴거/.test(s.sub||'')?'<em>퇴거</em>':''}</button>`).join('')}</div>`}
- /* 11-14 망령 「뒷골목 · 대성당 … 미사그 캠퍼스는 세계관 · 지역 쪽에 지역 이미지나 관련 인물을 볼 수 있는 설명 문서」:
+   <span class="eid-b"><span class="eid-p ${img ? '' : 'noimg'}" style="${img ? `background-image:url('${cssu(img)}')` : ''}" ${big && img ? `data-big="${esc(img)}"` : ''}>${img ? '' : ini}</span>
+    <span class="eid-f"><span class="eid-l">성명</span><b class="eid-n">${esc(e.title || '(이름 없음)')}</b>
+     <span class="eid-l">${K[2]}</span><span class="eid-v">${esc(e.sub || '—')}</span>
+     <span class="eid-l">${K[3]}</span><span class="eid-v eid-no">${esc((rowsV(e).find(r => r.v && r.k === K[3]) || {}).v || idNo(e.id, k))}</span>
+     ${(big ? [] : R.slice(0, 1)).map(r => `<span class="eid-l">${esc(clip(r.k, 6))}</span><span class="eid-v">${esc(clip(r.v, big ? 60 : 22))}</span>`).join('')}</span></span>
+   <span class="eid-ft"><span class="eid-bar" aria-hidden="true"></span>${!big && (NEST.sv[e.id] || []).length ? `<span class="eid-svn" title="누르면 오른쪽에 휘하 서번트가 펼쳐져요">서번트 ${NEST.sv[e.id].length}</span>` : ''}${
+     vt(e).length
+       ? `<span class="eid-tg">${vt(e)
+           .slice(0, big ? 6 : 2)
+           .map(x => `<em>${esc(x)}</em>`)
+           .join('')}</span>`
+       : '<span class="sp"></span>'
+   }${big ? '' : N().visBadge(e._vis, 'ents', e.id) + linkIcons(e)}<span class="eid-seal" aria-hidden="true">${isDead(e) ? '사망' : isMiss(e) ? '실종' : K[4]}</span></span>${isDead(e) ? `<span class="eid-dead" aria-label="사망">${SPLAT}<span class="eid-dstamp">사망<small>DECEASED</small></span></span>` : isMiss(e) ? `<span class="eid-dead eid-miss" aria-label="실종"><span class="eid-dstamp">실종<small>MISSING</small></span></span>` : ''}</${tag}>`;
+  }
+  function nestBox(e) {
+    const S = NEST.sv[e.id] || [],
+      M = NEST.m[e.id];
+    if (!S.length && !M) return '';
+    if (M)
+      return `<div class="svmaster"><span class="small dim">마스터</span><button type="button" class="svm mini" data-sel="${esc(M.id)}"><span class="svf" style="${M.face ? `background-image:url('${cssu(M.face)}')` : ''}">${M.face ? '' : esc([...String(M.title || '?')][0])}</span><span class="svt"><b>${esc(M.title || '')}</b><small>${esc(M.sub || '')}</small></span><em>←</em></button></div>`;
+    return `<div class="sec">휘하 서번트 <small class="dim">${S.length}</small></div><div class="svlist">${S.map(s => `<button type="button" class="svm ${/퇴거/.test(s.sub || '') ? 'gone' : ''}" data-sel="${esc(s.id)}" style="--c:${esc(s.color || tc('인물')[2])}"><span class="svf" style="${s.face ? `background-image:url('${cssu(s.face)}')` : ''}">${s.face ? '' : esc([...String(s.title || '?')][0])}</span><span class="svt"><b>${esc(s.title || '')}</b><small>${esc(String(s.sub || '').replace(/\s*\([^)]*\)/, ''))}</small></span>${/퇴거/.test(s.sub || '') ? '<em>퇴거</em>' : ''}</button>`).join('')}</div>`;
+  }
+  /* 11-14 망령 「뒷골목 · 대성당 … 미사그 캠퍼스는 세계관 · 지역 쪽에 지역 이미지나 관련 인물을 볼 수 있는 설명 문서」:
     인물이 아닌 항목의 상세에 「관련 인물」 = 소속(teams)에 이 항목의 제목이나 이 항목의 소속이 들어 있는 인물(보이는 것만). 장소는 배경 그림이 있으면 그림으로. 인물의 소속 칩은 같은 제목의 항목으로 간다 */
- function relPeople(e){if(ety(e)==='인물')return '';const K=new Set([e.title].concat(e.teams||[]).map(x=>String(x||'').trim()).filter(Boolean));if(!K.size)return '';
-  const P=ents().filter(p=>p.id!==e.id&&ety(p)==='인물'&&(p.teams||[]).some(t=>K.has(String(t).trim())));if(!P.length)return '';
-  const grp=[...K].map(k=>[k,P.filter(p=>(p.teams||[]).map(x=>String(x).trim()).includes(k))]).filter(x=>x[1].length);
-  const one=s=>`<button type="button" class="relpm" data-sel="${esc(s.id)}" style="--c:${esc(s.color||tc('인물')[2])}"><span class="relpf" style="${s.face||s.photo?`background-image:url('${cssu(s.face||s.photo)}')`:''}">${s.face||s.photo?'':esc([...String(s.title||'?')][0])}</span><b>${esc(s.title||'')}</b><small>${esc(s.sub||'')}</small></button>`;
-  return `<div class="sec">관련 인물 <small class="dim">${P.length}</small></div>${grp.map(([k,L])=>`${grp.length>1?`<div class="relph">${esc(k)}</div>`:''}<div class="relp">${L.map(one).join('')}</div>`).join('')}`}
- function spotsBox(e){const A=(e.at||[]).map(id=>[id,N().data('spots',id)]).filter(x=>x[1]);if(!A.length)return (e.at||[]).length?`<div class="sec">장소</div><div class="row">${e.at.map(id=>`<button class="chip" data-spot="${esc(id)}">📍 ${esc(spotName(id)||id)}</button>`).join('')}</div>`:'';
-  const im=A.filter(([,s])=>/^https?:/.test(s.bg||'')),no=A.filter(([,s])=>!/^https?:/.test(s.bg||''));
-  return `<div class="sec">장소</div>${im.length?`<div class="fgrid spg">${im.map(([id,s])=>`<figure><img src="${esc(s.bg)}" alt="" loading="lazy" data-big="${esc(s.bg)}"><figcaption><button type="button" class="linkbtn" data-spot="${esc(id)}" title="지도에서 보기">📍 ${esc(spotName(id))}</button></figcaption></figure>`).join('')}</div>`:''}${no.length?`<div class="row">${no.map(([id])=>`<button class="chip" data-spot="${esc(id)}">📍 ${esc(spotName(id)||id)}</button>`).join('')}</div>`:''}`}
- const teamDoc=t=>ents().find(x=>ety(x)!=='인물'&&String(x.title||'').trim()===String(t).trim());
- function detail(e){const G=N().gm(),ty=ety(e),t=tc(ty);const sec=N().data('sec','ent:'+e.id);const KV=(G?rowsAll(e):(e.rows||[]).map(r=>({k:r.k,v:r.v,lk:false}))).filter(r=>r.v);const nlk=KV.filter(r=>r.lk).length;const rels=N().list('rels').filter(r=>r.a===e.id||r.b===e.id);
-  return `<div class="card entd" style="--c:${e.color||t[2]}"><div class="row" style="gap:6px"><span class="chip static" style="border-color:var(--c);color:var(--c)">${esc(tl(ty))}</span>${window.NT_FAV?NT_FAV.btn('ents',e.id,e.title):''}${N().visBadge(e._vis,'ents',e.id)}${window.NT_HIST?NT_HIST.btn('ents',e.id):''}<span class="sp"></span><button type="button" class="btn xs ghost entback" data-eback title="목록의 이 카드로 올라가요">↑ 목록</button>${U.ids.length>1&&U.ids.includes(e.id)?`<span class="entnav"><button class="btn xs ghost" data-enav="-1" ${U.ids[0]===e.id?'disabled':''} title="앞 항목">◀</button><button class="btn xs ghost" data-enav="1" ${U.ids[U.ids.length-1]===e.id?'disabled':''} title="다음 항목">▶</button></span>`:''}${G?`<button class="btn xs" data-e="edit" data-id="${esc(e.id)}">고치기</button><button class="btn xs ghost danger" data-e="del" data-id="${esc(e.id)}">지우기</button>`:''}</div>
-   ${ty==='인물'&&idOk(e)?`<div class="eidwrap">${cardId(e,true)}</div>`:`<div class="enthead ${ty==='세계관'?'ewh':''}">${e.face?`<img class="face" src="${esc(e.face)}" alt="" data-big="${esc(e.face)}">`:''}<div><h3>${esc(e.title||'')}</h3>${e.sub?`<div class="dim">${esc(e.sub)}</div>`:''}${(e.tags||[]).length?`<div class="etags">${e.tags.map(x=>`<em>${esc(x)}</em>`).join('')}</div>`:''}</div></div>`}
-   ${ty==='인물'?nestBox(e):''}
-   ${e.photo&&!(ty==='인물'&&!e.face)?`<img class="photo" src="${esc(e.photo)}" alt="" data-big="${esc(e.photo)}" loading="lazy">`:''}
-   ${e.body?`<p class="pre">${esc(e.body)}</p>`:''}
-   ${e.mk?mkBox(e.mk):''}${e.rb&&e.rb.ch&&window.NT_RB?NT_RB.box(e.rb):''}${(e.files||[]).length?filesBox(e):''}
-   ${KV.length?`<div class="kv">${KV.map(r=>`<b class="${r.lk?'lk':''}">${r.lk?'<i class="lkm" title="GM 에게만 보이는 칸">🔒</i>':''}${esc(r.k)}</b><span class="pre ${r.lk?'lk':''}">${esc(r.v)}</span>`).join('')}</div>${nlk?`<div class="kvnote">🔒 ${nlk}칸은 GM 에게만 보여요 — 공개해도 PL 화면에는 나가지 않아요</div>`:''}`:''}
+  function relPeople(e) {
+    if (ety(e) === '인물') return '';
+    const K = new Set(
+      [e.title]
+        .concat(e.teams || [])
+        .map(x => String(x || '').trim())
+        .filter(Boolean)
+    );
+    if (!K.size) return '';
+    const P = ents().filter(p => p.id !== e.id && ety(p) === '인물' && (p.teams || []).some(t => K.has(String(t).trim())));
+    if (!P.length) return '';
+    const grp = [...K].map(k => [k, P.filter(p => (p.teams || []).map(x => String(x).trim()).includes(k))]).filter(x => x[1].length);
+    const one = s =>
+      `<button type="button" class="relpm" data-sel="${esc(s.id)}" style="--c:${esc(s.color || tc('인물')[2])}"><span class="relpf" style="${s.face || s.photo ? `background-image:url('${cssu(s.face || s.photo)}')` : ''}">${s.face || s.photo ? '' : esc([...String(s.title || '?')][0])}</span><b>${esc(s.title || '')}</b><small>${esc(s.sub || '')}</small></button>`;
+    return `<div class="sec">관련 인물 <small class="dim">${P.length}</small></div>${grp.map(([k, L]) => `${grp.length > 1 ? `<div class="relph">${esc(k)}</div>` : ''}<div class="relp">${L.map(one).join('')}</div>`).join('')}`;
+  }
+  function spotsBox(e) {
+    const A = (e.at || []).map(id => [id, N().data('spots', id)]).filter(x => x[1]);
+    if (!A.length)
+      return (e.at || []).length
+        ? `<div class="sec">장소</div><div class="row">${e.at.map(id => `<button class="chip" data-spot="${esc(id)}">📍 ${esc(spotName(id) || id)}</button>`).join('')}</div>`
+        : '';
+    const im = A.filter(([, s]) => /^https?:/.test(s.bg || '')),
+      no = A.filter(([, s]) => !/^https?:/.test(s.bg || ''));
+    return `<div class="sec">장소</div>${im.length ? `<div class="fgrid spg">${im.map(([id, s]) => `<figure><img src="${esc(s.bg)}" alt="" loading="lazy" data-big="${esc(s.bg)}"><figcaption><button type="button" class="linkbtn" data-spot="${esc(id)}" title="지도에서 보기">📍 ${esc(spotName(id))}</button></figcaption></figure>`).join('')}</div>` : ''}${no.length ? `<div class="row">${no.map(([id]) => `<button class="chip" data-spot="${esc(id)}">📍 ${esc(spotName(id) || id)}</button>`).join('')}</div>` : ''}`;
+  }
+  const teamDoc = t => ents().find(x => ety(x) !== '인물' && String(x.title || '').trim() === String(t).trim());
+  function detail(e) {
+    const G = N().gm(),
+      ty = ety(e),
+      t = tc(ty);
+    const sec = N().data('sec', 'ent:' + e.id);
+    const KV = (G ? rowsAll(e) : (e.rows || []).map(r => ({ k: r.k, v: r.v, lk: false }))).filter(r => r.v);
+    const nlk = KV.filter(r => r.lk).length;
+    const rels = N()
+      .list('rels')
+      .filter(r => r.a === e.id || r.b === e.id);
+    return `<div class="card entd" style="--c:${e.color || t[2]}"><div class="row" style="gap:6px"><span class="chip static" style="border-color:var(--c);color:var(--c)">${esc(tl(ty))}</span>${window.NT_FAV ? NT_FAV.btn('ents', e.id, e.title) : ''}${N().visBadge(e._vis, 'ents', e.id)}${window.NT_HIST ? NT_HIST.btn('ents', e.id) : ''}<span class="sp"></span><button type="button" class="btn xs ghost entback" data-eback title="목록의 이 카드로 올라가요">↑ 목록</button>${U.ids.length > 1 && U.ids.includes(e.id) ? `<span class="entnav"><button class="btn xs ghost" data-enav="-1" ${U.ids[0] === e.id ? 'disabled' : ''} title="앞 항목">◀</button><button class="btn xs ghost" data-enav="1" ${U.ids[U.ids.length - 1] === e.id ? 'disabled' : ''} title="다음 항목">▶</button></span>` : ''}${G ? `<button class="btn xs" data-e="edit" data-id="${esc(e.id)}">고치기</button><button class="btn xs ghost danger" data-e="del" data-id="${esc(e.id)}">지우기</button>` : ''}</div>
+   ${ty === '인물' && idOk(e) ? `<div class="eidwrap">${cardId(e, true)}</div>` : `<div class="enthead ${ty === '세계관' ? 'ewh' : ''}">${e.face ? `<img class="face" src="${esc(e.face)}" alt="" data-big="${esc(e.face)}">` : ''}<div><h3>${esc(e.title || '')}</h3>${e.sub ? `<div class="dim">${esc(e.sub)}</div>` : ''}${(e.tags || []).length ? `<div class="etags">${e.tags.map(x => `<em>${esc(x)}</em>`).join('')}</div>` : ''}</div></div>`}
+   ${ty === '인물' ? nestBox(e) : ''}
+   ${e.photo && !(ty === '인물' && !e.face) ? `<img class="photo" src="${esc(e.photo)}" alt="" data-big="${esc(e.photo)}" loading="lazy">` : ''}
+   ${e.body ? `<p class="pre">${esc(e.body)}</p>` : ''}
+   ${e.mk ? mkBox(e.mk) : ''}${e.rb && e.rb.ch && window.NT_RB ? NT_RB.box(e.rb) : ''}${(e.files || []).length ? filesBox(e) : ''}
+   ${KV.length ? `<div class="kv">${KV.map(r => `<b class="${r.lk ? 'lk' : ''}">${r.lk ? '<i class="lkm" title="GM 에게만 보이는 칸">🔒</i>' : ''}${esc(r.k)}</b><span class="pre ${r.lk ? 'lk' : ''}">${esc(r.v)}</span>`).join('')}</div>${nlk ? `<div class="kvnote">🔒 ${nlk}칸은 GM 에게만 보여요 — 공개해도 PL 화면에는 나가지 않아요</div>` : ''}` : ''}
    ${spotsBox(e)}
    ${relPeople(e)}
-   ${(e.teams||[]).length?`<div class="sec">소속 · 편</div><div class="row">${e.teams.map(x=>{const d=ty==='인물'?teamDoc(x):null;return d?`<button type="button" class="chip" data-sel="${esc(d.id)}" title="「${esc(d.title)}」 설명 보기">${esc(x)} ›</button>`:`<span class="chip static">${esc(x)}</span>`}).join('')}</div>`:''}
-   ${rels.length?`<div class="sec">관계</div><ul class="lnk">${rels.map(r=>{const oid=r.a===e.id?r.b:r.a;const o=N().data('ents',oid);return `<li><button class="linkbtn" data-sel="${esc(oid)}">${esc(o?o.title:'?')}</button> <span class="small dim">${r.a===e.id?'→':'←'} ${esc(r.label||'')}</span></li>`}).join('')}</ul><button class="btn xs ghost" data-e="graph" data-id="${esc(e.id)}">관계도에서 보기</button>`:''}
-   ${window.NT_BLUE&&NT_BLUE.usesHtml?NT_BLUE.usesHtml('ents',e.id):''}
-   ${(()=>{const A=appears(e);return A.length?`<div class="sec">시나리오에 나오는 곳</div><ul class="appear">${A.map(a=>`<li style="--c:${esc(a.c)}"><i class="dot"></i><button class="linkbtn" data-appear="${esc(a.rid)}|${a.i}">${esc(a.route)} · ${a.i+1}. ${esc(a.title)}</button><span class="small dim">${a.why}</span></li>`).join('')}</ul>`:''})()}
-   ${G&&sec&&sec.t?`<div class="gmnote"><b>GM 메모</b><div class="pre">${esc(sec.t)}</div></div>`:''}</div>`}
- /* 10-29 망령: 제작기 트레이너 상자 — 랭크 · 파티 · 시트로 가기 */
- function mkBox(tid){const MK=window.NT_MAKER;if(!MK)return '';const t=MK.trainer(tid);const G=N().gm();
-  if(!t)return `<div class="mkx"><span class="small dim">🎴 ${MK.M.at?'제작기에서 이 트레이너를 찾지 못했어요 ('+esc(tid)+')':'제작기 트레이너를 읽는 중이에요…'}</span></div>`;
-  if(t.priv&&!G&&t.id!==N().me())return '';
-  /* 11-15 망령 「인물을 공개했다고 NPC 시트(배틀 데이터)를 볼 수 있으면 안 된다」: GM 이 아니면 자기 트레이너이거나 그 시트가 보이는(공개된) 때만 */
-  if(!G&&t.id!==N().me()&&!N().data('pc',tid)&&!N().data('npc',tid))return '';
-  const ms=MK.mons(tid).filter(m=>!m.priv||G||t.id===N().me()),rk=t.ranks||{};   /* 11-12 숨긴 포켓몬은 주인 · GM 만 */const sheet=N().data('pc',tid)?'pc':N().data('npc',tid)?'npc':'';
-  return `<div class="mkx"><span class="por" style="${t.image?`background-image:url('${cssu(t.image)}')`:''}"></span><div class="mb"><div class="row" style="gap:6px"><b>🎴 ${esc(t.name||tid)}</b><small class="dim">제작기 ${t.kind==='npc'?'NPC':'PC'}${t.folder?' · '+esc(MK.folderName(t.folder)):''}</small></div>
-   <div class="rk">${['지시','육성','통솔','능력'].map(k=>`<span>${k} <b>${esc(rk[k]||'-')}</b></span>`).join('')}</div>${ms.length?`<div class="mons">${ms.slice(0,6).map(m=>`<i title="${esc(m.name||'')}" style="${MK.img(m)?`background-image:url('${cssu(MK.img(m))}')`:''}">${MK.img(m)?'':esc((m.name||'?')[0])}</i>`).join('')}</div>`:''}</div>
-   <div class="acts">${sheet?`<button class="btn xs" data-gosheet="${sheet}|${esc(tid)}">시트 보기</button>`:G?`<button class="btn xs" data-mkadd="${esc(tid)}">시트로 넣기</button>`:''}<a class="btn xs ghost" href="${esc((window.NT_CONFIG||{}).makerUrl||'#')}" target="_blank" rel="noopener">제작기 ↗</a></div></div>`}
- const fsize=n=>!n?'':n>1048576?(n/1048576).toFixed(1)+'MB':n>1024?Math.round(n/1024)+'KB':(n||0)+'B';
- function filesBox(e){const F=e.files||[];const im=F.map((f,i)=>[f,i]).filter(([f])=>f.k==='img'),ot=F.map((f,i)=>[f,i]).filter(([f])=>f.k!=='img');
-  return `<div class="sec">첨부 <small class="dim">${F.length}</small></div>${im.length?`<div class="fgrid">${im.map(([f])=>`<figure><img src="${esc(f.u)}" alt="" loading="lazy" data-big="${esc(f.u)}"><figcaption>${esc(f.n||'')}</figcaption></figure>`).join('')}</div>`:''}
-   ${ot.length?`<ul class="flist">${ot.map(([f,i])=>f.k==='link'?`<li><a href="${esc(f.u)}" target="_blank" rel="noopener">🔗 ${esc(f.n||f.u)}</a><small class="dim">${esc((()=>{try{return new URL(f.u).host}catch(x){return ''}})())}</small></li>`:`<li><button class="linkbtn" data-fopen="${esc(e.id)}|${i}">📄 ${esc(f.n||'글')}</button><small class="dim">${fsize(f.s||(f.x||'').length)}</small></li>`).join('')}</ul>`:''}`}
- function openText(id,i){const e=N().data('ents',id);const f=e&&(e.files||[])[i];if(!f)return;const md=/\.md$/i.test(f.n||'')&&window.NT_RB;
-  N().openModal(`<div class="mhead"><h2>📄 ${esc(f.n||'글')}</h2><span class="sp"></span><button class="btn xs ghost" id="ftDl">내려받기</button><button class="btn ghost" data-x>닫기</button></div><div class="ftxt ${md?'rbx':''}">${md?`<div class="rbbody">${NT_RB.render(f.x||'')}</div>`:`<pre>${esc(f.x||'')}</pre>`}</div>`,'wide');
-  $('#ftDl').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([f.x||''],{type:'text/plain;charset=utf-8'}));a.download=f.n||'note.txt';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}}
- /* 이 항목이 나오는 시나리오 단계: 단계의 「등장 항목」 이거나, 항목의 장소에서 일어나는 단계 */
- function appears(e){const out=[];const at=new Set(e.at||[]);const R=window.NT_SCEN?NT_SCEN.routes():[];
-  for(const r of R)(r.steps||[]).forEach((s,i)=>{const a=(s.ents||[]).includes(e.id),b=s.spot&&at.has(s.spot);if(!a&&!b)return;const sp=s.spot&&N().data('spots',s.spot);out.push({rid:r.id,i,route:r.name||'루트',c:r.color||'#888',title:s.title||(sp?sp.name:'(단계)'),why:a?'등장':'장소'})});
-  return out.slice(0,30)}
+   ${
+     (e.teams || []).length
+       ? `<div class="sec">소속 · 편</div><div class="row">${e.teams
+           .map(x => {
+             const d = ty === '인물' ? teamDoc(x) : null;
+             return d
+               ? `<button type="button" class="chip" data-sel="${esc(d.id)}" title="「${esc(d.title)}」 설명 보기">${esc(x)} ›</button>`
+               : `<span class="chip static">${esc(x)}</span>`;
+           })
+           .join('')}</div>`
+       : ''
+   }
+   ${
+     rels.length
+       ? `<div class="sec">관계</div><ul class="lnk">${rels
+           .map(r => {
+             const oid = r.a === e.id ? r.b : r.a;
+             const o = N().data('ents', oid);
+             return `<li><button class="linkbtn" data-sel="${esc(oid)}">${esc(o ? o.title : '?')}</button> <span class="small dim">${r.a === e.id ? '→' : '←'} ${esc(r.label || '')}</span></li>`;
+           })
+           .join('')}</ul><button class="btn xs ghost" data-e="graph" data-id="${esc(e.id)}">관계도에서 보기</button>`
+       : ''
+   }
+   ${window.NT_BLUE && NT_BLUE.usesHtml ? NT_BLUE.usesHtml('ents', e.id) : ''}
+   ${(() => {
+     const A = appears(e);
+     return A.length
+       ? `<div class="sec">시나리오에 나오는 곳</div><ul class="appear">${A.map(a => `<li style="--c:${esc(a.c)}"><i class="dot"></i><button class="linkbtn" data-appear="${esc(a.rid)}|${a.i}">${esc(a.route)} · ${a.i + 1}. ${esc(a.title)}</button><span class="small dim">${a.why}</span></li>`).join('')}</ul>`
+       : '';
+   })()}
+   ${G && sec && sec.t ? `<div class="gmnote"><b>GM 메모</b><div class="pre">${esc(sec.t)}</div></div>` : ''}</div>`;
+  }
+  /* 10-29 망령: 제작기 트레이너 상자 — 랭크 · 파티 · 시트로 가기 */
+  function mkBox(tid) {
+    const MK = window.NT_MAKER;
+    if (!MK) return '';
+    const t = MK.trainer(tid);
+    const G = N().gm();
+    if (!t)
+      return `<div class="mkx"><span class="small dim">🎴 ${MK.M.at ? '제작기에서 이 트레이너를 찾지 못했어요 (' + esc(tid) + ')' : '제작기 트레이너를 읽는 중이에요…'}</span></div>`;
+    if (t.priv && !G && t.id !== N().me()) return '';
+    /* 11-15 망령 「인물을 공개했다고 NPC 시트(배틀 데이터)를 볼 수 있으면 안 된다」: GM 이 아니면 자기 트레이너이거나 그 시트가 보이는(공개된) 때만 */
+    if (!G && t.id !== N().me() && !N().data('pc', tid) && !N().data('npc', tid)) return '';
+    const ms = MK.mons(tid).filter(m => !m.priv || G || t.id === N().me()),
+      rk = t.ranks || {};
+    /* 11-12 숨긴 포켓몬은 주인 · GM 만 */ const sheet = N().data('pc', tid) ? 'pc' : N().data('npc', tid) ? 'npc' : '';
+    return `<div class="mkx"><span class="por" style="${t.image ? `background-image:url('${cssu(t.image)}')` : ''}"></span><div class="mb"><div class="row" style="gap:6px"><b>🎴 ${esc(t.name || tid)}</b><small class="dim">제작기 ${t.kind === 'npc' ? 'NPC' : 'PC'}${t.folder ? ' · ' + esc(MK.folderName(t.folder)) : ''}</small></div>
+   <div class="rk">${['지시', '육성', '통솔', '능력'].map(k => `<span>${k} <b>${esc(rk[k] || '-')}</b></span>`).join('')}</div>${
+     ms.length
+       ? `<div class="mons">${ms
+           .slice(0, 6)
+           .map(
+             m =>
+               `<i title="${esc(m.name || '')}" style="${MK.img(m) ? `background-image:url('${cssu(MK.img(m))}')` : ''}">${MK.img(m) ? '' : esc((m.name || '?')[0])}</i>`
+           )
+           .join('')}</div>`
+       : ''
+   }</div>
+   <div class="acts">${sheet ? `<button class="btn xs" data-gosheet="${sheet}|${esc(tid)}">시트 보기</button>` : G ? `<button class="btn xs" data-mkadd="${esc(tid)}">시트로 넣기</button>` : ''}<a class="btn xs ghost" href="${esc((window.NT_CONFIG || {}).makerUrl || '#')}" target="_blank" rel="noopener">제작기 ↗</a></div></div>`;
+  }
+  const fsize = n => (!n ? '' : n > 1048576 ? (n / 1048576).toFixed(1) + 'MB' : n > 1024 ? Math.round(n / 1024) + 'KB' : (n || 0) + 'B');
+  function filesBox(e) {
+    const F = e.files || [];
+    const im = F.map((f, i) => [f, i]).filter(([f]) => f.k === 'img'),
+      ot = F.map((f, i) => [f, i]).filter(([f]) => f.k !== 'img');
+    return `<div class="sec">첨부 <small class="dim">${F.length}</small></div>${im.length ? `<div class="fgrid">${im.map(([f]) => `<figure><img src="${esc(f.u)}" alt="" loading="lazy" data-big="${esc(f.u)}"><figcaption>${esc(f.n || '')}</figcaption></figure>`).join('')}</div>` : ''}
+   ${
+     ot.length
+       ? `<ul class="flist">${ot
+           .map(([f, i]) =>
+             f.k === 'link'
+               ? `<li><a href="${esc(f.u)}" target="_blank" rel="noopener">🔗 ${esc(f.n || f.u)}</a><small class="dim">${esc(
+                   (() => {
+                     try {
+                       return new URL(f.u).host;
+                     } catch (x) {
+                       return '';
+                     }
+                   })()
+                 )}</small></li>`
+               : `<li><button class="linkbtn" data-fopen="${esc(e.id)}|${i}">📄 ${esc(f.n || '글')}</button><small class="dim">${fsize(f.s || (f.x || '').length)}</small></li>`
+           )
+           .join('')}</ul>`
+       : ''
+   }`;
+  }
+  function openText(id, i) {
+    const e = N().data('ents', id);
+    const f = e && (e.files || [])[i];
+    if (!f) return;
+    const md = /\.md$/i.test(f.n || '') && window.NT_RB;
+    N().openModal(
+      `<div class="mhead"><h2>📄 ${esc(f.n || '글')}</h2><span class="sp"></span><button class="btn xs ghost" id="ftDl">내려받기</button><button class="btn ghost" data-x>닫기</button></div><div class="ftxt ${md ? 'rbx' : ''}">${md ? `<div class="rbbody">${NT_RB.render(f.x || '')}</div>` : `<pre>${esc(f.x || '')}</pre>`}</div>`,
+      'wide'
+    );
+    $('#ftDl').onclick = () => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([f.x || ''], { type: 'text/plain;charset=utf-8' }));
+      a.download = f.n || 'note.txt';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    };
+  }
+  /* 이 항목이 나오는 시나리오 단계: 단계의 「등장 항목」 이거나, 항목의 장소에서 일어나는 단계 */
+  function appears(e) {
+    const out = [];
+    const at = new Set(e.at || []);
+    const R = window.NT_SCEN ? NT_SCEN.routes() : [];
+    for (const r of R)
+      (r.steps || []).forEach((s, i) => {
+        const a = (s.ents || []).includes(e.id),
+          b = s.spot && at.has(s.spot);
+        if (!a && !b) return;
+        const sp = s.spot && N().data('spots', s.spot);
+        out.push({
+          rid: r.id,
+          i,
+          route: r.name || '루트',
+          c: r.color || '#888',
+          title: s.title || (sp ? sp.name : '(단계)'),
+          why: a ? '등장' : '장소'
+        });
+      });
+    return out.slice(0, 30);
+  }
 
- const TXTMAX=200*1024;
- async function attach(f){const nm=f.name||'파일';
-  if(/^image\//.test(f.type)){const u=await N().upload(f,'photo','file');return {k:'img',u,n:nm.replace(/\.[^.]+$/,''),s:f.size}}
-  if(/^text\//.test(f.type)||/\.(txt|md|markdown|csv)$/i.test(nm)){if(f.size>TXTMAX)throw new Error(`「${nm}」 이 너무 커요 (글 파일은 ${TXTMAX/1024}KB 까지)`);return {k:'txt',n:nm,x:await f.text(),s:f.size}}
-  throw new Error(`「${nm}」 은 아직 못 올려요 — 그림 · .txt · .md 만 돼요. PDF 는 드라이브 같은 곳에 올리고 「＋ 링크」로 붙여 주세요`)}
- async function mkAdd(tid){const t=window.NT_MAKER&&NT_MAKER.trainer(tid);if(!t)return;const k=t.kind==='npc'?'npc':'pc';await N().put(k,tid,{name:t.name||'',image:t.image||'',player:'',sub:'',log:[],order:N().list(k).length},k==='npc'?'gm':'pub');N().toast((k==='npc'?'NPC':'PC')+' 시트에 넣었어요');N().render()}
- async function act(k,b){const id=b.dataset.id||U.sel;
-  if(k==='new'){const nid=N().uid('e');const nty=(b&&b.dataset&&b.dataset.t)||U.type||'인물';await N().put('ents',nid,{type:nty,title:'새 항목',sub:'',body:'',rows:(TPL[nty]||[]).map(k=>({k,v:''})),tags:U.tag?[U.tag]:[],teams:[],face:'',photo:'',at:[],created:Date.now(),order:ents().length},'gm');U.sel=nid;edit(nid);N().armDraft('ents',nid);return}
-  if(k==='edit')return edit(id);
-  if(k==='graph'){const id=U.sel;N().go('graph');setTimeout(()=>window.NT_GRAPH&&NT_GRAPH.focus&&NT_GRAPH.focus(id),0);return}
-  if(k==='del'){const e=N().data('ents',id);if(!e||!await N().confirmBox(`「${e.title}」 항목을 지울까요? 관계선도 같이 지워져요. (설정 탭 「🗑 최근 지운 것」에서 되살릴 수 있어요)`,'지우기'))return;for(const r of N().list('rels').filter(r=>r.a===id||r.b===id))await N().del('rels',r.id);await N().del('ents',id);if(N().doc('sec','ent:'+id))await N().del('sec','ent:'+id);U.sel='';N().toastUndo('지웠어요');return}}
- function edit(id){const e=N().data('ents',id);if(!e)return;const sec=N().data('sec','ent:'+id)||{};const spots=N().list('spots');
-  const auto=!e.lkv&&(N().doc('ents',id)||{}).vis==='gm';/* 「비밀」 · 「숨긴 것」 은 기본 잠금: 아직 비어 있는 칸은 언제나, 내용이 있는 칸은 잠금을 정한 적 없는 GM만 항목일 때만 (이미 공개해 둔 내용은 그대로 둔다) */
-  const rows=rowsAll(e,id).map(r=>isSK(r.k)&&!r.lk&&(auto||!String(r.v||'').trim())?Object.assign(r,{lk:true}):r);let face=e.face||'',photo=e.photo||'';let files=N().clone(e.files||[]),rb=e.rb&&e.rb.ch?N().clone(e.rb):null;
-  const md=N().openModal(`<div class="mhead" style="border-color:${esc(e.color||tc(e.type)[2])}"><h2>항목 고치기 <small class="dim" style="font-size:13px;font-family:var(--body)">${esc(e.title||'')}</small></h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
+  const TXTMAX = 200 * 1024;
+  async function attach(f) {
+    const nm = f.name || '파일';
+    if (/^image\//.test(f.type)) {
+      const u = await N().upload(f, 'photo', 'file');
+      return { k: 'img', u, n: nm.replace(/\.[^.]+$/, ''), s: f.size };
+    }
+    if (/^text\//.test(f.type) || /\.(txt|md|markdown|csv)$/i.test(nm)) {
+      if (f.size > TXTMAX) throw new Error(`「${nm}」 이 너무 커요 (글 파일은 ${TXTMAX / 1024}KB 까지)`);
+      return { k: 'txt', n: nm, x: await f.text(), s: f.size };
+    }
+    throw new Error(`「${nm}」 은 아직 못 올려요 — 그림 · .txt · .md 만 돼요. PDF 는 드라이브 같은 곳에 올리고 「＋ 링크」로 붙여 주세요`);
+  }
+  async function mkAdd(tid) {
+    const t = window.NT_MAKER && NT_MAKER.trainer(tid);
+    if (!t) return;
+    const k = t.kind === 'npc' ? 'npc' : 'pc';
+    await N().put(
+      k,
+      tid,
+      { name: t.name || '', image: t.image || '', player: '', sub: '', log: [], order: N().list(k).length },
+      k === 'npc' ? 'gm' : 'pub'
+    );
+    N().toast((k === 'npc' ? 'NPC' : 'PC') + ' 시트에 넣었어요');
+    N().render();
+  }
+  async function act(k, b) {
+    const id = b.dataset.id || U.sel;
+    if (k === 'new') {
+      const nid = N().uid('e');
+      const nty = (b && b.dataset && b.dataset.t) || U.type || '인물';
+      await N().put(
+        'ents',
+        nid,
+        {
+          type: nty,
+          title: '새 항목',
+          sub: '',
+          body: '',
+          rows: (TPL[nty] || []).map(k => ({ k, v: '' })),
+          tags: U.tag ? [U.tag] : [],
+          teams: [],
+          face: '',
+          photo: '',
+          at: [],
+          created: Date.now(),
+          order: ents().length
+        },
+        'gm'
+      );
+      U.sel = nid;
+      edit(nid);
+      N().armDraft('ents', nid);
+      return;
+    }
+    if (k === 'edit') return edit(id);
+    if (k === 'graph') {
+      const id = U.sel;
+      N().go('graph');
+      setTimeout(() => window.NT_GRAPH && NT_GRAPH.focus && NT_GRAPH.focus(id), 0);
+      return;
+    }
+    if (k === 'del') {
+      const e = N().data('ents', id);
+      if (
+        !e ||
+        !(await N().confirmBox(`「${e.title}」 항목을 지울까요? 관계선도 같이 지워져요. (설정 탭 「🗑 최근 지운 것」에서 되살릴 수 있어요)`, '지우기'))
+      )
+        return;
+      for (const r of N()
+        .list('rels')
+        .filter(r => r.a === id || r.b === id))
+        await N().del('rels', r.id);
+      await N().del('ents', id);
+      if (N().doc('sec', 'ent:' + id)) await N().del('sec', 'ent:' + id);
+      U.sel = '';
+      N().toastUndo('지웠어요');
+      return;
+    }
+  }
+  function edit(id) {
+    const e = N().data('ents', id);
+    if (!e) return;
+    const sec = N().data('sec', 'ent:' + id) || {};
+    const spots = N().list('spots');
+    const auto =
+      !e.lkv &&
+      (N().doc('ents', id) || {}).vis ===
+        'gm'; /* 「비밀」 · 「숨긴 것」 은 기본 잠금: 아직 비어 있는 칸은 언제나, 내용이 있는 칸은 잠금을 정한 적 없는 GM만 항목일 때만 (이미 공개해 둔 내용은 그대로 둔다) */
+    const rows = rowsAll(e, id).map(r => (isSK(r.k) && !r.lk && (auto || !String(r.v || '').trim()) ? Object.assign(r, { lk: true }) : r));
+    let face = e.face || '',
+      photo = e.photo || '';
+    let files = N().clone(e.files || []),
+      rb = e.rb && e.rb.ch ? N().clone(e.rb) : null;
+    const md = N().openModal(
+      `<div class="mhead" style="border-color:${esc(e.color || tc(e.type)[2])}"><h2>항목 고치기 <small class="dim" style="font-size:13px;font-family:var(--body)">${esc(e.title || '')}</small></h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
    <div class="ed2">
     <div class="edL">
-     <div class="updz face" id="etFace"><div class="pv" style="${face?`background-image:url('${cssu(face)}')`:''}"></div><b>얼굴</b><span>카드 · 관계도 · 지도 핀 옆</span></div>
-     <div class="updz" id="etPhoto"><div class="pv" style="${photo?`background-image:url('${cssu(photo)}')`:''}"></div><b>큰 그림</b><span>끌어 놓기 · 클릭 · Ctrl+V</span></div>
+     <div class="updz face" id="etFace"><div class="pv" style="${face ? `background-image:url('${cssu(face)}')` : ''}"></div><b>얼굴</b><span>카드 · 관계도 · 지도 핀 옆</span></div>
+     <div class="updz" id="etPhoto"><div class="pv" style="${photo ? `background-image:url('${cssu(photo)}')` : ''}"></div><b>큰 그림</b><span>끌어 놓기 · 클릭 · Ctrl+V</span></div>
      <div class="row small" style="gap:4px"><button class="btn xs ghost" id="etFaceX">얼굴 빼기</button><button class="btn xs ghost" id="etPhotoX">큰 그림 빼기</button></div>
-     <label class="lbl">종류<select id="etType">${TYPES.map(([t])=>`<option value="${t}" ${t===e.type?'selected':''}>${tl(t)}</option>`).join('')}</select></label>
-     <label class="lbl">공개${N().visSelect(N().doc('ents',id).vis,'etVis')}</label>
-     <label class="lbl">색<input id="etColor" type="color" value="${esc(e.color||tc(e.type)[2])}"></label>
+     <label class="lbl">종류<select id="etType">${TYPES.map(([t]) => `<option value="${t}" ${t === e.type ? 'selected' : ''}>${tl(t)}</option>`).join('')}</select></label>
+     <label class="lbl">공개${N().visSelect(N().doc('ents', id).vis, 'etVis')}</label>
+     <label class="lbl">색<input id="etColor" type="color" value="${esc(e.color || tc(e.type)[2])}"></label>
     </div>
     <div class="edR">
-     <label class="lbl">제목<input id="etTitle" type="text" value="${esc(e.title||'')}" class="big"></label>
-     <label class="lbl">한 줄 소개<input id="etSub" type="text" value="${esc(e.sub||'')}"></label>
-     <label class="lbl">본문<textarea id="etBody" rows="5">${esc(e.body||'')}</textarea></label>
+     <label class="lbl">제목<input id="etTitle" type="text" value="${esc(e.title || '')}" class="big"></label>
+     <label class="lbl">한 줄 소개<input id="etSub" type="text" value="${esc(e.sub || '')}"></label>
+     <label class="lbl">본문<textarea id="etBody" rows="5">${esc(e.body || '')}</textarea></label>
      <div class="sec">상세 칸 <small class="dim">빈 칸은 저장하지 않아요 · 👁 공개 / 🔒 GM만</small><span class="sp"></span><button class="btn xs ghost" id="etTpl" title="이 종류의 기본 칸 중 빠진 것을 더해요">칸 틀</button><button class="btn xs" id="etRowAdd">＋ 칸</button></div><div id="etRows" class="rowsed"></div><div class="small dim" id="etLkSum"></div><div class="small dim">🔒 로 잠근 칸은 항목을 공개해도 PL 화면에 나가지 않아요. 한 줄 소개 · 본문 · 태그는 공개하면 그대로 보여요.</div>
      <div class="sec">태그 · 소속</div>
-     <div class="mrow"><label class="lbl">태그 (쉼표로)<input id="etTags" type="text" value="${esc((e.tags||[]).join(', '))}"></label><label class="lbl">소속 · 편 (쉼표로)<input id="etTeams" type="text" value="${esc((e.teams||[]).join(', '))}"></label></div>
-     <div class="row" style="gap:4px;flex-wrap:wrap">${tags().slice(0,24).map(t=>`<button type="button" class="chip xs" data-addtag="${esc(t)}">${esc(t)}</button>`).join('')}</div>
-     <div class="sec">장소</div><div class="row" id="etAt" style="flex-wrap:wrap;gap:4px">${spots.sort((a,b)=>String(a.num||'').localeCompare(String(b.num||''),'ko',{numeric:true})).map(s=>`<label class="chk chip ${(e.at||[]).includes(s.id)?'on':''}"><input type="checkbox" value="${esc(s.id)}" ${(e.at||[]).includes(s.id)?'checked':''} hidden>${esc((s.num?s.num+'. ':'')+s.name)}</label>`).join('')||'<span class="small dim">지도에 장소를 먼저 찍어요</span>'}</div>
+     <div class="mrow"><label class="lbl">태그 (쉼표로)<input id="etTags" type="text" value="${esc((e.tags || []).join(', '))}"></label><label class="lbl">소속 · 편 (쉼표로)<input id="etTeams" type="text" value="${esc((e.teams || []).join(', '))}"></label></div>
+     <div class="row" style="gap:4px;flex-wrap:wrap">${tags()
+       .slice(0, 24)
+       .map(t => `<button type="button" class="chip xs" data-addtag="${esc(t)}">${esc(t)}</button>`)
+       .join('')}</div>
+     <div class="sec">장소</div><div class="row" id="etAt" style="flex-wrap:wrap;gap:4px">${
+       spots
+         .sort((a, b) => String(a.num || '').localeCompare(String(b.num || ''), 'ko', { numeric: true }))
+         .map(
+           s =>
+             `<label class="chk chip ${(e.at || []).includes(s.id) ? 'on' : ''}"><input type="checkbox" value="${esc(s.id)}" ${(e.at || []).includes(s.id) ? 'checked' : ''} hidden>${esc((s.num ? s.num + '. ' : '') + s.name)}</label>`
+         )
+         .join('') || '<span class="small dim">지도에 장소를 먼저 찍어요</span>'
+     }</div>
      <div class="sec">잇기 <small class="dim">고르면 항목 상세에 바로 보여요 · 사본이 아니라 원본을 읽어요</small></div>
      <div class="mrow"><label class="lbl">📖 제작기 룰북 장<select id="etRb"><option value="">— 잇지 않음 —</option></select></label><label class="lbl">🎴 제작기 트레이너<select id="etMk"><option value="">— 잇지 않음 —</option></select></label></div>
      <div id="etRbH" class="rbpick"></div>
      <div class="sec">첨부 <small class="dim">그림 · .txt · .md · 링크</small><span class="sp"></span><button type="button" class="btn xs" id="etLinkAdd">＋ 링크</button></div>
      <div class="updz files" id="etFiles"><b>＋ 파일</b><span>끌어 놓기 · 클릭 · Ctrl+V — 그림은 줄여서 올리고, 글 파일은 항목 안에 넣어요</span></div>
      <ul class="flist ed" id="etFileList"></ul>
-     <div class="sec">GM 메모 <span class="dim">(GM 에게만 보여요)</span></div><textarea id="etSec" rows="3">${esc(sec.t||'')}</textarea>
+     <div class="sec">GM 메모 <span class="dim">(GM 에게만 보여요)</span></div><textarea id="etSec" rows="3">${esc(sec.t || '')}</textarea>
     </div>
    </div>
-   <div class="mfoot"><button class="btn ghost" data-x>취소</button><span class="sp"></span><button class="btn pri" id="etOk">저장</button></div>`,'wide');
-  $$('[data-addtag]',md).forEach(b=>b.onclick=()=>{const i=$('#etTags',md);const cur=i.value.split(',').map(x=>x.trim()).filter(Boolean);if(!cur.includes(b.dataset.addtag))cur.push(b.dataset.addtag);i.value=cur.join(', ')});
-  const drawRows=()=>{$('#etRows',md).innerHTML=rows.map((r,i)=>`<div class="etrow lkable ${r.lk?'lk':''}" data-i="${i}"><input type="text" data-k value="${esc(r.k)}" placeholder="칸 이름"><textarea data-v rows="1" placeholder="${r.lk?'내용 (GM만)':'내용'}">${esc(r.v)}</textarea><button type="button" class="btn xs ghost lkb ${r.lk?'on':''}" data-lk aria-pressed="${r.lk?'true':'false'}" title="${r.lk?'GM만 보는 칸이에요 — 누르면 공개 칸으로':'공개 칸이에요 — 누르면 GM만 보는 칸으로'}">${r.lk?'🔒':'👁'}</button><button class="btn xs ghost danger" data-del title="칸 빼기">×</button></div>`).join('');{const f=rows.filter(r=>String(r.v||'').trim());const a=f.filter(r=>r.lk).length;$('#etLkSum',md).textContent=f.length?`PL 에게 보이는 칸 ${f.length-a}개 · 🔒 GM만 ${a}개`:''}$$('#etRows textarea',md).forEach(t=>{const g=()=>{t.style.height='auto';t.style.height=Math.min(160,t.scrollHeight+2)+'px'};t.oninput=g;g()});
-   $$('.etrow',md).forEach(r=>{const i=+r.dataset.i;r.querySelector('[data-k]').oninput=ev=>rows[i].k=ev.target.value;r.querySelector('[data-v]').addEventListener('input',ev=>{rows[i].v=ev.target.value});r.querySelector('[data-lk]').onclick=()=>{rows[i].lk=!rows[i].lk;drawRows()};r.querySelector('[data-del]').onclick=()=>{rows.splice(i,1);drawRows()}})};
-  $('#etTpl',md).onclick=()=>{const have=new Set(rows.map(r=>r.k.trim()));const add=(TPL[$('#etType',md).value]||[]).filter(k=>!have.has(k));if(!add.length)return N().toast('기본 칸이 이미 다 있어요');add.forEach(k=>rows.push({k,v:'',lk:isSK(k)}));drawRows()};
-  drawRows();$('#etRowAdd',md).onclick=()=>{rows.push({k:'',v:'',lk:false});drawRows();const last=$$('.etrow [data-k]',md).pop();if(last)last.focus()};
-  $$('#etAt input',md).forEach(c=>c.onchange=()=>c.closest('label').classList.toggle('on',c.checked));
-  N().bindDrop($('#etFace',md),async fs=>{try{face=await N().upload(fs[0],'face','face');$('#etFace .pv',md).style.backgroundImage=`url('${cssu(face)}')`}catch(x){N().toast('올리기 실패: '+x.message)}});
-  N().bindDrop($('#etPhoto',md),async fs=>{try{photo=await N().upload(fs[0],'photo','photo');$('#etPhoto .pv',md).style.backgroundImage=`url('${cssu(photo)}')`}catch(x){N().toast('올리기 실패: '+x.message)}});
-  $('#etFaceX',md).onclick=()=>{face='';$('#etFace .pv',md).style.backgroundImage=''};$('#etPhotoX',md).onclick=()=>{photo='';$('#etPhoto .pv',md).style.backgroundImage=''};
-   /* 10-29 망령: 룰북 장 · 제작기 트레이너 · 첨부 */
-   const drawRbH=()=>{const box=$('#etRbH',md);if(!rb||!rb.ch||!window.NT_RB){box.innerHTML='';return}const S=NT_RB.sections(rb.ch).filter(x=>x.h);const on=h=>(rb.h||[]).includes(h);
-    box.innerHTML=S.length?`<span class="small dim">이 절만 보이기 (안 고르면 장 전체)</span>`+S.map(x=>`<label class="chk chip ${on(x.h)?'on':''}"><input type="checkbox" value="${esc(x.h)}" ${on(x.h)?'checked':''}>${esc(x.h)}</label>`).join(''):'';
-    $$('input',box).forEach(c=>c.onchange=()=>{c.closest('label').classList.toggle('on',c.checked);rb.h=$$('input:checked',box).map(x=>x.value)})};
-   const fillRb=()=>{const C=NT_RB.chapters();$('#etRb',md).innerHTML='<option value="">— 잇지 않음 —</option>'+C.map(c=>`<option value="${esc(c.id)}" ${rb&&rb.ch===c.id?'selected':''}>${esc(c.title||c.id)}</option>`).join('')+(rb&&!C.some(c=>c.id===rb.ch)?`<option value="${esc(rb.ch)}" selected>${esc(rb.ch)} (룰북에 없음)</option>`:'');drawRbH()};
-   if(window.NT_RB){if(NT_RB.R.book)fillRb();else NT_RB.load().then(fillRb)}
-   $('#etRb',md).onchange=ev=>{rb=ev.target.value?{ch:ev.target.value,h:[]}:null;drawRbH()};
-   const fillMk=()=>{const MK=window.NT_MAKER;if(!MK)return;const cur=$('#etMk',md).value||e.mk||'';const T=MK.trainers();const L=new Set(MK.linkedTrainers().map(t=>t.id));const nm=$('#etTitle',md).value.trim();
-    const S=[...T].sort((a,b)=>(b.name===nm)-(a.name===nm)||L.has(b.id)-L.has(a.id)||String(a.name||'').localeCompare(String(b.name||''),'ko'));
-    $('#etMk',md).innerHTML='<option value="">— 잇지 않음 —</option>'+S.map(t=>`<option value="${esc(t.id)}" ${cur===t.id?'selected':''}>${esc(t.name||t.id)}${t.kind==='npc'?' · NPC':''}${t.folder?' · '+esc(MK.folderName(t.folder)):''}</option>`).join('')+(cur&&!T.some(t=>t.id===cur)?`<option value="${esc(cur)}" selected>${esc(cur)} (찾지 못함)</option>`:'')};
-   fillMk();if(window.NT_MAKER&&!NT_MAKER.M.at)NT_MAKER.load().then(fillMk);
-   const drawFiles=()=>{$('#etFileList',md).innerHTML=files.map((f,i)=>`<li data-i="${i}">${f.k==='img'?`<i class="th" style="background-image:url('${cssu(f.u)}')"></i>`:`<i class="th">${f.k==='link'?'🔗':'📄'}</i>`}<input type="text" data-fn value="${esc(f.n||'')}" placeholder="이름"><small class="dim">${f.k==='link'?esc(f.u):fsize(f.s||(f.x||'').length)}</small><button type="button" class="btn xs ghost danger" data-fdel title="빼기">×</button></li>`).join('');
-    $$('#etFileList li',md).forEach(li=>{const i=+li.dataset.i;li.querySelector('[data-fn]').oninput=ev=>{files[i].n=ev.target.value};li.querySelector('[data-fdel]').onclick=()=>{files.splice(i,1);drawFiles()}})};
-   drawFiles();
-   N().bindDrop($('#etFiles',md),async fs=>{for(const f of fs){try{files.push(await attach(f))}catch(x){N().toast(x.message)}drawFiles()}},true,'image/*,.txt,.md,.markdown,.csv,text/plain,text/markdown');
-   $('#etLinkAdd',md).onclick=async()=>{const u=((await N().promptBox('링크 주소','','https://…'))||'').trim();if(!u)return;if(!/^https?:\/\/\S+$/i.test(u))return N().toast('https:// 로 시작하는 주소를 적어 주세요');
-    const n=await N().promptBox('보일 이름',(()=>{try{return new URL(u).host}catch(x){return ''}})(),'');files.push({k:'link',u,n:(n||'').trim()||u});drawFiles()};
-  $('#etOk',md).onclick=async()=>{const split=v=>v.split(',').map(x=>x.trim()).filter(Boolean);const SR=splitRows(rows.map(r=>({k:String(r.k||'').trim(),v:String(r.v||'').trim(),lk:!!r.lk})).filter(r=>r.v));
-   const n=Object.assign({},e,{type:$('#etType',md).value,title:$('#etTitle',md).value.trim()||'항목',sub:$('#etSub',md).value.trim(),body:$('#etBody',md).value.trim(),rows:SR.pub,lkv:1,tags:split($('#etTags',md).value),teams:split($('#etTeams',md).value),color:$('#etColor',md).value,at:$$('#etAt input:checked',md).map(c=>c.value),face,photo,rb:rb&&rb.ch?{ch:rb.ch,h:rb.h||[]}:null,mk:$('#etMk',md).value||'',files});
-   /* 잠근 칸(sec)을 먼저 쓰고 ents 를 쓴다 — 잠그는 칸이 한순간도 공개 문서에 남지 않게, 저장이 실패하면 ents 는 그대로 */
-   const t=$('#etSec',md).value.trim();if(!await putSec(id,t,SR.sec))return;await N().put('ents',id,n,$('#etVis',md).value);N().closeModal()}}
+   <div class="mfoot"><button class="btn ghost" data-x>취소</button><span class="sp"></span><button class="btn pri" id="etOk">저장</button></div>`,
+      'wide'
+    );
+    $$('[data-addtag]', md).forEach(
+      b =>
+        (b.onclick = () => {
+          const i = $('#etTags', md);
+          const cur = i.value
+            .split(',')
+            .map(x => x.trim())
+            .filter(Boolean);
+          if (!cur.includes(b.dataset.addtag)) cur.push(b.dataset.addtag);
+          i.value = cur.join(', ');
+        })
+    );
+    const drawRows = () => {
+      $('#etRows', md).innerHTML = rows
+        .map(
+          (r, i) =>
+            `<div class="etrow lkable ${r.lk ? 'lk' : ''}" data-i="${i}"><input type="text" data-k value="${esc(r.k)}" placeholder="칸 이름"><textarea data-v rows="1" placeholder="${r.lk ? '내용 (GM만)' : '내용'}">${esc(r.v)}</textarea><button type="button" class="btn xs ghost lkb ${r.lk ? 'on' : ''}" data-lk aria-pressed="${r.lk ? 'true' : 'false'}" title="${r.lk ? 'GM만 보는 칸이에요 — 누르면 공개 칸으로' : '공개 칸이에요 — 누르면 GM만 보는 칸으로'}">${r.lk ? '🔒' : '👁'}</button><button class="btn xs ghost danger" data-del title="칸 빼기">×</button></div>`
+        )
+        .join('');
+      {
+        const f = rows.filter(r => String(r.v || '').trim());
+        const a = f.filter(r => r.lk).length;
+        $('#etLkSum', md).textContent = f.length ? `PL 에게 보이는 칸 ${f.length - a}개 · 🔒 GM만 ${a}개` : '';
+      }
+      $$('#etRows textarea', md).forEach(t => {
+        const g = () => {
+          t.style.height = 'auto';
+          t.style.height = Math.min(160, t.scrollHeight + 2) + 'px';
+        };
+        t.oninput = g;
+        g();
+      });
+      $$('.etrow', md).forEach(r => {
+        const i = +r.dataset.i;
+        r.querySelector('[data-k]').oninput = ev => (rows[i].k = ev.target.value);
+        r.querySelector('[data-v]').addEventListener('input', ev => {
+          rows[i].v = ev.target.value;
+        });
+        r.querySelector('[data-lk]').onclick = () => {
+          rows[i].lk = !rows[i].lk;
+          drawRows();
+        };
+        r.querySelector('[data-del]').onclick = () => {
+          rows.splice(i, 1);
+          drawRows();
+        };
+      });
+    };
+    $('#etTpl', md).onclick = () => {
+      const have = new Set(rows.map(r => r.k.trim()));
+      const add = (TPL[$('#etType', md).value] || []).filter(k => !have.has(k));
+      if (!add.length) return N().toast('기본 칸이 이미 다 있어요');
+      add.forEach(k => rows.push({ k, v: '', lk: isSK(k) }));
+      drawRows();
+    };
+    drawRows();
+    $('#etRowAdd', md).onclick = () => {
+      rows.push({ k: '', v: '', lk: false });
+      drawRows();
+      const last = $$('.etrow [data-k]', md).pop();
+      if (last) last.focus();
+    };
+    $$('#etAt input', md).forEach(c => (c.onchange = () => c.closest('label').classList.toggle('on', c.checked)));
+    N().bindDrop($('#etFace', md), async fs => {
+      try {
+        face = await N().upload(fs[0], 'face', 'face');
+        $('#etFace .pv', md).style.backgroundImage = `url('${cssu(face)}')`;
+      } catch (x) {
+        N().toast('올리기 실패: ' + x.message);
+      }
+    });
+    N().bindDrop($('#etPhoto', md), async fs => {
+      try {
+        photo = await N().upload(fs[0], 'photo', 'photo');
+        $('#etPhoto .pv', md).style.backgroundImage = `url('${cssu(photo)}')`;
+      } catch (x) {
+        N().toast('올리기 실패: ' + x.message);
+      }
+    });
+    $('#etFaceX', md).onclick = () => {
+      face = '';
+      $('#etFace .pv', md).style.backgroundImage = '';
+    };
+    $('#etPhotoX', md).onclick = () => {
+      photo = '';
+      $('#etPhoto .pv', md).style.backgroundImage = '';
+    };
+    /* 10-29 망령: 룰북 장 · 제작기 트레이너 · 첨부 */
+    const drawRbH = () => {
+      const box = $('#etRbH', md);
+      if (!rb || !rb.ch || !window.NT_RB) {
+        box.innerHTML = '';
+        return;
+      }
+      const S = NT_RB.sections(rb.ch).filter(x => x.h);
+      const on = h => (rb.h || []).includes(h);
+      box.innerHTML = S.length
+        ? `<span class="small dim">이 절만 보이기 (안 고르면 장 전체)</span>` +
+          S.map(
+            x =>
+              `<label class="chk chip ${on(x.h) ? 'on' : ''}"><input type="checkbox" value="${esc(x.h)}" ${on(x.h) ? 'checked' : ''}>${esc(x.h)}</label>`
+          ).join('')
+        : '';
+      $$('input', box).forEach(
+        c =>
+          (c.onchange = () => {
+            c.closest('label').classList.toggle('on', c.checked);
+            rb.h = $$('input:checked', box).map(x => x.value);
+          })
+      );
+    };
+    const fillRb = () => {
+      const C = NT_RB.chapters();
+      $('#etRb', md).innerHTML =
+        '<option value="">— 잇지 않음 —</option>' +
+        C.map(c => `<option value="${esc(c.id)}" ${rb && rb.ch === c.id ? 'selected' : ''}>${esc(c.title || c.id)}</option>`).join('') +
+        (rb && !C.some(c => c.id === rb.ch) ? `<option value="${esc(rb.ch)}" selected>${esc(rb.ch)} (룰북에 없음)</option>` : '');
+      drawRbH();
+    };
+    if (window.NT_RB) {
+      if (NT_RB.R.book) fillRb();
+      else NT_RB.load().then(fillRb);
+    }
+    $('#etRb', md).onchange = ev => {
+      rb = ev.target.value ? { ch: ev.target.value, h: [] } : null;
+      drawRbH();
+    };
+    const fillMk = () => {
+      const MK = window.NT_MAKER;
+      if (!MK) return;
+      const cur = $('#etMk', md).value || e.mk || '';
+      const T = MK.trainers();
+      const L = new Set(MK.linkedTrainers().map(t => t.id));
+      const nm = $('#etTitle', md).value.trim();
+      const S = [...T].sort(
+        (a, b) => (b.name === nm) - (a.name === nm) || L.has(b.id) - L.has(a.id) || String(a.name || '').localeCompare(String(b.name || ''), 'ko')
+      );
+      $('#etMk', md).innerHTML =
+        '<option value="">— 잇지 않음 —</option>' +
+        S.map(
+          t =>
+            `<option value="${esc(t.id)}" ${cur === t.id ? 'selected' : ''}>${esc(t.name || t.id)}${t.kind === 'npc' ? ' · NPC' : ''}${t.folder ? ' · ' + esc(MK.folderName(t.folder)) : ''}</option>`
+        ).join('') +
+        (cur && !T.some(t => t.id === cur) ? `<option value="${esc(cur)}" selected>${esc(cur)} (찾지 못함)</option>` : '');
+    };
+    fillMk();
+    if (window.NT_MAKER && !NT_MAKER.M.at) NT_MAKER.load().then(fillMk);
+    const drawFiles = () => {
+      $('#etFileList', md).innerHTML = files
+        .map(
+          (f, i) =>
+            `<li data-i="${i}">${f.k === 'img' ? `<i class="th" style="background-image:url('${cssu(f.u)}')"></i>` : `<i class="th">${f.k === 'link' ? '🔗' : '📄'}</i>`}<input type="text" data-fn value="${esc(f.n || '')}" placeholder="이름"><small class="dim">${f.k === 'link' ? esc(f.u) : fsize(f.s || (f.x || '').length)}</small><button type="button" class="btn xs ghost danger" data-fdel title="빼기">×</button></li>`
+        )
+        .join('');
+      $$('#etFileList li', md).forEach(li => {
+        const i = +li.dataset.i;
+        li.querySelector('[data-fn]').oninput = ev => {
+          files[i].n = ev.target.value;
+        };
+        li.querySelector('[data-fdel]').onclick = () => {
+          files.splice(i, 1);
+          drawFiles();
+        };
+      });
+    };
+    drawFiles();
+    N().bindDrop(
+      $('#etFiles', md),
+      async fs => {
+        for (const f of fs) {
+          try {
+            files.push(await attach(f));
+          } catch (x) {
+            N().toast(x.message);
+          }
+          drawFiles();
+        }
+      },
+      true,
+      'image/*,.txt,.md,.markdown,.csv,text/plain,text/markdown'
+    );
+    $('#etLinkAdd', md).onclick = async () => {
+      const u = ((await N().promptBox('링크 주소', '', 'https://…')) || '').trim();
+      if (!u) return;
+      if (!/^https?:\/\/\S+$/i.test(u)) return N().toast('https:// 로 시작하는 주소를 적어 주세요');
+      const n = await N().promptBox(
+        '보일 이름',
+        (() => {
+          try {
+            return new URL(u).host;
+          } catch (x) {
+            return '';
+          }
+        })(),
+        ''
+      );
+      files.push({ k: 'link', u, n: (n || '').trim() || u });
+      drawFiles();
+    };
+    $('#etOk', md).onclick = async () => {
+      const split = v =>
+        v
+          .split(',')
+          .map(x => x.trim())
+          .filter(Boolean);
+      const SR = splitRows(rows.map(r => ({ k: String(r.k || '').trim(), v: String(r.v || '').trim(), lk: !!r.lk })).filter(r => r.v));
+      const n = Object.assign({}, e, {
+        type: $('#etType', md).value,
+        title: $('#etTitle', md).value.trim() || '항목',
+        sub: $('#etSub', md).value.trim(),
+        body: $('#etBody', md).value.trim(),
+        rows: SR.pub,
+        lkv: 1,
+        tags: split($('#etTags', md).value),
+        teams: split($('#etTeams', md).value),
+        color: $('#etColor', md).value,
+        at: $$('#etAt input:checked', md).map(c => c.value),
+        face,
+        photo,
+        rb: rb && rb.ch ? { ch: rb.ch, h: rb.h || [] } : null,
+        mk: $('#etMk', md).value || '',
+        files
+      });
+      /* 잠근 칸(sec)을 먼저 쓰고 ents 를 쓴다 — 잠그는 칸이 한순간도 공개 문서에 남지 않게, 저장이 실패하면 ents 는 그대로 */
+      const t = $('#etSec', md).value.trim();
+      if (!(await putSec(id, t, SR.sec))) return;
+      await N().put('ents', id, n, $('#etVis', md).value);
+      N().closeModal();
+    };
+  }
 
- N().MOD.ents={render};
- window.NT_ENTS={TYPES,tc,ety,tl,rowsAll,select:id=>{U.sel=id;N().render()},edit};
+  N().MOD.ents = { render };
+  window.NT_ENTS = {
+    TYPES,
+    tc,
+    ety,
+    tl,
+    rowsAll,
+    select: id => {
+      U.sel = id;
+      N().render();
+    },
+    edit
+  };
 })();

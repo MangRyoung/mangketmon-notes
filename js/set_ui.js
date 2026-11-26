@@ -1,116 +1,566 @@
 /* ---------- 설정 탭 (GM · PL) ----------
    GM: 캠페인 이름 · 한 줄 · 표지 그림 · GM 비밀구 바꾸기 · PL 좌석(제작기 트레이너 id 에 비밀구) · 초대 링크 · 자료 내려받기 · 캠페인 지우기
    PL: 내 좌석 · 비밀구 바꾸기(없음 — GM 이 다시 준다) · 내려받기 */
-"use strict";
-(()=>{
- const N=()=>window.NT;const {$,$$,esc,cssu}=window.NT;
- const base=()=>location.origin+location.pathname;
- /* 10-26 망령: 캠페인 칸 초안 — 실시간 갱신으로 다시 그려도 적던 글이 안 날아가게. 저장하면 비운다 */
- const DR={camp:'',name:null,sub:null,cover:null};
- const drFor=camp=>{if(DR.camp!==camp){DR.camp=camp;DR.name=DR.sub=DR.cover=DR.theme=DR.skin=DR.idt=DR.grp=DR.nest=null}return DR};
- const link=(secret)=>`${base()}?c=${encodeURIComponent(N().ST.camp)}${secret?'&pl='+encodeURIComponent(secret):''}#c=${encodeURIComponent(N().ST.camp)}`;
- function render(el){const S=N().ST;const c=S.campInfo||{};const d=c.data||{};const G=N().gm();
-  if(!G){el.innerHTML=`<div class="setgrid"><div class="card"><h3>내 좌석</h3><p>${N().me()?`<b>${esc(N().seatName(N().me())||N().me())}</b> 좌석으로 들어와 있어요. PC 시트 탭에서 내 시트를 고칠 수 있어요.`:'구경 모드예요. 위 「로그인」으로 웹툴과 같은 계정에 들어가면 GM 이 준 권한대로 내 PC 시트를 고칠 수 있어요(예전 좌석 비밀구도 돼요).'}</p><p class="small dim">${String(S.secret).startsWith('u:')?'계정으로 들어와 있어요. 다른 기기에서도 로그인만 하면 돼요.':'비밀구는 이 브라우저에만 저장돼요. 다른 기기에서는 GM 이 준 링크를 한 번 열면 돼요.'}</p></div>
-   <div class="card"><h3>공개 링크</h3><div class="linkbox"><input type="text" readonly value="${esc(link())}" id="lkPub"><button class="btn xs" data-copy="lkPub">복사</button></div></div></div>`;bindCopy(el);return}
-  const dr=drFor(S.camp);const vName=dr.name!=null?dr.name:(c.name||''),vSub=dr.sub!=null?dr.sub:(d.sub||''),vCover=dr.cover!=null?dr.cover:(d.cover||'');
-  el.innerHTML=`<div class="setgrid">
+'use strict';
+(() => {
+  const N = () => window.NT;
+  const { $, $$, esc, cssu } = window.NT;
+  const base = () => location.origin + location.pathname;
+  /* 10-26 망령: 캠페인 칸 초안 — 실시간 갱신으로 다시 그려도 적던 글이 안 날아가게. 저장하면 비운다 */
+  const DR = { camp: '', name: null, sub: null, cover: null };
+  const drFor = camp => {
+    if (DR.camp !== camp) {
+      DR.camp = camp;
+      DR.name = DR.sub = DR.cover = DR.theme = DR.skin = DR.idt = DR.grp = DR.nest = null;
+    }
+    return DR;
+  };
+  const link = secret =>
+    `${base()}?c=${encodeURIComponent(N().ST.camp)}${secret ? '&pl=' + encodeURIComponent(secret) : ''}#c=${encodeURIComponent(N().ST.camp)}`;
+  function render(el) {
+    const S = N().ST;
+    const c = S.campInfo || {};
+    const d = c.data || {};
+    const G = N().gm();
+    if (!G) {
+      el.innerHTML = `<div class="setgrid"><div class="card"><h3>내 좌석</h3><p>${N().me() ? `<b>${esc(N().seatName(N().me()) || N().me())}</b> 좌석으로 들어와 있어요. PC 시트 탭에서 내 시트를 고칠 수 있어요.` : '구경 모드예요. 위 「로그인」으로 웹툴과 같은 계정에 들어가면 GM 이 준 권한대로 내 PC 시트를 고칠 수 있어요(예전 좌석 비밀구도 돼요).'}</p><p class="small dim">${String(S.secret).startsWith('u:') ? '계정으로 들어와 있어요. 다른 기기에서도 로그인만 하면 돼요.' : '비밀구는 이 브라우저에만 저장돼요. 다른 기기에서는 GM 이 준 링크를 한 번 열면 돼요.'}</p></div>
+   <div class="card"><h3>공개 링크</h3><div class="linkbox"><input type="text" readonly value="${esc(link())}" id="lkPub"><button class="btn xs" data-copy="lkPub">복사</button></div></div></div>`;
+      bindCopy(el);
+      return;
+    }
+    const dr = drFor(S.camp);
+    const vName = dr.name != null ? dr.name : c.name || '',
+      vSub = dr.sub != null ? dr.sub : d.sub || '',
+      vCover = dr.cover != null ? dr.cover : d.cover || '';
+    el.innerHTML = `<div class="setgrid">
    <div class="card"><h3>캠페인</h3><label class="lbl">이름<input id="cpName" type="text" value="${esc(vName)}"></label><label class="lbl" style="margin-top:6px">한 줄 (세션 수 · 기간 …)<input id="cpSub" type="text" value="${esc(vSub)}" placeholder="예: 13세션 · 1부 6 · 2부 6 · 최종 1"></label>
-    <div class="row" style="margin-top:6px;gap:8px;align-items:flex-end"><label class="lbl" style="flex:1;min-width:150px">기본 테마<select id="cpTheme"><option value="">정하지 않음 (각자 고른 테마)</option>${N().VT.map(([k,l])=>`<option value="${k}" ${(dr.theme!=null?dr.theme:d.theme||'')===k?'selected':''}>${esc(l)}</option>`).join('')}</select></label><label class="lbl" style="flex:1;min-width:150px">꾸밈<select id="cpSkin">${N().SKINS.map(([k,l])=>`<option value="${k}" ${(dr.skin!=null?dr.skin:d.skin||'')===k?'selected':''}>${esc(l)}</option>`).join('')}</select></label><label class="lbl" style="flex:1;min-width:150px" title="11-04 망령 「칼데아 소속 인물(서번트 제외)에게만 신분증」">신분증 줄 팀<input id="cpIdTeams" placeholder="비우면 인물 모두" value="${esc(dr.idt!=null?dr.idt:((d.idTeams||[]).join(', ')))}"></label><label class="lbl" style="flex:1;min-width:150px">항목 묶음 태그 <small class="dim">— 이 태그를 단 항목끼리 묶어 보여요 (쉼표, 순서대로)</small><input id="cpGroups" type="text" placeholder="예: 칼데아, 칼데아 외" value="${esc(dr.grp!=null?dr.grp:((d.entGroups||[]).join(', ')))}"></label><label class="lbl" style="flex:1 1 100%;display:flex;gap:6px;align-items:center;cursor:pointer"><input id="cpNest" type="checkbox" ${(dr.nest!=null?dr.nest:!!d.entNest)?'checked':''} style="width:auto"> 인물 칸엔 출입증만 — 서번트는 마스터 카드를 누르면 펼쳐 보이고(팀 「서번트」 + 한 줄에 「(마스터 이름)」), 출입증이 아닌 인물은 「외부 인물 기록」으로 따로</label></div>
+    <div class="row" style="margin-top:6px;gap:8px;align-items:flex-end"><label class="lbl" style="flex:1;min-width:150px">기본 테마<select id="cpTheme"><option value="">정하지 않음 (각자 고른 테마)</option>${N()
+      .VT.map(([k, l]) => `<option value="${k}" ${(dr.theme != null ? dr.theme : d.theme || '') === k ? 'selected' : ''}>${esc(l)}</option>`)
+      .join('')}</select></label><label class="lbl" style="flex:1;min-width:150px">꾸밈<select id="cpSkin">${N()
+      .SKINS.map(([k, l]) => `<option value="${k}" ${(dr.skin != null ? dr.skin : d.skin || '') === k ? 'selected' : ''}>${esc(l)}</option>`)
+      .join(
+        ''
+      )}</select></label><label class="lbl" style="flex:1;min-width:150px" title="11-04 망령 「칼데아 소속 인물(서번트 제외)에게만 신분증」">신분증 줄 팀<input id="cpIdTeams" placeholder="비우면 인물 모두" value="${esc(dr.idt != null ? dr.idt : (d.idTeams || []).join(', '))}"></label><label class="lbl" style="flex:1;min-width:150px">항목 묶음 태그 <small class="dim">— 이 태그를 단 항목끼리 묶어 보여요 (쉼표, 순서대로)</small><input id="cpGroups" type="text" placeholder="예: 칼데아, 칼데아 외" value="${esc(dr.grp != null ? dr.grp : (d.entGroups || []).join(', '))}"></label><label class="lbl" style="flex:1 1 100%;display:flex;gap:6px;align-items:center;cursor:pointer"><input id="cpNest" type="checkbox" ${(dr.nest != null ? dr.nest : !!d.entNest) ? 'checked' : ''} style="width:auto"> 인물 칸엔 출입증만 — 서번트는 마스터 카드를 누르면 펼쳐 보이고(팀 「서번트」 + 한 줄에 「(마스터 이름)」), 출입증이 아닌 인물은 「외부 인물 기록」으로 따로</label></div>
     <p class="small dim" style="margin:4px 0 0">기본 테마 = 이 캠페인을 열면 그 테마로 보여요(위 띠에서 바꾸면 각자 고른 것). 꾸밈 = 캠페인 분위기 장식(대학: 학생증 PC 시트 · 도서 목록 카드 항목 · 도면 지도 틀). 신분증 줄 팀 = 자료 탭에서 신분증 카드로 보일 인물의 팀(쉼표로). 소속에 클래스 이름이 있는 서번트는 빠지고, 태그 「신분증」 · 「신분증 없음」으로 하나씩 정할 수 있어요.</p>
-    <label class="lbl" style="margin-top:6px">PL 자리 앉기 (계정 로그인한 PL)<select id="cpClaim"><option value="pub" ${(d.claimMode||'pub')!=='approve'?'selected':''}>「모두」 공개된 PC 시트면 바로 앉아요</option><option value="approve" ${d.claimMode==='approve'?'selected':''}>GM 승인 뒤에 앉아요 (요청이 여기 설정 탭에 떠요)</option></select></label>
-    <div class="sec">표지 그림 (캠페인 목록 카드)</div><div class="updz" id="cpDz"><div class="pv" style="${vCover?`background-image:url('${cssu(vCover)}')`:''}"></div><b>＋ 그림</b></div>
+    <label class="lbl" style="margin-top:6px">PL 자리 앉기 (계정 로그인한 PL)<select id="cpClaim"><option value="pub" ${(d.claimMode || 'pub') !== 'approve' ? 'selected' : ''}>「모두」 공개된 PC 시트면 바로 앉아요</option><option value="approve" ${d.claimMode === 'approve' ? 'selected' : ''}>GM 승인 뒤에 앉아요 (요청이 여기 설정 탭에 떠요)</option></select></label>
+    <div class="sec">표지 그림 (캠페인 목록 카드)</div><div class="updz" id="cpDz"><div class="pv" style="${vCover ? `background-image:url('${cssu(vCover)}')` : ''}"></div><b>＋ 그림</b></div>
     <div class="acts"><button class="btn xs ghost" id="cpCoverX">표지 빼기</button><span class="sp"></span><button class="btn pri sm" id="cpOk">저장</button></div></div>
    <div class="card"><h3>링크</h3><div class="small dim">공개 링크 — 링크만 있으면 「모두」로 둔 것만 보여요</div><div class="linkbox"><input type="text" readonly value="${esc(link())}" id="lkPub"><button class="btn xs" data-copy="lkPub">복사</button></div>
-    ${String(S.secret).startsWith('u:')?`<div class="small dim" style="margin-top:8px">계정(웹툴과 같은 로그인)으로 GM 이에요. 다른 기기에서도 로그인만 하면 돼요.</div>`:`<div class="small dim" style="margin-top:8px">GM 링크 — 비밀구가 들어 있어요. 내 다른 기기에서만 열어요</div><div class="linkbox"><input type="text" readonly value="${esc(base()+'?c='+encodeURIComponent(S.camp)+'&gm='+encodeURIComponent(S.secret)+'#c='+encodeURIComponent(S.camp))}" id="lkGm"><button class="btn xs" data-copy="lkGm">복사</button></div>`}
-    <div class="acts">${window.NT_ACCT&&NT_ACCT.tok()?'<button class="btn xs pri" id="acPerm">👥 계정 권한</button>':''}<button class="btn xs ghost" id="gmSecBtn">GM 비밀구 바꾸기</button></div></div>
+    ${String(S.secret).startsWith('u:') ? `<div class="small dim" style="margin-top:8px">계정(웹툴과 같은 로그인)으로 GM 이에요. 다른 기기에서도 로그인만 하면 돼요.</div>` : `<div class="small dim" style="margin-top:8px">GM 링크 — 비밀구가 들어 있어요. 내 다른 기기에서만 열어요</div><div class="linkbox"><input type="text" readonly value="${esc(base() + '?c=' + encodeURIComponent(S.camp) + '&gm=' + encodeURIComponent(S.secret) + '#c=' + encodeURIComponent(S.camp))}" id="lkGm"><button class="btn xs" data-copy="lkGm">복사</button></div>`}
+    <div class="acts">${window.NT_ACCT && NT_ACCT.tok() ? '<button class="btn xs pri" id="acPerm">👥 계정 권한</button>' : ''}<button class="btn xs ghost" id="gmSecBtn">GM 비밀구 바꾸기</button></div></div>
    ${claimsCard(d)}${linkCard(d)}
    <div class="card" style="grid-column:1/-1"><h3>PL 좌석 <small>좌석 id = 제작기 트레이너 id · 그 PL 은 자기 PC 시트만 고칠 수 있어요 · 계정 PL 은 「👥 계정 권한」에서</small></h3>
-    <div id="seatList">${(S.seats||[]).map(s=>`<div class="seatrow"><div><b>${esc(N().seatName(s.seat)||s.seat)}</b> <small>${esc(s.name||'')} · <code>${esc(s.seat)}</code></small></div><div class="row" style="gap:4px">${s.acct?'<span class="tag acpl" title="계정 권한 — 「👥 계정 권한」에서 바꿔요">계정</span>':''}${s.sec===false?'':`<button class="btn xs" data-seat="link" data-id="${esc(s.seat)}">초대 링크</button><button class="btn xs ghost" data-seat="reset" data-id="${esc(s.seat)}">비밀구 다시</button><button class="btn xs ghost danger" data-seat="del" data-id="${esc(s.seat)}">빼기</button>`}</div></div>`).join('')||'<div class="small dim">좌석이 없어요</div>'}</div>
+    <div id="seatList">${(S.seats || []).map(s => `<div class="seatrow"><div><b>${esc(N().seatName(s.seat) || s.seat)}</b> <small>${esc(s.name || '')} · <code>${esc(s.seat)}</code></small></div><div class="row" style="gap:4px">${s.acct ? '<span class="tag acpl" title="계정 권한 — 「👥 계정 권한」에서 바꿔요">계정</span>' : ''}${s.sec === false ? '' : `<button class="btn xs" data-seat="link" data-id="${esc(s.seat)}">초대 링크</button><button class="btn xs ghost" data-seat="reset" data-id="${esc(s.seat)}">비밀구 다시</button><button class="btn xs ghost danger" data-seat="del" data-id="${esc(s.seat)}">빼기</button>`}</div></div>`).join('') || '<div class="small dim">좌석이 없어요</div>'}</div>
     <div class="acts"><button class="btn sm pri" id="seatAdd">＋ 좌석 (PC 시트의 트레이너에게)</button></div></div>
-   <div class="card"><h3>자료</h3><div class="acts"><button class="btn sm" id="dlJson">전체 내려받기 (JSON)</button><button class="btn sm ghost" id="ulJson">JSON 올리기</button><input type="file" id="ulFile" accept="application/json" hidden>${window.NT_HIST?'<button class="btn sm ghost" id="trashBtn" title="최근 30일 안에 지운 문서를 되살려요">🗑 최근 지운 것</button>':''}</div><p class="small dim">내려받기 전에 DB 에서 전부 다시 받아요(이 브라우저 사본에 빠진 게 없게). 그림은 주소만 들어 있어요 (Supabase 저장소). 올리기는 문서 전체(덮어쓰기) 또는 일부 종류만 골라요.</p></div>
-   <div class="card"><h3>화면</h3><div class="acts"><button class="btn sm ghost" id="guideBtn">${N().guideOff()?'시작 안내 다시 보기':'시작 안내 치우기'}</button></div><p class="small dim" style="margin:6px 0 0">시작 안내 = PC · 항목 · 지도 · 루트가 비었을 때 탭 위에 뜨는 체크리스트. 단축키: 1~7 탭 · N 새 항목 · F 맞춤 · Shift+F 발표 모드 · / 검색.</p></div>
+   <div class="card"><h3>자료</h3><div class="acts"><button class="btn sm" id="dlJson">전체 내려받기 (JSON)</button><button class="btn sm ghost" id="ulJson">JSON 올리기</button><input type="file" id="ulFile" accept="application/json" hidden>${window.NT_HIST ? '<button class="btn sm ghost" id="trashBtn" title="최근 30일 안에 지운 문서를 되살려요">🗑 최근 지운 것</button>' : ''}</div><p class="small dim">내려받기 전에 DB 에서 전부 다시 받아요(이 브라우저 사본에 빠진 게 없게). 그림은 주소만 들어 있어요 (Supabase 저장소). 올리기는 문서 전체(덮어쓰기) 또는 일부 종류만 골라요.</p></div>
+   <div class="card"><h3>화면</h3><div class="acts"><button class="btn sm ghost" id="guideBtn">${N().guideOff() ? '시작 안내 다시 보기' : '시작 안내 치우기'}</button></div><p class="small dim" style="margin:6px 0 0">시작 안내 = PC · 항목 · 지도 · 루트가 비었을 때 탭 위에 뜨는 체크리스트. 단축키: 1~7 탭 · N 새 항목 · F 맞춤 · Shift+F 발표 모드 · / 검색.</p></div>
    <div class="card"><h3>위험</h3><div class="acts"><button class="btn sm ghost danger" id="wipeSess" title="부 · 세션 · 후보 날짜를 모두 지워요 (30일 안에 「🗑 최근 지운 것」에서 되살릴 수 있어요)">일정 비우기</button><button class="btn sm ghost danger" id="wipeNote" title="설계 메모를 모두 지워요">설계 메모 비우기</button><button class="btn sm ghost danger" id="cpDel">캠페인 지우기</button></div></div></div>`;
-  bindCopy(el);bindLink(el,d);{const ap=$('#acPerm',el);if(ap)ap.onclick=()=>NT_ACCT.openManage(S.camp)}
-  $('#cpName',el).oninput=e=>{dr.name=e.target.value};$('#cpSub',el).oninput=e=>{dr.sub=e.target.value};$('#cpTheme',el).onchange=e=>{dr.theme=e.target.value};$('#cpSkin',el).onchange=e=>{dr.skin=e.target.value};$('#cpIdTeams',el).oninput=e=>{dr.idt=e.target.value};$('#cpGroups',el).oninput=e=>{dr.grp=e.target.value};$('#cpNest',el).onchange=e=>{dr.nest=e.target.checked};
-  N().bindDrop($('#cpDz',el),async fs=>{try{dr.cover=await N().upload(fs[0],'thumb','cover');$('#cpDz .pv',el).style.backgroundImage=`url('${cssu(dr.cover)}')`}catch(e){N().toast('올리기 실패: '+e.message)}});
-  $('#cpCoverX',el).onclick=()=>{dr.cover='';$('#cpDz .pv',el).style.backgroundImage=''};
-  /* 11-03: 바꾼 칸만 보낸다(campPatch) — 받아 둔 옛 data 로 통째 덮어 기록 · 폴더 · 웹툴 잇기가 되돌아가던 것 */
-  $('#cpOk',el).onclick=async()=>{const cover=dr.cover!=null?dr.cover:(d.cover||'');try{await N().campPatch({sub:$('#cpSub',el).value.trim(),cover,theme:$('#cpTheme',el).value,skin:$('#cpSkin',el).value,idTeams:$('#cpIdTeams',el).value.split(/[,，]/).map(x=>x.trim()).filter(Boolean),entNest:!!$('#cpNest',el).checked,entGroups:$('#cpGroups',el).value.split(/[,，]/).map(x=>x.trim()).filter(Boolean),claimMode:($('#cpClaim',el)||{}).value||'pub'},$('#cpName',el).value.trim()||c.name);dr.name=dr.sub=dr.cover=dr.theme=dr.skin=dr.idt=dr.grp=dr.nest=null;N().toast('저장했어요')}catch(e){N().toast('저장 실패: '+e.message)}};
-  $('#gmSecBtn',el).onclick=async()=>{const v=await N().promptBox('새 GM 비밀구 (6자 이상)','','');if(v==null)return;try{await N().DBS().gmSecret(S.camp,S.secret,v.trim());if(!String(S.secret).startsWith('u:'))S.secret=v.trim();try{localStorage.setItem('nt_sec_'+S.camp,v.trim())}catch(e){}N().toast('바꿨어요');N().render()}catch(e){N().toast('실패: '+e.message)}};
-  $('#seatAdd',el).onclick=async()=>{const pcs=N().list('pc').filter(p=>!(S.seats||[]).some(s=>s.seat===p.id&&s.sec!==false));if(!pcs.length)return N().toast('좌석을 줄 PC 가 없어요 — PC 시트 탭에서 먼저 PC 를 넣어요');
-   const md=N().openModal(`<div class="mhead"><h2>PL 좌석 만들기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div class="mrow"><label class="lbl">PC<select id="stPc">${pcs.map(p=>`<option value="${esc(p.id)}">${esc(p.name||p.id)}</option>`).join('')}</select></label><label class="lbl">플레이어 이름<input id="stName" type="text"></label><label class="lbl">비밀구 (4자 이상)<input id="stSec" type="text" value="${esc(Math.random().toString(36).slice(2,8))}"></label></div><p class="small dim">만든 뒤 「초대 링크」를 그 플레이어에게 보내요. 링크에 비밀구가 들어 있어요.</p><div class="row" style="margin-top:12px"><span class="sp"></span><button class="btn pri" id="stOk">만들기</button></div>`);
-   $('#stOk',md).onclick=async()=>{const seat=$('#stPc',md).value,sec=$('#stSec',md).value.trim(),name=$('#stName',md).value.trim();if(sec.length<4)return N().toast('비밀구는 4자 이상');try{await N().DBS().seatSet(S.camp,S.secret,seat,sec,name);N().closeModal();N().toast('좌석을 만들었어요');showLink(seat,sec);N().refreshCamp()}catch(e){N().toast('실패: '+e.message)}}};
-  $$('[data-seat]',el).forEach(b=>b.onclick=async()=>{const k=b.dataset.seat,seat=b.dataset.id;
-   if(k==='link'){const sec=await N().promptBox('이 좌석의 비밀구 (링크에 넣을 것 — 저장돼 있지 않아 다시 적어요)','','');if(sec==null||!sec.trim())return;showLink(seat,sec.trim());return}
-   if(k==='reset'){const sec=await N().promptBox('새 비밀구 (4자 이상)',Math.random().toString(36).slice(2,8),'');if(sec==null)return;try{await N().DBS().seatSet(S.camp,S.secret,seat,sec.trim(),null);N().toast('바꿨어요');showLink(seat,sec.trim());N().refreshCamp()}catch(e){N().toast('실패: '+e.message)}return}
-   if(k==='del'){if(!await N().confirmBox('이 좌석을 뺄까요? 그 플레이어는 구경만 할 수 있게 돼요.','빼기'))return;try{await N().DBS().seatSet(S.camp,S.secret,seat,null,null);N().refreshCamp()}catch(e){N().toast('실패: '+e.message)}}});
-  /* 11-03 감우 「백업 허점」: 내려받기 전에 DB 에서 전부 다시 받는다(사본 7일 · 3MB 규칙으로 빠진 칸이 있을 수 있었다). 못 받으면(오프라인) 이 브라우저 사본이라고 적는다 */
-  $('#dlJson',el).onclick=async()=>{const b=$('#dlJson',el);b.disabled=true;b.textContent='DB 에서 받는 중…';let rows=null;try{rows=await N().DBS().all(S.camp,S.secret,null)}catch(e){rows=null}
-   const out={camp:c,exported:new Date().toISOString(),source:rows?'db':'browser-cache',docs:[]};if(rows)for(const r of rows)out.docs.push({kind:r.kind,id:r.id,data:r.data,vis:r.vis,updated_at:r.updated_at});else for(const k in N().D)for(const id in N().D[k])out.docs.push({kind:k,id,data:N().D[k][id].data,vis:N().D[k][id].vis});
-   const imgs=new Set();JSON.stringify(out.docs).replace(/https?:\/\/[^"\s\\]+\/storage\/v1\/object\/public\/[^"\s\\]+/g,m=>{imgs.add(m);return m});out.images=[...imgs];
-   const bl=new Blob([JSON.stringify(out,null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download=`notes_${c.name||S.camp}_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);b.disabled=false;b.textContent='전체 내려받기 (JSON)';N().toast(rows?`DB 에서 ${out.docs.length}개 · 그림 주소 ${imgs.size}개`:'DB 를 못 읽어 이 브라우저 사본으로 내려받았어요')};
-  /* 올리기: 문서 종류를 골라 되살린다 (전체 = 덮어쓰기 · 사본에 없는 것도 되살아난다) */
-  $('#ulJson',el).onclick=()=>$('#ulFile',el).click();$('#ulFile',el).onchange=async()=>{const f=$('#ulFile',el).files[0];if(!f)return;try{const j=JSON.parse(await f.text());let rows=(j.docs||[]).filter(r=>r.kind&&r.id);if(!rows.length)return N().toast('문서가 없어요');
-    const kinds=[...new Set(rows.map(r=>r.kind))].sort();const KL={ents:'항목',spots:'장소',maps:'지도',links:'이음선',routes:'루트',rels:'관계',pc:'PC 시트',npc:'NPC 시트',pcp:'PC 비밀 칸',plan:'일정',avail:'일정 투표',sec:'GM 메모',logs:'기록',dgs:'던전',shelf:'서가'};
-    const pick=await new Promise(res=>{const md=N().openModal(`<div class="mhead"><h2>JSON 올리기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><p class="small" style="margin-top:0">${esc(j.exported?new Date(j.exported).toLocaleString('ko-KR'):'날짜 모름')} 에 내려받은 문서 ${rows.length}개${j.source==='browser-cache'?' <span class="dim">(브라우저 사본에서 내려받은 것)</span>':''}. 되살릴 종류를 골라요 — 같은 id 는 그 판으로 덮어쓰고, 없는 건 더해져요. 지금 있는데 파일에 없는 문서는 그대로 둬요.</p>
-     <div class="row" style="flex-wrap:wrap;gap:6px">${kinds.map(k=>`<label class="chk chip on"><input type="checkbox" value="${esc(k)}" checked hidden>${esc(KL[k]||k)} <small class="dim">${rows.filter(r=>r.kind===k).length}</small></label>`).join('')}</div>
-     <div class="mfoot"><button class="btn ghost" id="ujAll">전체 고르기</button><span class="sp"></span><button class="btn pri" id="ujOk">올리기</button></div>`,'',{stack:true});
-     $$('.chk input',md).forEach(i=>i.onchange=()=>i.parentElement.classList.toggle('on',i.checked));$('#ujAll',md).onclick=()=>$$('.chk input',md).forEach(i=>{i.checked=true;i.parentElement.classList.add('on')});
-     let done=false;$('#ujOk',md).onclick=()=>{done=true;const v=$$('.chk input:checked',md).map(i=>i.value);N().closeModal();res(v)};md.parentElement.addEventListener('nt:close',()=>{if(!done)res(null)})});
-    if(!pick)return;rows=rows.filter(r=>pick.includes(r.kind));if(!rows.length)return N().toast('고른 종류가 없어요');
-    const nImg=JSON.stringify(rows).split('"data:image/').length-1;
-    if(!await N().confirmBox(`${rows.length}개 문서를 이 캠페인에 쓸까요? 같은 id 는 파일의 판으로 바뀌어요 — 되돌리려면 「🗑 최근 지운 것」 옆 이력에서.${nImg?`\n그림 ${nImg}장은 저장소에 올리고 주소로 바꿔요 — 시간이 좀 걸려요.`:''}`,'올리기'))return;
-    let done=0;const up=async(u,kind,tag)=>{const bl=await (await fetch(u)).blob();const url=await N().upload(bl,kind,tag);done++;N().toast(`그림 올리는 중 ${done}/${nImg}`);return url};
-    const walk=async(o,kind,key)=>{if(typeof o==='string')return o.startsWith('data:image/')?await up(o,kind==='maps'?'map':key==='face'?'face':'photo',kind):o;if(Array.isArray(o)){for(let i=0;i<o.length;i++)o[i]=await walk(o[i],kind,key);return o}if(o&&typeof o==='object'){for(const k in o)o[k]=await walk(o[k],kind,k);return o}return o};
-    for(const r of rows)r.data=await walk(r.data,r.kind,'');
-    for(let i=0;i<rows.length;i+=40)await N().putMany(rows.slice(i,i+40),{force:true});
-    if(j.camp&&j.camp.data&&j.camp.data.sub&&!d.sub){try{await N().campPatch({sub:j.camp.data.sub})}catch(e){}}
-    N().toast('올렸어요 · '+rows.length+'개')}catch(e){N().toast('실패: '+e.message)}$('#ulFile',el).value=''};
-  {const tb=$('#trashBtn',el);if(tb)tb.onclick=()=>NT_HIST.trash()}
-  {const g=$('#guideBtn',el);if(g)g.onclick=()=>{N().guideSet(N().guideOff());N().toast(N().guideOff()?'시작 안내를 치웠어요':'시작 안내를 다시 켰어요 — 비어 있는 동안 탭 위에 떠요')};const ws=$('#wipeSess',el);if(ws)ws.onclick=()=>window.NT_PLAN&&NT_PLAN.wipe('sess');const wn=$('#wipeNote',el);if(wn)wn.onclick=()=>window.NT_PLAN&&NT_PLAN.wipe('note')}
-  $$('[data-claim]',el).forEach(b=>b.onclick=async()=>{const [uid,ok]=b.dataset.claim.split('|');b.disabled=true;try{await N().DBS().claimDecide(S.camp,S.secret,uid,ok==='1');N().toast(ok==='1'?'승인했어요 — 그 자리에 앉았어요':'거절했어요');N().DBS().ping(S.camp,{t:'claim',uid,ok:ok==='1'});await N().refreshCamp()}catch(e){b.disabled=false;N().toast('실패: '+e.message)}});
-  $('#cpDel',el).onclick=async()=>{const v=await N().promptBox(`정말 지우려면 캠페인 이름 「${c.name}」 을 적어요`,'','');if(v==null)return;if(v.trim()!==c.name)return N().toast('이름이 달라요');try{await N().DBS().campDel(S.camp,S.secret);try{localStorage.removeItem('nt_sec_'+S.camp)}catch(e){}N().toast('지웠어요');N().ST.camps=[];N().leave()}catch(e){N().toast('실패: '+e.message)}}}
- /* 10-29 망령: 세 도구 잇기 — 제작기 폴더 · 웹툴 방 · 룰북. 웹툴 방 목록은 같은 주소(mangryoung.github.io)의 오레마스가 이 브라우저에 남긴 「최근 방」에서 */
- const omRooms=()=>{try{return (JSON.parse(localStorage.getItem('om_rooms')||'[]')||[]).filter(r=>r&&r.id)}catch(e){return []}};
- /* 11-03 19:50 망령 「미사그 캠퍼스를 복제한 미사그 캠퍼스 2 도 노트랑 연동」: 웹툴 방을 여럿 잇는다.
+    bindCopy(el);
+    bindLink(el, d);
+    {
+      const ap = $('#acPerm', el);
+      if (ap) ap.onclick = () => NT_ACCT.openManage(S.camp);
+    }
+    $('#cpName', el).oninput = e => {
+      dr.name = e.target.value;
+    };
+    $('#cpSub', el).oninput = e => {
+      dr.sub = e.target.value;
+    };
+    $('#cpTheme', el).onchange = e => {
+      dr.theme = e.target.value;
+    };
+    $('#cpSkin', el).onchange = e => {
+      dr.skin = e.target.value;
+    };
+    $('#cpIdTeams', el).oninput = e => {
+      dr.idt = e.target.value;
+    };
+    $('#cpGroups', el).oninput = e => {
+      dr.grp = e.target.value;
+    };
+    $('#cpNest', el).onchange = e => {
+      dr.nest = e.target.checked;
+    };
+    N().bindDrop($('#cpDz', el), async fs => {
+      try {
+        dr.cover = await N().upload(fs[0], 'thumb', 'cover');
+        $('#cpDz .pv', el).style.backgroundImage = `url('${cssu(dr.cover)}')`;
+      } catch (e) {
+        N().toast('올리기 실패: ' + e.message);
+      }
+    });
+    $('#cpCoverX', el).onclick = () => {
+      dr.cover = '';
+      $('#cpDz .pv', el).style.backgroundImage = '';
+    };
+    /* 11-03: 바꾼 칸만 보낸다(campPatch) — 받아 둔 옛 data 로 통째 덮어 기록 · 폴더 · 웹툴 잇기가 되돌아가던 것 */
+    $('#cpOk', el).onclick = async () => {
+      const cover = dr.cover != null ? dr.cover : d.cover || '';
+      try {
+        await N().campPatch(
+          {
+            sub: $('#cpSub', el).value.trim(),
+            cover,
+            theme: $('#cpTheme', el).value,
+            skin: $('#cpSkin', el).value,
+            idTeams: $('#cpIdTeams', el)
+              .value.split(/[,，]/)
+              .map(x => x.trim())
+              .filter(Boolean),
+            entNest: !!$('#cpNest', el).checked,
+            entGroups: $('#cpGroups', el)
+              .value.split(/[,，]/)
+              .map(x => x.trim())
+              .filter(Boolean),
+            claimMode: ($('#cpClaim', el) || {}).value || 'pub'
+          },
+          $('#cpName', el).value.trim() || c.name
+        );
+        dr.name = dr.sub = dr.cover = dr.theme = dr.skin = dr.idt = dr.grp = dr.nest = null;
+        N().toast('저장했어요');
+      } catch (e) {
+        N().toast('저장 실패: ' + e.message);
+      }
+    };
+    $('#gmSecBtn', el).onclick = async () => {
+      const v = await N().promptBox('새 GM 비밀구 (6자 이상)', '', '');
+      if (v == null) return;
+      try {
+        await N().DBS().gmSecret(S.camp, S.secret, v.trim());
+        if (!String(S.secret).startsWith('u:')) S.secret = v.trim();
+        try {
+          localStorage.setItem('nt_sec_' + S.camp, v.trim());
+        } catch (e) {}
+        N().toast('바꿨어요');
+        N().render();
+      } catch (e) {
+        N().toast('실패: ' + e.message);
+      }
+    };
+    $('#seatAdd', el).onclick = async () => {
+      const pcs = N()
+        .list('pc')
+        .filter(p => !(S.seats || []).some(s => s.seat === p.id && s.sec !== false));
+      if (!pcs.length) return N().toast('좌석을 줄 PC 가 없어요 — PC 시트 탭에서 먼저 PC 를 넣어요');
+      const md = N().openModal(
+        `<div class="mhead"><h2>PL 좌석 만들기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div class="mrow"><label class="lbl">PC<select id="stPc">${pcs.map(p => `<option value="${esc(p.id)}">${esc(p.name || p.id)}</option>`).join('')}</select></label><label class="lbl">플레이어 이름<input id="stName" type="text"></label><label class="lbl">비밀구 (4자 이상)<input id="stSec" type="text" value="${esc(Math.random().toString(36).slice(2, 8))}"></label></div><p class="small dim">만든 뒤 「초대 링크」를 그 플레이어에게 보내요. 링크에 비밀구가 들어 있어요.</p><div class="row" style="margin-top:12px"><span class="sp"></span><button class="btn pri" id="stOk">만들기</button></div>`
+      );
+      $('#stOk', md).onclick = async () => {
+        const seat = $('#stPc', md).value,
+          sec = $('#stSec', md).value.trim(),
+          name = $('#stName', md).value.trim();
+        if (sec.length < 4) return N().toast('비밀구는 4자 이상');
+        try {
+          await N().DBS().seatSet(S.camp, S.secret, seat, sec, name);
+          N().closeModal();
+          N().toast('좌석을 만들었어요');
+          showLink(seat, sec);
+          N().refreshCamp();
+        } catch (e) {
+          N().toast('실패: ' + e.message);
+        }
+      };
+    };
+    $$('[data-seat]', el).forEach(
+      b =>
+        (b.onclick = async () => {
+          const k = b.dataset.seat,
+            seat = b.dataset.id;
+          if (k === 'link') {
+            const sec = await N().promptBox('이 좌석의 비밀구 (링크에 넣을 것 — 저장돼 있지 않아 다시 적어요)', '', '');
+            if (sec == null || !sec.trim()) return;
+            showLink(seat, sec.trim());
+            return;
+          }
+          if (k === 'reset') {
+            const sec = await N().promptBox('새 비밀구 (4자 이상)', Math.random().toString(36).slice(2, 8), '');
+            if (sec == null) return;
+            try {
+              await N().DBS().seatSet(S.camp, S.secret, seat, sec.trim(), null);
+              N().toast('바꿨어요');
+              showLink(seat, sec.trim());
+              N().refreshCamp();
+            } catch (e) {
+              N().toast('실패: ' + e.message);
+            }
+            return;
+          }
+          if (k === 'del') {
+            if (!(await N().confirmBox('이 좌석을 뺄까요? 그 플레이어는 구경만 할 수 있게 돼요.', '빼기'))) return;
+            try {
+              await N().DBS().seatSet(S.camp, S.secret, seat, null, null);
+              N().refreshCamp();
+            } catch (e) {
+              N().toast('실패: ' + e.message);
+            }
+          }
+        })
+    );
+    /* 11-03 감우 「백업 허점」: 내려받기 전에 DB 에서 전부 다시 받는다(사본 7일 · 3MB 규칙으로 빠진 칸이 있을 수 있었다). 못 받으면(오프라인) 이 브라우저 사본이라고 적는다 */
+    $('#dlJson', el).onclick = async () => {
+      const b = $('#dlJson', el);
+      b.disabled = true;
+      b.textContent = 'DB 에서 받는 중…';
+      let rows = null;
+      try {
+        rows = await N().DBS().all(S.camp, S.secret, null);
+      } catch (e) {
+        rows = null;
+      }
+      const out = { camp: c, exported: new Date().toISOString(), source: rows ? 'db' : 'browser-cache', docs: [] };
+      if (rows) for (const r of rows) out.docs.push({ kind: r.kind, id: r.id, data: r.data, vis: r.vis, updated_at: r.updated_at });
+      else for (const k in N().D) for (const id in N().D[k]) out.docs.push({ kind: k, id, data: N().D[k][id].data, vis: N().D[k][id].vis });
+      const imgs = new Set();
+      JSON.stringify(out.docs).replace(/https?:\/\/[^"\s\\]+\/storage\/v1\/object\/public\/[^"\s\\]+/g, m => {
+        imgs.add(m);
+        return m;
+      });
+      out.images = [...imgs];
+      const bl = new Blob([JSON.stringify(out, null, 1)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(bl);
+      a.download = `notes_${c.name || S.camp}_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      b.disabled = false;
+      b.textContent = '전체 내려받기 (JSON)';
+      N().toast(rows ? `DB 에서 ${out.docs.length}개 · 그림 주소 ${imgs.size}개` : 'DB 를 못 읽어 이 브라우저 사본으로 내려받았어요');
+    };
+    /* 올리기: 문서 종류를 골라 되살린다 (전체 = 덮어쓰기 · 사본에 없는 것도 되살아난다) */
+    $('#ulJson', el).onclick = () => $('#ulFile', el).click();
+    $('#ulFile', el).onchange = async () => {
+      const f = $('#ulFile', el).files[0];
+      if (!f) return;
+      try {
+        const j = JSON.parse(await f.text());
+        let rows = (j.docs || []).filter(r => r.kind && r.id);
+        if (!rows.length) return N().toast('문서가 없어요');
+        const kinds = [...new Set(rows.map(r => r.kind))].sort();
+        const KL = {
+          ents: '항목',
+          spots: '장소',
+          maps: '지도',
+          links: '이음선',
+          routes: '루트',
+          rels: '관계',
+          pc: 'PC 시트',
+          npc: 'NPC 시트',
+          pcp: 'PC 비밀 칸',
+          plan: '일정',
+          avail: '일정 투표',
+          sec: 'GM 메모',
+          logs: '기록',
+          dgs: '던전',
+          shelf: '서가'
+        };
+        const pick = await new Promise(res => {
+          const md = N().openModal(
+            `<div class="mhead"><h2>JSON 올리기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><p class="small" style="margin-top:0">${esc(j.exported ? new Date(j.exported).toLocaleString('ko-KR') : '날짜 모름')} 에 내려받은 문서 ${rows.length}개${j.source === 'browser-cache' ? ' <span class="dim">(브라우저 사본에서 내려받은 것)</span>' : ''}. 되살릴 종류를 골라요 — 같은 id 는 그 판으로 덮어쓰고, 없는 건 더해져요. 지금 있는데 파일에 없는 문서는 그대로 둬요.</p>
+     <div class="row" style="flex-wrap:wrap;gap:6px">${kinds.map(k => `<label class="chk chip on"><input type="checkbox" value="${esc(k)}" checked hidden>${esc(KL[k] || k)} <small class="dim">${rows.filter(r => r.kind === k).length}</small></label>`).join('')}</div>
+     <div class="mfoot"><button class="btn ghost" id="ujAll">전체 고르기</button><span class="sp"></span><button class="btn pri" id="ujOk">올리기</button></div>`,
+            '',
+            { stack: true }
+          );
+          $$('.chk input', md).forEach(i => (i.onchange = () => i.parentElement.classList.toggle('on', i.checked)));
+          $('#ujAll', md).onclick = () =>
+            $$('.chk input', md).forEach(i => {
+              i.checked = true;
+              i.parentElement.classList.add('on');
+            });
+          let done = false;
+          $('#ujOk', md).onclick = () => {
+            done = true;
+            const v = $$('.chk input:checked', md).map(i => i.value);
+            N().closeModal();
+            res(v);
+          };
+          md.parentElement.addEventListener('nt:close', () => {
+            if (!done) res(null);
+          });
+        });
+        if (!pick) return;
+        rows = rows.filter(r => pick.includes(r.kind));
+        if (!rows.length) return N().toast('고른 종류가 없어요');
+        const nImg = JSON.stringify(rows).split('"data:image/').length - 1;
+        if (
+          !(await N().confirmBox(
+            `${rows.length}개 문서를 이 캠페인에 쓸까요? 같은 id 는 파일의 판으로 바뀌어요 — 되돌리려면 「🗑 최근 지운 것」 옆 이력에서.${nImg ? `\n그림 ${nImg}장은 저장소에 올리고 주소로 바꿔요 — 시간이 좀 걸려요.` : ''}`,
+            '올리기'
+          ))
+        )
+          return;
+        let done = 0;
+        const up = async (u, kind, tag) => {
+          const bl = await (await fetch(u)).blob();
+          const url = await N().upload(bl, kind, tag);
+          done++;
+          N().toast(`그림 올리는 중 ${done}/${nImg}`);
+          return url;
+        };
+        const walk = async (o, kind, key) => {
+          if (typeof o === 'string')
+            return o.startsWith('data:image/') ? await up(o, kind === 'maps' ? 'map' : key === 'face' ? 'face' : 'photo', kind) : o;
+          if (Array.isArray(o)) {
+            for (let i = 0; i < o.length; i++) o[i] = await walk(o[i], kind, key);
+            return o;
+          }
+          if (o && typeof o === 'object') {
+            for (const k in o) o[k] = await walk(o[k], kind, k);
+            return o;
+          }
+          return o;
+        };
+        for (const r of rows) r.data = await walk(r.data, r.kind, '');
+        for (let i = 0; i < rows.length; i += 40) await N().putMany(rows.slice(i, i + 40), { force: true });
+        if (j.camp && j.camp.data && j.camp.data.sub && !d.sub) {
+          try {
+            await N().campPatch({ sub: j.camp.data.sub });
+          } catch (e) {}
+        }
+        N().toast('올렸어요 · ' + rows.length + '개');
+      } catch (e) {
+        N().toast('실패: ' + e.message);
+      }
+      $('#ulFile', el).value = '';
+    };
+    {
+      const tb = $('#trashBtn', el);
+      if (tb) tb.onclick = () => NT_HIST.trash();
+    }
+    {
+      const g = $('#guideBtn', el);
+      if (g)
+        g.onclick = () => {
+          N().guideSet(N().guideOff());
+          N().toast(N().guideOff() ? '시작 안내를 치웠어요' : '시작 안내를 다시 켰어요 — 비어 있는 동안 탭 위에 떠요');
+        };
+      const ws = $('#wipeSess', el);
+      if (ws) ws.onclick = () => window.NT_PLAN && NT_PLAN.wipe('sess');
+      const wn = $('#wipeNote', el);
+      if (wn) wn.onclick = () => window.NT_PLAN && NT_PLAN.wipe('note');
+    }
+    $$('[data-claim]', el).forEach(
+      b =>
+        (b.onclick = async () => {
+          const [uid, ok] = b.dataset.claim.split('|');
+          b.disabled = true;
+          try {
+            await N()
+              .DBS()
+              .claimDecide(S.camp, S.secret, uid, ok === '1');
+            N().toast(ok === '1' ? '승인했어요 — 그 자리에 앉았어요' : '거절했어요');
+            N()
+              .DBS()
+              .ping(S.camp, { t: 'claim', uid, ok: ok === '1' });
+            await N().refreshCamp();
+          } catch (e) {
+            b.disabled = false;
+            N().toast('실패: ' + e.message);
+          }
+        })
+    );
+    $('#cpDel', el).onclick = async () => {
+      const v = await N().promptBox(`정말 지우려면 캠페인 이름 「${c.name}」 을 적어요`, '', '');
+      if (v == null) return;
+      if (v.trim() !== c.name) return N().toast('이름이 달라요');
+      try {
+        await N().DBS().campDel(S.camp, S.secret);
+        try {
+          localStorage.removeItem('nt_sec_' + S.camp);
+        } catch (e) {}
+        N().toast('지웠어요');
+        N().ST.camps = [];
+        N().leave();
+      } catch (e) {
+        N().toast('실패: ' + e.message);
+      }
+    };
+  }
+  /* 10-29 망령: 세 도구 잇기 — 제작기 폴더 · 웹툴 방 · 룰북. 웹툴 방 목록은 같은 주소(mangryoung.github.io)의 오레마스가 이 브라우저에 남긴 「최근 방」에서 */
+  const omRooms = () => {
+    try {
+      return (JSON.parse(localStorage.getItem('om_rooms') || '[]') || []).filter(r => r && r.id);
+    } catch (e) {
+      return [];
+    }
+  };
+  /* 11-03 19:50 망령 「미사그 캠퍼스를 복제한 미사그 캠퍼스 2 도 노트랑 연동」: 웹툴 방을 여럿 잇는다.
     data.om = {room:<주 방>, rooms:{<방 id>:{n:이름}}} — 예전 om.room 은 그대로 「주 방」. 칸 단위로 합쳐지게 목록은 객체(지울 때 null).
     「쓰는 방」(휴대폰 · 게시판 · ⚔ 웹툴로 · 지도/던전 웹툴로 · 장면 보내기가 가는 방)은 이 브라우저마다 고른다(nt_omcur_<캠페인>), 안 골랐으면 주 방 */
- const omData=()=>((((N().ST.campInfo||{}).data||{}).om)||{});
- const roomsOf=om=>{om=om||{};const R=omRooms();const ids=[];if(om.room)ids.push(om.room);for(const [k,v] of Object.entries(om.rooms||{}))if(v&&!ids.includes(k))ids.push(k);
-  return ids.map(id=>({id,main:id===om.room,name:((om.rooms||{})[id]||{}).n||(R.find(r=>r.id===id)||{}).name||''}))};
- const curKey=()=>'nt_omcur_'+(N().ST.camp||'');
- const curRoom=()=>{const om=omData();const L=roomsOf(om);if(!L.length)return '';let c='';try{c=localStorage.getItem(curKey())||''}catch(e){}return L.some(r=>r.id===c)?c:(om.room||L[0].id)};
- const setCur=id=>{try{if(id)localStorage.setItem(curKey(),id);else localStorage.removeItem(curKey())}catch(e){}};
- const roomName=id=>{const r=roomsOf(omData()).find(x=>x.id===id);return (r&&r.name)||id};
- const roomId=v=>{const m=String(v||'').match(/[#&?]r=([a-z0-9]+)/i);return m?m[1]:/^[a-z0-9]{4,}$/i.test(String(v||'').trim())?String(v).trim():''};
- /* 11-03: 칸 단위 patch (null = 그 칸 지움) */
- const campPatch=patch=>N().campPatch(patch);
- /* 11-03: 자리 앉기 승인 대기 (camp.data.claims = {uid:{seat,name,at}}) */
- function claimsCard(d){const C=Object.entries(d.claims||{});if(!C.length)return '';
-  return `<div class="card claimcard" style="grid-column:1/-1"><h3>🪑 자리 앉기 요청 <small>${C.length}건 · 승인하면 그 계정이 그 PC 시트에 앉아요</small></h3>${C.map(([uid,x])=>`<div class="seatrow"><div><b>${esc(x.name||uid)}</b> <small class="mono">@${esc(uid)}</small> → <b>${esc(N().seatName(x.seat)||x.seat)}</b> <small class="dim">${esc(String(x.at||'').replace('T',' ').slice(0,16))}</small></div><div class="row" style="gap:4px"><button class="btn xs pri" data-claim="${esc(uid)}|1">승인</button><button class="btn xs ghost danger" data-claim="${esc(uid)}|0">거절</button></div></div>`).join('')}</div>`}
- function linkCard(d){const MK=window.NT_MAKER;const fl=MK?MK.linked():[];const R=omRooms();const OL=roomsOf(d.om);const cur=curRoom();
-  const nRb=N().list('ents').filter(e=>e.rb&&e.rb.ch).length,nMk=N().list('ents').filter(e=>e.mk).length;
-  return `<div class="card linkcard" style="grid-column:1/-1"><h3>세 도구 잇기 <small>제작기 · 웹툴 · 룰북</small></h3><div class="lkgrid">
-   <div class="lkc"><b>📁 제작기 폴더</b><p class="small dim">이 폴더에 만든 트레이너가 시트 탭에 「아직 안 넣은 트레이너」로 떠요.</p><div class="lkv">${fl.length?fl.map(id=>`<span class="chip static">📁 ${esc(MK.fpath(id)||MK.folderName(id))}</span>`).join(' '):'<span class="dim small">이어진 폴더 없음</span>'}</div><div class="acts"><button class="btn xs" id="lkMk">${fl.length?'폴더 바꾸기':'폴더 잇기'}</button></div></div>
+  const omData = () => ((N().ST.campInfo || {}).data || {}).om || {};
+  const roomsOf = om => {
+    om = om || {};
+    const R = omRooms();
+    const ids = [];
+    if (om.room) ids.push(om.room);
+    for (const [k, v] of Object.entries(om.rooms || {})) if (v && !ids.includes(k)) ids.push(k);
+    return ids.map(id => ({ id, main: id === om.room, name: ((om.rooms || {})[id] || {}).n || (R.find(r => r.id === id) || {}).name || '' }));
+  };
+  const curKey = () => 'nt_omcur_' + (N().ST.camp || '');
+  const curRoom = () => {
+    const om = omData();
+    const L = roomsOf(om);
+    if (!L.length) return '';
+    let c = '';
+    try {
+      c = localStorage.getItem(curKey()) || '';
+    } catch (e) {}
+    return L.some(r => r.id === c) ? c : om.room || L[0].id;
+  };
+  const setCur = id => {
+    try {
+      if (id) localStorage.setItem(curKey(), id);
+      else localStorage.removeItem(curKey());
+    } catch (e) {}
+  };
+  const roomName = id => {
+    const r = roomsOf(omData()).find(x => x.id === id);
+    return (r && r.name) || id;
+  };
+  const roomId = v => {
+    const m = String(v || '').match(/[#&?]r=([a-z0-9]+)/i);
+    return m ? m[1] : /^[a-z0-9]{4,}$/i.test(String(v || '').trim()) ? String(v).trim() : '';
+  };
+  /* 11-03: 칸 단위 patch (null = 그 칸 지움) */
+  const campPatch = patch => N().campPatch(patch);
+  /* 11-03: 자리 앉기 승인 대기 (camp.data.claims = {uid:{seat,name,at}}) */
+  function claimsCard(d) {
+    const C = Object.entries(d.claims || {});
+    if (!C.length) return '';
+    return `<div class="card claimcard" style="grid-column:1/-1"><h3>🪑 자리 앉기 요청 <small>${C.length}건 · 승인하면 그 계정이 그 PC 시트에 앉아요</small></h3>${C.map(
+      ([uid, x]) =>
+        `<div class="seatrow"><div><b>${esc(x.name || uid)}</b> <small class="mono">@${esc(uid)}</small> → <b>${esc(N().seatName(x.seat) || x.seat)}</b> <small class="dim">${esc(
+          String(x.at || '')
+            .replace('T', ' ')
+            .slice(0, 16)
+        )}</small></div><div class="row" style="gap:4px"><button class="btn xs pri" data-claim="${esc(uid)}|1">승인</button><button class="btn xs ghost danger" data-claim="${esc(uid)}|0">거절</button></div></div>`
+    ).join('')}</div>`;
+  }
+  function linkCard(d) {
+    const MK = window.NT_MAKER;
+    const fl = MK ? MK.linked() : [];
+    const R = omRooms();
+    const OL = roomsOf(d.om);
+    const cur = curRoom();
+    const nRb = N()
+        .list('ents')
+        .filter(e => e.rb && e.rb.ch).length,
+      nMk = N()
+        .list('ents')
+        .filter(e => e.mk).length;
+    return `<div class="card linkcard" style="grid-column:1/-1"><h3>세 도구 잇기 <small>제작기 · 웹툴 · 룰북</small></h3><div class="lkgrid">
+   <div class="lkc"><b>📁 제작기 폴더</b><p class="small dim">이 폴더에 만든 트레이너가 시트 탭에 「아직 안 넣은 트레이너」로 떠요.</p><div class="lkv">${fl.length ? fl.map(id => `<span class="chip static">📁 ${esc(MK.fpath(id) || MK.folderName(id))}</span>`).join(' ') : '<span class="dim small">이어진 폴더 없음</span>'}</div><div class="acts"><button class="btn xs" id="lkMk">${fl.length ? '폴더 바꾸기' : '폴더 잇기'}</button></div></div>
    <div class="lkc"><b>🎲 웹툴 방</b><p class="small dim">이으면 위 막대에 「웹툴」 단추가 생기고, 웹툴에서 이 캠페인의 지도 · 관계도를 비밀구 없이 한 번에 가져와요. 방을 여럿 이을 수 있어요(복제한 방 등).</p>
-    <div class="lkv lkrooms">${OL.length?OL.map(r=>`<div class="lkroom ${r.id===cur&&OL.length>1?'cur':''}"><span class="chip static">🎲 ${esc(r.name||'방')} <code>${esc(r.id)}</code></span>${r.main?'<em class="lkb">주 방</em>':''}${OL.length>1&&r.id===cur?'<em class="lkb on">이 브라우저에서 쓰는 방</em>':''}<span class="sp"></span><a class="btn xs ghost" href="${esc(omUrl(r.id))}" target="oremas" rel="noopener">열기 ↗</a>${OL.length>1&&r.id!==cur?`<button class="btn xs ghost" data-omcur="${esc(r.id)}" title="휴대폰 · 게시판 · ⚔ 웹툴로 · 장면 보내기를 이 브라우저에서는 이 방으로">여기서 쓰기</button>`:''}${OL.length>1&&!r.main?`<button class="btn xs ghost" data-ommain="${esc(r.id)}" title="주 방 — 다른 브라우저 · 새로 연 사람이 처음 쓰는 방">★ 주 방으로</button>`:''}<button class="btn xs ghost" data-omx="${esc(r.id)}">풀기</button></div>`).join(''):'<span class="dim small">이어진 방 없음</span>'}</div>
-    <div class="row" style="gap:4px;flex-wrap:wrap;margin-top:6px">${R.length?`<select id="lkOmSel"><option value="">이 브라우저의 최근 방에서 고르기</option>${R.filter(r=>!OL.some(x=>x.id===r.id)).map(r=>`<option value="${esc(r.id)}">${esc(r.name||r.id)}</option>`).join('')}</select>`:''}<input id="lkOmIn" type="text" placeholder="또는 방 링크 · id 붙여 넣기" style="flex:1;min-width:150px"><button class="btn xs pri" id="lkOmOk">${OL.length?'＋ 방 더 잇기':'잇기'}</button></div></div>
-   <div class="lkc"><b>📖 룰북</b><p class="small dim">자료 탭에서 항목을 고칠 때 「제작기 룰북 장」을 고르면, 룰북 원문을 그대로 보여 줘요. 룰북을 고치면 같이 바뀌어요.</p><div class="lkv small">룰북과 이어진 항목 <b>${nRb}</b>개 · 제작기 트레이너와 이어진 항목 <b>${nMk}</b>개</div><div class="acts"><a class="btn xs ghost" href="${esc(window.NT_RB?NT_RB.link(''):'#')}" target="_blank" rel="noopener">룰북 열기 ↗</a></div></div>
-  </div></div>`}
- const omUrl=room=>String((window.NT_CONFIG||{}).oremasUrl||'https://mangryoung.github.io/oremas/').replace(/#.*$/,'')+'#r='+encodeURIComponent(room);
- function bindLink(el,d){const b=$('#lkMk',el);if(b)b.onclick=()=>window.NT_MAKER&&NT_MAKER.pickLinked();
-  const ok=$('#lkOmOk',el);if(ok)ok.onclick=async()=>{const v=roomId(($('#lkOmIn',el)||{}).value)||(($('#lkOmSel',el)||{}).value||'');if(!v)return N().toast('방 링크나 id 를 적거나 골라 주세요');
-   const om=d.om||{};const nm=(omRooms().find(r=>r.id===v)||{}).name||'';if(roomsOf(om).some(r=>r.id===v))return N().toast('이미 이어진 방이에요');
-   try{await campPatch({om:Object.assign(om.room?{}:{room:v},{rooms:{[v]:{n:nm}}})});N().toast(om.room?'웹툴 방을 하나 더 이었어요':'웹툴 방을 이었어요');N().render()}catch(e){N().toast('저장 실패: '+e.message)}};
-  const sel=$('#lkOmSel',el);if(sel)sel.onchange=()=>{const i=$('#lkOmIn',el);if(i)i.value=''};
-  $$('[data-omcur]',el).forEach(b=>b.onclick=()=>{setCur(b.dataset.omcur);N().toast(`이 브라우저에서는 「${roomName(b.dataset.omcur)}」 방을 써요`);N().render()});
-  $$('[data-ommain]',el).forEach(b=>b.onclick=async()=>{const id=b.dataset.ommain;const om=d.om||{};const pt={room:id,rooms:{[id]:{n:roomName(id)}}};if(om.room&&om.room!==id)pt.rooms[om.room]={n:roomName(om.room)};try{await campPatch({om:pt});N().toast('주 방을 바꿨어요');N().render()}catch(e){N().toast('저장 실패: '+e.message)}});
-  $$('[data-omx]',el).forEach(b=>b.onclick=async()=>{const id=b.dataset.omx;const om=d.om||{};const rest=roomsOf(om).filter(r=>r.id!==id);
-   if(!await N().confirmBox(`「${roomName(id)}」 방 잇기를 풀까요? (웹툴 방 자체는 그대로예요)`))return;
-   const pt=rest.length?{rooms:{[id]:null}}:null;if(pt&&om.room===id)pt.room=rest[0].id;
-   try{await campPatch({om:pt});if(curRoom()===id)setCur('');N().toast(rest.length?'그 방 잇기를 풀었어요':'웹툴 방 잇기를 풀었어요');N().render()}catch(e){N().toast('저장 실패: '+e.message)}})}
- function showLink(seat,sec){const u=link(sec);N().openModal(`<div class="mhead"><h2>초대 링크 — ${esc(N().seatName(seat)||seat)}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div class="linkbox"><input type="text" readonly value="${esc(u)}" id="lkSeat"><button class="btn xs" data-copy="lkSeat">복사</button></div><p class="small dim">이 링크를 한 번 열면 그 브라우저에 좌석 비밀구가 저장돼요. 비밀구: <code>${esc(sec)}</code></p>`);bindCopy(document)}
- function bindCopy(root){$$('[data-copy]',root).forEach(b=>b.onclick=()=>{const i=$('#'+b.dataset.copy);if(!i)return;i.select();const done=()=>N().toast('복사했어요');if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(i.value).then(done,()=>{document.execCommand('copy');done()});else{document.execCommand('copy');done()}})}
- N().MOD.set={render};
- window.NT_LINK={omUrl,omRooms,rooms:()=>roomsOf(omData()),cur:curRoom,setCur,roomName};
+    <div class="lkv lkrooms">${OL.length ? OL.map(r => `<div class="lkroom ${r.id === cur && OL.length > 1 ? 'cur' : ''}"><span class="chip static">🎲 ${esc(r.name || '방')} <code>${esc(r.id)}</code></span>${r.main ? '<em class="lkb">주 방</em>' : ''}${OL.length > 1 && r.id === cur ? '<em class="lkb on">이 브라우저에서 쓰는 방</em>' : ''}<span class="sp"></span><a class="btn xs ghost" href="${esc(omUrl(r.id))}" target="oremas" rel="noopener">열기 ↗</a>${OL.length > 1 && r.id !== cur ? `<button class="btn xs ghost" data-omcur="${esc(r.id)}" title="휴대폰 · 게시판 · ⚔ 웹툴로 · 장면 보내기를 이 브라우저에서는 이 방으로">여기서 쓰기</button>` : ''}${OL.length > 1 && !r.main ? `<button class="btn xs ghost" data-ommain="${esc(r.id)}" title="주 방 — 다른 브라우저 · 새로 연 사람이 처음 쓰는 방">★ 주 방으로</button>` : ''}<button class="btn xs ghost" data-omx="${esc(r.id)}">풀기</button></div>`).join('') : '<span class="dim small">이어진 방 없음</span>'}</div>
+    <div class="row" style="gap:4px;flex-wrap:wrap;margin-top:6px">${
+      R.length
+        ? `<select id="lkOmSel"><option value="">이 브라우저의 최근 방에서 고르기</option>${R.filter(r => !OL.some(x => x.id === r.id))
+            .map(r => `<option value="${esc(r.id)}">${esc(r.name || r.id)}</option>`)
+            .join('')}</select>`
+        : ''
+    }<input id="lkOmIn" type="text" placeholder="또는 방 링크 · id 붙여 넣기" style="flex:1;min-width:150px"><button class="btn xs pri" id="lkOmOk">${OL.length ? '＋ 방 더 잇기' : '잇기'}</button></div></div>
+   <div class="lkc"><b>📖 룰북</b><p class="small dim">자료 탭에서 항목을 고칠 때 「제작기 룰북 장」을 고르면, 룰북 원문을 그대로 보여 줘요. 룰북을 고치면 같이 바뀌어요.</p><div class="lkv small">룰북과 이어진 항목 <b>${nRb}</b>개 · 제작기 트레이너와 이어진 항목 <b>${nMk}</b>개</div><div class="acts"><a class="btn xs ghost" href="${esc(window.NT_RB ? NT_RB.link('') : '#')}" target="_blank" rel="noopener">룰북 열기 ↗</a></div></div>
+  </div></div>`;
+  }
+  const omUrl = room =>
+    String((window.NT_CONFIG || {}).oremasUrl || 'https://mangryoung.github.io/oremas/').replace(/#.*$/, '') + '#r=' + encodeURIComponent(room);
+  function bindLink(el, d) {
+    const b = $('#lkMk', el);
+    if (b) b.onclick = () => window.NT_MAKER && NT_MAKER.pickLinked();
+    const ok = $('#lkOmOk', el);
+    if (ok)
+      ok.onclick = async () => {
+        const v = roomId(($('#lkOmIn', el) || {}).value) || ($('#lkOmSel', el) || {}).value || '';
+        if (!v) return N().toast('방 링크나 id 를 적거나 골라 주세요');
+        const om = d.om || {};
+        const nm = (omRooms().find(r => r.id === v) || {}).name || '';
+        if (roomsOf(om).some(r => r.id === v)) return N().toast('이미 이어진 방이에요');
+        try {
+          await campPatch({ om: Object.assign(om.room ? {} : { room: v }, { rooms: { [v]: { n: nm } } }) });
+          N().toast(om.room ? '웹툴 방을 하나 더 이었어요' : '웹툴 방을 이었어요');
+          N().render();
+        } catch (e) {
+          N().toast('저장 실패: ' + e.message);
+        }
+      };
+    const sel = $('#lkOmSel', el);
+    if (sel)
+      sel.onchange = () => {
+        const i = $('#lkOmIn', el);
+        if (i) i.value = '';
+      };
+    $$('[data-omcur]', el).forEach(
+      b =>
+        (b.onclick = () => {
+          setCur(b.dataset.omcur);
+          N().toast(`이 브라우저에서는 「${roomName(b.dataset.omcur)}」 방을 써요`);
+          N().render();
+        })
+    );
+    $$('[data-ommain]', el).forEach(
+      b =>
+        (b.onclick = async () => {
+          const id = b.dataset.ommain;
+          const om = d.om || {};
+          const pt = { room: id, rooms: { [id]: { n: roomName(id) } } };
+          if (om.room && om.room !== id) pt.rooms[om.room] = { n: roomName(om.room) };
+          try {
+            await campPatch({ om: pt });
+            N().toast('주 방을 바꿨어요');
+            N().render();
+          } catch (e) {
+            N().toast('저장 실패: ' + e.message);
+          }
+        })
+    );
+    $$('[data-omx]', el).forEach(
+      b =>
+        (b.onclick = async () => {
+          const id = b.dataset.omx;
+          const om = d.om || {};
+          const rest = roomsOf(om).filter(r => r.id !== id);
+          if (!(await N().confirmBox(`「${roomName(id)}」 방 잇기를 풀까요? (웹툴 방 자체는 그대로예요)`))) return;
+          const pt = rest.length ? { rooms: { [id]: null } } : null;
+          if (pt && om.room === id) pt.room = rest[0].id;
+          try {
+            await campPatch({ om: pt });
+            if (curRoom() === id) setCur('');
+            N().toast(rest.length ? '그 방 잇기를 풀었어요' : '웹툴 방 잇기를 풀었어요');
+            N().render();
+          } catch (e) {
+            N().toast('저장 실패: ' + e.message);
+          }
+        })
+    );
+  }
+  function showLink(seat, sec) {
+    const u = link(sec);
+    N().openModal(
+      `<div class="mhead"><h2>초대 링크 — ${esc(N().seatName(seat) || seat)}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div class="linkbox"><input type="text" readonly value="${esc(u)}" id="lkSeat"><button class="btn xs" data-copy="lkSeat">복사</button></div><p class="small dim">이 링크를 한 번 열면 그 브라우저에 좌석 비밀구가 저장돼요. 비밀구: <code>${esc(sec)}</code></p>`
+    );
+    bindCopy(document);
+  }
+  function bindCopy(root) {
+    $$('[data-copy]', root).forEach(
+      b =>
+        (b.onclick = () => {
+          const i = $('#' + b.dataset.copy);
+          if (!i) return;
+          i.select();
+          const done = () => N().toast('복사했어요');
+          if (navigator.clipboard && navigator.clipboard.writeText)
+            navigator.clipboard.writeText(i.value).then(done, () => {
+              document.execCommand('copy');
+              done();
+            });
+          else {
+            document.execCommand('copy');
+            done();
+          }
+        })
+    );
+  }
+  N().MOD.set = { render };
+  window.NT_LINK = { omUrl, omRooms, rooms: () => roomsOf(omData()), cur: curRoom, setCur, roomName };
 })();

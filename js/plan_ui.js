@@ -9,196 +9,850 @@
      id 'wk_<seat>'      {days:{0..6: 'o' | 'd' | ''}, note}     평소 되는 요일 (0 = 일)
    캘린더 연동: 세션마다 Google 캘린더 추가 링크 · 전체 .ics 내려받기 (휴대폰 · 데스크톱 캘린더에 그대로 들어간다).
    11-03 감우: 세션마다 GM 만 보는 sec 문서 'sess:<id>' {prep:[{t,d}] 준비 체크리스트, use:[{k,id}] 쓸 것(루트 · 인물 · 지도 · 장면 링크), retro 회고} — ent · spot · route 의 GM 메모와 같은 저장(put 'sec' … 'gm'). */
-"use strict";
-(()=>{
- const N=()=>window.NT;const {$,$$,esc}=window.NT;
- const now=new Date();
- window.NT.BULKF.plan=()=>(id,d)=>U.tab==='note'?d.data.t==='note':(d.data.t==='part'||d.data.t==='sess');
- const U={tab:'sess',listf:'',y:now.getFullYear(),m:now.getMonth()};
- const all=()=>N().list('plan');
- const parts=()=>all().filter(x=>x.t==='part').sort((a,b)=>(a.order||0)-(b.order||0));
- const sessAll=()=>all().filter(x=>x.t==='sess').sort((a,b)=>(a.order||0)-(b.order||0));
- const sess=p=>sessAll().filter(x=>(x.part||'')===p);
- const cands=()=>all().filter(x=>x.t==='cand').sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.time||'').localeCompare(b.time||''));
- const notes=()=>all().filter(x=>x.t==='note').sort((a,b)=>(a.order||0)-(b.order||0));
- const KINDS=['커뮤','배틀','큰 사건','탐색','휴식','최종','기타'];
- const WD=['일','월','화','수','목','금','토'];
- const pad=n=>String(n).padStart(2,'0');
- const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
- const today=ymd(now);
- const fmtD=s=>{if(!s)return '';const d=new Date(s+'T00:00:00');return isNaN(d)?s:`${d.getMonth()+1}/${d.getDate()} (${WD[d.getDay()]})`};
- const seats=()=>(N().ST.seats||[]).map(s=>s.seat);
- const vote=(date,seat)=>N().data('avail',`${date}_${seat}`)||{};
- const wk=seat=>N().data('avail',`wk_${seat}`)||{days:{}};
- const V={o:'○',d:'△',x:'×','':'·'};const VC={o:'ok',d:'mid',x:'bad','':''};
- const cycle=v=>v==='o'?'d':v==='d'?'x':v==='x'?'':'o';
- const nextSess=()=>sessAll().filter(s=>s.date&&s.date>=today&&s.st!=='done').sort((a,b)=>a.date.localeCompare(b.date))[0]||sessAll().find(s=>s.st==='now');
- /* ---- 캘린더 링크 ---- */
- const gcal=s=>{if(!s.date)return '';const [y,m,d]=s.date.split('-').map(Number);const [hh,mm]=(s.time||'19:00').split(':').map(Number);const st=new Date(y,m-1,d,hh,mm);const en=new Date(st.getTime()+((+s.dur||180)*60000));const f=x=>`${x.getFullYear()}${pad(x.getMonth()+1)}${pad(x.getDate())}T${pad(x.getHours())}${pad(x.getMinutes())}00`;
-  const c=N().ST.campInfo||{};const title=`${c.name||'망켓몬'} 세션 ${s.label||''}${s.what?' · '+s.what:''}`;return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${f(st)}/${f(en)}&details=${encodeURIComponent((s.memo||'')+'\n'+location.href.split('?')[0]+'#c='+N().ST.camp+'&v=plan')}${s.where?'&location='+encodeURIComponent(s.where):''}`};
- function ics(){const c=N().ST.campInfo||{};const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//mangketmon-notes//KO','CALSCALE:GREGORIAN','X-WR-CALNAME:'+(c.name||'망켓몬')+' 세션'];
-  const e=s=>String(s||'').replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/[,;]/g,m=>'\\'+m);
-  for(const s of sessAll().filter(s=>s.date)){const [y,m,d]=s.date.split('-').map(Number);const [hh,mm]=(s.time||'19:00').split(':').map(Number);const st=new Date(y,m-1,d,hh,mm);const en=new Date(st.getTime()+((+s.dur||180)*60000));const f=x=>`${x.getFullYear()}${pad(x.getMonth()+1)}${pad(x.getDate())}T${pad(x.getHours())}${pad(x.getMinutes())}00`;
-   L.push('BEGIN:VEVENT',`UID:${N().ST.camp}-${s.id}@mangketmon-notes`,`DTSTAMP:${f(new Date())}`,`DTSTART:${f(st)}`,`DTEND:${f(en)}`,`SUMMARY:${e((c.name||'망켓몬')+' 세션 '+(s.label||'')+(s.what?' · '+s.what:''))}`,`DESCRIPTION:${e(s.memo||'')}`,s.where?`LOCATION:${e(s.where)}`:'','END:VEVENT')}
-  L.push('END:VCALENDAR');const bl=new Blob([L.filter(Boolean).join('\r\n')],{type:'text/calendar'});const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download=`${c.name||'campaign'}_sessions.ics`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
- /* ---- 그리기 ---- */
- /* 10-30 망령 「캘린더도 연동」: 이어 둔 웹툴 방의 게임 속 달력(오늘 · 날씨 · 일정) — 웹툴 GM 브라우저가 plan 문서 omcal_<방> 으로 써 준다(읽기 전용).
+'use strict';
+(() => {
+  const N = () => window.NT;
+  const { $, $$, esc } = window.NT;
+  const now = new Date();
+  window.NT.BULKF.plan = () => (id, d) => (U.tab === 'note' ? d.data.t === 'note' : d.data.t === 'part' || d.data.t === 'sess');
+  const U = { tab: 'sess', listf: '', y: now.getFullYear(), m: now.getMonth() };
+  const all = () => N().list('plan');
+  const parts = () =>
+    all()
+      .filter(x => x.t === 'part')
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+  const sessAll = () =>
+    all()
+      .filter(x => x.t === 'sess')
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+  const sess = p => sessAll().filter(x => (x.part || '') === p);
+  const cands = () =>
+    all()
+      .filter(x => x.t === 'cand')
+      .sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.time || '').localeCompare(b.time || ''));
+  const notes = () =>
+    all()
+      .filter(x => x.t === 'note')
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+  const KINDS = ['커뮤', '배틀', '큰 사건', '탐색', '휴식', '최종', '기타'];
+  const WD = ['일', '월', '화', '수', '목', '금', '토'];
+  const pad = n => String(n).padStart(2, '0');
+  const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const today = ymd(now);
+  const fmtD = s => {
+    if (!s) return '';
+    const d = new Date(s + 'T00:00:00');
+    return isNaN(d) ? s : `${d.getMonth() + 1}/${d.getDate()} (${WD[d.getDay()]})`;
+  };
+  const seats = () => (N().ST.seats || []).map(s => s.seat);
+  const vote = (date, seat) => N().data('avail', `${date}_${seat}`) || {};
+  const wk = seat => N().data('avail', `wk_${seat}`) || { days: {} };
+  const V = { o: '○', d: '△', x: '×', '': '·' };
+  const VC = { o: 'ok', d: 'mid', x: 'bad', '': '' };
+  const cycle = v => (v === 'o' ? 'd' : v === 'd' ? 'x' : v === 'x' ? '' : 'o');
+  const nextSess = () =>
+    sessAll()
+      .filter(s => s.date && s.date >= today && s.st !== 'done')
+      .sort((a, b) => a.date.localeCompare(b.date))[0] || sessAll().find(s => s.st === 'now');
+  /* ---- 캘린더 링크 ---- */
+  const gcal = s => {
+    if (!s.date) return '';
+    const [y, m, d] = s.date.split('-').map(Number);
+    const [hh, mm] = (s.time || '19:00').split(':').map(Number);
+    const st = new Date(y, m - 1, d, hh, mm);
+    const en = new Date(st.getTime() + (+s.dur || 180) * 60000);
+    const f = x => `${x.getFullYear()}${pad(x.getMonth() + 1)}${pad(x.getDate())}T${pad(x.getHours())}${pad(x.getMinutes())}00`;
+    const c = N().ST.campInfo || {};
+    const title = `${c.name || '망켓몬'} 세션 ${s.label || ''}${s.what ? ' · ' + s.what : ''}`;
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${f(st)}/${f(en)}&details=${encodeURIComponent((s.memo || '') + '\n' + location.href.split('?')[0] + '#c=' + N().ST.camp + '&v=plan')}${s.where ? '&location=' + encodeURIComponent(s.where) : ''}`;
+  };
+  function ics() {
+    const c = N().ST.campInfo || {};
+    const L = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//mangketmon-notes//KO',
+      'CALSCALE:GREGORIAN',
+      'X-WR-CALNAME:' + (c.name || '망켓몬') + ' 세션'
+    ];
+    const e = s =>
+      String(s || '')
+        .replace(/\\/g, '\\\\')
+        .replace(/\n/g, '\\n')
+        .replace(/[,;]/g, m => '\\' + m);
+    for (const s of sessAll().filter(s => s.date)) {
+      const [y, m, d] = s.date.split('-').map(Number);
+      const [hh, mm] = (s.time || '19:00').split(':').map(Number);
+      const st = new Date(y, m - 1, d, hh, mm);
+      const en = new Date(st.getTime() + (+s.dur || 180) * 60000);
+      const f = x => `${x.getFullYear()}${pad(x.getMonth() + 1)}${pad(x.getDate())}T${pad(x.getHours())}${pad(x.getMinutes())}00`;
+      L.push(
+        'BEGIN:VEVENT',
+        `UID:${N().ST.camp}-${s.id}@mangketmon-notes`,
+        `DTSTAMP:${f(new Date())}`,
+        `DTSTART:${f(st)}`,
+        `DTEND:${f(en)}`,
+        `SUMMARY:${e((c.name || '망켓몬') + ' 세션 ' + (s.label || '') + (s.what ? ' · ' + s.what : ''))}`,
+        `DESCRIPTION:${e(s.memo || '')}`,
+        s.where ? `LOCATION:${e(s.where)}` : '',
+        'END:VEVENT'
+      );
+    }
+    L.push('END:VCALENDAR');
+    const bl = new Blob([L.filter(Boolean).join('\r\n')], { type: 'text/calendar' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(bl);
+    a.download = `${c.name || 'campaign'}_sessions.ics`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  /* ---- 그리기 ---- */
+  /* 10-30 망령 「캘린더도 연동」: 이어 둔 웹툴 방의 게임 속 달력(오늘 · 날씨 · 일정) — 웹툴 GM 브라우저가 plan 문서 omcal_<방> 으로 써 준다(읽기 전용).
     거꾸로 이 탭의 세션(날짜 있는 것)은 웹툴 캘린더에 「세션」 일정으로 뜬다 */
- function omCalHtml(){const L=N().list('plan').filter(x=>x.t==='omcal');if(!L.length)return '';
-  return L.map(c=>{const ev=Object.entries(c.events||{}).filter(([d])=>!c.today||d>=c.today).sort((a,b)=>a[0].localeCompare(b[0])).flatMap(([d,xs])=>(xs||[]).map(e=>({d,...e}))).slice(0,6);
-   return `<div class="card omcal"><div class="row" style="gap:8px;align-items:baseline;flex-wrap:wrap"><b>🎲 웹툴 게임 달력</b><small class="dim">${esc(c.name||c.room||'')}</small><span class="sp"></span><span>게임 속 오늘 <b>${esc(c.today||'—')}</b> ${esc(c.weather||'')}</span></div>
-    ${ev.length?`<ul class="omcal-l">${ev.map(e=>`<li><span class="dim">${esc(e.d)}</span> ${esc(e.t||'')}${e.note?` <small class="dim">· ${esc(e.note)}</small>`:''}</li>`).join('')}</ul>`:'<div class="small dim">다가오는 게임 속 일정이 없어요</div>'}
-    <div class="small dim" style="margin-top:4px">웹툴 캘린더에서 고쳐요 · 여기 세션 일정은 웹툴 캘린더에 「세션」으로 떠요</div></div>`}).join('')}
- function render(el){const G=N().gm();const total=sessAll().length,done=sessAll().filter(x=>x.st==='done').length;
-  el.innerHTML=`<div class="toolbar"><h2>일정</h2><div class="seg"><button data-pt="sess" class="${U.tab==='sess'?'on':''}">세션 ${done}/${total}</button><button data-pt="cal" class="${U.tab==='cal'?'on':''}">달력</button><button data-pt="poll" class="${U.tab==='poll'?'on':''}">조율 ${cands().length?cands().filter(c=>c.date>=today).length:''}</button><button data-pt="note" class="${U.tab==='note'?'on':''}">설계 메모 ${notes().length}</button></div><span class="sp"></span>
-    ${U.tab==='sess'||U.tab==='cal'?`<button class="btn sm ghost" data-pl="ics" title="휴대폰 · 데스크톱 캘린더에 넣기">📅 .ics</button>`:''}${G?(U.tab==='sess'?'<button class="btn sm" data-pl="newpart">＋ 부</button><button class="btn sm pri" data-pl="newsess">＋ 세션</button>':U.tab==='poll'?'<button class="btn sm pri" data-pl="newcand">＋ 후보 날짜</button>':U.tab==='note'?'<button class="btn sm pri" data-pl="newnote">＋ 메모</button>':''):''}${N().bulkBtns('plan',null,U.tab==='note'?'설계 메모':'부 · 세션')}</div>
-   ${U.tab==='sess'||U.tab==='cal'?omCalHtml():''}${U.tab==='sess'?sessHtml():U.tab==='cal'?calHtml():U.tab==='poll'?pollHtml():notesHtml()}`;
-  el.addEventListener('click',e=>{const t=e.target;if(t.closest('a'))return;const pt=t.closest('[data-pt]');if(pt){U.tab=pt.dataset.pt;N().render();return}
-   const lf=t.closest('[data-lf]');if(lf){U.listf=lf.dataset.lf;N().render();return}
-   const v=t.closest('[data-vote]');if(v){const [date,seat]=v.dataset.vote.split('|');if(!N().canEdit('avail',`${date}_${seat}`))return N().toast(seat===N().me()?'':'자기 칸만 찍을 수 있어요');const cur=vote(date,seat);N().put('avail',`${date}_${seat}`,{v:cycle(cur.v||''),note:cur.note||''},'pub');return}
-   const w=t.closest('[data-wk]');if(w){const [seat,day]=w.dataset.wk.split('|');if(!N().canEdit('avail',`wk_${seat}`))return N().toast('자기 칸만 찍을 수 있어요');const cur=wk(seat);const days=Object.assign({},cur.days||{});days[day]=cycle(days[day]||'')==='x'?'':cycle(days[day]||'');N().put('avail',`wk_${seat}`,{days,note:cur.note||''},'pub');return}
-   const day=t.closest('[data-day]');if(day){dayMenu(day.dataset.day);return}
-   const b=t.closest('[data-pl]');if(b)return act(b.dataset.pl,b);
-   const s=t.closest('[data-sess]');if(s)return G?editSess(s.dataset.sess):viewSess(s.dataset.sess);
-   const n=t.closest('[data-note]');if(n&&G)return editNote(n.dataset.note)});
-  /* 10-26: 우클릭 · 길게 누르기 메뉴, 끌어서 순서 바꾸기 */
-  N().bindCtx(el,'[data-sess]',t=>sessCtx(t.dataset.sess));
-  if(G){$$('.part',el).forEach(c=>N().sortable(c,'.sess[data-id]',ids=>orderSess(ids)));
-   const pp=$('.plan-parts',el);if(pp)N().sortable(pp,'.part[data-id]',ids=>N().reorder('plan',ids),{handleSel:'h3'});
-   const ng=$('.notes-grid',el);if(ng)N().sortable(ng,'.pnote[data-id]',ids=>orderNotes(ids))}}
- /* ---- 10-26 공용: 세션 메뉴 · 상태 · 순서 · PL 열람 ---- */
- const SST={'':'예정',now:'진행 중',done:'끝'};
- async function setSessSt(id,st){if(st==='now')for(const o of sessAll().filter(x=>x.st==='now'&&x.id!==id))await N().patch('plan',o.id,x=>{x.st=''});await N().patch('plan',id,x=>{x.st=st});N().toast('세션 상태: '+SST[st])}
- async function delSess(id){const s=N().data('plan',id);if(!s)return false;if(!await N().confirmBox(`세션 ${s.label||''} ${s.what?'「'+s.what+'」':''}을 지울까요? (설정 탭 「🗑 최근 지운 것」에서 되살릴 수 있어요)`,'지우기'))return false;await N().del('plan',id);if(N().doc('sec','sess:'+id))await N().del('sec','sess:'+id);N().toastUndo('세션을 지웠어요');return true}
- function visItems(id){const d=N().doc('plan',id);if(!d||!N().gm())return [];const cur=d.vis||'pub';const o=[['pub','👥 모두에게'],['gm','🔒 GM만']].concat((N().ST.seats||[]).map(x=>['pl:'+x.seat,'👤 '+(N().seatName(x.seat)||x.seat)+' 에게만']));
-  return o.map(([v,l])=>({t:(v===cur?'✓ ':'　')+l,on:async()=>{if(v===cur)return;await N().put('plan',id,N().clone(d.data),v);N().toast('공개 범위: '+N().visLabel(v))}}))}
- function sessCtx(id){const s=N().data('plan',id);if(!s)return null;const G=N().gm();const L=[];
-  if(G)L.push(...visItems(id),'-',{t:'✎ 고치기',on:()=>editSess(id)});else L.push({t:'자세히',on:()=>viewSess(id)});
-  if(window.NT_FAV)L.push({t:NT_FAV.has('sess',id)?'★ 즐겨찾기에서 빼기':'☆ 즐겨찾기에 넣기',on:()=>NT_FAV.toggle('sess',id,(s.label||'')+' '+(s.what||''))});
-  if(G)L.push('-',...Object.entries(SST).filter(([v])=>v!==(s.st||'')).map(([v,l])=>({t:(v==='now'?'▶ ':v==='done'?'✓ ':'○ ')+l+'으로',on:()=>setSessSt(id,v)})),'-',{t:'🗑 세션 지우기',danger:true,on:()=>delSess(id)});return L}
- /* 11-03 감우: 「비우기」(부 · 세션 · 후보 날짜 / 설계 메모 전부 지우기)는 「＋ 세션」 옆에서 설정 탭 「위험」 칸으로 옮겼다 (NT_PLAN.wipe) */
- async function wipe(w){if(!N().gm())return;const L=all().filter(x=>w==='note'?x.t==='note':(x.t==='part'||x.t==='sess'||x.t==='cand'));if(!L.length)return N().toast('지울 게 없어요');const v=await N().promptBox(`${w==='note'?'설계 메모':'부 · 세션 · 후보 날짜'} ${L.length}개를 모두 지워요. 바로 지워져요 (설정 탭 「🗑 최근 지운 것」에서 30일 안에 되살릴 수 있어요) — 「지우기」라고 적어요`,'','');if(v==null||v.trim()!=='지우기')return;for(const x of L)await N().del('plan',x.id);N().toastUndo(`${L.length}개를 지웠어요`)}
- /* 한 부 안에서 바뀐 순서를 전체 세션 순서에 끼워 넣는다 */
- function orderSess(ids){const set=new Set(ids);let k=0;return N().reorder('plan',sessAll().map(x=>set.has(x.id)?ids[k++]:x.id))}
- function orderNotes(ids){const set=new Set(ids);let k=0;return N().reorder('plan',notes().map(x=>set.has(x.id)?ids[k++]:x.id))}
- const isUrl=v=>/^https?:\/\//i.test(v||'');
- const whereHtml=w=>{if(!w)return '';if(!isUrl(w))return `<span class="wh small dim">📍 ${esc(w)}</span>`;let h='';try{h=new URL(w).hostname.replace(/^www\./,'')}catch(e){h=w}const l=/discord/i.test(h)?'디스코드':/maptool|rptools/i.test(h)?'맵툴':h;return `<a class="chip xs wh" href="${esc(w)}" target="_blank" rel="noopener" title="${esc(w)}">🔗 ${esc(l)}</a>`};
- /* PL · 구경: 세션 자세히 (읽기만) */
- function viewSess(id){const s=N().data('plan',id);if(!s)return;const p=s.part&&N().data('plan',s.part);const logs=N().MOD.logs?N().MOD.logs.logsOf(id):[];
-  N().openModal(`<div class="mhead"><h2>세션 ${esc(s.label||'')}${s.st?`<small class="stt ${s.st}" style="font-size:12px;margin-left:8px">${SST[s.st]||''}</small>`:''}</h2><span class="sp"></span>${window.NT_FAV?NT_FAV.btn('sess',id,(s.label||'')+' '+(s.what||'')):''}<button class="btn ghost" data-x>닫기</button></div>
-   <dl class="sview">${p?`<dt>부</dt><dd>${esc(p.title||'')}</dd>`:''}<dt>언제</dt><dd>${s.date?`<b>${fmtD(s.date)}</b>${s.time?' '+esc(s.time):''}${s.dur?` <span class="dim">· ${s.dur}분</span>`:''}`:'<span class="dim">날짜 미정</span>'}</dd>${s.kind?`<dt>종류</dt><dd>${esc(s.kind)}</dd>`:''}${s.where?`<dt>어디서</dt><dd>${isUrl(s.where)?`<a href="${esc(s.where)}" target="_blank" rel="noopener">${esc(s.where)}</a>`:esc(s.where)}</dd>`:''}${s.what?`<dt>무엇을</dt><dd class="pre">${esc(s.what)}</dd>`:''}${s.memo?`<dt>메모</dt><dd class="pre">${esc(s.memo)}</dd>`:''}${logs.length?`<dt>기록</dt><dd class="row" style="gap:4px;flex-wrap:wrap">${logs.map(l=>l.own?`<a class="chip xs" href="#" data-lgread="${esc(l.id)}">✍ ${esc(l.title)}</a>`:`<a class="chip xs" href="${esc(N().MOD.logs.viewUrl(l.id))}" target="_blank" rel="noopener">📜 ${esc(l.title)}</a>`).join('')}</dd>`:''}</dl>
-   <div class="row" style="margin-top:12px"><span class="sp"></span>${s.date?`<a class="btn sm ghost" target="_blank" rel="noopener" href="${gcal(s)}">📅 Google 캘린더에</a>`:''}</div>`)}
- function sessHtml(){const P=parts();const loose=sess('');const nx=nextSess();
-  const banner=nx?`<div class="nextsess"><div><small>다음 세션</small><b>${esc(nx.label||'')} ${esc(nx.what||'')}</b><span>${nx.date?fmtD(nx.date)+(nx.time?' '+nx.time:''):'날짜 미정'}${nx.where?' · '+esc(nx.where):''}</span></div>${nx.date?`<a class="btn xs" target="_blank" rel="noopener" href="${gcal(nx)}">Google 캘린더에</a>`:''}</div>`:'';
-  return banner+`<div class="plan-parts">${P.map(p=>part(p,sess(p.id))).join('')}${loose.length||!P.length?part(null,loose):''}</div>`}
- function part(p,list){const G=N().gm();return `<div class="part" ${p?`data-id="${esc(p.id)}"`:''}><h3 class="${G&&p?'dragh':''}">${p?esc(p.title||'부'):(parts().length?'분류 없음':'세션')}${p&&p.sub?`<small class="dim" style="font-family:var(--body);letter-spacing:0;font-weight:400">${esc(p.sub)}</small>`:''}${p?N().visBadge(p._vis,'plan',p.id):''}<span class="small dim">${list.length}회</span><span class="sp"></span>${G&&p?`<button class="btn xs ghost" data-pl="editpart" data-id="${esc(p.id)}">고치기</button>`:''}</h3>
-  ${list.map(s=>`<div class="sess ${s.st||''}" data-sess="${esc(s.id)}" data-id="${esc(s.id)}" style="cursor:pointer" title="${G?'눌러서 고치기 · 우클릭: 메뉴 · 끌어서 순서':'눌러서 자세히'}"><div class="lab">${esc(s.label||'')}</div><div class="when">${s.date?`<b>${fmtD(s.date)}</b>${s.time?`<i>${esc(s.time)}</i>`:''}`:'<span class="dim">날짜 미정</span>'}<em>${esc(s.kind||'')}</em></div><div><div class="what">${esc(s.what||'')}</div>${s.memo?`<div class="memo">${esc(s.memo)}</div>`:''}${G?prepChip(s.id):''}${(N().MOD.logs?N().MOD.logs.logsOf(s.id):[]).map(l=>l.own?`<a class="chip xs" href="#" data-lgread="${esc(l.id)}" title="기록 읽기">✍ ${esc(l.title)}</a>`:`<a class="chip xs" href="${esc(N().MOD.logs.viewUrl(l.id))}" target="_blank" rel="noopener" title="세션 로그 열기">📜 ${esc(l.title)}</a>`).join(' ')}${whereHtml(s.where)}${N().visBadge(s._vis,'plan',s.id)}</div><div class="stt ${s.st||''}">${window.NT_FAV?NT_FAV.btn('sess',s.id,(s.label||'')+' '+(s.what||'')):''}${s.st==='done'?'끝':s.st==='now'?'진행 중':s.date?`<a class="gl" target="_blank" rel="noopener" href="${gcal(s)}" title="Google 캘린더에 넣기">📅</a>`:''}${G?`<button type="button" class="btn xs ghost danger sdel" data-pl="delsess" data-id="${esc(s.id)}" title="세션 지우기">🗑</button>`:''}</div></div>`).join('')||`<div class="small dim emptyrow" style="padding:8px 12px">세션이 없어요${G?` <button type="button" class="btn xs" data-pl="newsess" data-part="${p?esc(p.id):''}">＋ 세션</button>`:''}</div>`}</div>`}
- function calHtml(){const first=new Date(U.y,U.m,1);const start=new Date(U.y,U.m,1-first.getDay());const byDay={};for(const s of sessAll())if(s.date)(byDay[s.date]=byDay[s.date]||{s:[],c:[]}).s.push(s);for(const c of cands())if(c.date)(byDay[c.date]=byDay[c.date]||{s:[],c:[]}).c.push(c);
-  const cells=[];for(let i=0;i<42;i++){const d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);const k=ymd(d);const x=byDay[k]||{s:[],c:[]};const out=d.getMonth()!==U.m;
-   cells.push(`<div class="cday ${out?'out':''} ${k===today?'today':''} ${d.getDay()===0?'sun':d.getDay()===6?'sat':''}" data-day="${k}"><span class="dn">${d.getDate()}</span>${x.s.map(s=>`<span class="cs ${s.st||''}">${esc(s.label||'')} ${esc(s.time||'')}<i>${esc(s.what||'')}</i></span>`).join('')}${x.c.map(c=>{const sm=tally(c.date);return `<span class="cc">후보 ${esc(c.time||'')} <b>○${sm.o}</b>${sm.x?` ×${sm.x}`:''}</span>`}).join('')}</div>`)}
-  return `<div class="calhead"><button class="btn xs" data-pl="pm">‹</button><h3>${U.y}년 ${U.m+1}월</h3><button class="btn xs" data-pl="nm">›</button><button class="btn xs ghost" data-pl="tm">오늘</button><span class="sp"></span><span class="small dim">${N().gm()?'날짜를 누르면 세션 · 후보를 넣을 수 있어요':'후보 날짜를 누르면 ○△× 를 찍을 수 있어요'}</span></div>
-   <div class="calgrid"><div class="cwd">${WD.map((w,i)=>`<span class="${i===0?'sun':i===6?'sat':''}">${w}</span>`).join('')}</div>${cells.join('')}</div>`}
- const tally=date=>{const r={o:0,d:0,x:0,n:0};for(const s of seats()){const v=vote(date,s).v||'';if(v)r[v]++;else r.n++}return r};
- function pollHtml(){const S=seats();const C=cands();const me=N().me(),G=N().gm();
-  if(!S.length)return `<div class="empty">PL 좌석이 없어요. 설정 탭에서 좌석을 만들면 PL 이 자기 칸에 ○△× 를 찍을 수 있어요.${G||me?' <button type="button" class="btn xs" data-pl="goset">설정 탭으로</button>':''}</div>`;
-  const best=C.filter(c=>c.date>=today).map(c=>({c,t:tally(c.date)})).sort((a,b)=>b.t.o-a.t.o||a.t.x-b.t.x||b.t.d-a.t.d)[0];
-  const head=`<tr><th>후보</th>${S.map(s=>`<th class="${s===me?'me':''}">${esc(N().seatName(s)||s)}</th>`).join('')}<th>모임</th>${G?'<th></th>':''}</tr>`;
-  const rows=C.map(c=>{const t=tally(c.date);const isBest=best&&best.c.id===c.id&&t.o>0;return `<tr class="${c.date<today?'past':''} ${isBest?'best':''}"><td><b>${fmtD(c.date)}</b> ${esc(c.time||'')}${c.note?`<small>${esc(c.note)}</small>`:''}</td>${S.map(s=>{const v=vote(c.date,s).v||'';const can=N().canEdit('avail',`${c.date}_${s}`);return `<td class="vc ${VC[v]} ${can?'can':''}" data-vote="${esc(c.date)}|${esc(s)}" title="${can?'눌러서 바꾸기 (○ → △ → × → 빈칸)':''}">${V[v]}</td>`}).join('')}<td class="sum"><b>○${t.o}</b> △${t.d} ×${t.x}${t.n?` <span class="dim">·${t.n}</span>`:''}${isBest?'<i>유력</i>':''}</td>${G?`<td class="ops"><button class="btn xs" data-pl="fix" data-id="${esc(c.id)}" title="이 날로 세션을 만들어요">세션으로</button><button class="btn xs ghost" data-pl="delcand" data-id="${esc(c.id)}">빼기</button></td>`:''}</tr>`}).join('');
-  const wkrows=S.map(s=>{const w=wk(s);return `<tr><td class="${s===me?'me':''}"><b>${esc(N().seatName(s)||s)}</b>${w.note?`<small>${esc(w.note)}</small>`:''}</td>${WD.map((_,i)=>{const v=(w.days||{})[i]||'';const can=N().canEdit('avail',`wk_${s}`);return `<td class="vc ${VC[v]} ${can?'can':''}" data-wk="${esc(s)}|${i}">${V[v]}</td>`}).join('')}${(me===s||G)?`<td class="ops"><button class="btn xs ghost" data-pl="wknote" data-id="${esc(s)}">메모</button></td>`:'<td></td>'}</tr>`}).join('');
-  return `<div class="pollwrap"><h3>후보 날짜 <small>○ 돼요 · △ 애매해요 · × 안 돼요 — ${G?'GM 은 누구 칸이든 대신 찍을 수 있어요':'자기 칸만 찍을 수 있어요'}</small></h3>
-   <div class="tblwrap"><table class="poll">${head}${rows||`<tr><td colspan="${S.length+3}" class="dim">후보 날짜가 없어요${G?' — 「＋ 후보 날짜」 나 달력에서 날짜를 눌러요':''}</td></tr>`}</table></div>
+  function omCalHtml() {
+    const L = N()
+      .list('plan')
+      .filter(x => x.t === 'omcal');
+    if (!L.length) return '';
+    return L.map(c => {
+      const ev = Object.entries(c.events || {})
+        .filter(([d]) => !c.today || d >= c.today)
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .flatMap(([d, xs]) => (xs || []).map(e => ({ d, ...e })))
+        .slice(0, 6);
+      return `<div class="card omcal"><div class="row" style="gap:8px;align-items:baseline;flex-wrap:wrap"><b>🎲 웹툴 게임 달력</b><small class="dim">${esc(c.name || c.room || '')}</small><span class="sp"></span><span>게임 속 오늘 <b>${esc(c.today || '—')}</b> ${esc(c.weather || '')}</span></div>
+    ${ev.length ? `<ul class="omcal-l">${ev.map(e => `<li><span class="dim">${esc(e.d)}</span> ${esc(e.t || '')}${e.note ? ` <small class="dim">· ${esc(e.note)}</small>` : ''}</li>`).join('')}</ul>` : '<div class="small dim">다가오는 게임 속 일정이 없어요</div>'}
+    <div class="small dim" style="margin-top:4px">웹툴 캘린더에서 고쳐요 · 여기 세션 일정은 웹툴 캘린더에 「세션」으로 떠요</div></div>`;
+    }).join('');
+  }
+  function render(el) {
+    const G = N().gm();
+    const total = sessAll().length,
+      done = sessAll().filter(x => x.st === 'done').length;
+    el.innerHTML = `<div class="toolbar"><h2>일정</h2><div class="seg"><button data-pt="sess" class="${U.tab === 'sess' ? 'on' : ''}">세션 ${done}/${total}</button><button data-pt="cal" class="${U.tab === 'cal' ? 'on' : ''}">달력</button><button data-pt="poll" class="${U.tab === 'poll' ? 'on' : ''}">조율 ${cands().length ? cands().filter(c => c.date >= today).length : ''}</button><button data-pt="note" class="${U.tab === 'note' ? 'on' : ''}">설계 메모 ${notes().length}</button></div><span class="sp"></span>
+    ${U.tab === 'sess' || U.tab === 'cal' ? `<button class="btn sm ghost" data-pl="ics" title="휴대폰 · 데스크톱 캘린더에 넣기">📅 .ics</button>` : ''}${G ? (U.tab === 'sess' ? '<button class="btn sm" data-pl="newpart">＋ 부</button><button class="btn sm pri" data-pl="newsess">＋ 세션</button>' : U.tab === 'poll' ? '<button class="btn sm pri" data-pl="newcand">＋ 후보 날짜</button>' : U.tab === 'note' ? '<button class="btn sm pri" data-pl="newnote">＋ 메모</button>' : '') : ''}${N().bulkBtns('plan', null, U.tab === 'note' ? '설계 메모' : '부 · 세션')}</div>
+   ${U.tab === 'sess' || U.tab === 'cal' ? omCalHtml() : ''}${U.tab === 'sess' ? sessHtml() : U.tab === 'cal' ? calHtml() : U.tab === 'poll' ? pollHtml() : notesHtml()}`;
+    el.addEventListener('click', e => {
+      const t = e.target;
+      if (t.closest('a')) return;
+      const pt = t.closest('[data-pt]');
+      if (pt) {
+        U.tab = pt.dataset.pt;
+        N().render();
+        return;
+      }
+      const lf = t.closest('[data-lf]');
+      if (lf) {
+        U.listf = lf.dataset.lf;
+        N().render();
+        return;
+      }
+      const v = t.closest('[data-vote]');
+      if (v) {
+        const [date, seat] = v.dataset.vote.split('|');
+        if (!N().canEdit('avail', `${date}_${seat}`)) return N().toast(seat === N().me() ? '' : '자기 칸만 찍을 수 있어요');
+        const cur = vote(date, seat);
+        N().put('avail', `${date}_${seat}`, { v: cycle(cur.v || ''), note: cur.note || '' }, 'pub');
+        return;
+      }
+      const w = t.closest('[data-wk]');
+      if (w) {
+        const [seat, day] = w.dataset.wk.split('|');
+        if (!N().canEdit('avail', `wk_${seat}`)) return N().toast('자기 칸만 찍을 수 있어요');
+        const cur = wk(seat);
+        const days = Object.assign({}, cur.days || {});
+        days[day] = cycle(days[day] || '') === 'x' ? '' : cycle(days[day] || '');
+        N().put('avail', `wk_${seat}`, { days, note: cur.note || '' }, 'pub');
+        return;
+      }
+      const day = t.closest('[data-day]');
+      if (day) {
+        dayMenu(day.dataset.day);
+        return;
+      }
+      const b = t.closest('[data-pl]');
+      if (b) return act(b.dataset.pl, b);
+      const s = t.closest('[data-sess]');
+      if (s) return G ? editSess(s.dataset.sess) : viewSess(s.dataset.sess);
+      const n = t.closest('[data-note]');
+      if (n && G) return editNote(n.dataset.note);
+    });
+    /* 10-26: 우클릭 · 길게 누르기 메뉴, 끌어서 순서 바꾸기 */
+    N().bindCtx(el, '[data-sess]', t => sessCtx(t.dataset.sess));
+    if (G) {
+      $$('.part', el).forEach(c => N().sortable(c, '.sess[data-id]', ids => orderSess(ids)));
+      const pp = $('.plan-parts', el);
+      if (pp) N().sortable(pp, '.part[data-id]', ids => N().reorder('plan', ids), { handleSel: 'h3' });
+      const ng = $('.notes-grid', el);
+      if (ng) N().sortable(ng, '.pnote[data-id]', ids => orderNotes(ids));
+    }
+  }
+  /* ---- 10-26 공용: 세션 메뉴 · 상태 · 순서 · PL 열람 ---- */
+  const SST = { '': '예정', now: '진행 중', done: '끝' };
+  async function setSessSt(id, st) {
+    if (st === 'now')
+      for (const o of sessAll().filter(x => x.st === 'now' && x.id !== id))
+        await N().patch('plan', o.id, x => {
+          x.st = '';
+        });
+    await N().patch('plan', id, x => {
+      x.st = st;
+    });
+    N().toast('세션 상태: ' + SST[st]);
+  }
+  async function delSess(id) {
+    const s = N().data('plan', id);
+    if (!s) return false;
+    if (
+      !(await N().confirmBox(
+        `세션 ${s.label || ''} ${s.what ? '「' + s.what + '」' : ''}을 지울까요? (설정 탭 「🗑 최근 지운 것」에서 되살릴 수 있어요)`,
+        '지우기'
+      ))
+    )
+      return false;
+    await N().del('plan', id);
+    if (N().doc('sec', 'sess:' + id)) await N().del('sec', 'sess:' + id);
+    N().toastUndo('세션을 지웠어요');
+    return true;
+  }
+  function visItems(id) {
+    const d = N().doc('plan', id);
+    if (!d || !N().gm()) return [];
+    const cur = d.vis || 'pub';
+    const o = [
+      ['pub', '👥 모두에게'],
+      ['gm', '🔒 GM만']
+    ].concat((N().ST.seats || []).map(x => ['pl:' + x.seat, '👤 ' + (N().seatName(x.seat) || x.seat) + ' 에게만']));
+    return o.map(([v, l]) => ({
+      t: (v === cur ? '✓ ' : '　') + l,
+      on: async () => {
+        if (v === cur) return;
+        await N().put('plan', id, N().clone(d.data), v);
+        N().toast('공개 범위: ' + N().visLabel(v));
+      }
+    }));
+  }
+  function sessCtx(id) {
+    const s = N().data('plan', id);
+    if (!s) return null;
+    const G = N().gm();
+    const L = [];
+    if (G) L.push(...visItems(id), '-', { t: '✎ 고치기', on: () => editSess(id) });
+    else L.push({ t: '자세히', on: () => viewSess(id) });
+    if (window.NT_FAV)
+      L.push({
+        t: NT_FAV.has('sess', id) ? '★ 즐겨찾기에서 빼기' : '☆ 즐겨찾기에 넣기',
+        on: () => NT_FAV.toggle('sess', id, (s.label || '') + ' ' + (s.what || ''))
+      });
+    if (G)
+      L.push(
+        '-',
+        ...Object.entries(SST)
+          .filter(([v]) => v !== (s.st || ''))
+          .map(([v, l]) => ({ t: (v === 'now' ? '▶ ' : v === 'done' ? '✓ ' : '○ ') + l + '으로', on: () => setSessSt(id, v) })),
+        '-',
+        { t: '🗑 세션 지우기', danger: true, on: () => delSess(id) }
+      );
+    return L;
+  }
+  /* 11-03 감우: 「비우기」(부 · 세션 · 후보 날짜 / 설계 메모 전부 지우기)는 「＋ 세션」 옆에서 설정 탭 「위험」 칸으로 옮겼다 (NT_PLAN.wipe) */
+  async function wipe(w) {
+    if (!N().gm()) return;
+    const L = all().filter(x => (w === 'note' ? x.t === 'note' : x.t === 'part' || x.t === 'sess' || x.t === 'cand'));
+    if (!L.length) return N().toast('지울 게 없어요');
+    const v = await N().promptBox(
+      `${w === 'note' ? '설계 메모' : '부 · 세션 · 후보 날짜'} ${L.length}개를 모두 지워요. 바로 지워져요 (설정 탭 「🗑 최근 지운 것」에서 30일 안에 되살릴 수 있어요) — 「지우기」라고 적어요`,
+      '',
+      ''
+    );
+    if (v == null || v.trim() !== '지우기') return;
+    for (const x of L) await N().del('plan', x.id);
+    N().toastUndo(`${L.length}개를 지웠어요`);
+  }
+  /* 한 부 안에서 바뀐 순서를 전체 세션 순서에 끼워 넣는다 */
+  function orderSess(ids) {
+    const set = new Set(ids);
+    let k = 0;
+    return N().reorder(
+      'plan',
+      sessAll().map(x => (set.has(x.id) ? ids[k++] : x.id))
+    );
+  }
+  function orderNotes(ids) {
+    const set = new Set(ids);
+    let k = 0;
+    return N().reorder(
+      'plan',
+      notes().map(x => (set.has(x.id) ? ids[k++] : x.id))
+    );
+  }
+  const isUrl = v => /^https?:\/\//i.test(v || '');
+  const whereHtml = w => {
+    if (!w) return '';
+    if (!isUrl(w)) return `<span class="wh small dim">📍 ${esc(w)}</span>`;
+    let h = '';
+    try {
+      h = new URL(w).hostname.replace(/^www\./, '');
+    } catch (e) {
+      h = w;
+    }
+    const l = /discord/i.test(h) ? '디스코드' : /maptool|rptools/i.test(h) ? '맵툴' : h;
+    return `<a class="chip xs wh" href="${esc(w)}" target="_blank" rel="noopener" title="${esc(w)}">🔗 ${esc(l)}</a>`;
+  };
+  /* PL · 구경: 세션 자세히 (읽기만) */
+  function viewSess(id) {
+    const s = N().data('plan', id);
+    if (!s) return;
+    const p = s.part && N().data('plan', s.part);
+    const logs = N().MOD.logs ? N().MOD.logs.logsOf(id) : [];
+    N()
+      .openModal(`<div class="mhead"><h2>세션 ${esc(s.label || '')}${s.st ? `<small class="stt ${s.st}" style="font-size:12px;margin-left:8px">${SST[s.st] || ''}</small>` : ''}</h2><span class="sp"></span>${window.NT_FAV ? NT_FAV.btn('sess', id, (s.label || '') + ' ' + (s.what || '')) : ''}<button class="btn ghost" data-x>닫기</button></div>
+   <dl class="sview">${p ? `<dt>부</dt><dd>${esc(p.title || '')}</dd>` : ''}<dt>언제</dt><dd>${s.date ? `<b>${fmtD(s.date)}</b>${s.time ? ' ' + esc(s.time) : ''}${s.dur ? ` <span class="dim">· ${s.dur}분</span>` : ''}` : '<span class="dim">날짜 미정</span>'}</dd>${s.kind ? `<dt>종류</dt><dd>${esc(s.kind)}</dd>` : ''}${s.where ? `<dt>어디서</dt><dd>${isUrl(s.where) ? `<a href="${esc(s.where)}" target="_blank" rel="noopener">${esc(s.where)}</a>` : esc(s.where)}</dd>` : ''}${s.what ? `<dt>무엇을</dt><dd class="pre">${esc(s.what)}</dd>` : ''}${s.memo ? `<dt>메모</dt><dd class="pre">${esc(s.memo)}</dd>` : ''}${logs.length ? `<dt>기록</dt><dd class="row" style="gap:4px;flex-wrap:wrap">${logs.map(l => (l.own ? `<a class="chip xs" href="#" data-lgread="${esc(l.id)}">✍ ${esc(l.title)}</a>` : `<a class="chip xs" href="${esc(N().MOD.logs.viewUrl(l.id))}" target="_blank" rel="noopener">📜 ${esc(l.title)}</a>`)).join('')}</dd>` : ''}</dl>
+   <div class="row" style="margin-top:12px"><span class="sp"></span>${s.date ? `<a class="btn sm ghost" target="_blank" rel="noopener" href="${gcal(s)}">📅 Google 캘린더에</a>` : ''}</div>`);
+  }
+  function sessHtml() {
+    const P = parts();
+    const loose = sess('');
+    const nx = nextSess();
+    const banner = nx
+      ? `<div class="nextsess"><div><small>다음 세션</small><b>${esc(nx.label || '')} ${esc(nx.what || '')}</b><span>${nx.date ? fmtD(nx.date) + (nx.time ? ' ' + nx.time : '') : '날짜 미정'}${nx.where ? ' · ' + esc(nx.where) : ''}</span></div>${nx.date ? `<a class="btn xs" target="_blank" rel="noopener" href="${gcal(nx)}">Google 캘린더에</a>` : ''}</div>`
+      : '';
+    return banner + `<div class="plan-parts">${P.map(p => part(p, sess(p.id))).join('')}${loose.length || !P.length ? part(null, loose) : ''}</div>`;
+  }
+  function part(p, list) {
+    const G = N().gm();
+    return `<div class="part" ${p ? `data-id="${esc(p.id)}"` : ''}><h3 class="${G && p ? 'dragh' : ''}">${p ? esc(p.title || '부') : parts().length ? '분류 없음' : '세션'}${p && p.sub ? `<small class="dim" style="font-family:var(--body);letter-spacing:0;font-weight:400">${esc(p.sub)}</small>` : ''}${p ? N().visBadge(p._vis, 'plan', p.id) : ''}<span class="small dim">${list.length}회</span><span class="sp"></span>${G && p ? `<button class="btn xs ghost" data-pl="editpart" data-id="${esc(p.id)}">고치기</button>` : ''}</h3>
+  ${list.map(s => `<div class="sess ${s.st || ''}" data-sess="${esc(s.id)}" data-id="${esc(s.id)}" style="cursor:pointer" title="${G ? '눌러서 고치기 · 우클릭: 메뉴 · 끌어서 순서' : '눌러서 자세히'}"><div class="lab">${esc(s.label || '')}</div><div class="when">${s.date ? `<b>${fmtD(s.date)}</b>${s.time ? `<i>${esc(s.time)}</i>` : ''}` : '<span class="dim">날짜 미정</span>'}<em>${esc(s.kind || '')}</em></div><div><div class="what">${esc(s.what || '')}</div>${s.memo ? `<div class="memo">${esc(s.memo)}</div>` : ''}${G ? prepChip(s.id) : ''}${(N().MOD.logs ? N().MOD.logs.logsOf(s.id) : []).map(l => (l.own ? `<a class="chip xs" href="#" data-lgread="${esc(l.id)}" title="기록 읽기">✍ ${esc(l.title)}</a>` : `<a class="chip xs" href="${esc(N().MOD.logs.viewUrl(l.id))}" target="_blank" rel="noopener" title="세션 로그 열기">📜 ${esc(l.title)}</a>`)).join(' ')}${whereHtml(s.where)}${N().visBadge(s._vis, 'plan', s.id)}</div><div class="stt ${s.st || ''}">${window.NT_FAV ? NT_FAV.btn('sess', s.id, (s.label || '') + ' ' + (s.what || '')) : ''}${s.st === 'done' ? '끝' : s.st === 'now' ? '진행 중' : s.date ? `<a class="gl" target="_blank" rel="noopener" href="${gcal(s)}" title="Google 캘린더에 넣기">📅</a>` : ''}${G ? `<button type="button" class="btn xs ghost danger sdel" data-pl="delsess" data-id="${esc(s.id)}" title="세션 지우기">🗑</button>` : ''}</div></div>`).join('') || `<div class="small dim emptyrow" style="padding:8px 12px">세션이 없어요${G ? ` <button type="button" class="btn xs" data-pl="newsess" data-part="${p ? esc(p.id) : ''}">＋ 세션</button>` : ''}</div>`}</div>`;
+  }
+  function calHtml() {
+    const first = new Date(U.y, U.m, 1);
+    const start = new Date(U.y, U.m, 1 - first.getDay());
+    const byDay = {};
+    for (const s of sessAll()) if (s.date) (byDay[s.date] = byDay[s.date] || { s: [], c: [] }).s.push(s);
+    for (const c of cands()) if (c.date) (byDay[c.date] = byDay[c.date] || { s: [], c: [] }).c.push(c);
+    const cells = [];
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+      const k = ymd(d);
+      const x = byDay[k] || { s: [], c: [] };
+      const out = d.getMonth() !== U.m;
+      cells.push(
+        `<div class="cday ${out ? 'out' : ''} ${k === today ? 'today' : ''} ${d.getDay() === 0 ? 'sun' : d.getDay() === 6 ? 'sat' : ''}" data-day="${k}"><span class="dn">${d.getDate()}</span>${x.s.map(s => `<span class="cs ${s.st || ''}">${esc(s.label || '')} ${esc(s.time || '')}<i>${esc(s.what || '')}</i></span>`).join('')}${x.c
+          .map(c => {
+            const sm = tally(c.date);
+            return `<span class="cc">후보 ${esc(c.time || '')} <b>○${sm.o}</b>${sm.x ? ` ×${sm.x}` : ''}</span>`;
+          })
+          .join('')}</div>`
+      );
+    }
+    return `<div class="calhead"><button class="btn xs" data-pl="pm">‹</button><h3>${U.y}년 ${U.m + 1}월</h3><button class="btn xs" data-pl="nm">›</button><button class="btn xs ghost" data-pl="tm">오늘</button><span class="sp"></span><span class="small dim">${N().gm() ? '날짜를 누르면 세션 · 후보를 넣을 수 있어요' : '후보 날짜를 누르면 ○△× 를 찍을 수 있어요'}</span></div>
+   <div class="calgrid"><div class="cwd">${WD.map((w, i) => `<span class="${i === 0 ? 'sun' : i === 6 ? 'sat' : ''}">${w}</span>`).join('')}</div>${cells.join('')}</div>`;
+  }
+  const tally = date => {
+    const r = { o: 0, d: 0, x: 0, n: 0 };
+    for (const s of seats()) {
+      const v = vote(date, s).v || '';
+      if (v) r[v]++;
+      else r.n++;
+    }
+    return r;
+  };
+  function pollHtml() {
+    const S = seats();
+    const C = cands();
+    const me = N().me(),
+      G = N().gm();
+    if (!S.length)
+      return `<div class="empty">PL 좌석이 없어요. 설정 탭에서 좌석을 만들면 PL 이 자기 칸에 ○△× 를 찍을 수 있어요.${G || me ? ' <button type="button" class="btn xs" data-pl="goset">설정 탭으로</button>' : ''}</div>`;
+    const best = C.filter(c => c.date >= today)
+      .map(c => ({ c, t: tally(c.date) }))
+      .sort((a, b) => b.t.o - a.t.o || a.t.x - b.t.x || b.t.d - a.t.d)[0];
+    const head = `<tr><th>후보</th>${S.map(s => `<th class="${s === me ? 'me' : ''}">${esc(N().seatName(s) || s)}</th>`).join('')}<th>모임</th>${G ? '<th></th>' : ''}</tr>`;
+    const rows = C.map(c => {
+      const t = tally(c.date);
+      const isBest = best && best.c.id === c.id && t.o > 0;
+      return `<tr class="${c.date < today ? 'past' : ''} ${isBest ? 'best' : ''}"><td><b>${fmtD(c.date)}</b> ${esc(c.time || '')}${c.note ? `<small>${esc(c.note)}</small>` : ''}</td>${S.map(
+        s => {
+          const v = vote(c.date, s).v || '';
+          const can = N().canEdit('avail', `${c.date}_${s}`);
+          return `<td class="vc ${VC[v]} ${can ? 'can' : ''}" data-vote="${esc(c.date)}|${esc(s)}" title="${can ? '눌러서 바꾸기 (○ → △ → × → 빈칸)' : ''}">${V[v]}</td>`;
+        }
+      ).join(
+        ''
+      )}<td class="sum"><b>○${t.o}</b> △${t.d} ×${t.x}${t.n ? ` <span class="dim">·${t.n}</span>` : ''}${isBest ? '<i>유력</i>' : ''}</td>${G ? `<td class="ops"><button class="btn xs" data-pl="fix" data-id="${esc(c.id)}" title="이 날로 세션을 만들어요">세션으로</button><button class="btn xs ghost" data-pl="delcand" data-id="${esc(c.id)}">빼기</button></td>` : ''}</tr>`;
+    }).join('');
+    const wkrows = S.map(s => {
+      const w = wk(s);
+      return `<tr><td class="${s === me ? 'me' : ''}"><b>${esc(N().seatName(s) || s)}</b>${w.note ? `<small>${esc(w.note)}</small>` : ''}</td>${WD.map(
+        (_, i) => {
+          const v = (w.days || {})[i] || '';
+          const can = N().canEdit('avail', `wk_${s}`);
+          return `<td class="vc ${VC[v]} ${can ? 'can' : ''}" data-wk="${esc(s)}|${i}">${V[v]}</td>`;
+        }
+      ).join(
+        ''
+      )}${me === s || G ? `<td class="ops"><button class="btn xs ghost" data-pl="wknote" data-id="${esc(s)}">메모</button></td>` : '<td></td>'}</tr>`;
+    }).join('');
+    return `<div class="pollwrap"><h3>후보 날짜 <small>○ 돼요 · △ 애매해요 · × 안 돼요 — ${G ? 'GM 은 누구 칸이든 대신 찍을 수 있어요' : '자기 칸만 찍을 수 있어요'}</small></h3>
+   <div class="tblwrap"><table class="poll">${head}${rows || `<tr><td colspan="${S.length + 3}" class="dim">후보 날짜가 없어요${G ? ' — 「＋ 후보 날짜」 나 달력에서 날짜를 눌러요' : ''}</td></tr>`}</table></div>
    <h3 style="margin-top:18px">평소 되는 요일 <small>대략적인 것 — 조율할 때 참고해요</small></h3>
-   <div class="tblwrap"><table class="poll wk"><tr><th>PL</th>${WD.map((w,i)=>`<th class="${i===0?'sun':i===6?'sat':''}">${w}</th>`).join('')}<th></th></tr>${wkrows}</table></div></div>`}
- function notesHtml(){const L=notes().filter(n=>!U.listf||(n.list||'')===(U.listf==='memo'?'':U.listf));const G=N().gm();
-  return `<div class="row" style="margin-bottom:8px"><div class="seg"><button data-lf="" class="${!U.listf?'on':''}">전체</button><button data-lf="done" class="${U.listf==='done'?'on':''}">확정</button><button data-lf="todo" class="${U.listf==='todo'?'on':''}">정해야 할 것</button><button data-lf="rule" class="${U.listf==='rule'?'on':''}">규칙</button><button data-lf="memo" class="${U.listf==='memo'?'on':''}">메모</button></div></div>
-   <div class="notes-grid">${L.map(n=>`<div class="pnote ${n.list||''}" data-note="${esc(n.id)}" data-id="${esc(n.id)}" ${G?'title="눌러서 고치기 · 끌어서 순서"':''}><span class="lst">${n.list==='done'?'확정':n.list==='todo'?'정해야 할 것':n.list==='rule'?'규칙':'메모'}</span>${N().visBadge(n._vis,'plan',n.id)}<b>${esc(n.k||'')}</b><p>${esc(n.v||'')}</p></div>`).join('')||`<div class="empty">메모가 없어요${G?' <button type="button" class="btn xs" data-pl="newnote">＋ 메모</button>':''}</div>`}</div>`}
- /* ---- 동작 ---- */
- async function act(k,b){const id=b.dataset.id;const G=N().gm();
-  if(k==='ics')return ics();
-  if(k==='pm'){U.m--;if(U.m<0){U.m=11;U.y--}return N().render()}if(k==='nm'){U.m++;if(U.m>11){U.m=0;U.y++}return N().render()}if(k==='tm'){U.y=now.getFullYear();U.m=now.getMonth();return N().render()}
-  if(k==='wknote'){const w=wk(id);const v=await N().promptBox('평소 되는 시간 메모',w.note||'','예: 평일은 20시 이후, 주말 오후');if(v==null)return;await N().put('avail',`wk_${id}`,{days:w.days||{},note:v.trim()},'pub');return}
-  if(k==='goset')return N().go('set');
-  if(!G)return;
-  if(k==='delsess')return delSess(id);
-  if(k==='wipe')return wipe(b.dataset.w);
-  if(k==='newpart'){const t=await N().promptBox('부 이름','','예: 1부 · 관측의 진실 (1~6세션)');if(t==null||!t.trim())return;await N().put('plan',N().uid('p'),{t:'part',title:t.trim(),order:parts().length},'gm');return}
-  if(k==='editpart'){const p=N().data('plan',id);const md=N().openModal(`<div class="mhead"><h2>부 고치기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div class="mrow"><label class="lbl">이름<input id="ppT" type="text" value="${esc(p.title||'')}"></label><label class="lbl">한 줄<input id="ppS" type="text" value="${esc(p.sub||'')}"></label><label class="lbl">순서<input id="ppO" type="number" class="n" value="${p.order||0}"></label><label class="lbl">공개${N().visSelect(N().doc('plan',id).vis,'ppV',{noPl:true})}</label></div><div class="row" style="margin-top:12px"><button class="btn danger ghost sm" id="ppDel">부 지우기 (세션은 분류 없음으로)</button><span class="sp"></span><button class="btn pri" id="ppOk">저장</button></div>`);
-   $('#ppOk',md).onclick=async()=>{await N().put('plan',id,Object.assign({},p,{title:$('#ppT',md).value.trim(),sub:$('#ppS',md).value.trim(),order:+$('#ppO',md).value||0}),$('#ppV',md).value);N().closeModal()};
-   $('#ppDel',md).onclick=async()=>{if(!await N().confirmBox('이 부를 지울까요? 안의 세션은 「분류 없음」으로 남아요.','지우기'))return;for(const s of sess(id))await N().patch('plan',s.id,x=>{x.part=''});await N().del('plan',id);N().closeModal()};return}
-  if(k==='newsess')return newSess('','','',b.dataset.part);
-  if(k==='newcand')return newCand('');
-  if(k==='delcand'){if(!await N().confirmBox('이 후보 날짜를 뺄까요? 투표도 같이 사라져요.','빼기'))return;await N().del('plan',id);return}
-  if(k==='fix'){const c=N().data('plan',id);if(!c)return;await newSess(c.date,c.time,c.note);await N().del('plan',id);return}
-  if(k==='newnote'){const nid=N().uid('n');await N().put('plan',nid,{t:'note',k:'',v:'',list:U.listf==='memo'?'':U.listf||'',order:notes().length},'gm');editNote(nid);N().armDraft('plan',nid);return}}
- async function newSess(date,time,memo,part){const P=parts();const last=sessAll();const nid=N().uid('s');await N().put('plan',nid,{t:'sess',part:part!=null&&(!part||N().data('plan',part))?part:(P[P.length-1]||{}).id||'',label:String(last.length+1),kind:'커뮤',what:'',memo:memo||'',order:last.length,st:'',date:date||'',time:time||'',dur:180,where:''},'gm');editSess(nid);N().armDraft('plan',nid)}
- async function newCand(date){const md=N().openModal(`<div class="mhead"><h2>후보 날짜</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div class="mrow"><label class="lbl">날짜<input id="cdD" type="date" value="${esc(date||'')}"></label><label class="lbl">시간<input id="cdT" type="time" value="19:00"></label><label class="lbl" style="grid-column:span 2">메모<input id="cdN" type="text" placeholder="예: 토요일 저녁 · 3시간"></label></div><div class="row" style="margin-top:12px"><span class="sp"></span><button class="btn pri" id="cdOk">넣기</button></div>`);
-  $('#cdOk',md).onclick=async()=>{const d=$('#cdD',md).value;if(!d)return N().toast('날짜를 골라요');await N().put('plan',N().uid('c'),{t:'cand',date:d,time:$('#cdT',md).value,note:$('#cdN',md).value.trim()},'pub');N().closeModal();U.tab='poll';N().render()}}
- function dayMenu(date){const G=N().gm();const S=sessAll().filter(s=>s.date===date);const C=cands().filter(c=>c.date===date);const me=N().me();
-  if(!G&&!C.length&&!S.length)return;
-  const md=N().openModal(`<div class="mhead"><h2>${fmtD(date)}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
-   ${S.map(s=>`<div class="dm-row"><b>세션 ${esc(s.label||'')}</b> ${esc(s.time||'')} ${esc(s.what||'')}<span class="sp"></span><a class="btn xs" target="_blank" rel="noopener" href="${gcal(s)}">📅 Google</a>${G?`<button class="btn xs ghost" data-dm="edit" data-id="${esc(s.id)}">고치기</button>`:''}</div>`).join('')}
-   ${C.map(c=>{const t=tally(c.date);return `<div class="dm-row"><b>후보</b> ${esc(c.time||'')} ${esc(c.note||'')} <span class="dim">○${t.o} △${t.d} ×${t.x}</span><span class="sp"></span>${me?`<button class="btn xs" data-dm="vote" data-d="${esc(c.date)}">내 표: ${V[vote(c.date,me).v||'']} 바꾸기</button>`:''}${G?`<button class="btn xs" data-dm="fix" data-id="${esc(c.id)}">세션으로</button>`:''}</div>`}).join('')}
-   ${G?`<div class="row" style="margin-top:12px;gap:6px"><button class="btn sm pri" data-dm="newsess">＋ 이 날 세션</button>${C.length?'':'<button class="btn sm" data-dm="newcand">＋ 후보 날짜로</button>'}</div>`:''}`);
-  md.addEventListener('click',async e=>{const b=e.target.closest('[data-dm]');if(!b)return;const k=b.dataset.dm;
-   if(k==='edit'){N().closeModal();return editSess(b.dataset.id)}
-   if(k==='vote'){const d=b.dataset.d;const cur=vote(d,me);const nv=cycle(cur.v||'');if(!await N().put('avail',`${d}_${me}`,{v:nv,note:cur.note||''},'pub'))return;b.textContent=`내 표: ${V[nv]} 바꾸기`;b.classList.remove('flash');void b.offsetWidth;b.classList.add('flash');setTimeout(()=>b.classList.remove('flash'),600);return}
-   if(k==='fix'){const c=N().data('plan',b.dataset.id);N().closeModal();await newSess(c.date,c.time,c.note);await N().del('plan',b.dataset.id);return}
-   if(k==='newsess'){N().closeModal();return newSess(date)}
-   if(k==='newcand'){N().closeModal();return newCand(date)}})}
- function editSess(id){const s=N().data('plan',id);if(!s)return;const P=parts();
-  const md=N().openModal(`<div class="mhead"><h2>세션 ${esc(s.label||'')}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
-   <div class="mrow"><label class="lbl">표시 (① · 3 …)<input id="ssL" type="text" value="${esc(s.label||'')}"></label><label class="lbl">부<select id="ssP"><option value="">분류 없음</option>${P.map(p=>`<option value="${esc(p.id)}" ${p.id===s.part?'selected':''}>${esc(p.title)}</option>`).join('')}</select></label><label class="lbl">종류<input id="ssK" type="text" value="${esc(s.kind||'')}" list="ssKL"><datalist id="ssKL">${KINDS.map(k=>`<option value="${k}">`).join('')}</datalist></label><label class="lbl">진행<select id="ssSt"><option value="" ${!s.st?'selected':''}>예정</option><option value="now" ${s.st==='now'?'selected':''}>진행 중</option><option value="done" ${s.st==='done'?'selected':''}>끝</option></select></label>
-    <label class="lbl">날짜<input id="ssD" type="date" value="${esc(s.date||'')}"></label><label class="lbl">시작<input id="ssT" type="time" value="${esc(s.time||'')}"></label><label class="lbl">길이 (분)<input id="ssDu" type="number" class="n" value="${s.dur||180}" step="30"></label><label class="lbl">장소 · 링크<input id="ssWh" type="text" value="${esc(s.where||'')}" placeholder="디스코드 · 맵툴 주소 …"></label>
-    <label class="lbl">순서<input id="ssO" type="number" class="n" value="${s.order||0}"></label><label class="lbl">공개${N().visSelect(N().doc('plan',id).vis,'ssV',{noPl:true})}</label></div>
-   <label class="lbl">무엇을 하나<textarea id="ssW" rows="3">${esc(s.what||'')}</textarea></label><label class="lbl" style="margin-top:6px">메모 <small class="dim">(PL 에게도 보여요)</small><textarea id="ssM" rows="2">${esc(s.memo||'')}</textarea></label>
+   <div class="tblwrap"><table class="poll wk"><tr><th>PL</th>${WD.map((w, i) => `<th class="${i === 0 ? 'sun' : i === 6 ? 'sat' : ''}">${w}</th>`).join('')}<th></th></tr>${wkrows}</table></div></div>`;
+  }
+  function notesHtml() {
+    const L = notes().filter(n => !U.listf || (n.list || '') === (U.listf === 'memo' ? '' : U.listf));
+    const G = N().gm();
+    return `<div class="row" style="margin-bottom:8px"><div class="seg"><button data-lf="" class="${!U.listf ? 'on' : ''}">전체</button><button data-lf="done" class="${U.listf === 'done' ? 'on' : ''}">확정</button><button data-lf="todo" class="${U.listf === 'todo' ? 'on' : ''}">정해야 할 것</button><button data-lf="rule" class="${U.listf === 'rule' ? 'on' : ''}">규칙</button><button data-lf="memo" class="${U.listf === 'memo' ? 'on' : ''}">메모</button></div></div>
+   <div class="notes-grid">${L.map(n => `<div class="pnote ${n.list || ''}" data-note="${esc(n.id)}" data-id="${esc(n.id)}" ${G ? 'title="눌러서 고치기 · 끌어서 순서"' : ''}><span class="lst">${n.list === 'done' ? '확정' : n.list === 'todo' ? '정해야 할 것' : n.list === 'rule' ? '규칙' : '메모'}</span>${N().visBadge(n._vis, 'plan', n.id)}<b>${esc(n.k || '')}</b><p>${esc(n.v || '')}</p></div>`).join('') || `<div class="empty">메모가 없어요${G ? ' <button type="button" class="btn xs" data-pl="newnote">＋ 메모</button>' : ''}</div>`}</div>`;
+  }
+  /* ---- 동작 ---- */
+  async function act(k, b) {
+    const id = b.dataset.id;
+    const G = N().gm();
+    if (k === 'ics') return ics();
+    if (k === 'pm') {
+      U.m--;
+      if (U.m < 0) {
+        U.m = 11;
+        U.y--;
+      }
+      return N().render();
+    }
+    if (k === 'nm') {
+      U.m++;
+      if (U.m > 11) {
+        U.m = 0;
+        U.y++;
+      }
+      return N().render();
+    }
+    if (k === 'tm') {
+      U.y = now.getFullYear();
+      U.m = now.getMonth();
+      return N().render();
+    }
+    if (k === 'wknote') {
+      const w = wk(id);
+      const v = await N().promptBox('평소 되는 시간 메모', w.note || '', '예: 평일은 20시 이후, 주말 오후');
+      if (v == null) return;
+      await N().put('avail', `wk_${id}`, { days: w.days || {}, note: v.trim() }, 'pub');
+      return;
+    }
+    if (k === 'goset') return N().go('set');
+    if (!G) return;
+    if (k === 'delsess') return delSess(id);
+    if (k === 'wipe') return wipe(b.dataset.w);
+    if (k === 'newpart') {
+      const t = await N().promptBox('부 이름', '', '예: 1부 · 관측의 진실 (1~6세션)');
+      if (t == null || !t.trim()) return;
+      await N().put('plan', N().uid('p'), { t: 'part', title: t.trim(), order: parts().length }, 'gm');
+      return;
+    }
+    if (k === 'editpart') {
+      const p = N().data('plan', id);
+      const md = N().openModal(
+        `<div class="mhead"><h2>부 고치기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div class="mrow"><label class="lbl">이름<input id="ppT" type="text" value="${esc(p.title || '')}"></label><label class="lbl">한 줄<input id="ppS" type="text" value="${esc(p.sub || '')}"></label><label class="lbl">순서<input id="ppO" type="number" class="n" value="${p.order || 0}"></label><label class="lbl">공개${N().visSelect(N().doc('plan', id).vis, 'ppV', { noPl: true })}</label></div><div class="row" style="margin-top:12px"><button class="btn danger ghost sm" id="ppDel">부 지우기 (세션은 분류 없음으로)</button><span class="sp"></span><button class="btn pri" id="ppOk">저장</button></div>`
+      );
+      $('#ppOk', md).onclick = async () => {
+        await N().put(
+          'plan',
+          id,
+          Object.assign({}, p, { title: $('#ppT', md).value.trim(), sub: $('#ppS', md).value.trim(), order: +$('#ppO', md).value || 0 }),
+          $('#ppV', md).value
+        );
+        N().closeModal();
+      };
+      $('#ppDel', md).onclick = async () => {
+        if (!(await N().confirmBox('이 부를 지울까요? 안의 세션은 「분류 없음」으로 남아요.', '지우기'))) return;
+        for (const s of sess(id))
+          await N().patch('plan', s.id, x => {
+            x.part = '';
+          });
+        await N().del('plan', id);
+        N().closeModal();
+      };
+      return;
+    }
+    if (k === 'newsess') return newSess('', '', '', b.dataset.part);
+    if (k === 'newcand') return newCand('');
+    if (k === 'delcand') {
+      if (!(await N().confirmBox('이 후보 날짜를 뺄까요? 투표도 같이 사라져요.', '빼기'))) return;
+      await N().del('plan', id);
+      return;
+    }
+    if (k === 'fix') {
+      const c = N().data('plan', id);
+      if (!c) return;
+      await newSess(c.date, c.time, c.note);
+      await N().del('plan', id);
+      return;
+    }
+    if (k === 'newnote') {
+      const nid = N().uid('n');
+      await N().put('plan', nid, { t: 'note', k: '', v: '', list: U.listf === 'memo' ? '' : U.listf || '', order: notes().length }, 'gm');
+      editNote(nid);
+      N().armDraft('plan', nid);
+      return;
+    }
+  }
+  async function newSess(date, time, memo, part) {
+    const P = parts();
+    const last = sessAll();
+    const nid = N().uid('s');
+    await N().put(
+      'plan',
+      nid,
+      {
+        t: 'sess',
+        part: part != null && (!part || N().data('plan', part)) ? part : (P[P.length - 1] || {}).id || '',
+        label: String(last.length + 1),
+        kind: '커뮤',
+        what: '',
+        memo: memo || '',
+        order: last.length,
+        st: '',
+        date: date || '',
+        time: time || '',
+        dur: 180,
+        where: ''
+      },
+      'gm'
+    );
+    editSess(nid);
+    N().armDraft('plan', nid);
+  }
+  async function newCand(date) {
+    const md = N().openModal(
+      `<div class="mhead"><h2>후보 날짜</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div class="mrow"><label class="lbl">날짜<input id="cdD" type="date" value="${esc(date || '')}"></label><label class="lbl">시간<input id="cdT" type="time" value="19:00"></label><label class="lbl" style="grid-column:span 2">메모<input id="cdN" type="text" placeholder="예: 토요일 저녁 · 3시간"></label></div><div class="row" style="margin-top:12px"><span class="sp"></span><button class="btn pri" id="cdOk">넣기</button></div>`
+    );
+    $('#cdOk', md).onclick = async () => {
+      const d = $('#cdD', md).value;
+      if (!d) return N().toast('날짜를 골라요');
+      await N().put('plan', N().uid('c'), { t: 'cand', date: d, time: $('#cdT', md).value, note: $('#cdN', md).value.trim() }, 'pub');
+      N().closeModal();
+      U.tab = 'poll';
+      N().render();
+    };
+  }
+  function dayMenu(date) {
+    const G = N().gm();
+    const S = sessAll().filter(s => s.date === date);
+    const C = cands().filter(c => c.date === date);
+    const me = N().me();
+    if (!G && !C.length && !S.length) return;
+    const md = N().openModal(`<div class="mhead"><h2>${fmtD(date)}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
+   ${S.map(s => `<div class="dm-row"><b>세션 ${esc(s.label || '')}</b> ${esc(s.time || '')} ${esc(s.what || '')}<span class="sp"></span><a class="btn xs" target="_blank" rel="noopener" href="${gcal(s)}">📅 Google</a>${G ? `<button class="btn xs ghost" data-dm="edit" data-id="${esc(s.id)}">고치기</button>` : ''}</div>`).join('')}
+   ${C.map(c => {
+     const t = tally(c.date);
+     return `<div class="dm-row"><b>후보</b> ${esc(c.time || '')} ${esc(c.note || '')} <span class="dim">○${t.o} △${t.d} ×${t.x}</span><span class="sp"></span>${me ? `<button class="btn xs" data-dm="vote" data-d="${esc(c.date)}">내 표: ${V[vote(c.date, me).v || '']} 바꾸기</button>` : ''}${G ? `<button class="btn xs" data-dm="fix" data-id="${esc(c.id)}">세션으로</button>` : ''}</div>`;
+   }).join('')}
+   ${G ? `<div class="row" style="margin-top:12px;gap:6px"><button class="btn sm pri" data-dm="newsess">＋ 이 날 세션</button>${C.length ? '' : '<button class="btn sm" data-dm="newcand">＋ 후보 날짜로</button>'}</div>` : ''}`);
+    md.addEventListener('click', async e => {
+      const b = e.target.closest('[data-dm]');
+      if (!b) return;
+      const k = b.dataset.dm;
+      if (k === 'edit') {
+        N().closeModal();
+        return editSess(b.dataset.id);
+      }
+      if (k === 'vote') {
+        const d = b.dataset.d;
+        const cur = vote(d, me);
+        const nv = cycle(cur.v || '');
+        if (!(await N().put('avail', `${d}_${me}`, { v: nv, note: cur.note || '' }, 'pub'))) return;
+        b.textContent = `내 표: ${V[nv]} 바꾸기`;
+        b.classList.remove('flash');
+        void b.offsetWidth;
+        b.classList.add('flash');
+        setTimeout(() => b.classList.remove('flash'), 600);
+        return;
+      }
+      if (k === 'fix') {
+        const c = N().data('plan', b.dataset.id);
+        N().closeModal();
+        await newSess(c.date, c.time, c.note);
+        await N().del('plan', b.dataset.id);
+        return;
+      }
+      if (k === 'newsess') {
+        N().closeModal();
+        return newSess(date);
+      }
+      if (k === 'newcand') {
+        N().closeModal();
+        return newCand(date);
+      }
+    });
+  }
+  function editSess(id) {
+    const s = N().data('plan', id);
+    if (!s) return;
+    const P = parts();
+    const md = N()
+      .openModal(`<div class="mhead"><h2>세션 ${esc(s.label || '')}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
+   <div class="mrow"><label class="lbl">표시 (① · 3 …)<input id="ssL" type="text" value="${esc(s.label || '')}"></label><label class="lbl">부<select id="ssP"><option value="">분류 없음</option>${P.map(p => `<option value="${esc(p.id)}" ${p.id === s.part ? 'selected' : ''}>${esc(p.title)}</option>`).join('')}</select></label><label class="lbl">종류<input id="ssK" type="text" value="${esc(s.kind || '')}" list="ssKL"><datalist id="ssKL">${KINDS.map(k => `<option value="${k}">`).join('')}</datalist></label><label class="lbl">진행<select id="ssSt"><option value="" ${!s.st ? 'selected' : ''}>예정</option><option value="now" ${s.st === 'now' ? 'selected' : ''}>진행 중</option><option value="done" ${s.st === 'done' ? 'selected' : ''}>끝</option></select></label>
+    <label class="lbl">날짜<input id="ssD" type="date" value="${esc(s.date || '')}"></label><label class="lbl">시작<input id="ssT" type="time" value="${esc(s.time || '')}"></label><label class="lbl">길이 (분)<input id="ssDu" type="number" class="n" value="${s.dur || 180}" step="30"></label><label class="lbl">장소 · 링크<input id="ssWh" type="text" value="${esc(s.where || '')}" placeholder="디스코드 · 맵툴 주소 …"></label>
+    <label class="lbl">순서<input id="ssO" type="number" class="n" value="${s.order || 0}"></label><label class="lbl">공개${N().visSelect(N().doc('plan', id).vis, 'ssV', { noPl: true })}</label></div>
+   <label class="lbl">무엇을 하나<textarea id="ssW" rows="3">${esc(s.what || '')}</textarea></label><label class="lbl" style="margin-top:6px">메모 <small class="dim">(PL 에게도 보여요)</small><textarea id="ssM" rows="2">${esc(s.memo || '')}</textarea></label>
    ${gmSecHtml(id)}
-   <div class="row" style="margin-top:12px"><button class="btn danger ghost sm" id="ssDel">지우기</button>${s.date?`<a class="btn sm ghost" target="_blank" rel="noopener" href="${gcal(s)}">📅 Google 캘린더에</a>`:''}<span class="sp"></span><button class="btn pri" id="ssOk">저장</button></div>`);
-  bindGmSec(md,id);
-  $('#ssOk',md).onclick=async()=>{const st=$('#ssSt',md).value;if(st==='now')for(const o of sessAll().filter(x=>x.st==='now'&&x.id!==id))await N().patch('plan',o.id,x=>{x.st=''});
-   await N().put('plan',id,Object.assign({},s,{label:$('#ssL',md).value.trim(),part:$('#ssP',md).value,kind:$('#ssK',md).value.trim(),st,order:+$('#ssO',md).value||0,what:$('#ssW',md).value.trim(),memo:$('#ssM',md).value.trim(),date:$('#ssD',md).value,time:$('#ssT',md).value,dur:+$('#ssDu',md).value||180,where:$('#ssWh',md).value.trim()}),$('#ssV',md).value);await saveRetro(md,id);N().closeModal()};
-  $('#ssDel',md).onclick=async()=>{if(!await N().confirmBox('이 세션을 지울까요? (설정 탭 「🗑 최근 지운 것」에서 되살릴 수 있어요)','지우기'))return;await N().del('plan',id);if(N().doc('sec','sess:'+id))await N().del('sec','sess:'+id);N().closeModal();N().toastUndo('세션을 지웠어요')}}
- /* ---- 11-03 GM 준비 · 쓸 것 · 회고 (sec 'sess:<id>' · GM만) ---- */
- const secOf=id=>N().data('sec','sess:'+id)||{};
- async function secSave(id,fn){const cur=N().clone(secOf(id));fn(cur);const empty=!(cur.prep||[]).length&&!(cur.use||[]).length&&!(cur.retro||'').trim();if(empty){if(N().doc('sec','sess:'+id))await N().del('sec','sess:'+id);return}await N().put('sec','sess:'+id,cur,'gm')}
- function prepChip(id){const x=secOf(id);const P=x.prep||[];const d=P.filter(p=>p.d).length;if(!P.length&&!(x.use||[]).length&&!x.retro)return '';
-  return `<div class="row small" style="gap:6px;margin-top:3px;flex-wrap:wrap">${P.length?`<span class="chip xs static ${d===P.length?'ok':''}" title="GM 준비 체크리스트">${d===P.length?'✓':'☐'} 준비 ${d}/${P.length}</span>`:''}${(x.use||[]).length?`<span class="chip xs static" title="이 세션에 쓸 것">🔗 ${(x.use||[]).length}</span>`:''}${x.retro?'<span class="chip xs static" title="회고 적음">📝 회고</span>':''}</div>`}
- const USEK={routes:'🧭',ents:'📇',npc:'🎭',pc:'🪪',maps:'🗺',spots:'📍',step:'▸'};
- const useLabel=u=>{if(u.k==='step'){const [rid,i]=String(u.id).split('|');const r=N().data('routes',rid);const st=r&&(r.steps||[])[+i];return st?(r.name||'')+' › '+((st.title)||(st.spot&&(N().data('spots',st.spot)||{}).name)||'(단계)'):'(없어진 장면)'}
-  const d=N().data(u.k,u.id);if(!d)return '(없어진 것)';return u.k==='ents'?d.title:(d.name||(window.NT_MAKER&&(NT_MAKER.trainer(u.id)||{}).name)||u.id)};
- function useOptions(){const G=[];const add=(lab,L)=>{if(L.length)G.push([lab,L])};
-  add('루트',N().list('routes').map(r=>['routes',r.id,r.name||'루트']));
-  add('장면 (루트 단계)',N().list('routes').flatMap(r=>(r.steps||[]).map((st,i)=>['step',r.id+'|'+i,(r.name||'')+' › '+(st.title||(st.spot&&(N().data('spots',st.spot)||{}).name)||'(단계)')])));
-  add('인물 (항목)',N().list('ents').filter(e=>e.type==='인물'||!e.type).map(e=>['ents',e.id,e.title||'']));
-  add('NPC 시트',N().list('npc').map(p=>['npc',p.id,(window.NT_MAKER&&(NT_MAKER.trainer(p.id)||{}).name)||p.name||p.id]));
-  add('지도',N().list('maps').map(m=>['maps',m.id,m.name||'지도']));
-  add('장소',N().list('spots').map(s=>['spots',s.id,(s.num?s.num+'. ':'')+(s.name||'')]));
-  return G}
- function gmSecHtml(id){const x=secOf(id);const P=x.prep||[],U=x.use||[];
-  return `<div class="gmnote sessgm" data-sessgm="${esc(id)}"><b>GM 준비 · 회고 (GM 만 보여요 — 바로 저장)</b>
-   <div class="sec">준비 체크리스트</div><div class="preplist">${P.map((p,i)=>`<label class="prep ${p.d?'done':''}"><input type="checkbox" data-nodirty data-prep="${i}" ${p.d?'checked':''}><span>${esc(p.t)}</span><button type="button" class="x" data-prepx="${i}" title="빼기">×</button></label>`).join('')||'<div class="small dim">아직 없어요 — 아래에 적고 Enter</div>'}</div>
+   <div class="row" style="margin-top:12px"><button class="btn danger ghost sm" id="ssDel">지우기</button>${s.date ? `<a class="btn sm ghost" target="_blank" rel="noopener" href="${gcal(s)}">📅 Google 캘린더에</a>` : ''}<span class="sp"></span><button class="btn pri" id="ssOk">저장</button></div>`);
+    bindGmSec(md, id);
+    $('#ssOk', md).onclick = async () => {
+      const st = $('#ssSt', md).value;
+      if (st === 'now')
+        for (const o of sessAll().filter(x => x.st === 'now' && x.id !== id))
+          await N().patch('plan', o.id, x => {
+            x.st = '';
+          });
+      await N().put(
+        'plan',
+        id,
+        Object.assign({}, s, {
+          label: $('#ssL', md).value.trim(),
+          part: $('#ssP', md).value,
+          kind: $('#ssK', md).value.trim(),
+          st,
+          order: +$('#ssO', md).value || 0,
+          what: $('#ssW', md).value.trim(),
+          memo: $('#ssM', md).value.trim(),
+          date: $('#ssD', md).value,
+          time: $('#ssT', md).value,
+          dur: +$('#ssDu', md).value || 180,
+          where: $('#ssWh', md).value.trim()
+        }),
+        $('#ssV', md).value
+      );
+      await saveRetro(md, id);
+      N().closeModal();
+    };
+    $('#ssDel', md).onclick = async () => {
+      if (!(await N().confirmBox('이 세션을 지울까요? (설정 탭 「🗑 최근 지운 것」에서 되살릴 수 있어요)', '지우기'))) return;
+      await N().del('plan', id);
+      if (N().doc('sec', 'sess:' + id)) await N().del('sec', 'sess:' + id);
+      N().closeModal();
+      N().toastUndo('세션을 지웠어요');
+    };
+  }
+  /* ---- 11-03 GM 준비 · 쓸 것 · 회고 (sec 'sess:<id>' · GM만) ---- */
+  const secOf = id => N().data('sec', 'sess:' + id) || {};
+  async function secSave(id, fn) {
+    const cur = N().clone(secOf(id));
+    fn(cur);
+    const empty = !(cur.prep || []).length && !(cur.use || []).length && !(cur.retro || '').trim();
+    if (empty) {
+      if (N().doc('sec', 'sess:' + id)) await N().del('sec', 'sess:' + id);
+      return;
+    }
+    await N().put('sec', 'sess:' + id, cur, 'gm');
+  }
+  function prepChip(id) {
+    const x = secOf(id);
+    const P = x.prep || [];
+    const d = P.filter(p => p.d).length;
+    if (!P.length && !(x.use || []).length && !x.retro) return '';
+    return `<div class="row small" style="gap:6px;margin-top:3px;flex-wrap:wrap">${P.length ? `<span class="chip xs static ${d === P.length ? 'ok' : ''}" title="GM 준비 체크리스트">${d === P.length ? '✓' : '☐'} 준비 ${d}/${P.length}</span>` : ''}${(x.use || []).length ? `<span class="chip xs static" title="이 세션에 쓸 것">🔗 ${(x.use || []).length}</span>` : ''}${x.retro ? '<span class="chip xs static" title="회고 적음">📝 회고</span>' : ''}</div>`;
+  }
+  const USEK = { routes: '🧭', ents: '📇', npc: '🎭', pc: '🪪', maps: '🗺', spots: '📍', step: '▸' };
+  const useLabel = u => {
+    if (u.k === 'step') {
+      const [rid, i] = String(u.id).split('|');
+      const r = N().data('routes', rid);
+      const st = r && (r.steps || [])[+i];
+      return st ? (r.name || '') + ' › ' + (st.title || (st.spot && (N().data('spots', st.spot) || {}).name) || '(단계)') : '(없어진 장면)';
+    }
+    const d = N().data(u.k, u.id);
+    if (!d) return '(없어진 것)';
+    return u.k === 'ents' ? d.title : d.name || (window.NT_MAKER && (NT_MAKER.trainer(u.id) || {}).name) || u.id;
+  };
+  function useOptions() {
+    const G = [];
+    const add = (lab, L) => {
+      if (L.length) G.push([lab, L]);
+    };
+    add(
+      '루트',
+      N()
+        .list('routes')
+        .map(r => ['routes', r.id, r.name || '루트'])
+    );
+    add(
+      '장면 (루트 단계)',
+      N()
+        .list('routes')
+        .flatMap(r =>
+          (r.steps || []).map((st, i) => [
+            'step',
+            r.id + '|' + i,
+            (r.name || '') + ' › ' + (st.title || (st.spot && (N().data('spots', st.spot) || {}).name) || '(단계)')
+          ])
+        )
+    );
+    add(
+      '인물 (항목)',
+      N()
+        .list('ents')
+        .filter(e => e.type === '인물' || !e.type)
+        .map(e => ['ents', e.id, e.title || ''])
+    );
+    add(
+      'NPC 시트',
+      N()
+        .list('npc')
+        .map(p => ['npc', p.id, (window.NT_MAKER && (NT_MAKER.trainer(p.id) || {}).name) || p.name || p.id])
+    );
+    add(
+      '지도',
+      N()
+        .list('maps')
+        .map(m => ['maps', m.id, m.name || '지도'])
+    );
+    add(
+      '장소',
+      N()
+        .list('spots')
+        .map(s => ['spots', s.id, (s.num ? s.num + '. ' : '') + (s.name || '')])
+    );
+    return G;
+  }
+  function gmSecHtml(id) {
+    const x = secOf(id);
+    const P = x.prep || [],
+      U = x.use || [];
+    return `<div class="gmnote sessgm" data-sessgm="${esc(id)}"><b>GM 준비 · 회고 (GM 만 보여요 — 바로 저장)</b>
+   <div class="sec">준비 체크리스트</div><div class="preplist">${P.map((p, i) => `<label class="prep ${p.d ? 'done' : ''}"><input type="checkbox" data-nodirty data-prep="${i}" ${p.d ? 'checked' : ''}><span>${esc(p.t)}</span><button type="button" class="x" data-prepx="${i}" title="빼기">×</button></label>`).join('') || '<div class="small dim">아직 없어요 — 아래에 적고 Enter</div>'}</div>
    <input type="text" data-nodirty id="prepIn" placeholder="예: NPC 스탠딩 올리기 · 배틀 포켓몬 준비 · BGM 고르기 (Enter 로 더해요)" style="width:100%;margin-top:4px">
-   <div class="sec">쓸 것 <small class="dim">— 누르면 그곳으로</small></div><div class="row" style="gap:4px;flex-wrap:wrap">${U.map((u,i)=>`<span class="chip xs usechip" data-usego="${i}" title="열기">${USEK[u.k]||'•'} ${esc(useLabel(u))}<button type="button" class="x" data-usex="${i}" title="빼기">×</button></span>`).join('')||'<span class="small dim">루트 · 장면 · 인물 · 지도를 골라 붙여요</span>'}</div>
-   <select id="useSel" data-nodirty style="margin-top:4px;max-width:100%"><option value="">＋ 붙이기…</option>${useOptions().map(([g,L])=>`<optgroup label="${esc(g)}">${L.map(([k,i,l])=>`<option value="${esc(k)}|${esc(i)}">${esc(l)}</option>`).join('')}</optgroup>`).join('')}</select>
-   <div class="sec">끝난 뒤 회고 <small class="dim">— 잘된 것 · 다음에 고칠 것 (저장 단추로)</small></div><textarea id="ssRetro" rows="3" placeholder="예: 배틀이 길었다 → 다음엔 2체로. PL 이 ○○ 단서를 못 봤다 → 2세션에 다시 깔기">${esc(x.retro||'')}</textarea></div>`}
- function bindGmSec(md,id){const box=md.querySelector('[data-sessgm]');if(!box)return;
-  const redraw=()=>{const nb=document.createElement('div');nb.innerHTML=gmSecHtml(id);const r=md.querySelector('#ssRetro');const keep=r?r.value:'';box.replaceWith(nb.firstElementChild);const r2=md.querySelector('#ssRetro');if(r2)r2.value=keep;bindGmSec(md,id)};
-  const pin=md.querySelector('#prepIn');pin.onkeydown=async e=>{if(e.key!=='Enter'||e.isComposing)return;e.preventDefault();const t=pin.value.trim();if(!t)return;pin.value='';await secSave(id,x=>{x.prep=(x.prep||[]).concat(t.split('\n').map(s=>s.trim()).filter(Boolean).map(s=>({t:s,d:false})))});redraw();setTimeout(()=>{const p=md.querySelector('#prepIn');if(p)p.focus()},0)};
-  box.addEventListener('change',async e=>{const c=e.target.closest('[data-prep]');if(c){await secSave(id,x=>{const p=(x.prep||[])[+c.dataset.prep];if(p)p.d=c.checked});c.closest('.prep').classList.toggle('done',c.checked);return}
-   if(e.target.id==='useSel'){const v=e.target.value;if(!v)return;const p=v.indexOf('|');const k=v.slice(0,p),i=v.slice(p+1);   /* 장면 id 는 '루트|번호' 라 첫 | 에서만 나눈다 */await secSave(id,x=>{x.use=(x.use||[]);if(!x.use.some(u=>u.k===k&&u.id===i))x.use.push({k,id:i})});redraw()}});
-  box.addEventListener('click',async e=>{const px=e.target.closest('[data-prepx]');if(px){await secSave(id,x=>{(x.prep||[]).splice(+px.dataset.prepx,1)});redraw();return}
-   const ux=e.target.closest('[data-usex]');if(ux){e.stopPropagation();await secSave(id,x=>{(x.use||[]).splice(+ux.dataset.usex,1)});redraw();return}
-   const ug=e.target.closest('[data-usego]');if(ug){const u=(secOf(id).use||[])[+ug.dataset.usego];if(!u)return;await saveRetro(md,id);N().closeModal(true);
-    if(u.k==='step'){const [rid,i]=String(u.id).split('|');N().go('scen');setTimeout(()=>window.NT_SCEN&&NT_SCEN.write(rid,'ws'+i+'n'),60);return}
-    if(window.NT_FAV)NT_FAV.go({kind:u.k==='maps'?'map':u.k,id:u.id})}})}
- async function saveRetro(md,id){const r=md.querySelector('#ssRetro');if(!r)return;const v=r.value.trim();if(v===(secOf(id).retro||''))return;await secSave(id,x=>{x.retro=v})}
- function editNote(id){const n=N().data('plan',id);if(!n)return;
-  const md=N().openModal(`<div class="mhead"><h2>설계 메모</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
-   <div class="mrow"><label class="lbl" style="grid-column:span 2">제목<input id="nnK" type="text" value="${esc(n.k||'')}"></label><label class="lbl">묶음<select id="nnL"><option value="" ${!n.list?'selected':''}>메모</option><option value="done" ${n.list==='done'?'selected':''}>확정</option><option value="todo" ${n.list==='todo'?'selected':''}>정해야 할 것</option><option value="rule" ${n.list==='rule'?'selected':''}>규칙</option></select></label><label class="lbl">공개${N().visSelect(N().doc('plan',id).vis,'nnV',{noPl:true})}</label></div>
-   <label class="lbl">내용<textarea id="nnV2" rows="6">${esc(n.v||'')}</textarea></label>
+   <div class="sec">쓸 것 <small class="dim">— 누르면 그곳으로</small></div><div class="row" style="gap:4px;flex-wrap:wrap">${U.map((u, i) => `<span class="chip xs usechip" data-usego="${i}" title="열기">${USEK[u.k] || '•'} ${esc(useLabel(u))}<button type="button" class="x" data-usex="${i}" title="빼기">×</button></span>`).join('') || '<span class="small dim">루트 · 장면 · 인물 · 지도를 골라 붙여요</span>'}</div>
+   <select id="useSel" data-nodirty style="margin-top:4px;max-width:100%"><option value="">＋ 붙이기…</option>${useOptions()
+     .map(
+       ([g, L]) => `<optgroup label="${esc(g)}">${L.map(([k, i, l]) => `<option value="${esc(k)}|${esc(i)}">${esc(l)}</option>`).join('')}</optgroup>`
+     )
+     .join('')}</select>
+   <div class="sec">끝난 뒤 회고 <small class="dim">— 잘된 것 · 다음에 고칠 것 (저장 단추로)</small></div><textarea id="ssRetro" rows="3" placeholder="예: 배틀이 길었다 → 다음엔 2체로. PL 이 ○○ 단서를 못 봤다 → 2세션에 다시 깔기">${esc(x.retro || '')}</textarea></div>`;
+  }
+  function bindGmSec(md, id) {
+    const box = md.querySelector('[data-sessgm]');
+    if (!box) return;
+    const redraw = () => {
+      const nb = document.createElement('div');
+      nb.innerHTML = gmSecHtml(id);
+      const r = md.querySelector('#ssRetro');
+      const keep = r ? r.value : '';
+      box.replaceWith(nb.firstElementChild);
+      const r2 = md.querySelector('#ssRetro');
+      if (r2) r2.value = keep;
+      bindGmSec(md, id);
+    };
+    const pin = md.querySelector('#prepIn');
+    pin.onkeydown = async e => {
+      if (e.key !== 'Enter' || e.isComposing) return;
+      e.preventDefault();
+      const t = pin.value.trim();
+      if (!t) return;
+      pin.value = '';
+      await secSave(id, x => {
+        x.prep = (x.prep || []).concat(
+          t
+            .split('\n')
+            .map(s => s.trim())
+            .filter(Boolean)
+            .map(s => ({ t: s, d: false }))
+        );
+      });
+      redraw();
+      setTimeout(() => {
+        const p = md.querySelector('#prepIn');
+        if (p) p.focus();
+      }, 0);
+    };
+    box.addEventListener('change', async e => {
+      const c = e.target.closest('[data-prep]');
+      if (c) {
+        await secSave(id, x => {
+          const p = (x.prep || [])[+c.dataset.prep];
+          if (p) p.d = c.checked;
+        });
+        c.closest('.prep').classList.toggle('done', c.checked);
+        return;
+      }
+      if (e.target.id === 'useSel') {
+        const v = e.target.value;
+        if (!v) return;
+        const p = v.indexOf('|');
+        const k = v.slice(0, p),
+          i = v.slice(p + 1);
+        /* 장면 id 는 '루트|번호' 라 첫 | 에서만 나눈다 */ await secSave(id, x => {
+          x.use = x.use || [];
+          if (!x.use.some(u => u.k === k && u.id === i)) x.use.push({ k, id: i });
+        });
+        redraw();
+      }
+    });
+    box.addEventListener('click', async e => {
+      const px = e.target.closest('[data-prepx]');
+      if (px) {
+        await secSave(id, x => {
+          (x.prep || []).splice(+px.dataset.prepx, 1);
+        });
+        redraw();
+        return;
+      }
+      const ux = e.target.closest('[data-usex]');
+      if (ux) {
+        e.stopPropagation();
+        await secSave(id, x => {
+          (x.use || []).splice(+ux.dataset.usex, 1);
+        });
+        redraw();
+        return;
+      }
+      const ug = e.target.closest('[data-usego]');
+      if (ug) {
+        const u = (secOf(id).use || [])[+ug.dataset.usego];
+        if (!u) return;
+        await saveRetro(md, id);
+        N().closeModal(true);
+        if (u.k === 'step') {
+          const [rid, i] = String(u.id).split('|');
+          N().go('scen');
+          setTimeout(() => window.NT_SCEN && NT_SCEN.write(rid, 'ws' + i + 'n'), 60);
+          return;
+        }
+        if (window.NT_FAV) NT_FAV.go({ kind: u.k === 'maps' ? 'map' : u.k, id: u.id });
+      }
+    });
+  }
+  async function saveRetro(md, id) {
+    const r = md.querySelector('#ssRetro');
+    if (!r) return;
+    const v = r.value.trim();
+    if (v === (secOf(id).retro || '')) return;
+    await secSave(id, x => {
+      x.retro = v;
+    });
+  }
+  function editNote(id) {
+    const n = N().data('plan', id);
+    if (!n) return;
+    const md = N().openModal(`<div class="mhead"><h2>설계 메모</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
+   <div class="mrow"><label class="lbl" style="grid-column:span 2">제목<input id="nnK" type="text" value="${esc(n.k || '')}"></label><label class="lbl">묶음<select id="nnL"><option value="" ${!n.list ? 'selected' : ''}>메모</option><option value="done" ${n.list === 'done' ? 'selected' : ''}>확정</option><option value="todo" ${n.list === 'todo' ? 'selected' : ''}>정해야 할 것</option><option value="rule" ${n.list === 'rule' ? 'selected' : ''}>규칙</option></select></label><label class="lbl">공개${N().visSelect(N().doc('plan', id).vis, 'nnV', { noPl: true })}</label></div>
+   <label class="lbl">내용<textarea id="nnV2" rows="6">${esc(n.v || '')}</textarea></label>
    <div class="row" style="margin-top:12px"><button class="btn danger ghost sm" id="nnDel">지우기</button><span class="sp"></span><button class="btn pri" id="nnOk">저장</button></div>`);
-  $('#nnK',md).focus();
-  $('#nnOk',md).onclick=async()=>{await N().put('plan',id,Object.assign({},n,{k:$('#nnK',md).value.trim(),list:$('#nnL',md).value,v:$('#nnV2',md).value.trim()}),$('#nnV',md).value);N().closeModal()};
-  $('#nnDel',md).onclick=async()=>{if(!await N().confirmBox('이 메모를 지울까요?','지우기'))return;await N().del('plan',id);N().closeModal();N().toastUndo('메모를 지웠어요')}}
- N().MOD.plan={render,nextSess,gcal};
- window.NT_PLAN=Object.assign(window.NT_PLAN||{},{wipe});
+    $('#nnK', md).focus();
+    $('#nnOk', md).onclick = async () => {
+      await N().put(
+        'plan',
+        id,
+        Object.assign({}, n, { k: $('#nnK', md).value.trim(), list: $('#nnL', md).value, v: $('#nnV2', md).value.trim() }),
+        $('#nnV', md).value
+      );
+      N().closeModal();
+    };
+    $('#nnDel', md).onclick = async () => {
+      if (!(await N().confirmBox('이 메모를 지울까요?', '지우기'))) return;
+      await N().del('plan', id);
+      N().closeModal();
+      N().toastUndo('메모를 지웠어요');
+    };
+  }
+  N().MOD.plan = { render, nextSess, gcal };
+  window.NT_PLAN = Object.assign(window.NT_PLAN || {}, { wipe });
 })();

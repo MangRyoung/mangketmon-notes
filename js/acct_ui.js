@@ -3,163 +3,607 @@
    로그인 표는 웹툴(오레마스)과 같은 열쇠 om_acct — 주소(mangryoung.github.io)가 같아 한쪽에서 로그인하면 다른 쪽도 들어가 있다.
    캠페인에서는 비밀구 자리에 'u:'+표 (웹툴과 같은 꼴). 권한 = nt_members (관리자는 모든 캠페인 GM). 예전 비밀구 · ?gm= · ?pl= 링크도 그대로.
    접속자 = 실시간 presence 채널 mk_online. 관리 창(대기실 「👥 접속자 · 권한」 · 설정 탭)은 관리자와 그 캠페인 GM 만. 서버는 supabase/patch_2026-10-29_계정.sql */
-"use strict";
-window.NT_ACCT=(()=>{
- const N=()=>window.NT;const DB=()=>window.NT_STORE;
- const {$,$$,esc}=window.NT;
- const on=()=>!!(DB()&&DB().acct);
- /* 웹툴 app.js 의 ACCT 와 같은 규칙: 「로그인 유지」면 localStorage, 아니면 sessionStorage */
- const A={get(){try{return JSON.parse(localStorage.getItem('om_acct')||sessionStorage.getItem('om_acct')||'null')}catch(e){return null}},
-  kept(){try{return !!localStorage.getItem('om_acct')}catch(e){return false}},
-  set(a,keep){try{localStorage.removeItem('om_acct');sessionStorage.removeItem('om_acct');if(a)(keep?localStorage:sessionStorage).setItem('om_acct',JSON.stringify(a))}catch(e){}},
-  tok(){const a=A.get();return (a&&a.token)||''}};
- const NEED='서버에 노트 계정 함수가 아직 없어요 — Supabase SQL Editor 에서 supabase/patch_2026-10-29_계정.sql 을 실행해 주세요';
- const errMsg=e=>{const m=String((e&&e.message)||e||'');return /nt_(me|admin|camp_new|join)|Could not find the function|PGRST202|schema cache/i.test(m)?NEED:m};
+'use strict';
+window.NT_ACCT = (() => {
+  const N = () => window.NT;
+  const DB = () => window.NT_STORE;
+  const { $, $$, esc } = window.NT;
+  const on = () => !!(DB() && DB().acct);
+  /* 웹툴 app.js 의 ACCT 와 같은 규칙: 「로그인 유지」면 localStorage, 아니면 sessionStorage */
+  const A = {
+    get() {
+      try {
+        return JSON.parse(localStorage.getItem('om_acct') || sessionStorage.getItem('om_acct') || 'null');
+      } catch (e) {
+        return null;
+      }
+    },
+    kept() {
+      try {
+        return !!localStorage.getItem('om_acct');
+      } catch (e) {
+        return false;
+      }
+    },
+    set(a, keep) {
+      try {
+        localStorage.removeItem('om_acct');
+        sessionStorage.removeItem('om_acct');
+        if (a) (keep ? localStorage : sessionStorage).setItem('om_acct', JSON.stringify(a));
+      } catch (e) {}
+    },
+    tok() {
+      const a = A.get();
+      return (a && a.token) || '';
+    }
+  };
+  const NEED = '서버에 노트 계정 함수가 아직 없어요 — Supabase SQL Editor 에서 supabase/patch_2026-10-29_계정.sql 을 실행해 주세요';
+  const errMsg = e => {
+    const m = String((e && e.message) || e || '');
+    return /nt_(me|admin|camp_new|join)|Could not find the function|PGRST202|schema cache/i.test(m) ? NEED : m;
+  };
 
- /* ----- 나 ----- */
- let ME=null,meP=null,meErr='';
- function me(force){const t=A.tok();if(!t||!on()){ME=null;return Promise.resolve(null)}if(ME&&!force)return Promise.resolve(ME);if(meP)return meP;
-  meP=(async()=>{try{const m=await DB().acct.me(t);meErr='';if(!m){A.set(null);ME=null}else{ME=m;A.set(Object.assign({},A.get()||{},{token:t,uid:m.uid,name:m.name,admin:!!m.admin}),A.kept())}}
-   catch(e){meErr=errMsg(e);console.warn('[노트] 계정',e)}finally{meP=null}return ME})();return meP}
- const roleOf=camp=>((ME&&ME.camps)||[]).find(c=>c.id===camp)||null;
- /* 11-04 망령 「한 사람이 여러 트레이너 자리에 앉을 수 있게」: 내 자리 전부 (서버 seats · 아직 패치 전이면 지금 자리 하나) */
- const mySeats=camp=>{const r=roleOf(camp);if(!r||r.role==='gm')return [];const L=Array.isArray(r.seats)?r.seats.filter(Boolean):[];if(r.seat&&!L.includes(r.seat))L.push(r.seat);return L};
- const canManage=()=>!!(ME&&(ME.admin||(ME.camps||[]).some(c=>c.role==='gm')));
- const myName=()=>(ME&&ME.name)||(A.get()||{}).name||(A.get()||{}).uid||'';
+  /* ----- 나 ----- */
+  let ME = null,
+    meP = null,
+    meErr = '';
+  function me(force) {
+    const t = A.tok();
+    if (!t || !on()) {
+      ME = null;
+      return Promise.resolve(null);
+    }
+    if (ME && !force) return Promise.resolve(ME);
+    if (meP) return meP;
+    meP = (async () => {
+      try {
+        const m = await DB().acct.me(t);
+        meErr = '';
+        if (!m) {
+          A.set(null);
+          ME = null;
+        } else {
+          ME = m;
+          A.set(Object.assign({}, A.get() || {}, { token: t, uid: m.uid, name: m.name, admin: !!m.admin }), A.kept());
+        }
+      } catch (e) {
+        meErr = errMsg(e);
+        console.warn('[노트] 계정', e);
+      } finally {
+        meP = null;
+      }
+      return ME;
+    })();
+    return meP;
+  }
+  const roleOf = camp => ((ME && ME.camps) || []).find(c => c.id === camp) || null;
+  /* 11-04 망령 「한 사람이 여러 트레이너 자리에 앉을 수 있게」: 내 자리 전부 (서버 seats · 아직 패치 전이면 지금 자리 하나) */
+  const mySeats = camp => {
+    const r = roleOf(camp);
+    if (!r || r.role === 'gm') return [];
+    const L = Array.isArray(r.seats) ? r.seats.filter(Boolean) : [];
+    if (r.seat && !L.includes(r.seat)) L.push(r.seat);
+    return L;
+  };
+  const canManage = () => !!(ME && (ME.admin || (ME.camps || []).some(c => c.role === 'gm')));
+  const myName = () => (ME && ME.name) || (A.get() || {}).name || (A.get() || {}).uid || '';
 
- /* ----- 로그인 창 (웹툴 로그인 화면과 같은 칸) ----- */
- function loginModal(msg){if(!on())return N().loginBox();let mode='in';
-  const keep0=(()=>{try{return JSON.parse(localStorage.getItem('om_keep')??'true')}catch(e){return true}})();
-  const draw=()=>{const m=N().openModal(`<div class="mhead"><h2>${mode==='up'?'가입':'로그인'}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
-   <div class="aclg"><div class="lgtabs"><button type="button" data-lm="in" class="${mode==='in'?'on':''}">로그인</button><button type="button" data-lm="up" class="${mode==='up'?'on':''}">가입</button></div>
-   ${msg?`<p class="acmsg">${esc(msg)}</p>`:''}
+  /* ----- 로그인 창 (웹툴 로그인 화면과 같은 칸) ----- */
+  function loginModal(msg) {
+    if (!on()) return N().loginBox();
+    let mode = 'in';
+    const keep0 = (() => {
+      try {
+        return JSON.parse(localStorage.getItem('om_keep') ?? 'true');
+      } catch (e) {
+        return true;
+      }
+    })();
+    const draw = () => {
+      const m = N().openModal(
+        `<div class="mhead"><h2>${mode === 'up' ? '가입' : '로그인'}</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
+   <div class="aclg"><div class="lgtabs"><button type="button" data-lm="in" class="${mode === 'in' ? 'on' : ''}">로그인</button><button type="button" data-lm="up" class="${mode === 'up' ? 'on' : ''}">가입</button></div>
+   ${msg ? `<p class="acmsg">${esc(msg)}</p>` : ''}
    <form id="acForm" autocomplete="on">
     <label class="lbl">아이디<input type="text" id="acId" name="username" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="영문 소문자 · 숫자 3~20자"></label>
-    ${mode==='up'?'<label class="lbl">이름<input type="text" id="acName" placeholder="보일 이름 (나중에 웹툴 「내 계정」에서 바꿀 수 있어요)"></label>':''}
-    <label class="lbl">비밀번호<input type="password" id="acPw" name="password" autocomplete="${mode==='up'?'new-password':'current-password'}" placeholder="4자 이상"></label>
-    ${mode==='up'?'<label class="lbl">비밀번호 확인<input type="password" id="acPw2" autocomplete="new-password"></label>':''}
-    <label class="ackeep"><input type="checkbox" id="acKeep" ${keep0?'checked':''}> 이 기기에서 로그인 유지</label>
-    <button class="btn pri" id="acOk" type="submit">${mode==='up'?'가입하고 들어가기':'로그인'}</button></form>
+    ${mode === 'up' ? '<label class="lbl">이름<input type="text" id="acName" placeholder="보일 이름 (나중에 웹툴 「내 계정」에서 바꿀 수 있어요)"></label>' : ''}
+    <label class="lbl">비밀번호<input type="password" id="acPw" name="password" autocomplete="${mode === 'up' ? 'new-password' : 'current-password'}" placeholder="4자 이상"></label>
+    ${mode === 'up' ? '<label class="lbl">비밀번호 확인<input type="password" id="acPw2" autocomplete="new-password"></label>' : ''}
+    <label class="ackeep"><input type="checkbox" id="acKeep" ${keep0 ? 'checked' : ''}> 이 기기에서 로그인 유지</label>
+    <button class="btn pri" id="acOk" type="submit">${mode === 'up' ? '가입하고 들어가기' : '로그인'}</button></form>
    <p class="small dim">웹툴(오레마스)과 같은 계정이에요. 한쪽에서 로그인하면 다른 쪽도 들어가 있어요. 캠페인 권한(GM · PL 시트)은 관리자나 그 캠페인 GM 이 「접속자 · 권한」 창에서 줘요.</p>
-   ${N().ST.camp?'<p class="small dim"><a href="#" id="acSec">예전 방식 — 비밀구로 들어가기</a></p>':''}</div>`,'acmodal');
-   $$('[data-lm]',m).forEach(b=>b.onclick=()=>{mode=b.dataset.lm;draw()});
-   const sc=$('#acSec',m);if(sc)sc.onclick=e=>{e.preventDefault();N().closeModal(true);N().loginBox()};
-   $('#acForm',m).onsubmit=async e=>{e.preventDefault();const id=$('#acId',m).value.trim().toLowerCase(),pw=$('#acPw',m).value,keep=$('#acKeep',m).checked;try{localStorage.setItem('om_keep',JSON.stringify(keep))}catch(x){}
-    if(!id||!pw)return N().toast('아이디와 비밀번호를 적어 주세요');const bt=$('#acOk',m);bt.disabled=true;
-    try{if(mode==='up'){if(pw!==$('#acPw2',m).value){bt.disabled=false;return N().toast('비밀번호 확인이 달라요')}await DB().acct.signup(id,pw,($('#acName',m).value||'').trim()||id)}
-     const tok=await DB().acct.login(id,pw,(navigator.userAgent||'').slice(0,60)+' · 노트');
-     if(!tok){bt.disabled=false;return N().toast('아이디나 비밀번호가 맞지 않아요')}
-     A.set({token:tok,uid:id},keep);await me(true);N().closeModal(true);N().toast(`${myName()} 님으로 로그인했어요`);after()}
-    catch(x){bt.disabled=false;N().toast(errMsg(x))}};
-   setTimeout(()=>{const i=$('#acId',m);if(i)i.focus()},30)};
-  draw()}
- /* 로그인 · 로그아웃 뒤: 캠페인 안이면 권한을 다시 묻고, 대기실이면 다시 그린다 */
- function after(){lastInfo='';const S=N().ST;if(S.camp)N().open(S.camp,S.view);else N().render()}
- async function logout(){if(!await N().confirmBox('이 기기에서 로그아웃할까요? 웹툴도 같이 로그아웃돼요.','로그아웃'))return;const t=A.tok();try{if(t)await DB().acct.logout(t)}catch(e){}A.set(null);ME=null;N().toast('로그아웃했어요');after()}
- /* 캠페인 위 띠의 내 이름 단추 */
- function meMenu(){const m=N().openModal(`<div class="mhead"><h2>${esc(myName())}</h2><span class="small dim mono">@${esc((ME||A.get()||{}).uid||'')}</span><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
+   ${N().ST.camp ? '<p class="small dim"><a href="#" id="acSec">예전 방식 — 비밀구로 들어가기</a></p>' : ''}</div>`,
+        'acmodal'
+      );
+      $$('[data-lm]', m).forEach(
+        b =>
+          (b.onclick = () => {
+            mode = b.dataset.lm;
+            draw();
+          })
+      );
+      const sc = $('#acSec', m);
+      if (sc)
+        sc.onclick = e => {
+          e.preventDefault();
+          N().closeModal(true);
+          N().loginBox();
+        };
+      $('#acForm', m).onsubmit = async e => {
+        e.preventDefault();
+        const id = $('#acId', m).value.trim().toLowerCase(),
+          pw = $('#acPw', m).value,
+          keep = $('#acKeep', m).checked;
+        try {
+          localStorage.setItem('om_keep', JSON.stringify(keep));
+        } catch (x) {}
+        if (!id || !pw) return N().toast('아이디와 비밀번호를 적어 주세요');
+        const bt = $('#acOk', m);
+        bt.disabled = true;
+        try {
+          if (mode === 'up') {
+            if (pw !== $('#acPw2', m).value) {
+              bt.disabled = false;
+              return N().toast('비밀번호 확인이 달라요');
+            }
+            await DB().acct.signup(id, pw, ($('#acName', m).value || '').trim() || id);
+          }
+          const tok = await DB().acct.login(id, pw, (navigator.userAgent || '').slice(0, 60) + ' · 노트');
+          if (!tok) {
+            bt.disabled = false;
+            return N().toast('아이디나 비밀번호가 맞지 않아요');
+          }
+          A.set({ token: tok, uid: id }, keep);
+          await me(true);
+          N().closeModal(true);
+          N().toast(`${myName()} 님으로 로그인했어요`);
+          after();
+        } catch (x) {
+          bt.disabled = false;
+          N().toast(errMsg(x));
+        }
+      };
+      setTimeout(() => {
+        const i = $('#acId', m);
+        if (i) i.focus();
+      }, 30);
+    };
+    draw();
+  }
+  /* 로그인 · 로그아웃 뒤: 캠페인 안이면 권한을 다시 묻고, 대기실이면 다시 그린다 */
+  function after() {
+    lastInfo = '';
+    const S = N().ST;
+    if (S.camp) N().open(S.camp, S.view);
+    else N().render();
+  }
+  async function logout() {
+    if (!(await N().confirmBox('이 기기에서 로그아웃할까요? 웹툴도 같이 로그아웃돼요.', '로그아웃'))) return;
+    const t = A.tok();
+    try {
+      if (t) await DB().acct.logout(t);
+    } catch (e) {}
+    A.set(null);
+    ME = null;
+    N().toast('로그아웃했어요');
+    after();
+  }
+  /* 캠페인 위 띠의 내 이름 단추 */
+  function meMenu() {
+    const m = N().openModal(
+      `<div class="mhead"><h2>${esc(myName())}</h2><span class="small dim mono">@${esc((ME || A.get() || {}).uid || '')}</span><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
   <p class="small dim">웹툴과 같은 계정으로 들어와 있어요. 이름 · 비밀번호는 웹툴 「내 계정」에서 바꿔요.</p>
-  ${N().ST.acct==='pl'&&N().me()?(()=>{const L=mySeats(N().ST.camp);return `<p class="small">지금 <b>${esc(N().seatName(N().me())||N().me())}</b> 자리예요.${L.length>1?' 내 자리를 누르면 그 자리로 바꿔요.':''}</p>${L.length>1?`<div class="row" style="gap:6px;flex-wrap:wrap">${L.map(s=>`<button type="button" class="btn sm ${s===N().me()?'pri':'ghost'}" data-myseat="${esc(s)}">${esc(N().seatName(s)||s)}</button>`).join('')}</div>`:''}`})():''}
-  <div class="row" style="gap:6px;justify-content:flex-end;margin-top:10px">${N().ST.acct==='pl'?'<button class="btn sm" id="mmSeat">＋ 자리 더 앉기</button>':''}${N().ST.acct==='pl'&&N().me()?'<button class="btn sm ghost" id="mmUp">이 자리에서 일어나기</button>':''}${canManage()?'<button class="btn sm pri" id="mmMng">👥 접속자 · 권한</button>':''}<button class="btn sm ghost" id="mmOut">로그아웃</button></div>`,'acmodal');
-  const g=$('#mmMng',m);if(g)g.onclick=()=>openManage(N().ST.camp);
-  const ms=$('#mmSeat',m);if(ms)ms.onclick=()=>seatPicker();
-  $$('[data-myseat]',m).forEach(b=>b.onclick=()=>useSeat(b.dataset.myseat));
-  const mu=$('#mmUp',m);if(mu)mu.onclick=async()=>{try{await DB().claim2(N().ST.camp,'','u:'+A.tok(),myName());await me(true);N().closeModal(true);N().toast('자리에서 일어났어요');N().open(N().ST.camp,N().ST.view)}catch(e){N().toast(errMsg(e))}};$('#mmOut',m).onclick=()=>{N().closeModal(true);logout()}}
+  ${
+    N().ST.acct === 'pl' && N().me()
+      ? (() => {
+          const L = mySeats(N().ST.camp);
+          return `<p class="small">지금 <b>${esc(N().seatName(N().me()) || N().me())}</b> 자리예요.${L.length > 1 ? ' 내 자리를 누르면 그 자리로 바꿔요.' : ''}</p>${L.length > 1 ? `<div class="row" style="gap:6px;flex-wrap:wrap">${L.map(s => `<button type="button" class="btn sm ${s === N().me() ? 'pri' : 'ghost'}" data-myseat="${esc(s)}">${esc(N().seatName(s) || s)}</button>`).join('')}</div>` : ''}`;
+        })()
+      : ''
+  }
+  <div class="row" style="gap:6px;justify-content:flex-end;margin-top:10px">${N().ST.acct === 'pl' ? '<button class="btn sm" id="mmSeat">＋ 자리 더 앉기</button>' : ''}${N().ST.acct === 'pl' && N().me() ? '<button class="btn sm ghost" id="mmUp">이 자리에서 일어나기</button>' : ''}${canManage() ? '<button class="btn sm pri" id="mmMng">👥 접속자 · 권한</button>' : ''}<button class="btn sm ghost" id="mmOut">로그아웃</button></div>`,
+      'acmodal'
+    );
+    const g = $('#mmMng', m);
+    if (g) g.onclick = () => openManage(N().ST.camp);
+    const ms = $('#mmSeat', m);
+    if (ms) ms.onclick = () => seatPicker();
+    $$('[data-myseat]', m).forEach(b => (b.onclick = () => useSeat(b.dataset.myseat)));
+    const mu = $('#mmUp', m);
+    if (mu)
+      mu.onclick = async () => {
+        try {
+          await DB().claim2(N().ST.camp, '', 'u:' + A.tok(), myName());
+          await me(true);
+          N().closeModal(true);
+          N().toast('자리에서 일어났어요');
+          N().open(N().ST.camp, N().ST.view);
+        } catch (e) {
+          N().toast(errMsg(e));
+        }
+      };
+    $('#mmOut', m).onclick = () => {
+      N().closeModal(true);
+      logout();
+    };
+  }
 
- /* ----- 자리 앉기 (10-29 망령 「웹툴처럼 로그인한 PL 은 기본 PL 권한으로 자기가 자리에 앉게」) -----
+  /* ----- 자리 앉기 (10-29 망령 「웹툴처럼 로그인한 PL 은 기본 PL 권한으로 자기가 자리에 앉게」) -----
     계정으로 캠페인을 열면 서버(nt_join)가 PL 권한(자리 없음)을 준다. 빈 PC 시트를 골라 앉으면(nt_claim 'u:') 그 시트를 고칠 수 있다 */
- async function useSeat(id){const S=N().ST;try{await DB().seatUse(S.camp,'u:'+A.tok(),id);await me(true);N().closeModal(true);N().toast(`「${N().seatName(id)||id}」 자리로 바꿨어요`);if(PR)PR.send({uid:(A.get()||{}).uid,camp:S.camp,seat:id});N().open(S.camp,S.view)}catch(e){N().toast(/nt_seat_use|function/.test(String(e&&e.message))?'서버에 여러 자리 기능이 아직 없어요 — GM 이 patch_2026-11-04_여러자리.sql 을 돌려야 해요':errMsg(e))}}
- function seatPicker(again){const S=N().ST;if(!S.camp||!A.tok())return;/* 11-08: 내 계정 정보가 아직 없으면 먼저 읽는다 — 없으면 내 다른 자리가 「누군가 앉음」으로 잠겼다 */if(!ME&&!again){me(true).then(()=>seatPicker(1));return}const mine=S.role&&S.role!=='gm'?S.role:'';const own=new Set(mySeats(S.camp));if(mine)own.add(mine);
-  const taken={};(S.seats||[]).forEach(x=>{if(!own.has(x.seat))taken[x.seat]=x.name||'누군가'});
-  /* 11-03: 「모두」 공개된 시트만 앉을 수 있다 · 캠페인 설정이 「GM 승인」이면 요청만 남긴다 (camp.data.claims) */
-  const cd=((S.campInfo||{}).data)||{};const approve=cd.claimMode==='approve';const myUid=(A.get()||{}).uid||'';const pend=(cd.claims||{})[myUid];
-  const pcs=N().list('pc').filter(p=>p&&p.id);
-  const m=N().openModal(`<div class="mhead"><h2>자리 앉기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
-   <p class="small dim">내 PC 시트를 골라 앉으면 그 시트를 고칠 수 있어요. 다른 사람이 앉은 시트나 아직 공개되지 않은 시트는 고를 수 없어요. <b>한 사람이 여러 자리에 앉을 수 있어요</b> — 새로 앉아도 앉아 있던 자리는 그대로이고, 지금 쓰는 자리는 위 띠의 내 이름 단추에서 바꿔요.${approve?' <b>이 캠페인은 GM 이 승인한 뒤에 앉아요.</b>':''}</p>
-   ${pend?`<div class="card" style="margin-bottom:8px"><b>⏳ 승인 기다리는 중</b> — <b>${esc(N().seatName(pend.seat)||pend.seat)}</b> 자리를 요청했어요. GM 이 설정 탭에서 승인하면 앉아져요. <button type="button" class="btn xs ghost" data-st="">요청 거두기</button></div>`:''}
-   <div class="seatpick">${pcs.map(p=>{const t=taken[p.id];const img=p.image||p.img||'';const np=p._vis!=='pub';return `<button type="button" class="seatcard ${p.id===mine?'on':own.has(p.id)?'own':''}" data-st="${esc(p.id)}" ${t||(np&&!own.has(p.id))?'disabled':''}><span class="sface" style="${img?`background-image:url('${N().cssu(img)}')`:''}"></span><b>${esc(N().seatName(p.id)||p.name||p.id)}</b><small>${p.id===mine?'지금 내 자리':own.has(p.id)?'내 자리 — 누르면 이 자리로':t?esc(t)+' 님이 앉음':np?'아직 비공개':pend&&pend.seat===p.id?'승인 기다리는 중':'비어 있음'}</small></button>`}).join('')||'<div class="empty">아직 PC 시트가 없어요 — GM 이 시트 탭에 PC 를 넣으면 앉을 수 있어요</div>'}</div>`,'acmodal seatmodal');
-  $$('[data-st]',m).forEach(b=>b.onclick=async()=>{const id=b.dataset.st;if(id&&id===mine)return N().closeModal(true);if(id&&own.has(id))return useSeat(id);b.disabled=true;
-   try{const r=await DB().claim2(S.camp,id,'u:'+A.tok(),myName());if(r==='taken'){N().toast('방금 다른 사람이 앉았어요');b.disabled=false;return}
-    N().closeModal(true);
-    if(r==='pending'){N().toast(`「${N().seatName(id)||id}」 자리를 요청했어요 — GM 이 승인하면 앉아져요`);DB().ping(S.camp,{t:'claim',uid:myUid,seat:id,name:myName()});await N().refreshCamp();return}
-    if(r==='up'){N().toast('요청을 거뒀어요');await N().refreshCamp();return}
-    await me(true);N().toast(`「${N().seatName(id)||id}」 자리에 앉았어요${own.size?' (앉아 있던 자리도 그대로 — 내 이름 단추에서 바꿔요)':''}`);if(PR)PR.send({uid:(A.get()||{}).uid,camp:S.camp,seat:id});N().open(S.camp,S.view)}
-   catch(e){b.disabled=false;N().toast(errMsg(e))}})}
- /* 캠페인을 연 뒤: 계정 PL 인데 자리가 없고 빈 시트가 있으면, 이 탭에서 캠페인마다 한 번 자리 고르기를 띄운다 */
- function afterOpen(){const S=N().ST;if(S.role||S.acct!=='pl'||!A.tok())return;const k='nt_seatask_'+S.camp;try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(e){}
-  const taken=new Set((S.seats||[]).map(x=>x.seat));const cd=((S.campInfo||{}).data)||{};if((cd.claims||{})[(A.get()||{}).uid||''])return;if(N().list('pc').some(p=>p&&p.id&&p._vis==='pub'&&!taken.has(p.id)))seatPicker()}
+  async function useSeat(id) {
+    const S = N().ST;
+    try {
+      await DB().seatUse(S.camp, 'u:' + A.tok(), id);
+      await me(true);
+      N().closeModal(true);
+      N().toast(`「${N().seatName(id) || id}」 자리로 바꿨어요`);
+      if (PR) PR.send({ uid: (A.get() || {}).uid, camp: S.camp, seat: id });
+      N().open(S.camp, S.view);
+    } catch (e) {
+      N().toast(
+        /nt_seat_use|function/.test(String(e && e.message))
+          ? '서버에 여러 자리 기능이 아직 없어요 — GM 이 patch_2026-11-04_여러자리.sql 을 돌려야 해요'
+          : errMsg(e)
+      );
+    }
+  }
+  function seatPicker(again) {
+    const S = N().ST;
+    if (!S.camp || !A.tok()) return;
+    /* 11-08: 내 계정 정보가 아직 없으면 먼저 읽는다 — 없으면 내 다른 자리가 「누군가 앉음」으로 잠겼다 */ if (!ME && !again) {
+      me(true).then(() => seatPicker(1));
+      return;
+    }
+    const mine = S.role && S.role !== 'gm' ? S.role : '';
+    const own = new Set(mySeats(S.camp));
+    if (mine) own.add(mine);
+    const taken = {};
+    (S.seats || []).forEach(x => {
+      if (!own.has(x.seat)) taken[x.seat] = x.name || '누군가';
+    });
+    /* 11-03: 「모두」 공개된 시트만 앉을 수 있다 · 캠페인 설정이 「GM 승인」이면 요청만 남긴다 (camp.data.claims) */
+    const cd = (S.campInfo || {}).data || {};
+    const approve = cd.claimMode === 'approve';
+    const myUid = (A.get() || {}).uid || '';
+    const pend = (cd.claims || {})[myUid];
+    const pcs = N()
+      .list('pc')
+      .filter(p => p && p.id);
+    const m = N().openModal(
+      `<div class="mhead"><h2>자리 앉기</h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div>
+   <p class="small dim">내 PC 시트를 골라 앉으면 그 시트를 고칠 수 있어요. 다른 사람이 앉은 시트나 아직 공개되지 않은 시트는 고를 수 없어요. <b>한 사람이 여러 자리에 앉을 수 있어요</b> — 새로 앉아도 앉아 있던 자리는 그대로이고, 지금 쓰는 자리는 위 띠의 내 이름 단추에서 바꿔요.${approve ? ' <b>이 캠페인은 GM 이 승인한 뒤에 앉아요.</b>' : ''}</p>
+   ${pend ? `<div class="card" style="margin-bottom:8px"><b>⏳ 승인 기다리는 중</b> — <b>${esc(N().seatName(pend.seat) || pend.seat)}</b> 자리를 요청했어요. GM 이 설정 탭에서 승인하면 앉아져요. <button type="button" class="btn xs ghost" data-st="">요청 거두기</button></div>` : ''}
+   <div class="seatpick">${
+     pcs
+       .map(p => {
+         const t = taken[p.id];
+         const img = p.image || p.img || '';
+         const np = p._vis !== 'pub';
+         return `<button type="button" class="seatcard ${p.id === mine ? 'on' : own.has(p.id) ? 'own' : ''}" data-st="${esc(p.id)}" ${t || (np && !own.has(p.id)) ? 'disabled' : ''}><span class="sface" style="${img ? `background-image:url('${N().cssu(img)}')` : ''}"></span><b>${esc(N().seatName(p.id) || p.name || p.id)}</b><small>${p.id === mine ? '지금 내 자리' : own.has(p.id) ? '내 자리 — 누르면 이 자리로' : t ? esc(t) + ' 님이 앉음' : np ? '아직 비공개' : pend && pend.seat === p.id ? '승인 기다리는 중' : '비어 있음'}</small></button>`;
+       })
+       .join('') || '<div class="empty">아직 PC 시트가 없어요 — GM 이 시트 탭에 PC 를 넣으면 앉을 수 있어요</div>'
+   }</div>`,
+      'acmodal seatmodal'
+    );
+    $$('[data-st]', m).forEach(
+      b =>
+        (b.onclick = async () => {
+          const id = b.dataset.st;
+          if (id && id === mine) return N().closeModal(true);
+          if (id && own.has(id)) return useSeat(id);
+          b.disabled = true;
+          try {
+            const r = await DB().claim2(S.camp, id, 'u:' + A.tok(), myName());
+            if (r === 'taken') {
+              N().toast('방금 다른 사람이 앉았어요');
+              b.disabled = false;
+              return;
+            }
+            N().closeModal(true);
+            if (r === 'pending') {
+              N().toast(`「${N().seatName(id) || id}」 자리를 요청했어요 — GM 이 승인하면 앉아져요`);
+              DB().ping(S.camp, { t: 'claim', uid: myUid, seat: id, name: myName() });
+              await N().refreshCamp();
+              return;
+            }
+            if (r === 'up') {
+              N().toast('요청을 거뒀어요');
+              await N().refreshCamp();
+              return;
+            }
+            await me(true);
+            N().toast(`「${N().seatName(id) || id}」 자리에 앉았어요${own.size ? ' (앉아 있던 자리도 그대로 — 내 이름 단추에서 바꿔요)' : ''}`);
+            if (PR) PR.send({ uid: (A.get() || {}).uid, camp: S.camp, seat: id });
+            N().open(S.camp, S.view);
+          } catch (e) {
+            b.disabled = false;
+            N().toast(errMsg(e));
+          }
+        })
+    );
+  }
+  /* 캠페인을 연 뒤: 계정 PL 인데 자리가 없고 빈 시트가 있으면, 이 탭에서 캠페인마다 한 번 자리 고르기를 띄운다 */
+  function afterOpen() {
+    const S = N().ST;
+    if (S.role || S.acct !== 'pl' || !A.tok()) return;
+    const k = 'nt_seatask_' + S.camp;
+    try {
+      if (sessionStorage.getItem(k)) return;
+      sessionStorage.setItem(k, '1');
+    } catch (e) {}
+    const taken = new Set((S.seats || []).map(x => x.seat));
+    const cd = (S.campInfo || {}).data || {};
+    if ((cd.claims || {})[(A.get() || {}).uid || '']) return;
+    if (
+      N()
+        .list('pc')
+        .some(p => p && p.id && p._vis === 'pub' && !taken.has(p.id))
+    )
+      seatPicker();
+  }
 
- /* ----- 대기실 막대 · 캠페인 카드 표시 ----- */
- function lobbyBar(){if(!on())return '';const a=A.get();
-  if(a&&a.token&&ME)return `<div class="acbar"><span class="acav">${esc([...(ME.name||ME.uid||'?')][0]||'?')}</span><div class="acme"><b>${esc(ME.name)}</b><small><span class="mono">@${esc(ME.uid)}</span>${ME.admin?' · <span class="acadm">관리자</span>':''}</small></div><span class="sp"></span>
-   ${canManage()?'<button class="btn sm pri" data-acmng>👥 접속자 · 권한</button>':''}<button class="btn sm ghost" data-acout>로그아웃</button></div>${meErr?`<p class="small acwarn">${esc(meErr)}</p>`:''}`;
-  if(a&&a.token&&meErr)return `<div class="acbar"><div class="acme"><b>${esc(a.name||a.uid||'계정')}</b><small class="acwarn">${esc(meErr)}</small></div><span class="sp"></span><button class="btn sm ghost" data-acout>로그아웃</button></div>`;
-  return `<div class="acbar off"><div class="acme"><b>로그인하지 않았어요</b><small>웹툴(오레마스)과 같은 계정이에요 — 한쪽에서 로그인하면 둘 다 들어가 있어요. 예전 비밀구 · 링크도 그대로 돼요.</small></div><span class="sp"></span><button class="btn sm pri" data-acin>로그인</button></div>`}
- function bindBar(root){const q=s=>$(s,root);const i=q('[data-acin]'),o=q('[data-acout]'),g=q('[data-acmng]');if(i)i.onclick=()=>loginModal();if(o)o.onclick=logout;if(g)g.onclick=()=>openManage('')}
- function campTag(camp){const r=roleOf(camp);if(!r)return '';return r.role==='gm'?'<span class="tag acgm">GM</span>':r.seat?'<span class="tag acpl">PL</span>':'<span class="tag">구경</span>'}
+  /* ----- 대기실 막대 · 캠페인 카드 표시 ----- */
+  function lobbyBar() {
+    if (!on()) return '';
+    const a = A.get();
+    if (a && a.token && ME)
+      return `<div class="acbar"><span class="acav">${esc([...(ME.name || ME.uid || '?')][0] || '?')}</span><div class="acme"><b>${esc(ME.name)}</b><small><span class="mono">@${esc(ME.uid)}</span>${ME.admin ? ' · <span class="acadm">관리자</span>' : ''}</small></div><span class="sp"></span>
+   ${canManage() ? '<button class="btn sm pri" data-acmng>👥 접속자 · 권한</button>' : ''}<button class="btn sm ghost" data-acout>로그아웃</button></div>${meErr ? `<p class="small acwarn">${esc(meErr)}</p>` : ''}`;
+    if (a && a.token && meErr)
+      return `<div class="acbar"><div class="acme"><b>${esc(a.name || a.uid || '계정')}</b><small class="acwarn">${esc(meErr)}</small></div><span class="sp"></span><button class="btn sm ghost" data-acout>로그아웃</button></div>`;
+    return `<div class="acbar off"><div class="acme"><b>로그인하지 않았어요</b><small>웹툴(오레마스)과 같은 계정이에요 — 한쪽에서 로그인하면 둘 다 들어가 있어요. 예전 비밀구 · 링크도 그대로 돼요.</small></div><span class="sp"></span><button class="btn sm pri" data-acin>로그인</button></div>`;
+  }
+  function bindBar(root) {
+    const q = s => $(s, root);
+    const i = q('[data-acin]'),
+      o = q('[data-acout]'),
+      g = q('[data-acmng]');
+    if (i) i.onclick = () => loginModal();
+    if (o) o.onclick = logout;
+    if (g) g.onclick = () => openManage('');
+  }
+  function campTag(camp) {
+    const r = roleOf(camp);
+    if (!r) return '';
+    return r.role === 'gm' ? '<span class="tag acgm">GM</span>' : r.seat ? '<span class="tag acpl">PL</span>' : '<span class="tag">구경</span>';
+  }
 
- /* ----- 접속자 (presence) ----- */
- const KEY=(()=>{try{let k=sessionStorage.getItem('nt_pkey');if(!k){k=Math.random().toString(36).slice(2,10);sessionStorage.setItem('nt_pkey',k)}return k}catch(e){return Math.random().toString(36).slice(2,10)}})();
- const T0=Date.now();let PR=null,PS={},lastInfo='',trT=0;
- function info(){const S=N().ST,a=A.get()||{};const seat=S.role&&S.role!=='gm'?S.role:'';
-  return {uid:(a.token&&a.uid)||'',name:(a.token&&(a.name||a.uid))||'',camp:S.camp||'',cname:S.camp?((S.campInfo&&S.campInfo.name)||S.camp):'',role:S.role==='gm'?'gm':seat?'pl':'',seat,sname:seat?(N().seatName(seat)||seat):'',view:S.camp?S.view:'',
-   via:(S.secret||'').startsWith('u:')?'acct':S.secret?'sec':'',dev:matchMedia('(max-width:720px)').matches?'폰':'PC',at:T0}}
- function track(){if(!on())return;clearTimeout(trT);trT=setTimeout(()=>{const i=info();const j=JSON.stringify(i);if(j===lastInfo)return;lastInfo=j;
-  if(!PR)PR=DB().online(KEY,i,{onSync:st=>{PS=st||{};drawLive()},onRole});else PR.update(i)},250)}
- function people(){const out=[];for(const k in PS){const L=PS[k]||[];const x=L[L.length-1];if(x)out.push(Object.assign({key:k,me:k===KEY},x))}return out}
- /* 다른 사람이 내 권한을 바꾸면: 내 계정 정보를 다시 읽고, 그 캠페인을 보고 있으면 다시 연다 */
- function onRole(p){const a=A.get();if(!a||!a.uid||p.uid!==a.uid)return;me(true).then(()=>{const S=N().ST;if(S.camp&&(!p.camp||p.camp===S.camp)){N().toast('권한이 바뀌었어요 — 다시 열어요');N().open(S.camp,S.view)}else if(!S.camp)N().render()})}
+  /* ----- 접속자 (presence) ----- */
+  const KEY = (() => {
+    try {
+      let k = sessionStorage.getItem('nt_pkey');
+      if (!k) {
+        k = Math.random().toString(36).slice(2, 10);
+        sessionStorage.setItem('nt_pkey', k);
+      }
+      return k;
+    } catch (e) {
+      return Math.random().toString(36).slice(2, 10);
+    }
+  })();
+  const T0 = Date.now();
+  let PR = null,
+    PS = {},
+    lastInfo = '',
+    trT = 0;
+  function info() {
+    const S = N().ST,
+      a = A.get() || {};
+    const seat = S.role && S.role !== 'gm' ? S.role : '';
+    return {
+      uid: (a.token && a.uid) || '',
+      name: (a.token && (a.name || a.uid)) || '',
+      camp: S.camp || '',
+      cname: S.camp ? (S.campInfo && S.campInfo.name) || S.camp : '',
+      role: S.role === 'gm' ? 'gm' : seat ? 'pl' : '',
+      seat,
+      sname: seat ? N().seatName(seat) || seat : '',
+      view: S.camp ? S.view : '',
+      via: (S.secret || '').startsWith('u:') ? 'acct' : S.secret ? 'sec' : '',
+      dev: matchMedia('(max-width:720px)').matches ? '폰' : 'PC',
+      at: T0
+    };
+  }
+  function track() {
+    if (!on()) return;
+    clearTimeout(trT);
+    trT = setTimeout(() => {
+      const i = info();
+      const j = JSON.stringify(i);
+      if (j === lastInfo) return;
+      lastInfo = j;
+      if (!PR)
+        PR = DB().online(KEY, i, {
+          onSync: st => {
+            PS = st || {};
+            drawLive();
+          },
+          onRole
+        });
+      else PR.update(i);
+    }, 250);
+  }
+  function people() {
+    const out = [];
+    for (const k in PS) {
+      const L = PS[k] || [];
+      const x = L[L.length - 1];
+      if (x) out.push(Object.assign({ key: k, me: k === KEY }, x));
+    }
+    return out;
+  }
+  /* 다른 사람이 내 권한을 바꾸면: 내 계정 정보를 다시 읽고, 그 캠페인을 보고 있으면 다시 연다 */
+  function onRole(p) {
+    const a = A.get();
+    if (!a || !a.uid || p.uid !== a.uid) return;
+    me(true).then(() => {
+      const S = N().ST;
+      if (S.camp && (!p.camp || p.camp === S.camp)) {
+        N().toast('권한이 바뀌었어요 — 다시 열어요');
+        N().open(S.camp, S.view);
+      } else if (!S.camp) N().render();
+    });
+  }
 
- /* ----- 관리 창: 접속 중 · 캠페인 권한 ----- */
- const MG={tab:'on',camp:'',data:null};
- const VNAME=v=>((N().VIEWS.find(x=>x[0]===v)||[])[1])||v||'';
- const ago=t=>{const m=Math.floor((Date.now()-t)/60000);if(m<1)return '방금';if(m<60)return m+'분';const h=Math.floor(m/60);return h<24?h+'시간':Math.floor(h/24)+'일'};
- const whenTxt=s=>{if(!s)return '—';return ago(new Date(s).getTime())+' 전'};
- async function openManage(camp){if(!on())return;if(!A.tok())return loginModal('관리 창은 로그인해야 열 수 있어요');
-  MG.camp=camp||MG.camp||'';MG.tab=camp?'perm':'on';
-  const m=N().openModal(`<div class="mhead"><h2>접속자 · 권한</h2><span class="small dim" id="mgSum"></span><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div class="mgtabs"><button type="button" data-mgt="on">접속 중</button><button type="button" data-mgt="perm">캠페인 권한</button></div><div class="mgbody"><div class="dim">불러오는 중…</div></div>`,'mgmodal');
-  $$('[data-mgt]',m).forEach(b=>b.onclick=()=>{MG.tab=b.dataset.mgt;draw()});
-  await load();draw()}
- async function load(){try{MG.data=await DB().acct.adminList(A.tok());if(!MG.data.camps.some(c=>c.id===MG.camp))MG.camp=(MG.data.camps[0]||{}).id||''}catch(e){MG.data={err:errMsg(e),users:[],camps:[]}}}
- const campOf=id=>((MG.data||{}).camps||[]).find(c=>c.id===id)||null;
- /* 한 계정 · 한 캠페인의 권한 고르기: '' 없음 · gm · pl: (시트 아직) · pl:<시트 id> */
- function permSel(c,u,attr){const mem=(c.members||[]).find(x=>x.uid===u.uid);const cur=mem?(mem.role==='gm'?'gm':'pl:'+(mem.seat||'')):'';
-  const taken={};(c.members||[]).forEach(x=>{if(x.role==='pl'&&x.seat&&x.uid!==u.uid)taken[x.seat]=x.uid});const leg=new Set((c.legacy||[]).map(x=>x.seat));
-  const uname=id=>((MG.data.users||[]).find(x=>x.uid===id)||{}).name||id;
-  const pcs=(c.pcs||[]).slice();if(mem&&mem.role==='pl'&&mem.seat&&!pcs.some(p=>p.id===mem.seat))pcs.push({id:mem.seat,name:mem.seat+' (시트 없음)'});
-  return `<select ${attr}><option value="" ${cur===''?'selected':''}>${u.admin?'없음 (관리자라 GM)':'없음 (구경)'}</option><option value="gm" ${cur==='gm'?'selected':''}>GM</option><option value="pl:" ${cur==='pl:'?'selected':''}>PL · 시트 아직</option>
-   ${pcs.map(p=>`<option value="pl:${esc(p.id)}" ${cur==='pl:'+p.id?'selected':''} ${taken[p.id]?'disabled':''}>PL · ${esc(p.name)}${taken[p.id]?` (${esc(uname(taken[p.id]))} 앉음)`:leg.has(p.id)?' · 비밀구 좌석도 있음':''}</option>`).join('')}</select>`}
- async function setPerm(campId,uidv,val){const role=val===''?null:val==='gm'?'gm':'pl';const seat=role==='pl'?val.slice(3):null;
-  try{await DB().acct.adminMember(A.tok(),campId,uidv,role,seat);const u=(MG.data.users||[]).find(x=>x.uid===uidv)||{};const c=campOf(campId)||{};
-   N().toast(`${u.name||uidv} — 「${c.name||campId}」 ${role==='gm'?'GM':role==='pl'?(seat?'PL · '+(((c.pcs||[]).find(p=>p.id===seat)||{}).name||seat):'PL (시트 아직)'):'권한 뺌'}`);
-   if(PR)PR.send({uid:uidv,camp:campId});if(uidv===(A.get()||{}).uid)onRole({uid:uidv,camp:campId})}
-  catch(e){N().toast(errMsg(e))}await load();draw()}
- function draw(){const m=$('.mgmodal');if(!m)return;const body=$('.mgbody',m);if(!body)return;const d=MG.data||{users:[],camps:[]};const P=people();
-  $$('[data-mgt]',m).forEach(b=>b.classList.toggle('on',b.dataset.mgt===MG.tab));const sm=$('#mgSum',m);if(sm)sm.textContent=`지금 ${P.length}명 · 계정 ${d.users.length}`;
-  const onT=$('[data-mgt="on"]',m);if(onT)onT.textContent=`접속 중 ${P.length}`;
-  if(d.err){body.innerHTML=`<div class="empty">${esc(d.err)}</div>`;return}
-  const onlineUid=new Set(P.filter(x=>x.uid).map(x=>x.uid));
-  if(MG.tab==='on'){
-   const L=P.slice().sort((a,b)=>(b.camp?1:0)-(a.camp?1:0)||String(a.cname).localeCompare(String(b.cname))||(a.at-b.at));
-   body.innerHTML=L.length?`<div class="onlist">${L.map(x=>{const c=x.camp?campOf(x.camp):null;const u=x.uid?(d.users.find(y=>y.uid===x.uid)||{uid:x.uid,name:x.name}):null;
-     const rl=x.role==='gm'?'<span class="badge gm">GM</span>':x.role==='pl'?`<span class="badge seat">PL · ${esc(x.sname||x.seat)}</span>`:x.camp?'<span class="badge">구경</span>':'';
-     return `<div class="onrow ${x.me?'me':''}"><span class="ondot" aria-hidden="true"></span><div class="onwho"><b>${esc(x.name||'로그인 안 한 사람')}</b><small>${x.uid?'<span class="mono">@'+esc(x.uid)+'</span>':x.via==='sec'?'비밀구로 들어옴':'구경 링크'} · ${esc(x.dev||'')} · ${esc(ago(x.at||Date.now()))} 전부터${x.me?' · 나':''}</small></div>
-      <div class="onwhere">${x.camp?`<b>${esc(x.cname||x.camp)}</b><small>${esc(VNAME(x.view))}</small>`:'<span class="dim">대기실</span>'}</div><div class="onrole">${rl}</div>
-      <div class="onctl">${c&&u?permSel(c,u,`data-onp="${esc(x.camp)}" data-uid="${esc(x.uid)}" aria-label="${esc((u.name||x.uid)+' 권한')}"`):''}</div></div>`}).join('')}</div>
+  /* ----- 관리 창: 접속 중 · 캠페인 권한 ----- */
+  const MG = { tab: 'on', camp: '', data: null };
+  const VNAME = v => (N().VIEWS.find(x => x[0] === v) || [])[1] || v || '';
+  const ago = t => {
+    const m = Math.floor((Date.now() - t) / 60000);
+    if (m < 1) return '방금';
+    if (m < 60) return m + '분';
+    const h = Math.floor(m / 60);
+    return h < 24 ? h + '시간' : Math.floor(h / 24) + '일';
+  };
+  const whenTxt = s => {
+    if (!s) return '—';
+    return ago(new Date(s).getTime()) + ' 전';
+  };
+  async function openManage(camp) {
+    if (!on()) return;
+    if (!A.tok()) return loginModal('관리 창은 로그인해야 열 수 있어요');
+    MG.camp = camp || MG.camp || '';
+    MG.tab = camp ? 'perm' : 'on';
+    const m = N().openModal(
+      `<div class="mhead"><h2>접속자 · 권한</h2><span class="small dim" id="mgSum"></span><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div class="mgtabs"><button type="button" data-mgt="on">접속 중</button><button type="button" data-mgt="perm">캠페인 권한</button></div><div class="mgbody"><div class="dim">불러오는 중…</div></div>`,
+      'mgmodal'
+    );
+    $$('[data-mgt]', m).forEach(
+      b =>
+        (b.onclick = () => {
+          MG.tab = b.dataset.mgt;
+          draw();
+        })
+    );
+    await load();
+    draw();
+  }
+  async function load() {
+    try {
+      MG.data = await DB().acct.adminList(A.tok());
+      if (!MG.data.camps.some(c => c.id === MG.camp)) MG.camp = (MG.data.camps[0] || {}).id || '';
+    } catch (e) {
+      MG.data = { err: errMsg(e), users: [], camps: [] };
+    }
+  }
+  const campOf = id => ((MG.data || {}).camps || []).find(c => c.id === id) || null;
+  /* 한 계정 · 한 캠페인의 권한 고르기: '' 없음 · gm · pl: (시트 아직) · pl:<시트 id> */
+  function permSel(c, u, attr) {
+    const mem = (c.members || []).find(x => x.uid === u.uid);
+    const cur = mem ? (mem.role === 'gm' ? 'gm' : 'pl:' + (mem.seat || '')) : '';
+    const taken = {};
+    (c.members || []).forEach(x => {
+      if (x.role === 'pl' && x.seat && x.uid !== u.uid) taken[x.seat] = x.uid;
+    });
+    const leg = new Set((c.legacy || []).map(x => x.seat));
+    const uname = id => ((MG.data.users || []).find(x => x.uid === id) || {}).name || id;
+    const pcs = (c.pcs || []).slice();
+    if (mem && mem.role === 'pl' && mem.seat && !pcs.some(p => p.id === mem.seat)) pcs.push({ id: mem.seat, name: mem.seat + ' (시트 없음)' });
+    return `<select ${attr}><option value="" ${cur === '' ? 'selected' : ''}>${u.admin ? '없음 (관리자라 GM)' : '없음 (구경)'}</option><option value="gm" ${cur === 'gm' ? 'selected' : ''}>GM</option><option value="pl:" ${cur === 'pl:' ? 'selected' : ''}>PL · 시트 아직</option>
+   ${pcs.map(p => `<option value="pl:${esc(p.id)}" ${cur === 'pl:' + p.id ? 'selected' : ''} ${taken[p.id] ? 'disabled' : ''}>PL · ${esc(p.name)}${taken[p.id] ? ` (${esc(uname(taken[p.id]))} 앉음)` : leg.has(p.id) ? ' · 비밀구 좌석도 있음' : ''}</option>`).join('')}</select>`;
+  }
+  async function setPerm(campId, uidv, val) {
+    const role = val === '' ? null : val === 'gm' ? 'gm' : 'pl';
+    const seat = role === 'pl' ? val.slice(3) : null;
+    try {
+      await DB().acct.adminMember(A.tok(), campId, uidv, role, seat);
+      const u = (MG.data.users || []).find(x => x.uid === uidv) || {};
+      const c = campOf(campId) || {};
+      N().toast(
+        `${u.name || uidv} — 「${c.name || campId}」 ${role === 'gm' ? 'GM' : role === 'pl' ? (seat ? 'PL · ' + (((c.pcs || []).find(p => p.id === seat) || {}).name || seat) : 'PL (시트 아직)') : '권한 뺌'}`
+      );
+      if (PR) PR.send({ uid: uidv, camp: campId });
+      if (uidv === (A.get() || {}).uid) onRole({ uid: uidv, camp: campId });
+    } catch (e) {
+      N().toast(errMsg(e));
+    }
+    await load();
+    draw();
+  }
+  function draw() {
+    const m = $('.mgmodal');
+    if (!m) return;
+    const body = $('.mgbody', m);
+    if (!body) return;
+    const d = MG.data || { users: [], camps: [] };
+    const P = people();
+    $$('[data-mgt]', m).forEach(b => b.classList.toggle('on', b.dataset.mgt === MG.tab));
+    const sm = $('#mgSum', m);
+    if (sm) sm.textContent = `지금 ${P.length}명 · 계정 ${d.users.length}`;
+    const onT = $('[data-mgt="on"]', m);
+    if (onT) onT.textContent = `접속 중 ${P.length}`;
+    if (d.err) {
+      body.innerHTML = `<div class="empty">${esc(d.err)}</div>`;
+      return;
+    }
+    const onlineUid = new Set(P.filter(x => x.uid).map(x => x.uid));
+    if (MG.tab === 'on') {
+      const L = P.slice().sort((a, b) => (b.camp ? 1 : 0) - (a.camp ? 1 : 0) || String(a.cname).localeCompare(String(b.cname)) || a.at - b.at);
+      body.innerHTML = L.length
+        ? `<div class="onlist">${L.map(x => {
+            const c = x.camp ? campOf(x.camp) : null;
+            const u = x.uid ? d.users.find(y => y.uid === x.uid) || { uid: x.uid, name: x.name } : null;
+            const rl =
+              x.role === 'gm'
+                ? '<span class="badge gm">GM</span>'
+                : x.role === 'pl'
+                  ? `<span class="badge seat">PL · ${esc(x.sname || x.seat)}</span>`
+                  : x.camp
+                    ? '<span class="badge">구경</span>'
+                    : '';
+            return `<div class="onrow ${x.me ? 'me' : ''}"><span class="ondot" aria-hidden="true"></span><div class="onwho"><b>${esc(x.name || '로그인 안 한 사람')}</b><small>${x.uid ? '<span class="mono">@' + esc(x.uid) + '</span>' : x.via === 'sec' ? '비밀구로 들어옴' : '구경 링크'} · ${esc(x.dev || '')} · ${esc(ago(x.at || Date.now()))} 전부터${x.me ? ' · 나' : ''}</small></div>
+      <div class="onwhere">${x.camp ? `<b>${esc(x.cname || x.camp)}</b><small>${esc(VNAME(x.view))}</small>` : '<span class="dim">대기실</span>'}</div><div class="onrole">${rl}</div>
+      <div class="onctl">${c && u ? permSel(c, u, `data-onp="${esc(x.camp)}" data-uid="${esc(x.uid)}" aria-label="${esc((u.name || x.uid) + ' 권한')}"`) : ''}</div></div>`;
+          }).join('')}</div>
      <p class="pf-note small dim">세션 노트를 연 사람만 보여요(대기실 포함). 로그인한 사람은 보고 있는 캠페인의 권한을 여기서 바로 바꿀 수 있어요 — 바꾸면 그 사람 화면이 새 권한으로 다시 열려요. 로그인하지 않은 사람은 비밀구 · 링크 권한이라 설정 탭 「PL 좌석」에서 관리해요.</p>`
-    :'<div class="empty">지금 세션 노트를 연 사람이 없어요</div>';
-   $$('[data-onp]',body).forEach(s=>s.onchange=()=>setPerm(s.dataset.onp,s.dataset.uid,s.value));return}
-  /* 캠페인 권한 */
-  const c=campOf(MG.camp);
-  body.innerHTML=`<div class="row mgpick"><label class="lbl" style="flex:1;min-width:180px">캠페인<select id="mgCamp">${d.camps.map(x=>`<option value="${esc(x.id)}" ${x.id===MG.camp?'selected':''}>${esc(x.name||x.id)}</option>`).join('')}</select></label></div>
-   ${c?`<table class="mgt"><thead><tr><th>계정</th><th>권한</th></tr></thead><tbody>${d.users.map(u=>`<tr><td><span class="ondot ${onlineUid.has(u.uid)?'':'off'}" title="${onlineUid.has(u.uid)?'지금 접속 중':'최근 ' + esc(whenTxt(u.last_at))}"></span><b>${esc(u.name)}</b> <span class="mono small dim">@${esc(u.uid)}</span>${u.admin?' <span class="badge gm">관리자</span>':''}</td><td>${permSel(c,u,`data-pp="${esc(u.uid)}" aria-label="${esc(u.name+' 권한')}"`)}</td></tr>`).join('')||'<tr><td colspan="2" class="dim">아직 계정이 없어요</td></tr>'}</tbody></table>
-    ${(c.legacy||[]).length?`<div class="mgleg"><b>비밀구 좌석 (예전 방식)</b> ${(c.legacy||[]).map(x=>`<span class="tag">${esc(((c.pcs||[]).find(p=>p.id===x.seat)||{}).name||x.seat)}${x.name?' · '+esc(x.name):''}</span>`).join(' ')}<div class="small dim">비밀구 좌석은 그대로 돼요. 그 캠페인 설정 탭 「PL 좌석」에서 빼거나 바꿔요.</div></div>`:''}
+        : '<div class="empty">지금 세션 노트를 연 사람이 없어요</div>';
+      $$('[data-onp]', body).forEach(s => (s.onchange = () => setPerm(s.dataset.onp, s.dataset.uid, s.value)));
+      return;
+    }
+    /* 캠페인 권한 */
+    const c = campOf(MG.camp);
+    body.innerHTML = `<div class="row mgpick"><label class="lbl" style="flex:1;min-width:180px">캠페인<select id="mgCamp">${d.camps.map(x => `<option value="${esc(x.id)}" ${x.id === MG.camp ? 'selected' : ''}>${esc(x.name || x.id)}</option>`).join('')}</select></label></div>
+   ${
+     c
+       ? `<table class="mgt"><thead><tr><th>계정</th><th>권한</th></tr></thead><tbody>${d.users.map(u => `<tr><td><span class="ondot ${onlineUid.has(u.uid) ? '' : 'off'}" title="${onlineUid.has(u.uid) ? '지금 접속 중' : '최근 ' + esc(whenTxt(u.last_at))}"></span><b>${esc(u.name)}</b> <span class="mono small dim">@${esc(u.uid)}</span>${u.admin ? ' <span class="badge gm">관리자</span>' : ''}</td><td>${permSel(c, u, `data-pp="${esc(u.uid)}" aria-label="${esc(u.name + ' 권한')}"`)}</td></tr>`).join('') || '<tr><td colspan="2" class="dim">아직 계정이 없어요</td></tr>'}</tbody></table>
+    ${(c.legacy || []).length ? `<div class="mgleg"><b>비밀구 좌석 (예전 방식)</b> ${(c.legacy || []).map(x => `<span class="tag">${esc(((c.pcs || []).find(p => p.id === x.seat) || {}).name || x.seat)}${x.name ? ' · ' + esc(x.name) : ''}</span>`).join(' ')}<div class="small dim">비밀구 좌석은 그대로 돼요. 그 캠페인 설정 탭 「PL 좌석」에서 빼거나 바꿔요.</div></div>` : ''}
     <p class="pf-note small dim">PL 은 고른 PC 시트만 고칠 수 있어요. 「PL · 시트 아직」은 비공개 없이 구경만. 관리자는 따로 주지 않아도 모든 캠페인에서 GM 이에요. 계정 만들기 · 관리자 · 비밀번호 초기화는 웹툴 「관리자 패널」에서 해요.</p>`
-   :'<div class="empty">관리할 캠페인이 없어요</div>'}`;
-  const cs=$('#mgCamp',body);if(cs)cs.onchange=()=>{MG.camp=cs.value;draw()};
-  $$('[data-pp]',body).forEach(s=>s.onchange=()=>setPerm(MG.camp,s.dataset.pp,s.value))}
- /* 접속자가 바뀌면 열린 관리 창도 다시 (고르던 칸이 있으면 기다린다) */
- function drawLive(){const m=$('.mgmodal');if(!m)return;const a=document.activeElement;if(a&&a.tagName==='SELECT'&&m.contains(a))return;draw()}
+       : '<div class="empty">관리할 캠페인이 없어요</div>'
+   }`;
+    const cs = $('#mgCamp', body);
+    if (cs)
+      cs.onchange = () => {
+        MG.camp = cs.value;
+        draw();
+      };
+    $$('[data-pp]', body).forEach(s => (s.onchange = () => setPerm(MG.camp, s.dataset.pp, s.value)));
+  }
+  /* 접속자가 바뀌면 열린 관리 창도 다시 (고르던 칸이 있으면 기다린다) */
+  function drawLive() {
+    const m = $('.mgmodal');
+    if (!m) return;
+    const a = document.activeElement;
+    if (a && a.tagName === 'SELECT' && m.contains(a)) return;
+    draw();
+  }
 
- return {seatPicker,afterOpen,tok:()=>A.tok(),get:()=>A.get(),me,roleOf,canManage,myName,loginModal,logout,meMenu,lobbyBar,bindBar,campTag,track,people,openManage};
+  return {
+    seatPicker,
+    afterOpen,
+    tok: () => A.tok(),
+    get: () => A.get(),
+    me,
+    roleOf,
+    canManage,
+    myName,
+    loginModal,
+    logout,
+    meMenu,
+    lobbyBar,
+    bindBar,
+    campTag,
+    track,
+    people,
+    openManage
+  };
 })();
