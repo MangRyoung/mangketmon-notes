@@ -512,8 +512,6 @@ window.NT_AWK=(()=>{
   return twoLine(pc)+`<div class="awid"><b>✦ 각성체</b><span class="awidt">${S.filter(x=>x.img).map(x=>`<i style="background-image:url('${cssu(x.img)}')" title="각성체 ${x.n}"></i>`).join('')}<small>${any?S.filter(x=>x.note&&!slotRaw(x.pc,x.n).fixed).map(x=>esc(x.note.slice(0,40))).join(' · ')||(S.every(x=>slotRaw(x.pc,x.n).fixed)?'두 칸 모두 확정':'그림 있음'):'각성체 그림과 바라는 점을 넣으면 어울리는 원전 인물을 골라 드려요'}</small></span><button type="button" class="btn xs" onclick="NT_AWK.sendBox('${esc(pc)}')">${any?'고치기':'넣기'}</button></div>`}
  /* 10-30 망령 「이 설정에서 추천 후보 중에 고르던가 직접 입력하고 확정도」: GM 이면 칸마다 원전 줄 — 감우 추천(extra · picks) · 고른 후보 목록에서 고르거나 이름을 직접 적고 ✦ 확정.
     확정 안 하고 저장하면 DB 에 있는 이름은 고른 후보(awk.pick), 없는 이름은 칸의 src 로 남는다 */
- function srcCands(sid){const r=rec(sid);const rd=r.read||{};const out=[];const add=(n,why)=>{n=String(n||'').trim();if(n&&!out.some(q=>q.n===n))out.push({n,why:why||''})};
-  if(r.pick){const e=byId(r.pick);if(e)add(e.n,'고른 후보')}(rd.extra||[]).forEach(e=>add(e.n,e.why));(rd.picks||[]).forEach(p=>add((p.id&&(byId(p.id)||{}).n)||p.n,p.why));(r.cands||[]).forEach(i=>{const e=byId(i);if(e)add(e.n,'후보 목록')});return out}
  /* 10-31 망령 「저 항목(고치기 창)에도 추천 들어가 있으면 보고 변경 — DB 쪽 카드 UI 참고」: 칸마다 추천 카드 묶음. 누르면 원전 · 제작 설정이 그 후보로 채워지고(저장해야 남음), 직접 적기 · 확정은 아래 줄 */
  function srcList(sid){const r=rec(sid);const rd=r.read||{};const out=[];const add=(n,tag)=>{n=String(n||'').trim();if(!n)return;let o=out.find(q=>q.n===n);if(!o){o={n,c:candOf(sid,n)||{n},tags:[]};out.push(o)}if(tag&&!o.tags.includes(tag))o.tags.push(tag)};
   (rd.extra||[]).forEach((e,k)=>{if(k===0)add(e.n,'1순위');add(e.n,'DB 밖')});(rd.picks||[]).forEach(p=>add((p.id&&(byId(p.id)||{}).n)||p.n,'감우 추천'));if(r.pick){const e=byId(r.pick);if(e)add(e.n,'고른 후보')}(r.cands||[]).forEach(id=>{const e=byId(id);if(e)add(e.n,'☆ 후보')});return out}
@@ -546,7 +544,6 @@ window.NT_AWK=(()=>{
  /* 10-31 망령 「각성체 DB 에서 선택할 방법이 없잖니 — 클릭하면 각성체 칸에 반영」「타입 · 종족치도 DB 에 저장」「추천 항목을 추가 · 삭제 · 관리」 */
  const specOfCand=e=>{const o={};const t=(e&&e.t||[]).filter(t=>T2C[t]);if(t.length)o.t=t.slice(0,2);const b=baseFix(e&&e.base);if(b)o.base=b;if(e&&e.ab)o.ab=String(e.ab);if(e&&e.so)o.so=String(e.so);return o};
  const curName=sid=>{const x=slot(sid),r=rec(sid);const pk=r.pick&&byId(r.pick);return (x.fixed&&x.fixed.n)||(pk&&pk.n)||x.src||''};
- const miniSpec=sp=>{if(!sp)return '';const b=baseFix(sp.base);const t=(sp.t||[]).filter(Boolean);return [t.length?t.map(tchip).join(''):'',b?`<span class="awms">${b.map((v,i)=>`<i title="${BASEN[i]} ${grd(v)}">${v}</i>`).join('')}<small>합 ${sumOf(b)}</small></span>`:'',sp.ab?`<span class="awms-ab">특성 「${esc(sp.ab)}」</span>`:sp.so?`<span class="awms-ab">특성 소켓 ${esc(sp.so)}</span>`:''].filter(Boolean).join(' ')};
  /* 10-31 망령 「종족치도 랭크 정도는 · 특성도 효과는」: 카드 · 칸 상자에 쓰는 제작 블록 (타입 · 종족치 6칸 + 랭크 · 특성 + 소켓 + 효과) */
  const abTxt=v=>String(v||'').replace(/<br\s*\/?>/gi,' ').replace(/\s+/g,' ').trim();
  let abW=0;const abWait=()=>{if(abW||!MK())return;abW=1;MK().db().then(()=>N().render()).catch(()=>{})};

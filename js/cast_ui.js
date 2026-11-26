@@ -284,7 +284,6 @@
  function panelOpen(t){P=Object.assign({mid:'',focus:''},t);let el=panelEl();if(!el){el=document.createElement('aside');el.id='cgPanel';el.className='bp-panel cg-panel';document.body.appendChild(el);panelBind(el);requestAnimationFrame(()=>el.classList.add('on'))}else el.classList.add('on');
   document.body.classList.add('cg-panel-on');panelDraw();$$('.cg-sel').forEach(x=>x.classList.remove('cg-sel'));const q=P.mid?`.cg-m[data-m="${CSS.escape(P.mid)}"]`:`.cg-grp[data-g="${CSS.escape(P.gid)}"]`;$$(q).forEach(x=>x.classList.add('cg-sel'));if(!P.focus)el.scrollTop=0}
  function panelSync(){if(!P)return;if(!N().data('grp',P.gid)||(P.mid&&!mOf(P.gid,P.mid)))return panelClose();const el=panelEl();if(!el)return;const f=document.activeElement;if(f&&el.contains(f)&&/^(INPUT|TEXTAREA|SELECT)$/.test(f.tagName))return;panelDraw()}
- const fld=(lab,inner,hint)=>`<div class="bp-f"><label>${lab}${hint?`<small>${hint}</small>`:''}</label>${inner}</div>`;
  const inp=(f,v,ph)=>`<input type="text" data-f="${f}" value="${esc(v||'')}" placeholder="${esc(ph||'')}">`;
  const txa=(f,v,rows,ph)=>`<textarea data-f="${f}" rows="${rows||3}" placeholder="${esc(ph||'')}">${esc(v||'')}</textarea>`;
  /* 11-13 08:32 망령 「이미지는 포트랑 스탠딩 따로 · 입력 UI 가시성 개선」: 옆 창을 칸 묶음(카드)으로 — 머리 · 설명 · 내용. 칸 이름은 크고 밝게, 설명은 그 아래 작게 */

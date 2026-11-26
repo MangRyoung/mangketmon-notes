@@ -13,7 +13,6 @@ window.NT_HIST=(()=>{
  const jeq=(a,b)=>{try{return JSON.stringify(a)===JSON.stringify(b)}catch(e){return false}};
  /* 두 판의 다른 칸 이름 (1단계 키) */
  const diffKeys=(a,b)=>{a=a||{};b=b||{};const K=new Set(Object.keys(a).concat(Object.keys(b)));return [...K].filter(k=>!jeq(a[k],b[k]))};
- const short=v=>{if(v==null)return '(없음)';const s=typeof v==='string'?v:JSON.stringify(v);return s.length>80?s.slice(0,80)+'…':s};
  const btn=(kind,id)=>N().canEdit(kind,id)?`<button type="button" class="btn xs ghost histb" data-hist="${esc(kind)}|${esc(id)}" title="이 문서의 옛 판 보기 · 되돌리기">🕘 이력</button>`:'';
  async function open(kind,id){if(!N().canEdit(kind,id))return;const cur=N().doc(kind,id);const label=(cur&&nameOf(kind,cur.data))||id;
   const md=N().openModal(`<div class="mhead"><h2>🕘 이력 <small class="dim" style="font-size:12px;margin-left:6px">${esc(KL[kind]||kind)} · ${esc(label)}</small></h2><span class="sp"></span><button class="btn ghost" data-x>닫기</button></div><div id="histBox" class="histbox"><div class="small dim">읽는 중…</div></div>`,'wide histmodal',{stack:true});

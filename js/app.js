@@ -113,7 +113,6 @@ window.NT=(()=>{
  /* 11-22 망령 「GM만으로 돌려도 그 자리에 앉아 있는 사람에겐 권한도 있고 보이기도」: 자기 자리 PC 시트(pc · pcp, id = 자리)는 「GM만」이어도 그 자리 PL 이 보고 고친다 (서버 nt_can_see2 와 같은 규칙 · GM 메모 sec 는 그대로 GM만) */
  const canSee=(vis,k,id)=>vis==='pub'||gm()||(me()&&(vis==='pl:'+me()||((k==='pc'||k==='pcp')&&id===me())));
  const canEdit=(k,id)=>gm()||!!(me()&&(((k==='pc'||k==='pcp')&&id===me())||(k==='avail'&&String(id).endsWith('_'+me()))));
- const VISL={pub:'모두',gm:'GM만'};
  const visLabel=v=>v==='pub'?'모두':v==='gm'?'GM만':v&&v.startsWith('pl:')?'PL 전용 · '+(seatName(v.slice(3))||v.slice(3)):v;
  const seatName=s=>{const t=data('pc',s);const mk=(window.NT_MAKER&&NT_MAKER.trainer(s))||null;return (mk&&mk.name)||(t&&t.name)||((ST.seats.find(x=>x.seat===s)||{}).name)||''};
  /* 공개 설정 고르기 칸. 값: pub · gm · pl:<seat> */
