@@ -1,0 +1,5 @@
+# 정렬(prettier)은 js 코드만
+/*
+!/js
+/js/config.js
+/js/vendor/
