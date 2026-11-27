@@ -26,7 +26,7 @@ window.NT_WORD = (() => {
     const one = src =>
       new Promise(res => {
         const s = document.createElement('script');
-        s.src = base() + src + '?v=202611201125ko';
+        s.src = base() + src + '?v=202611270918sy';
         s.onload = () => res(true);
         s.onerror = () => res(false);
         document.head.appendChild(s);
