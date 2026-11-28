@@ -198,3 +198,7 @@
 .dgcd-r{overflow:hidden}
 @media (max-width:760px){.dgen-bn{height:110px}}
 @media (max-width:760px){.modal.dgcdm .dgcd-wrap{padding:4px 2px}.dgcd.dgen{padding:8px 5px}.dgen-r{padding:6px 4px}.dgen-r.pic{padding-top:0}.dgen-bn{margin:0 -4px 2px}.dgen .pmc{padding:8px 6px}.dgen .pmst{gap:2px}}
+/* 11-28 시트 「던전」 탭: 던전 고르는 칩 · 카드 판 */
+.dgsh-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}.dgsh-chips .btn.on{border-color:var(--ac,#d4a017);color:var(--ac,#d4a017)}.dgsh-chips small{margin-left:3px}
+.dgsh-wrap .dgcd.dgen{max-width:none}
+@media (max-width:760px){.dgsh-wrap .dgcd.dgen{padding:8px 5px}.dgsh-wrap .dgen-r{padding:6px 4px}}

@@ -92,6 +92,7 @@ window.NT = (() => {
     ['npc', 'NPC 시트'],
     ['awk', '각성체'],
     ['awdb', '각성체 DB'],
+    ['dgsh', '던전'],
     ['blue', '도안'],
     ['cast', '조직'],
     ['dgp', '던전'],
@@ -105,7 +106,7 @@ window.NT = (() => {
     ['rb', '룰북', ['rb']],
     ['ents', '자료', ['ents']],
     ['map', '지도', ['map']],
-    ['pc', '시트', ['pc', 'npc', 'awk', 'awdb']],
+    ['pc', '시트', ['pc', 'npc', 'awk', 'awdb', 'dgsh']],
     ['graph', '관계도', ['graph']],
     ['plan', '일정', ['plan', 'logs']],
     ['scen', '시나리오', ['blue', 'cast', 'dgp', 'scen']],
@@ -116,7 +117,8 @@ window.NT = (() => {
   const rbOn = () => skin() === 'univ';
   const tabOk = ([k]) => (k === 'rb' ? rbOn() : k !== 'set' || gm() || me());
   /* 10-29: 각성체 DB 는 GM만. 10-30 망령 「PC 시트 옆에 NPC 시트」: NPC 시트는 GM, 또는 공개된 NPC 가 있을 때만 */
-  const subOk = v => (v === 'rb' ? rbOn() : v === 'awdb' || v === 'cast' || v === 'dgp' ? gm() : v === 'npc' ? gm() || list('npc').length > 0 : true);
+  const subOk = v =>
+    v === 'rb' ? rbOn() : v === 'awdb' || v === 'cast' || v === 'dgp' || v === 'dgsh' ? gm() : v === 'npc' ? gm() || list('npc').length > 0 : true;
   const subGet = t => {
     try {
       const v = localStorage.getItem('nt_sub_' + t[0]);

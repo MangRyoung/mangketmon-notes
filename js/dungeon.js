@@ -965,6 +965,30 @@ window.NT_DG = (() => {
        : '<div class="dim small" style="padding:14px">야생 시트가 있는 조우 방이 없어요 — 제작기 「던전」 탭에서 방에 야생을 잇고 「↻ 제작기에서 다시 받기」.</div>'
    }</div>`;
   }
+  /* 조우 카드용: 제작기 DB 를 불러 두고, 제작기에서 받은 던전이면 방 id → 이어 둔 제작기 트레이너 id 표를 만든다 (한 장 요약 「⚔ 조우」 · 시트 「던전」 탭) */
+  async function encMkr(d0) {
+    const MKR = {};
+    try {
+      const MK = window.NT_MAKER;
+      if (MK) {
+        if (MK.load) await MK.load();
+        if (MK.db && MK.dbReady && !MK.dbReady()) await MK.db();
+      }
+    } catch (e) {}
+    try {
+      const src = (d0 && d0.src) || {};
+      if (src.from === 'maker' && src.mk) {
+        const x = await N().DBS().makerGet('dungeon', src.mk);
+        for (const [k, r] of Object.entries(((x && x.data && x.data.d) || {}).r || {})) {
+          const rid = String(k)
+            .replace(/[^A-Za-z0-9_]/g, '')
+            .slice(0, 12);
+          if (r && r.mk && rid) MKR[rid] = r.mk;
+        }
+      }
+    } catch (e) {}
+    return MKR;
+  }
   function openCard(id) {
     const d0 = E.id === id && E.d ? E.d : N().data('dgs', id);
     if (!d0) return N().toast('던전을 찾지 못했어요');
@@ -995,25 +1019,7 @@ window.NT_DG = (() => {
           tab = b.dataset.dctab;
           paint();
           if (tab === 'enc') {
-            try {
-              const MK = window.NT_MAKER;
-              if (MK) {
-                if (MK.load) await MK.load();
-                if (MK.db && MK.dbReady && !MK.dbReady()) await MK.db();
-              }
-            } catch (e) {}
-            try {
-              const src = d0.src || {};
-              if (src.from === 'maker' && src.mk && !Object.keys(MKR).length) {
-                const x = await N().DBS().makerGet('dungeon', src.mk);
-                for (const [k, r] of Object.entries(((x && x.data && x.data.d) || {}).r || {})) {
-                  const rid = String(k)
-                    .replace(/[^A-Za-z0-9_]/g, '')
-                    .slice(0, 12);
-                  if (r && r.mk && rid) MKR[rid] = r.mk;
-                }
-              }
-            } catch (e) {}
+            if (!Object.keys(MKR).length) MKR = await encMkr(d0);
             if (tab === 'enc') paint();
           }
         })
@@ -1652,5 +1658,5 @@ window.NT_DG = (() => {
     },
     true
   );
-  return { all, at, has, spotSec, pinMark, mini, openEd, newFor, fromSim, fromAny, fromMaker, mkList, toOm, simList, TY };
+  return { all, at, has, spotSec, pinMark, mini, openEd, openCard, encHTML, encMkr, newFor, fromSim, fromAny, fromMaker, mkList, toOm, simList, TY };
 })();
