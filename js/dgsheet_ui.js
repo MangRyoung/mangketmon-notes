@@ -44,9 +44,10 @@
        : '<div class="empty">노트에 던전이 없어요 — 지도 장소 · 시나리오 「던전」에서 먼저 만들어요.</div>'
    }</div>`;
     bind(el, cur);
-    if (cur && !mkrOf[cur.id] && loading !== cur.id) loadMkr(el, cur);
+    if (cur && !mkrOf[cur.id] && loading !== cur.id) loadMkr(cur);
   }
-  async function loadMkr(el, d) {
+  /* 받는 사이 화면이 다시 그려지면(el 이 바뀜) 옛 el 은 떨어져 있다 — 지금 이 탭이 떠 있으면 앱 전체를 다시 그린다 */
+  async function loadMkr(d) {
     loading = d.id;
     try {
       mkrOf[d.id] = await NT_DG.encMkr(d);
@@ -54,7 +55,7 @@
       mkrOf[d.id] = {};
     }
     loading = '';
-    if (el.isConnected && el.querySelector('[data-dgsh-wrap]')) render(el);
+    if (document.querySelector('[data-dgsh-wrap]')) N().render();
   }
   function bind(el, cur) {
     el.querySelectorAll('[data-dgsh]').forEach(
