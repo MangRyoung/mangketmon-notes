@@ -1059,7 +1059,7 @@ window.NT = (() => {
         e.preventDefault();
         e.stopPropagation();
         const fs = await window.OM_CUTTER.open({
-          label: ((el.querySelector('b') || {}).textContent || '이 칸').trim(),
+          label: el.dataset.cut || ((el.querySelector('b') || {}).textContent || '이 칸').trim(),
           multi: !!multi,
           src: window.OM_CUTTER.srcIn(el)
         });
