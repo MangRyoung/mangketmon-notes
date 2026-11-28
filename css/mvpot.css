@@ -19,6 +19,10 @@
 .mvc-n span{display:inline-flex;align-items:baseline;gap:4px}
 .mvc-n small{font-size:10px;opacity:.65}
 .mvc-n b{font-size:13px;font-variant-numeric:tabular-nums}
+.mvc-pw{display:flex;flex-wrap:wrap;gap:4px;align-items:baseline;margin-top:2px}
+.mvc-pw small{font-size:10px;opacity:.65}
+.mvc-pw b{font-size:13px;font-variant-numeric:tabular-nums;color:var(--tc)}
+.mvc-pw em{font-style:normal;font-size:10px;opacity:.6}
 .mvc-ct{font-size:10px;padding:0 5px;border:1px dashed currentColor;border-radius:3px;opacity:.7}
 .mvc-e{margin:0;font-size:12px;line-height:1.5;opacity:.85;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .mvc:hover .mvc-e{-webkit-line-clamp:unset}

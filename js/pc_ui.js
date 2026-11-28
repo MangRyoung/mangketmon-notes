@@ -953,7 +953,17 @@
     if (has('eff')) r[13] = String(o.eff);
     return { r, ov: true };
   }
-  function moveGrid(mv, key, SE) {
+  /* 11-28 망령 「결정력 계산기도 · 세션 노트쪽 시트에도 · 기술 아래에 띄워주는 식으로」: 제작기 js/power.js 를 같이 씀 */
+  function powCtx(m, X) {
+    return { base: X.bs, lv: X.lv, ivs: m.ivs, add: m.statAdd, cp: m.statCp, types: X.types, ability: m.ability };
+  }
+  function powLine(PO, r) {
+    const D = PO && r && window.MKM_POWER ? window.MKM_POWER.calc(PO, r) : null;
+    return D
+      ? `<div class="mvc-pw" title="결정력 = ${esc(D.why)}"><small>결정력</small><b>${D.v.toLocaleString()}</b><em>${esc(D.why)}</em></div>`
+      : '';
+  }
+  function moveGrid(mv, key, SE, PO) {
     if (!mv.length) return '';
     const k = key ? String(key) : '';
     return `<details class="mvp mvfold" ${k ? `data-mvk="${esc(k)}"` : ''} ${k && MVF.has(k) ? '' : 'open'}><summary class="mvp-h"><span>기술</span><small>${mv.length}</small><em class="mvp-tg" aria-hidden="true"></em></summary><div class="mvg">${mv
@@ -966,7 +976,7 @@
         const pr = r && +r[11] ? (+r[11] > 0 ? '+' : '') + r[11] : '';
         const eff = r ? brN(r[13] || '') : '';
         return `<article class="mvc"${SE && x._i != null ? SE('mv.' + x._i, '눌러서 이 기술 고치기 (제작기 기술 탭)') : ''} style="--tc:${T2C[ty] || '#8f7b52'}"><div class="mvc-h">${ty ? tchip(ty) : ''}<b title="${esc(x.name)}">${esc(x.name)}</b>${x.half ? '<small class="mvc-half" title="자속 기술 할인">할인</small>' : ''}${ov ? '<small class="mvc-half" title="이 포켓몬만 덮어쓴 기술 (제작기 시트 「이 포켓몬만」)">개별</small>' : ''}${cl ? `<span class="mvc-cl c-${CLS[cl] || 'st'}">${esc(cl)}</span>` : ''}</div>
-    ${r ? `<div class="mvc-n"><span><small>위력</small><b>${esc(pw)}</b></span><span><small>명중</small><b>${esc(ac)}</b></span>${r[9] && r[9] !== '-' ? `<span><small>범위</small><b>${esc(r[9])}</b></span>` : ''}${pr ? `<span><small>우선</small><b>${esc(pr)}</b></span>` : ''}${r[10] === 'O' ? '<span class="mvc-ct" title="접촉 기술">접촉</span>' : ''}</div>${eff ? `<p class="mvc-e" title="${esc(eff)}">${fxT(eff)}</p>` : ''}` : MK().dbReady() ? '<p class="mvc-e dim">기술 표에 없는 이름이에요</p>' : '<p class="mvc-e dim">기술 표를 불러오는 중이에요…</p>'}</article>`;
+    ${r ? `<div class="mvc-n"><span><small>위력</small><b>${esc(pw)}</b></span><span><small>명중</small><b>${esc(ac)}</b></span>${r[9] && r[9] !== '-' ? `<span><small>범위</small><b>${esc(r[9])}</b></span>` : ''}${pr ? `<span><small>우선</small><b>${esc(pr)}</b></span>` : ''}${r[10] === 'O' ? '<span class="mvc-ct" title="접촉 기술">접촉</span>' : ''}</div>${powLine(PO, r)}${eff ? `<p class="mvc-e" title="${esc(eff)}">${fxT(eff)}</p>` : ''}` : MK().dbReady() ? '<p class="mvc-e dim">기술 표에 없는 이름이에요</p>' : '<p class="mvc-e dim">기술 표를 불러오는 중이에요…</p>'}</article>`;
       })
       .join('')}</div></details>`;
   }
@@ -1105,7 +1115,7 @@
      return `<span class="${gcls(g)} ${up ? 'up' : ''}" title="${l} ${v || '-'} · ${g}${up ? ` (포텐셜로 ${b0[i]} → ${bu[i]})` : ''}"><small>${l}</small><em>${esc(g)}</em><b>${v || '-'}${up ? '<sup>▲</sup>' : ''}</b></span>`;
    }).join('')}<span class="tot"><small>합</small><em>${X.tot || '-'}</em><b>&nbsp;</b></span></div>
    ${m.ability ? line('특성', m.ability, E.ab || (MK().abil(m.ability) || [])[2] || '', 'ab', SE && SE('ab', '눌러서 특성 고치기')) : ''}${X.ex.map(x => line('전용', '『' + String(x.name).replace(/[『』]/g, '') + '』', x.eff || '', 'ex', (SE ? SE('ex.' + x._k, '눌러서 전용 포텐셜 고치기') : '') + (T2C[x.ty] ? ` style="--exc:${T2C[x.ty]}"` : ''))).join('')}${X.items.map(x => line('소지품', x.n, x.e, 'it', SE && SE('item', '눌러서 소지품 고치기'))).join('')}${FB.h}${ED && t.id ? `<div class="ux-itbs"><button type="button" class="linkbtn small ux-itb" data-ux="item" data-id="${esc(t.id)}" data-pid="${esc(m.id)}">✎ 소지품${X.items.length ? ' 고치기' : ' 넣기'}</button>${window.NT_MONED ? `<button type="button" class="linkbtn small ux-itb" data-moned="${esc(m.id)}" data-id="${esc(t.id)}">✎ 포켓몬 고치기</button><button type="button" class="linkbtn small ux-itb" data-moned="${esc(m.id)}" data-id="${esc(t.id)}" data-sec="pcard" title="제작기 「한 장 요약」 — 기술 · 포텐셜 · 상성을 한 장으로 (PNG 저장도)">▤ 한 장 보기</button>` : ''}${o.bench && !FB.in ? `<span class="pmbnc">${o.bench}</span>` : ''}</div>` : o.bench && !FB.in ? `<div class="ux-itbs"><span class="pmbnc">${o.bench}</span></div>` : ''}
-   ${moveGrid(X.mv, m.id, SE)}
+   ${moveGrid(X.mv, m.id, SE, powCtx(m, X))}
    ${
      X.pots.length
        ? `<details class="pmpot" open><summary>포텐셜 ${X.pots.length} <span class="dim small">${X.pots.map(x => esc(x.n)).join(' · ')}</span></summary>${potGrid(
