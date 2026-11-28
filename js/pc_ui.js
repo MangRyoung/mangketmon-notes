@@ -1374,7 +1374,8 @@
   window.NT_PCX = { partySec, monCard, mkRow };
   /* 10-29: 지도의 인물 얼굴 → 이 시트 */
   window.NT_PC = {
-    monCard: (t, m, o) => monCard(t || {}, m, false, o || {}) /* 11-23 던전 한 장 요약 「⚔ 조우」 탭이 같은 포켓몬 카드를 쓴다 */,
+    /* 11-23 던전 한 장 요약 「⚔ 조우」 탭이 같은 포켓몬 카드를 쓴다. 11-28 망령 「던전 탭에서 왜 편집은 못함?」: o.ed = 고치기 칸 · 단추 (시트 「던전」 탭, GM) */
+    monCard: (t, m, o) => monCard(t || {}, m, !!(o && o.ed), o || {}),
     select(k, id) {
       U.mode = k === 'npc' ? 'npc' : 'pc';
       U.sel = id;

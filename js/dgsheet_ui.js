@@ -1,7 +1,7 @@
 /* ---------- 시트 「던전」 탭 (11-28 망령 「시트 칸에 던전 탭도 만들어놔 거기 애들 데이터 보기 편하게」) ----------
    시트 탭 작은 탭 「던전」 — GM 만. 위 칩으로 노트 던전(kind 'dgs')을 고르면, 그 던전의 조우 방마다 야생 포켓몬 카드를 늘어놓는다.
    카드는 던전 한 장 요약 「⚔ 조우」 탭과 같은 것(NT_DG.encHTML) — 제작기에서 받은 던전이면 방에 이어 둔 제작기 트레이너의 시트 카드로.
-   고른 던전은 이 브라우저에 기억(nt_dgsh_sel). */
+   고른 던전은 이 브라우저에 기억(nt_dgsh_sel). 11-28 망령 「던전 탭에서 왜 편집은 못함?」: 카드 칸을 누르면 고치기(시트와 같은 mon_ed) · ✎ 고치기 · 소지품 단추. */
 'use strict';
 (() => {
   const N = () => window.NT;
@@ -40,7 +40,7 @@
    <div class="dgsh-wrap" data-dgsh-wrap>${
      cur
        ? (wait ? '<div class="dim small" style="padding:6px 2px">제작기 시트를 불러오는 중…</div>' : '') +
-         NT_DG.encHTML(cur, true, mkrOf[cur.id] || {})
+         NT_DG.encHTML(cur, true, mkrOf[cur.id] || {}, { ed: 1 })
        : '<div class="empty">노트에 던전이 없어요 — 지도 장소 · 시나리오 「던전」에서 먼저 만들어요.</div>'
    }</div>`;
     bind(el, cur);

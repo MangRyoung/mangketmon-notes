@@ -849,8 +849,10 @@ window.NT_DG = (() => {
   /* 11-23 망령 「던전 한장요약에 조우 탭을 따로 만들어서 포켓몬들 데이터 볼 수 있게」: 조우 방(야생 시트가 있는 방)마다 포켓몬 카드 —
     타입 · 프라이드 · 레벨 보정 · 종족치 · 특성(효과) · 기술(타입 · 분류 · 위력 · 명중 · 범위 · 효과) · 포텐셜(효과) · 『계제』 · 야생 포텐셜 · 전용. 효과 글은 제작기 DB 에서 읽는다(못 읽으면 이름만). */
   const STN = ['HP', '공격', '방어', '특공', '특방', '스피드'];
-  function encHTML(d, G, MKR) {
+  /* opt.ed = 카드를 고칠 수 있게 (시트 「던전」 탭 · GM) — 한 장 요약 창은 PNG 로 찍으니 보기만 */
+  function encHTML(d, G, MKR, opt) {
     MKR = MKR || {};
+    const ED = !!(G && opt && opt.ed);
     const R = d.r || {};
     const hide = new Set(d.hide || []);
     const all = Object.keys(R).filter(id => G || !hide.has(id));
@@ -942,6 +944,7 @@ window.NT_DG = (() => {
           const lv = +p.dist || 0;
           try {
             return NT_PC.monCard(t, p, {
+              ed: ED,
               univ: sk ? 1 : 0,
               strip: `<div class="dgen-role ${role}"><i>${RL[role]}</i><span>야생 레벨 보정 ${lv >= 0 ? '+' : ''}${lv}</span>${sm.pride && !p.pride ? `<span>프라이드 ${esc(sm.pride)}</span>` : ''}</div>`
             });
