@@ -1058,7 +1058,7 @@ window.NT = (() => {
       b.onclick = async e => {
         e.preventDefault();
         e.stopPropagation();
-        const fs = await window.OM_CUTTER.open({ label: el.dataset.cutLabel || el.getAttribute('aria-label') || '이 칸', multi: !!multi });
+        const fs = await window.OM_CUTTER.open({ label: ((el.querySelector('b') || {}).textContent || '이 칸').trim(), multi: !!multi });
         if (fs.length) give(fs);
       };
       el.appendChild(b);
