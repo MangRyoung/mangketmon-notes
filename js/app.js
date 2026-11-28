@@ -1044,6 +1044,29 @@ window.NT = (() => {
     toast('올렸다');
     return u;
   }
+  /* 11-28 망령 「포트레이트 따기 … 세션노트/웹툴/로그 정리기에 곧바로 연계」: 그림 받는 칸 모서리에 「✂」 — 웹툴 사이트의 포트레이트 따기(OM_CUTTER · /oremas/js/cutter.js)를 띄워
+     거기서 자른 그림을 그 칸이 받던 길 그대로 넘긴다. 칸 안을 다시 그리면 단추가 사라지므로 지켜보다가 다시 붙인다 */
+  function cutButton(el, give, multi) {
+    if (!window.OM_CUTTER) return;
+    const put = () => {
+      if (el.querySelector(':scope > .ntcut')) return;
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'ntcut';
+      b.textContent = '✂';
+      b.title = '자르기 — 포트레이트 따기를 열어 얼굴 쪽으로 자르거나 배경을 지운 뒤 이 칸에 올린다';
+      b.onclick = async e => {
+        e.preventDefault();
+        e.stopPropagation();
+        const fs = await window.OM_CUTTER.open({ label: el.dataset.cutLabel || el.getAttribute('aria-label') || '이 칸', multi: !!multi });
+        if (fs.length) give(fs);
+      };
+      el.appendChild(b);
+    };
+    if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+    put();
+    new MutationObserver(put).observe(el, { childList: true });
+  }
   /* 끌어 놓기 · 클릭 · Ctrl+V 로 파일 받기 */
   function bindDrop(el, onFiles, multi, accept) {
     if (!el || el._dz) return;
@@ -1088,6 +1111,7 @@ window.NT = (() => {
         give(fs);
       }
     });
+    if (!accept || accept === 'image/*') cutButton(el, give, multi);
   }
 
   /* ----- 주소 · 비밀구 ----- */
